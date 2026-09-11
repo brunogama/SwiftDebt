@@ -2,7 +2,7 @@
 
 A Swift CLI, reusable analysis library, SwiftPM command plugin, and incremental build-tool plugin based on **SCMA: A Lightweight Tool to Analyze Swift Projects**, by Fazle Rabbi, Syeda Sumbul Hossain, and Mir Mohammad Samsul Arefin.
 
-**Version:** 0.1.0. **Toolchain baseline:** Swift 6.2.x, Swift 6 language mode. The shipping manifest pins SwiftSyntax **602.0.0** and declares macOS 13 as its minimum macOS deployment target. Linux validation used Swift 6.2.1. Newer Swift syntax is not implicitly supported by the pinned parser.
+**Version:** 0.0.1. **Toolchain baseline:** Swift 6.2.x, Swift 6 language mode. The shipping manifest pins SwiftSyntax **602.0.0** and declares macOS 13 as its minimum macOS deployment target. Linux validation used Swift 6.2.1. Newer Swift syntax is not implicitly supported by the pinned parser.
 
 This is an independent, paper-inspired implementation, **not a reproduction of the authors' tool**. All ten metric families are implemented, with documented measurement policies. Coupling and field access are syntactic estimates; duplicate detection is native Swift, not Lizard. The paper's inconsistent scoring formulas are opt-in rather than treated as a validated quality grade.
 
@@ -11,6 +11,7 @@ This is an independent, paper-inspired implementation, **not a reproduction of t
 - [Quick start](#quick-start)
 - [Command plugin](#command-plugin)
 - [Build plugin](#build-plugin)
+- [Genesis code reviewer workflow](#genesis-code-reviewer-workflow)
 - [Configuration](#configuration)
 - [Library API](#library-api)
 - [Architecture](#architecture)
@@ -73,8 +74,13 @@ swift run scma analyze Examples/Sources --scoring corrected  # bounded, plus DC 
 `paper` can produce results greater than 5. Undefined scores are `null` in JSON, never replaced with a passing grade. The overall average is absent/null unless analysis is complete and all ten individual scores are defined. `bounded` is a convenience transform, not a scientifically corrected scoring model. `corrected` additionally replaces the paper's printed DC ratio (`duplicatedLines * totalLines / totalParams`, which zeroes the score on any clone) with `duplicatedLines / totalLines`; every other equation is unchanged.
 
 ## Command plugin
+Add the published package to a consumer's `Package.swift` by pinning the `v0.0.1` release tag. The SwiftPM version is `0.0.1`; the Git tag name is `v0.0.1`:
 
-Add the extracted package to a consumer's `Package.swift`. This local-path example does not assume a published repository exists:
+```swift
+.package(url: "git@github.com:brunogama/SwiftSCMA.git", exact: "0.0.1")
+```
+
+Use a local path only when developing SwiftSCMA and a consumer package side by side:
 
 ```swift
 .package(name: "SwiftSCMA", path: "../SwiftSCMA")
@@ -141,6 +147,32 @@ swift package scma --target Demo --type-scope nominals --format json
 ```
 
 A conditional `XcodeBuildToolPlugin` adapter is included for Xcode project targets. It has **not been compiled or exercised on macOS/Xcode in this environment**. See [PLUGINS.md](docs/PLUGINS.md) before relying on it.
+
+
+---
+
+## Genesis code reviewer workflow
+
+This repository includes [`.github/workflows/genesis-code-reviewer.yml`](.github/workflows/genesis-code-reviewer.yml), a manual GitHub Actions workflow for reviewing production Genesis code with the pinned `v0.0.1` SwiftSCMA release.
+
+The workflow:
+
+- checks out `brunogama/SwiftSCMA` at `v0.0.1`;
+- configures a strict SSH identity for the `genesis-production` host alias;
+- clones the Genesis repository over SSH, defaulting to `git@genesis-production:brunogama/Genesis.git` and the `production` ref;
+- runs `scma analyze` against the selected Genesis path, defaulting to `Sources`;
+- uploads `genesis-scma-diagnostics` as an artifact.
+
+Configure these repository secrets before running it:
+
+| Secret | Purpose |
+| --- | --- |
+| `GENESIS_SSH_PRIVATE_KEY` | Read-only deploy key for the Genesis repository. |
+| `GENESIS_SSH_KNOWN_HOSTS` | Trusted `known_hosts` entries for the SSH host. Do not replace this with disabled host checking. |
+
+Optional dispatch inputs let you override the SSH repository URL, reviewed ref, analyzed path, and whether configured SCMA threshold violations fail the workflow.
+
+---
 
 ## Configuration
 

@@ -1,0 +1,121 @@
+name: Genesis Code Reviewer
+
+on:
+  workflow_dispatch:
+    inputs:
+      genesis_repository:
+        description: SSH URL for the Genesis repository to review.
+        required: true
+        default: git@genesis-production:brunogama/Genesis.git
+      genesis_ref:
+        description: Branch, tag, or SHA to review.
+        required: true
+        default: production
+      genesis_path:
+        description: Root-relative path inside Genesis to analyze.
+        required: true
+        default: Sources
+      fail_on_violation:
+        description: Fail when configured SCMA thresholds are violated.
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    name: Review Genesis production code
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out SwiftSCMA v0.0.1
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          repository: brunogama/SwiftSCMA
+          ref: v0.0.1
+          path: SwiftSCMA
+
+      - name: Configure SSH for Genesis
+        env:
+          GENESIS_SSH_PRIVATE_KEY: ${{ secrets.GENESIS_SSH_PRIVATE_KEY }}
+          GENESIS_SSH_KNOWN_HOSTS: ${{ secrets.GENESIS_SSH_KNOWN_HOSTS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -n "$GENESIS_SSH_PRIVATE_KEY"
+          test -n "$GENESIS_SSH_KNOWN_HOSTS"
+
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$GENESIS_SSH_PRIVATE_KEY" > ~/.ssh/genesis_ed25519
+          chmod 600 ~/.ssh/genesis_ed25519
+          printf '%s\n' "$GENESIS_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+          cat > ~/.ssh/config <<'SSH_CONFIG'
+          Host genesis-production
+            HostName github.com
+            HostKeyAlias github.com
+            User git
+            IdentityFile ~/.ssh/genesis_ed25519
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+          SSH_CONFIG
+
+      - name: Clone Genesis over SSH
+        env:
+          GENESIS_REPOSITORY: ${{ inputs.genesis_repository }}
+          GENESIS_REF: ${{ inputs.genesis_ref }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git clone --filter=blob:none "$GENESIS_REPOSITORY" Genesis
+          git -C Genesis fetch --depth 1 origin "$GENESIS_REF"
+          git -C Genesis checkout --detach FETCH_HEAD
+
+      - name: Build SwiftSCMA
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          swift --version
+          swift build --package-path SwiftSCMA -c release
+
+      - name: Run SCMA review
+        env:
+          GENESIS_PATH: ${{ inputs.genesis_path }}
+          FAIL_ON_VIOLATION: ${{ inputs.fail_on_violation }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p artifacts
+          args=(
+            analyze
+            "Genesis/$GENESIS_PATH"
+            --type-scope nominals
+            --format diagnostics
+          )
+
+          if [ -f Genesis/.scma.json ]; then
+            args+=(--config Genesis/.scma.json)
+          fi
+
+          if [ "$FAIL_ON_VIOLATION" = "true" ]; then
+            args+=(--fail-on-violation)
+          fi
+
+          SwiftSCMA/.build/release/scma "${args[@]}" \
+            | tee artifacts/genesis-scma.diagnostics
+
+      - name: Upload SCMA diagnostics
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: genesis-scma-diagnostics
+          path: artifacts/genesis-scma.diagnostics
+          if-no-files-found: warn
