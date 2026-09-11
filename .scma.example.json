@@ -1,0 +1,19 @@
+{
+  "typeScope": "classes",
+  "scoring": "none",
+  "format": "text",
+  "exclude": ["Examples", "Generated"],
+  "jobs": 4,
+  "failOnViolation": false,
+  "strictSyntax": false,
+  "minimumDuplicateLines": 11,
+  "maximumDuplicateComparisons": 250000,
+  "maximumFileBytes": 16777216,
+  "thresholds": {
+    "LOCC": 500,
+    "WMCC": 200,
+    "CCF": 20,
+    "NOPF": 10,
+    "DC": 10
+  }
+}

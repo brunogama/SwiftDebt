@@ -1,0 +1,6 @@
+{
+  "typeScope": "nominals",
+  "scoring": "none",
+  "thresholds": { "CCF": 1 },
+  "failOnViolation": false
+}
