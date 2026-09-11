@@ -12,4 +12,4 @@ Run typechecking regularly, single test files regularly, and the full test suite
 
 Once done, use /code-review to review the work.
 
-Commit your work to the current branch. Do not commit to `main` or `dev`: if the current branch is `main` or `dev`, stop and ask the user to create or name a topic branch first, since this repository requires all changes to reach `dev` through a pull request.
+Commit your work to the current branch. Do not commit directly to `main`: if the current branch is `main`, stop and ask the user to create or name a topic branch first. This repository releases from `main` and uses `feature/*`, `release/*`, `hotfix/*`, and loop-owned `local-ticket-loop/*` branches for work.

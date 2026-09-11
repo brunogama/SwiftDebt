@@ -88,6 +88,7 @@ package has no UI layer, so they do not apply to work here.
 ## Conventions
 
 - Keep each module focused on one topic; split when a file exceeds ~200 lines.
+- Exception: `scripts/local-ticket-loop/*.sh` may exceed this line-count guideline when the entrypoint must remain a portable, self-contained Bash 3.2 harness. Keep shared logic in `scripts/local-ticket-loop/shared/` when it is used by multiple entrypoints.
 - Prefer executable commands over prose descriptions.
 - Establish positive defaults ("always add tests") rather than bans.
 - Treat stale rules as technical debt; update modules when conventions change.
