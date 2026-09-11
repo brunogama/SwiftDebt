@@ -37,7 +37,7 @@
 ## Work tracking
 
 Implementation work is tracked as local Markdown tickets under
-`.scratch/<feature>/issues/`, described in `docs/agents/issue-tracker.md`.
+`.scratch/tickets/`, described in `docs/agents/issue-tracker.md`.
 Tickets carry their own blocking edges; `scripts/local-ticket-loop/` executes
 them and owns their checkboxes. Do not edit a ticket's checkboxes by hand while
 a loop is running.

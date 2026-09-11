@@ -21,7 +21,7 @@ Follow `AGENTS.md` as the shared policy source.
 
 ### Issue tracker
 
-Issues are tracked as local Markdown under `.scratch/<feature>/`. See `docs/agents/issue-tracker.md`.
+Issues are tracked as local Markdown under `.scratch/tickets/`. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
