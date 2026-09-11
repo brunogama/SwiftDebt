@@ -1,0 +1,9 @@
+{
+  "agent": "claude",
+  "run_id": "20260905T081530-12925",
+  "identity": {"name": "", "email": ""},
+  "started_at": "2026-09-05T07:35:05Z",
+  "ended_at": "2026-09-05T08:15:30Z",
+  "exit_code": 0,
+  "files_changed": [".agents/evidence/run-20260830T190612-46851.json",".agents/evidence/run-20260901T204159-51296.json",".agents/evidence/run-20260905T073503-72630.json"]
+}
