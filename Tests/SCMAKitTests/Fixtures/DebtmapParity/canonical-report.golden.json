@@ -1,0 +1,45 @@
+{
+  "evidenceAvailability" : [
+    {
+      "id" : "coverage",
+      "state" : "available"
+    },
+    {
+      "id" : "git-history",
+      "state" : "available"
+    },
+    {
+      "id" : "semantic-bindings",
+      "reason" : "SwiftSyntax-only fixture has no compiler binding",
+      "state" : "unavailable"
+    }
+  ],
+  "generatedAt" : "2026-09-12T00:00:00Z",
+  "items" : [
+    {
+      "entity" : "App.Processor.process(values:enabled:)",
+      "evidence" : [
+        "complexity",
+        "coverage",
+        "git-history"
+      ],
+      "id" : "callable:App.Processor.process",
+      "location" : "Sources/Processor.swift:12",
+      "priority" : "high",
+      "score" : 78.4
+    },
+    {
+      "entity" : "App.Store",
+      "evidence" : [
+        "coupling",
+        "mutation"
+      ],
+      "id" : "type:App.Store",
+      "location" : "Sources/Store.swift:1",
+      "priority" : "medium",
+      "score" : 41.2
+    }
+  ],
+  "referenceTime" : "2026-09-12T00:00:00Z",
+  "schemaVersion" : 1
+}

@@ -1,0 +1,304 @@
+{
+  "baselineCommit": "b0ae66be2065084b29b8b5da0a86d5cd049feced",
+  "capabilities": [
+    {
+      "capability": "Frozen SwiftSCMA baseline benchmark inputs and measurement methodology",
+      "id": "baseline-benchmark",
+      "implementationState": "implemented",
+      "ownerTicket": "06-establish-executable-parity-matrix-and-fixture-harness",
+      "proofs": [
+        {
+          "kind": "fixture",
+          "reference": "benchmarks/debtmap-baseline/methodology.v1.json"
+        },
+        {
+          "kind": "test",
+          "reference": "DebtmapParityFixtureTests.benchmarkMethodologyReferencesFrozenInputs"
+        }
+      ],
+      "scope": "in-scope",
+      "status": "implemented"
+    },
+    {
+      "capability": "Self-contained browser dashboard consuming the debt report schema",
+      "id": "browser-dashboard",
+      "implementationState": "planned",
+      "ownerTicket": "20-implement-interactive-browser-dashboard",
+      "proofs": [
+        {
+          "kind": "ticket",
+          "reference": ".scratch/tickets/20-implement-interactive-browser-dashboard.md"
+        }
+      ],
+      "scope": "in-scope",
+      "status": "intentional-divergence"
+    },
+    {
+      "capability": "CI-oriented debt analyze and validate CLI workflows",
+      "id": "cli-analyze-validate",
+      "implementationState": "planned",
+      "ownerTicket": "16-implement-analyze-and-validate-cli-workflows",
+      "proofs": [
+        {
+          "kind": "ticket",
+          "reference": ".scratch/tickets/16-implement-analyze-and-validate-cli-workflows.md"
+        }
+      ],
+      "scope": "in-scope",
+      "status": "implemented"
+    },
+    {
+      "capability": "Before and after debt report comparison and improvement validation",
+      "id": "compare-validate-improvement",
+      "implementationState": "planned",
+      "ownerTicket": "17-implement-compare-and-validate-improvement-workflows",
+      "proofs": [
+        {
+          "kind": "ticket",
+          "reference": ".scratch/tickets/17-implement-compare-and-validate-improvement-workflows.md"
+        }
+      ],
+      "scope": "in-scope",
+      "status": "implemented"
+    },
+    {
+      "capability": "Swift concurrency and API-risk evidence for Swift 6 code",
+      "id": "concurrency-api-risk",
+      "implementationState": "planned",
+      "ownerTicket": "13-add-swift-concurrency-and-api-risk-evidence",
+      "proofs": [
+        {
+          "kind": "ticket",
+          "reference": ".scratch/tickets/13-add-swift-concurrency-and-api-risk-evidence.md"
+        }
+      ],
+      "scope": "in-scope",
+      "status": "intentional-divergence"
+    },
+    {
+      "capability": "Optional LCOV coverage evidence with explicit matching diagnostics",
+      "id": "coverage-lcov",
+      "implementationState": "planned",
+      "ownerTicket": "10-ingest-lcov-and-explain-coverage-matching",
+      "proofs": [
+        {
+          "kind": "ticket",
+          "reference": ".scratch/tickets/10-ingest-lcov-and-explain-coverage-matching.md"
+        }
+      ],
+      "scope": "in-scope",
+      "status": "implemented"
+    },
+    {
+      "capability": "Import-free debt domain values, evidence availability and deterministic scoring",
+      "id": "debt-domain-scoring",
+      "implementationState": "planned",
+      "ownerTicket": "07-introduce-debt-analysis-domain-model-and-deterministic-scoring",
+      "proofs": [
+        {
+          "kind": "ticket",
+          "reference": ".scratch/tickets/07-introduce-debt-analysis-domain-model-and-deterministic-scoring.md"
+        }
+      ],
+      "scope": "in-scope",
+      "status": "implemented"
+    },
+    {
+      "capability": "Deterministic JSON, Markdown, DOT and CLI exit golden fixture harness",
+      "id": "deterministic-golden-harness",
+      "implementationState": "implemented",
+      "ownerTicket": "06-establish-executable-parity-matrix-and-fixture-harness",
+      "proofs": [
+        {
+          "kind": "fixture",
+          "reference": "Tests/SCMAKitTests/Fixtures/DebtmapParity/canonical-workflow.fixture.json"
+        },
+        {
+          "kind": "test",
+          "reference": "DebtmapParityFixtureTests.goldenFixtureOutputsRemainDeterministic"
+        }
+      ],
+      "scope": "in-scope",
+      "status": "implemented"
+    },
+    {
+      "capability": "Provider orchestration, ranked debt analysis, aggregation and filtering",
+      "id": "evidence-composition-ranked-analysis",
+      "implementationState": "planned",
+      "ownerTicket": "14-compose-evidence-providers-and-ranked-debt-analysis",
+      "proofs": [
+        {
+          "kind": "ticket",
+          "reference": ".scratch/tickets/14-compose-evidence-providers-and-ranked-debt-analysis.md"
+        }
+      ],
+      "scope": "in-scope",
+      "status": "implemented"
+    },
+    {
+      "capability": "Optional Git-history risk evidence using frozen reference time",
+      "id": "git-history-risk",
+      "implementationState": "planned",
+      "ownerTicket": "11-add-git-history-risk-evidence",
+      "proofs": [
+        {
+          "kind": "ticket",
+          "reference": ".scratch/tickets/11-add-git-history-risk-evidence.md"
+        },
+        {
+          "kind": "fixture",
+          "reference": "Tests/SCMAKitTests/Fixtures/DebtmapParity/canonical-workflow.fixture.json"
+        }
+      ],
+      "scope": "in-scope",
+      "status": "implemented"
+    },
+    {
+      "capability": "Swift call graph, dependency graph and coupling-risk evidence",
+      "id": "graph-coupling-risk",
+      "implementationState": "planned",
+      "ownerTicket": "09-build-swift-call-graph-and-coupling-risk-analysis",
+      "proofs": [
+        {
+          "kind": "ticket",
+          "reference": ".scratch/tickets/09-build-swift-call-graph-and-coupling-risk-analysis.md"
+        }
+      ],
+      "scope": "in-scope",
+      "status": "intentional-divergence"
+    },
+    {
+      "capability": "Interactive terminal debt explorer with non-interactive fallback",
+      "id": "interactive-terminal-explorer",
+      "implementationState": "planned",
+      "ownerTicket": "19-implement-interactive-terminal-debt-explorer",
+      "proofs": [
+        {
+          "kind": "ticket",
+          "reference": ".scratch/tickets/19-implement-interactive-terminal-debt-explorer.md"
+        }
+      ],
+      "scope": "in-scope",
+      "status": "implemented"
+    },
+    {
+      "capability": "Versioned native debt JSON schema, Markdown report and Graphviz DOT output",
+      "id": "markdown-json-dot-output",
+      "implementationState": "planned",
+      "ownerTicket": "15-add-debt-report-schema-markdown-json-and-dot-output",
+      "proofs": [
+        {
+          "kind": "ticket",
+          "reference": ".scratch/tickets/15-add-debt-report-schema-markdown-json-and-dot-output.md"
+        },
+        {
+          "kind": "fixture",
+          "reference": "Tests/SCMAKitTests/Fixtures/DebtmapParity/canonical-report.golden.json"
+        },
+        {
+          "kind": "fixture",
+          "reference": "Tests/SCMAKitTests/Fixtures/DebtmapParity/canonical-report.golden.md"
+        },
+        {
+          "kind": "fixture",
+          "reference": "Tests/SCMAKitTests/Fixtures/DebtmapParity/canonical-graph.golden.dot"
+        }
+      ],
+      "scope": "in-scope",
+      "status": "implemented"
+    },
+    {
+      "capability": "Debtmap parsers for non-Swift languages",
+      "id": "non-swift-language-parsing",
+      "implementationState": "not-planned",
+      "ownerTicket": null,
+      "proofs": [
+        {
+          "kind": "documentation",
+          "reference": "README.md#validation-and-limitations"
+        }
+      ],
+      "scope": "out-of-scope",
+      "status": "out-of-scope"
+    },
+    {
+      "capability": "Machine-readable parity matrix validation",
+      "id": "parity-matrix-validation",
+      "implementationState": "implemented",
+      "ownerTicket": "06-establish-executable-parity-matrix-and-fixture-harness",
+      "proofs": [
+        {
+          "kind": "matrix",
+          "reference": "docs/debtmap/parity-matrix.v0.23.0.json"
+        },
+        {
+          "kind": "test",
+          "reference": "DebtmapParityFixtureTests.parityMatrixRequiresProofForEveryInScopeCapability"
+        }
+      ],
+      "scope": "in-scope",
+      "status": "implemented"
+    },
+    {
+      "capability": "Existing SCMA metric and SwiftPM plugin regression gates",
+      "id": "scma-regression-gates",
+      "implementationState": "implemented",
+      "ownerTicket": "06-establish-executable-parity-matrix-and-fixture-harness",
+      "proofs": [
+        {
+          "kind": "test-command",
+          "reference": "swift build --build-tests && swift test"
+        },
+        {
+          "kind": "smoke-command",
+          "reference": "python3 scripts/smoke-test.py --binary .build/debug/scma --plugins"
+        }
+      ],
+      "scope": "in-scope",
+      "status": "implemented"
+    },
+    {
+      "capability": "Swift structural debt evidence for complexity, size and duplication",
+      "id": "swift-structural-evidence",
+      "implementationState": "planned",
+      "ownerTicket": "08-add-swift-structural-debt-evidence",
+      "proofs": [
+        {
+          "kind": "ticket",
+          "reference": ".scratch/tickets/08-add-swift-structural-debt-evidence.md"
+        }
+      ],
+      "scope": "in-scope",
+      "status": "intentional-divergence"
+    },
+    {
+      "capability": "SwiftPM command and build plugin access to debt workflows",
+      "id": "swiftpm-plugin-integration",
+      "implementationState": "planned",
+      "ownerTicket": "21-integrate-debt-analysis-with-swiftpm-plugins",
+      "proofs": [
+        {
+          "kind": "ticket",
+          "reference": ".scratch/tickets/21-integrate-debt-analysis-with-swiftpm-plugins.md"
+        }
+      ],
+      "scope": "in-scope",
+      "status": "implemented"
+    }
+  ],
+  "debtmapVersion": "0.23.0",
+  "matrixSchemaVersion": 1,
+  "statuses": [
+    "implemented",
+    "intentional-divergence",
+    "out-of-scope"
+  ],
+  "statusDefinition": {
+    "implemented": "Capability is inside the Swift parity target without an intentional semantic difference; implementationState records whether it has shipped.",
+    "intentional-divergence": "Capability is inside the Swift parity target with a documented Swift-specific semantic difference.",
+    "out-of-scope": "Capability is outside the Swift parity target."
+  },
+  "validation": {
+    "testFilter": "DebtmapParityFixtureTests.parityMatrixRequiresProofForEveryInScopeCapability"
+  }
+}
