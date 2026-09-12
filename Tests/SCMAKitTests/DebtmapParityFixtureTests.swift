@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import Testing
 
@@ -12,7 +13,13 @@ struct DebtmapParityFixtureTests {
         let matrix: ParityMatrix = try loadJSON("docs/debtmap/parity-matrix.v0.23.0.json")
 
         #expect(matrix.debtmapVersion == "0.23.0")
+        #expect(matrix.matrixSchemaVersion == 1)
         #expect(matrix.statuses == ["implemented", "intentional-divergence", "out-of-scope"])
+        #expect(matrix.statuses.allSatisfy { !(matrix.statusDefinition[$0] ?? "").isEmpty })
+        #expect(
+            matrix.validation.testFilter
+                == "DebtmapParityFixtureTests.parityMatrixRequiresProofForEveryInScopeCapability"
+        )
         #expect(matrix.capabilities.map(\.id) == matrix.capabilities.map(\.id).sorted())
         #expect(Set(matrix.capabilities.map(\.id)).count == matrix.capabilities.count)
 
@@ -31,7 +38,9 @@ struct DebtmapParityFixtureTests {
     @Test func goldenFixtureOutputsRemainDeterministic() throws {
         let fixture: GoldenFixture = try loadJSON("Tests/SCMAKitTests/Fixtures/DebtmapParity/canonical-workflow.fixture.json")
 
-        #expect(!fixture.gitHistory.referenceTime.isEmpty)
+        #expect(fixture.schemaVersion == 1)
+        #expect(fixture.generatedAt == "2026-09-12T00:00:00Z")
+        #expect(fixture.gitHistory.referenceTime == "2026-09-12T00:00:00Z")
         #expect(!fixture.gitHistory.commits.isEmpty)
         #expect(fixture.evidenceAvailability.contains { $0.state == "unavailable" })
 
@@ -39,6 +48,16 @@ struct DebtmapParityFixtureTests {
         let markdown = renderMarkdown(fixture)
         let dot = renderDOT(fixture)
         let cli = try renderCLI(fixture)
+
+        let repeatedJSON = try renderJSON(fixture)
+        let repeatedMarkdown = renderMarkdown(fixture)
+        let repeatedDOT = renderDOT(fixture)
+        let repeatedCLI = try renderCLI(fixture)
+
+        #expect(json == repeatedJSON)
+        #expect(markdown == repeatedMarkdown)
+        #expect(dot == repeatedDOT)
+        #expect(cli == repeatedCLI)
 
         let shuffled = fixture.shuffledForDeterminismCheck()
         let shuffledJSON = try renderJSON(shuffled)
@@ -62,9 +81,12 @@ struct DebtmapParityFixtureTests {
         let methodology: BenchmarkMethodology = try loadJSON("benchmarks/debtmap-baseline/methodology.v1.json")
 
         #expect(methodology.baselineCommit == "b0ae66be2065084b29b8b5da0a86d5cd049feced")
+        #expect(methodology.schemaVersion == 1)
+        #expect(methodology.outputDirectory == ".scma/benchmarks/debtmap-baseline")
         #expect(methodology.measurements == ["wall-clock-seconds", "peak-memory-bytes"])
-        #expect(methodology.warmupRuns > 0)
-        #expect(methodology.measuredRuns > 0)
+        #expect(methodology.methodology.allSatisfy { !$0.isEmpty })
+        #expect(methodology.warmupRuns == 1)
+        #expect(methodology.measuredRuns == 5)
         #expect(!methodology.commands.isEmpty)
 
         for command in methodology.commands {
@@ -79,6 +101,7 @@ struct DebtmapParityFixtureTests {
             let text = try #require(String(data: data, encoding: .utf8))
             #expect(data.count == input.utf8ByteCount, "Byte count drifted for \(input.path)")
             #expect(text.split(separator: "\n", omittingEmptySubsequences: false).count == input.lineCount)
+            #expect(sha256Hex(data) == input.sha256, "SHA-256 drifted for \(input.path)")
         }
     }
 
@@ -89,5 +112,11 @@ struct DebtmapParityFixtureTests {
 
     private func read(_ path: String) throws -> String {
         try String(contentsOf: root.appendingPathComponent(path), encoding: .utf8)
+    }
+
+    private func sha256Hex(_ data: Data) -> String {
+        SHA256.hash(data: data)
+            .map { String(format: "%02x", $0) }
+            .joined()
     }
 }

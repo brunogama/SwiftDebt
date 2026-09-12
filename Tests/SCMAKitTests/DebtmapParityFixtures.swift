@@ -2,8 +2,15 @@ import Foundation
 
 struct ParityMatrix: Decodable {
     let debtmapVersion: String
+    let matrixSchemaVersion: Int
     let statuses: [String]
+    let statusDefinition: [String: String]
+    let validation: ParityValidation
     let capabilities: [ParityCapability]
+}
+
+struct ParityValidation: Decodable {
+    let testFilter: String
 }
 
 struct ParityCapability: Decodable {
@@ -19,15 +26,19 @@ struct ParityProof: Decodable {
 
 struct BenchmarkMethodology: Decodable {
     let baselineCommit: String
+    let schemaVersion: Int
+    let outputDirectory: String
     let warmupRuns: Int
     let measuredRuns: Int
     let measurements: [String]
+    let methodology: [String]
     let inputs: [BenchmarkInput]
     let commands: [BenchmarkCommand]
 }
 
 struct BenchmarkInput: Decodable {
     let path: String
+    let sha256: String
     let utf8ByteCount: Int
     let lineCount: Int
 }
