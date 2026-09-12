@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "debtmapVersion": "0.23.0",
+  "swiftSCMABaselineVersion": "0.0.1",
+  "capabilities": [
+    {
+      "id": "debtmap.baseline.methodology",
+      "title": "Baseline runtime and peak-memory methodology",
+      "status": "implemented",
+      "proof": [
+        "Benchmarks/SwiftSCMABaseline/manifest.json",
+        "docs/BASELINE_BENCHMARK.md",
+        "Tests/SCMAKitTests/ParityHarnessTests.swift#baselineBenchmarkManifestFreezesInputsAndMethodology"
+      ],
+      "notes": "Benchmark inputs and measurement commands are frozen before debt features are added."
+    },
+    {
+      "id": "debtmap.capability-matrix.validation",
+      "title": "Executable capability matrix validation",
+      "status": "implemented",
+      "proof": [
+        "docs/debtmap-parity-matrix.json",
+        "Tests/SCMAKitTests/ParityHarnessTests.swift#parityMatrixRequiresProofForInScopeCapabilities"
+      ],
+      "notes": "Validation rejects any implemented or intentionally divergent entry that lacks proof."
+    },
+    {
+      "id": "debtmap.evidence.optional-availability",
+      "title": "Optional evidence availability fixture state",
+      "status": "implemented",
+      "proof": [
+        "Tests/SCMAKitTests/Fixtures/DebtmapParity/cli-exit.golden",
+        "Tests/SCMAKitTests/ParityHarnessTests.swift#goldenOutputsAreStableAcrossRepeatedRuns"
+      ],
+      "notes": "The fixture can render an unavailable evidence state without consulting live services."
+    },
+    {
+      "id": "debtmap.git-history.frozen",
+      "title": "Frozen Git history fixture",
+      "status": "implemented",
+      "proof": [
+        "Tests/SCMAKitTests/Fixtures/DebtmapParity/digraph.dot.golden",
+        "Tests/SCMAKitTests/ParityHarnessTests.swift#goldenOutputsAreStableAcrossRepeatedRuns"
+      ],
+      "notes": "Fixture history is supplied as deterministic commit records instead of live Git state."
+    },
+    {
+      "id": "debtmap.output.cli-exit",
+      "title": "CLI exit behavior golden fixture",
+      "status": "implemented",
+      "proof": [
+        "Tests/SCMAKitTests/Fixtures/DebtmapParity/cli-exit.golden",
+        "Tests/SCMAKitTests/ParityHarnessTests.swift#goldenOutputsAreStableAcrossRepeatedRuns"
+      ],
+      "notes": "The fixture records the exit status and diagnostic text contract used by later debt workflow tests."
+    },
+    {
+      "id": "debtmap.output.dot",
+      "title": "DOT golden fixture",
+      "status": "implemented",
+      "proof": [
+        "Tests/SCMAKitTests/Fixtures/DebtmapParity/digraph.dot.golden",
+        "Tests/SCMAKitTests/ParityHarnessTests.swift#goldenOutputsAreStableAcrossRepeatedRuns"
+      ],
+      "notes": "DOT ordering is frozen by the executable fixture harness without adding production debt graph rendering."
+    },
+    {
+      "id": "debtmap.output.json",
+      "title": "JSON golden fixture",
+      "status": "implemented",
+      "proof": [
+        "Tests/SCMAKitTests/Fixtures/DebtmapParity/report.json.golden",
+        "Tests/SCMAKitTests/ParityHarnessTests.swift#goldenOutputsAreStableAcrossRepeatedRuns"
+      ],
+      "notes": "JSON field and array ordering are frozen for the parity fixture."
+    },
+    {
+      "id": "debtmap.output.markdown",
+      "title": "Markdown golden fixture",
+      "status": "implemented",
+      "proof": [
+        "Tests/SCMAKitTests/Fixtures/DebtmapParity/report.md.golden",
+        "Tests/SCMAKitTests/ParityHarnessTests.swift#goldenOutputsAreStableAcrossRepeatedRuns"
+      ],
+      "notes": "Markdown ordering is frozen by the fixture harness before production debt reporting exists."
+    },
+    {
+      "id": "debtmap.output.ordering",
+      "title": "Stable ordering across fixture inputs",
+      "status": "implemented",
+      "proof": [
+        "Tests/SCMAKitTests/ParityHarnessTests.swift#goldenOutputsAreStableAcrossRepeatedRuns"
+      ],
+      "notes": "The harness sorts capabilities and commit edges before rendering every output format."
+    },
+    {
+      "id": "debtmap.regression.scma-metrics",
+      "title": "Current SCMA metric tests remain gates",
+      "status": "implemented",
+      "proof": [
+        "Tests/SCMAKitTests/AnalyzerTests.swift",
+        "Tests/SCMACoreTests/CoreTests.swift"
+      ],
+      "notes": "Existing analyzer and core metric suites are unchanged and continue to run under SwiftPM."
+    },
+    {
+      "id": "debtmap.regression.swiftpm-plugins",
+      "title": "SwiftPM plugin sources remain gates",
+      "status": "implemented",
+      "proof": [
+        "Plugins/SCMACommandPlugin/plugin.swift",
+        "Plugins/SCMABuildPlugin/plugin.swift",
+        "docs/VALIDATION.md"
+      ],
+      "notes": "This ticket preserves plugin source behavior and keeps repository verification on swift build --build-tests and swift test."
+    },
+    {
+      "id": "debtmap.scoring.production",
+      "title": "Production debt scoring",
+      "status": "out-of-scope",
+      "proof": [],
+      "notes": "Debt scoring implementation is intentionally excluded from this acceptance-backbone ticket."
+    }
+  ]
+}
