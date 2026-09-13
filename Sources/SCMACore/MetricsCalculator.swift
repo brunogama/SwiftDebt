@@ -35,6 +35,24 @@ package struct MetricsCalculator {
             couplingCounts[edge.second, default: 0] += 1
         }
         let duplication = try DuplicateDetector().detect(files, options: options)
+        let structuralTypes = types.values.map { type in
+            let owned = ownedByType[type.key, default: []]
+            return StructuralTypeFacts(
+                key: type.key,
+                location: type.location,
+                codeLines: type.lines,
+                propertyCount: type.fields.count,
+                methodCount: owned.filter { $0.kind == .method }.count,
+                weightedMethodComplexity: owned.reduce(0) { $0 + $1.complexity },
+                callableNames: owned.map(\.name).sorted()
+            )
+        }
+        let debtItems = StructuralDebtBuilder().items(
+            files: files,
+            types: structuralTypes,
+            functions: functions,
+            duplicateBlocks: duplication.blocks
+        )
         var observations: [Metric: [MetricObservation]] = [:]
         for type in types.values.sorted(by: { $0.key.displayName < $1.key.displayName }) {
             let owned = ownedByType[type.key, default: []]
@@ -117,7 +135,7 @@ package struct MetricsCalculator {
             return lhs.message < rhs.message
         }
         return AnalysisReport(
-            schemaVersion: 1, engineVersion: "0.1.0", typeScope: options.typeScope,
+            schemaVersion: 2, engineVersion: "0.1.0", typeScope: options.typeScope,
             scoringMode: options.scoring, complete: complete,
             inputFileCount: parsed.count, inputFiles: parsed.map(\.path).sorted(),
             minimumDuplicateLines: options.minimumDuplicateLines, analyzedFileCount: files.count,
@@ -129,7 +147,8 @@ package struct MetricsCalculator {
             metrics: summaries, overallScore: overall,
             overallScoreNote: overall == nil
                 ? "An overall score requires a complete analysis and all ten defined metric scores." : nil,
-            findings: findings, diagnostics: diagnostics, couplings: edges, duplicateBlocks: duplication.blocks
+            findings: findings, diagnostics: diagnostics, couplings: edges, duplicateBlocks: duplication.blocks,
+            debtItems: debtItems
         )
     }
 

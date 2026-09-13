@@ -19,6 +19,7 @@ struct AnalyzerTests {
             source("C.swift", "class C { var x = 0; func f(_ n: Int) { x = n } }")
         ])
         #expect(report.complete)
+        #expect(report.schemaVersion == 2)
         #expect(report.metrics.map(\.metric) == Metric.allCases)
         #expect(metric(.noav, in: report).total == 1)
         #expect(report.overallScore == nil)
@@ -154,6 +155,74 @@ struct AnalyzerTests {
         ])
         #expect(metric(.noav, in: report).observations.map(\.value) == [2, 1, 0])
     }
+    @Test func structuralDebtEvidenceCarriesLocationsAndExplanations() async throws {
+        let repeated = (0..<3).map { "    let v\($0) = \($0)" }.joined(separator: "\n")
+        let code = """
+        class Worker {
+            var values: [Int] = []
+            func risky(flag: Bool) async throws {
+                if flag {
+                    for value in values {
+                        if value > 0 {
+                            print(value)
+                        }
+                    }
+                }
+            }
+            func cloneA() {
+        \(repeated)
+            }
+            func cloneB() {
+        \(repeated)
+            }
+        }
+        """
+        let report = try await Analyzer().analyze(
+            [source("Structural.swift", code)],
+            options: .init(minimumDuplicateLines: 3)
+        )
+        let evidence = report.debtItems.flatMap(\.evidence)
+
+        #expect(report.metrics.map(\.metric) == Metric.allCases)
+        #expect(!evidence.isEmpty)
+        #expect(evidence.allSatisfy { $0.location?.file != nil && $0.location?.line != nil })
+        #expect(evidence.allSatisfy { $0.note?.isEmpty == false })
+        #expect(evidence.contains { $0.kind == "swift.cognitive-complexity" && $0.rawValue == "value=6" })
+        #expect(evidence.contains { $0.kind == "swift.nesting-depth" && $0.rawValue == "value=3" })
+        #expect(evidence.contains { $0.kind == "swift.oversized-type" })
+        #expect(evidence.contains { $0.kind == "swift.duplicate-lines" && $0.rawValue != "value=0" })
+    }
+
+    @Test func structuralDebtEvidenceIsDeterministicUnderParallelParsing() async throws {
+        let body = (0..<4).map { "        let v\($0) = \($0)" }.joined(separator: "\n")
+        let sources = (0..<12).map { index in
+            source(
+                "\(index).swift",
+                """
+                class C\(index) {
+                    var value = \(index)
+                    func f(_ flag: Bool) {
+                        if flag {
+                            for item in [value] {
+                                if item > 0 { print(item) }
+                            }
+                        }
+                \(body)
+                    }
+                }
+                """
+            )
+        }
+        let first = try await Analyzer().analyze(sources, options: .init(minimumDuplicateLines: 3), jobs: 1)
+        let second = try await Analyzer().analyze(
+            Array(sources.reversed()),
+            options: .init(minimumDuplicateLines: 3),
+            jobs: 4
+        )
+
+        #expect(first.debtItems == second.debtItems)
+    }
+
     @Test func correctedScoringRepairsDuplicateRatioOnly() async throws {
         let block = (0..<12).map { "    let v\($0) = \($0)" }.joined(separator: "\n")
         let code = "class C {\n    func a(_ p: Int) {\n\(block)\n    }\n    func b() {\n\(block)\n    }\n}"

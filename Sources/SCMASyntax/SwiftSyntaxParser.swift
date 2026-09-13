@@ -21,7 +21,7 @@ package struct SwiftSyntaxParser: SourceParsing {
         guard !diagnostics.contains(where: { $0.severity == .error }) else {
             // Error recovery is useful to editors, but must not manufacture quality metrics.
             return ParsedSource(
-                path: source.path, module: source.module, types: [], functions: [],
+                path: source.path, module: source.module, types: [], functions: [], closures: [],
                 lines: [], topLevelVariables: 0, diagnostics: diagnostics)
         }
         let imports = ImportVisitor()
@@ -30,8 +30,9 @@ package struct SwiftSyntaxParser: SourceParsing {
         collector.walk(tree)
         return ParsedSource(
             path: source.path, module: source.module, types: collector.types,
-            functions: collector.functions, lines: collector.sourceLines.codeLines(tree),
-            topLevelVariables: collector.topLevelVariables, diagnostics: diagnostics
+            functions: collector.functions, closures: collector.closures,
+            lines: collector.sourceLines.codeLines(tree), topLevelVariables: collector.topLevelVariables,
+            diagnostics: diagnostics
         )
     }
 }
@@ -51,6 +52,7 @@ private final class DeclarationCollector: SyntaxVisitor {
     let imports: Set<String>
     var types: [TypeFragment] = []
     var functions: [FunctionFacts] = []
+    var closures: [ClosureFacts] = []
     var topLevelVariables = 0
 
     init(source: SourceUnit, converter: SourceLocationConverter, imports: Set<String>) {
@@ -134,6 +136,10 @@ private final class DeclarationCollector: SyntaxVisitor {
         }
         return .visitChildren
     }
+    override func visit(_ node: ClosureExprSyntax) -> SyntaxVisitorContinueKind {
+        addClosure(node)
+        return .visitChildren
+    }
     override func visit(_ node: VariableDeclSyntax) -> SyntaxVisitorContinueKind {
         var parent = node.parent
         var global = true
@@ -169,6 +175,35 @@ private final class DeclarationCollector: SyntaxVisitor {
             node, kind: .method, name: name, parameters: parameters, statements: body.statements, ownerAnchor: node)
     }
 
+    private func addClosure(_ node: ClosureExprSyntax) {
+        let names = closureParameterNames(node.signature)
+        let visitor = BodyVisitor(parameters: names)
+        visitor.walk(node.statements)
+        closures.append(
+            ClosureFacts(
+                owner: directOwner(of: Syntax(node), module: source.module), location: sourceLines.location(node),
+                codeLines: sourceLines.codeLines(node.statements).count, complexity: visitor.complexity,
+                cognitiveComplexity: visitor.cognitiveComplexity, maxNestingDepth: visitor.maxNestingDepth,
+                parameters: names.count
+            ))
+    }
+
+    private func closureParameterNames(_ signature: ClosureSignatureSyntax?) -> Set<String> {
+        guard let parameterClause = signature?.parameterClause else { return [] }
+        switch parameterClause {
+        case .simpleInput(let parameters):
+            return Set(parameters.compactMap { parameter in
+                let value = cleanName(parameter.name.text)
+                return value == "_" ? nil : value
+            })
+        case .parameterClause(let clause):
+            return Set(clause.parameters.compactMap { parameter in
+                let value = cleanName((parameter.secondName ?? parameter.firstName).text)
+                return value == "_" ? nil : value
+            })
+        }
+    }
+
     private func addFunction(
         _ node: Syntax, kind: CallableKind, name: String, parameters: FunctionParameterListSyntax,
         statements: CodeBlockItemListSyntax, ownerAnchor: Syntax, implicitNames: Set<String> = []
@@ -200,6 +235,8 @@ private final class DeclarationCollector: SyntaxVisitor {
             FunctionFacts(
                 name: "\(prefix).\(name)(\(labels))", kind: kind, owner: owner, location: sourceLines.location(node),
                 codeLines: sourceLines.codeLines(statements).count, complexity: visitor.complexity,
+                cognitiveComplexity: visitor.cognitiveComplexity,
+                maxNestingDepth: visitor.maxNestingDepth,
                 parameters: parameters.count, bareReferences: visitor.bareReferences,
                 explicitSelfReferences: visitor.explicitSelfReferences, shadowedNames: visitor.shadowedNames,
                 effectFacts: effectVisitor.effectFacts, compositionFacts: effectVisitor.compositionFacts
