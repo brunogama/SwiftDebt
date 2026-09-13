@@ -49,8 +49,10 @@ public struct DebtScoring: Sendable {
             available.append(evidence)
         }
 
-        let totalAvailableWeight = available.reduce(0.0) { $0 + positiveWeight($1.weight) }
-        let contributions = available.map { evidence -> DebtScoreContribution in
+        let dampeners = available.filter(isScoreDampener)
+        let primaryEvidence = available.filter { !isScoreDampener($0) }
+        let totalAvailableWeight = primaryEvidence.reduce(0.0) { $0 + positiveWeight($1.weight) }
+        var contributions = primaryEvidence.map { evidence -> DebtScoreContribution in
             let normalizedScore = bounded(evidence.normalizedScore ?? 0)
             let effectiveWeight = positiveWeight(evidence.weight) / totalAvailableWeight
             let contribution = normalizedScore * effectiveWeight
@@ -72,12 +74,15 @@ public struct DebtScoring: Sendable {
                 breakdown: DebtScoreBreakdown(
                     totalConfiguredWeight: totalConfiguredWeight,
                     totalAvailableWeight: totalAvailableWeight,
-                    contributions: contributions,
+                    contributions: contributions + dampenerContributions(dampeners, startingValue: nil),
                     unavailableEvidence: unavailable
                 )
             )
         }
-        let value = contributions.reduce(0.0) { $0 + $1.contribution }
+        let baseValue = contributions.reduce(0.0) { $0 + $1.contribution }
+        let dampenerContributions = dampenerContributions(dampeners, startingValue: baseValue)
+        contributions += dampenerContributions
+        let value = max(0, baseValue + dampenerContributions.reduce(0.0) { $0 + $1.contribution })
         return DebtScore(
             value: value,
             priority: policy.priorityThresholds.classify(value),
@@ -145,6 +150,30 @@ private func isOrdered(_ lhs: Double?, before rhs: Double?) -> Bool? {
     }
 }
 
+private func isScoreDampener(_ evidence: DebtEvidence) -> Bool {
+    evidence.kind.hasPrefix("coverage.")
+}
+
+private func dampenerContributions(_ dampeners: [DebtEvidence], startingValue: Double?) -> [DebtScoreContribution] {
+    var currentValue = startingValue
+    return dampeners.map { evidence -> DebtScoreContribution in
+        let normalizedScore = bounded(evidence.normalizedScore ?? 0)
+        let nextValue = currentValue.map { $0 * (normalizedScore / 100) }
+        let contribution = nextValue.flatMap { next in currentValue.map { next - $0 } } ?? 0
+        currentValue = nextValue
+        return DebtScoreContribution(
+            evidenceID: evidence.id,
+            kind: evidence.kind,
+            rawValue: evidence.rawValue,
+            normalizedScore: normalizedScore,
+            configuredWeight: positiveWeight(evidence.weight),
+            effectiveWeight: 0,
+            contribution: contribution,
+            note: dampenerNote(for: evidence)
+        )
+    }
+}
+
 private func positiveWeight(_ weight: Double) -> Double {
     max(0, weight)
 }
@@ -164,4 +193,10 @@ private func contributionNote(for evidence: DebtEvidence) -> String? {
         return note + "; normalized score clamped to 0...100"
     }
     return note
+}
+
+private func dampenerNote(for evidence: DebtEvidence) -> String {
+    let note = contributionNote(for: evidence)
+    let dampener = "coverage dampener; cannot increase score"
+    return note.map { $0 + "; " + dampener } ?? dampener
 }
