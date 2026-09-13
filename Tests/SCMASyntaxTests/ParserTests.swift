@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 
 @testable import SCMACore
@@ -7,6 +8,55 @@ import Testing
 struct ParserTests {
     private func parse(_ code: String) -> ParsedSource {
         SwiftSyntaxParser().parse(SourceUnit(path: "Input.swift", content: code))
+    }
+
+    @Test func modernSwiftSyntaxGoldenFixtureCoversStructuralDebtFacts() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        let sourceURL = root.appendingPathComponent("Fixtures/ModernStructuralDebt.swift")
+        let goldenURL = root.appendingPathComponent("Fixtures/ModernStructuralDebt.golden.json")
+        let source = try String(contentsOf: sourceURL, encoding: .utf8)
+        let expected = try JSONDecoder().decode(SwiftSyntaxGolden.self, from: Data(contentsOf: goldenURL))
+        let result = SwiftSyntaxParser().parse(SourceUnit(path: sourceURL.lastPathComponent, content: source))
+
+        #expect(result.isValid)
+        #expect(
+            SwiftSyntaxGolden(
+                types: result.types
+                    .map {
+                        SwiftSyntaxGolden.TypeFact(
+                            name: $0.key.name,
+                            kind: $0.kind,
+                            line: $0.location.line,
+                            propertyNames: $0.propertyNames.sorted()
+                        )
+                    }
+                    .sorted { $0.name < $1.name },
+                functions: result.functions
+                    .map {
+                        SwiftSyntaxGolden.FunctionFact(
+                            name: $0.name,
+                            kind: callableKind($0.kind),
+                            line: $0.location.line,
+                            complexity: $0.complexity,
+                            cognitiveComplexity: $0.cognitiveComplexity,
+                            maxNestingDepth: $0.maxNestingDepth
+                        )
+                    }
+                    .sorted { $0.name < $1.name },
+                closures: result.closures
+                    .map {
+                        SwiftSyntaxGolden.ClosureFact(
+                            line: $0.location.line,
+                            codeLines: $0.codeLines,
+                            parameters: $0.parameters,
+                            complexity: $0.complexity,
+                            cognitiveComplexity: $0.cognitiveComplexity,
+                            maxNestingDepth: $0.maxNestingDepth
+                        )
+                    }
+                    .sorted { $0.line < $1.line }
+            ) == expected
+        )
     }
 
     @Test func classesPropertiesAndMethods() {
@@ -77,8 +127,14 @@ struct ParserTests {
             }
             """)
         #expect(result.functions.count == 2)
+        #expect(result.closures.count == 1)
         #expect(result.functions[0].complexity == 2)
         #expect(result.functions[1].complexity == 2)
+        #expect(result.functions.map(\.cognitiveComplexity) == [1, 1])
+        #expect(result.functions.map(\.maxNestingDepth) == [1, 1])
+        #expect(result.closures.first?.complexity == 2)
+        #expect(result.closures.first?.cognitiveComplexity == 1)
+        #expect(result.closures.first?.maxNestingDepth == 1)
         #expect(result.functions[1].owner == nil)
     }
     @Test(arguments: [
@@ -143,5 +199,43 @@ struct ParserTests {
         let result = parse("class Outer { class Inner { func f() {} } }")
         #expect(result.types.map { $0.key.name } == ["Outer", "Outer.Inner"])
         #expect(result.functions.first?.owner?.name == "Outer.Inner")
+    }
+}
+
+private struct SwiftSyntaxGolden: Decodable, Equatable {
+    struct TypeFact: Decodable, Equatable {
+        let name: String
+        let kind: String
+        let line: Int
+        let propertyNames: [String]
+    }
+
+    struct FunctionFact: Decodable, Equatable {
+        let name: String
+        let kind: String
+        let line: Int
+        let complexity: Int
+        let cognitiveComplexity: Int
+        let maxNestingDepth: Int
+    }
+
+    struct ClosureFact: Decodable, Equatable {
+        let line: Int
+        let codeLines: Int
+        let parameters: Int
+        let complexity: Int
+        let cognitiveComplexity: Int
+        let maxNestingDepth: Int
+    }
+
+    let types: [TypeFact]
+    let functions: [FunctionFact]
+    let closures: [ClosureFact]
+}
+
+private func callableKind(_ kind: CallableKind) -> String {
+    switch kind {
+    case .method: "method"
+    case .accessor: "accessor"
     }
 }

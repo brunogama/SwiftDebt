@@ -136,6 +136,7 @@ public struct AnalysisReport: Codable, Sendable {
     public let diagnostics: [AnalysisDiagnostic]
     public let couplings: [CouplingEdge]
     public let duplicateBlocks: [DuplicateBlock]
+    public let debtItems: [DebtItem]
 
     public var hasViolations: Bool { !findings.isEmpty }
 
@@ -163,6 +164,7 @@ public struct AnalysisReport: Codable, Sendable {
         case diagnostics
         case couplings
         case duplicateBlocks
+        case debtItems
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -190,6 +192,7 @@ public struct AnalysisReport: Codable, Sendable {
         try values.encode(diagnostics, forKey: .diagnostics)
         try values.encode(couplings, forKey: .couplings)
         try values.encode(duplicateBlocks, forKey: .duplicateBlocks)
+        try values.encode(debtItems, forKey: .debtItems)
     }
 }
 
@@ -301,6 +304,8 @@ package struct FunctionFacts: Sendable {
     package let location: SourceLocation
     package let codeLines: Int
     package let complexity: Int
+    package let cognitiveComplexity: Int
+    package let maxNestingDepth: Int
     package let parameters: Int
     /// Bare identifiers that were not shadowed by a lexically enclosing local binding.
     package let bareReferences: Set<String>
@@ -312,8 +317,8 @@ package struct FunctionFacts: Sendable {
 
     package init(
         name: String, kind: CallableKind = .method, owner: TypeKey?, location: SourceLocation, codeLines: Int,
-        complexity: Int, parameters: Int, bareReferences: Set<String>,
-        explicitSelfReferences: Set<String>, shadowedNames: Set<String>,
+        complexity: Int, cognitiveComplexity: Int = 0, maxNestingDepth: Int = 0, parameters: Int,
+        bareReferences: Set<String>, explicitSelfReferences: Set<String>, shadowedNames: Set<String>,
         effectFacts: [SyntaxEffectFact] = [], compositionFacts: [FunctionalCompositionFact] = []
     ) {
         self.name = name
@@ -322,12 +327,37 @@ package struct FunctionFacts: Sendable {
         self.location = location
         self.codeLines = codeLines
         self.complexity = complexity
+        self.cognitiveComplexity = cognitiveComplexity
+        self.maxNestingDepth = maxNestingDepth
         self.parameters = parameters
         self.bareReferences = bareReferences
         self.explicitSelfReferences = explicitSelfReferences
         self.shadowedNames = shadowedNames
         self.effectFacts = effectFacts
         self.compositionFacts = compositionFacts
+    }
+}
+
+package struct ClosureFacts: Sendable {
+    package let owner: TypeKey?
+    package let location: SourceLocation
+    package let codeLines: Int
+    package let complexity: Int
+    package let cognitiveComplexity: Int
+    package let maxNestingDepth: Int
+    package let parameters: Int
+
+    package init(
+        owner: TypeKey?, location: SourceLocation, codeLines: Int, complexity: Int,
+        cognitiveComplexity: Int, maxNestingDepth: Int, parameters: Int
+    ) {
+        self.owner = owner
+        self.location = location
+        self.codeLines = codeLines
+        self.complexity = complexity
+        self.cognitiveComplexity = cognitiveComplexity
+        self.maxNestingDepth = maxNestingDepth
+        self.parameters = parameters
     }
 }
 
@@ -345,18 +375,21 @@ package struct ParsedSource: Sendable {
     package let module: String
     package let types: [TypeFragment]
     package let functions: [FunctionFacts]
+    package let closures: [ClosureFacts]
     package let lines: [CodeLine]
     package let topLevelVariables: Int
     package let diagnostics: [AnalysisDiagnostic]
 
     package init(
         path: String, module: String, types: [TypeFragment], functions: [FunctionFacts],
-        lines: [CodeLine], topLevelVariables: Int, diagnostics: [AnalysisDiagnostic]
+        closures: [ClosureFacts] = [], lines: [CodeLine], topLevelVariables: Int,
+        diagnostics: [AnalysisDiagnostic]
     ) {
         self.path = path
         self.module = module
         self.types = types
         self.functions = functions
+        self.closures = closures
         self.lines = lines
         self.topLevelVariables = topLevelVariables
         self.diagnostics = diagnostics

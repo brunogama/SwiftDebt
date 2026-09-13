@@ -1,0 +1,72 @@
+{
+  "closures" : [
+    {
+      "codeLines" : 2,
+      "cognitiveComplexity" : 1,
+      "complexity" : 2,
+      "line" : 38,
+      "maxNestingDepth" : 1,
+      "parameters" : 1
+    }
+  ],
+  "functions" : [
+    {
+      "cognitiveComplexity" : 6,
+      "complexity" : 4,
+      "kind" : "method",
+      "line" : 45,
+      "maxNestingDepth" : 3,
+      "name" : "Workspace.ModernService.Nested.nested(flag:)"
+    },
+    {
+      "cognitiveComplexity" : 6,
+      "complexity" : 6,
+      "kind" : "method",
+      "line" : 16,
+      "maxNestingDepth" : 2,
+      "name" : "Workspace.ModernService.load(_:)"
+    },
+    {
+      "cognitiveComplexity" : 0,
+      "complexity" : 1,
+      "kind" : "method",
+      "line" : 37,
+      "maxNestingDepth" : 0,
+      "name" : "Workspace.ModernService.map(_:)"
+    },
+    {
+      "cognitiveComplexity" : 1,
+      "complexity" : 2,
+      "kind" : "accessor",
+      "line" : 10,
+      "maxNestingDepth" : 1,
+      "name" : "Workspace.ModernService.subscript.get(key:)"
+    }
+  ],
+  "types" : [
+    {
+      "kind" : "struct",
+      "line" : 1,
+      "name" : "Boxed",
+      "propertyNames" : [
+        "wrappedValue"
+      ]
+    },
+    {
+      "kind" : "actor",
+      "line" : 6,
+      "name" : "ModernService",
+      "propertyNames" : [
+        "cache"
+      ]
+    },
+    {
+      "kind" : "struct",
+      "line" : 44,
+      "name" : "ModernService.Nested",
+      "propertyNames" : [
+
+      ]
+    }
+  ]
+}
