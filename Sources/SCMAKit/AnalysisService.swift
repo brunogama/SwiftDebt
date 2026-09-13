@@ -31,6 +31,13 @@ public struct AnalysisService: Sendable {
             request: request, root: root, excludes: configuration.exclude + request.exclude)
         let sources = try discovery.read(selection, maximumFileBytes: configuration.maximumFileBytes)
         let report = try await Analyzer().analyze(sources, options: options, jobs: request.jobs ?? configuration.jobs)
+        let rankedDebtAnalysis = makeRankedDebtAnalysis(
+            report: report,
+            root: root,
+            options: request.debtAnalysisOptions ?? configuration.debtAnalysis,
+            lcovPath: request.lcovPath ?? configuration.lcovPath,
+            referenceTime: request.debtReferenceTime
+        )
         let format = request.format ?? configuration.format
         let rendered = try ReportRenderer().render(report, format: format, root: root.path)
         var protectedPaths = Set(selection.entries.map { URL(fileURLWithPath: $0.path).resolvingSymlinksInPath().path })
@@ -63,7 +70,89 @@ public struct AnalysisService: Sendable {
             try write(content, to: url)
         }
         return AnalysisRunResult(
-            report: report, standardOutput: request.outputPath == nil ? rendered : "", exitStatus: status)
+            report: report,
+            standardOutput: request.outputPath == nil ? rendered : "",
+            exitStatus: status,
+            rankedDebtAnalysis: rankedDebtAnalysis
+        )
+    }
+
+    private func makeRankedDebtAnalysis(
+        report: AnalysisReport,
+        root: URL,
+        options: DebtAnalysisOptions?,
+        lcovPath: String?,
+        referenceTime: Date?
+    ) -> RankedDebtAnalysis? {
+        guard let options else { return nil }
+        let entities = report.debtItems.map(\.entity)
+        var evidence: [DebtEvidence] = []
+        if let lcovPath {
+            let url = (lcovPath as NSString).isAbsolutePath
+                ? URL(fileURLWithPath: lcovPath)
+                : root.appendingPathComponent(lcovPath)
+            do {
+                let text = try String(contentsOf: url, encoding: .utf8)
+                let lcov = LcovParser().parse(text)
+                evidence += CoverageMatcher().match(report: lcov, entities: entities, repositoryRoot: root.path).evidence
+            } catch {
+                evidence += unavailableCoverageEvidence(for: entities, reason: "LCOV unavailable: \(error)")
+            }
+        }
+        let history = GitHistoryEvidenceProvider().evidence(
+            for: GitHistoryEvidenceRequest(
+                repositoryRoot: root.path,
+                referenceTime: referenceTime ?? Date(timeIntervalSince1970: 0),
+                entities: entities
+            )
+        )
+        evidence += history.evidence
+        let merged = merge(evidence: evidence, into: report.debtItems)
+        return DebtAnalysisBuilder(options: options).analyze(items: merged)
+    }
+
+    private func merge(evidence: [DebtEvidence], into items: [DebtItem]) -> [DebtItem] {
+        guard !evidence.isEmpty else { return items }
+        let grouped = Dictionary(grouping: evidence) { evidence in
+            entityID(for: evidence.id)
+        }
+        return items.map { item in
+            let mergedEvidence = (item.evidence + grouped[item.id, default: []]).sorted { lhs, rhs in
+                if lhs.id != rhs.id { return lhs.id < rhs.id }
+                if lhs.kind != rhs.kind { return lhs.kind < rhs.kind }
+                return lhs.rawValue < rhs.rawValue
+            }
+            return DebtItem(id: item.id, entity: item.entity, evidence: mergedEvidence)
+        }.sorted { lhs, rhs in
+            if lhs.entity.level.rawValue != rhs.entity.level.rawValue {
+                return lhs.entity.level.rawValue < rhs.entity.level.rawValue
+            }
+            return lhs.id < rhs.id
+        }
+    }
+
+    private func entityID(for evidenceID: String) -> String {
+        for marker in [":coverage:", ":git-history:"] {
+            if let range = evidenceID.range(of: marker) {
+                return String(evidenceID[..<range.lowerBound])
+            }
+        }
+        return evidenceID
+    }
+
+    private func unavailableCoverageEvidence(for entities: [DebtEntity], reason: String) -> [DebtEvidence] {
+        entities.sorted(by: entityOrder).map { entity in
+            DebtEvidence(
+                id: "\(entity.id):coverage:lcov",
+                kind: "coverage.lcov",
+                availability: .unavailable(reason: reason),
+                weight: 1,
+                normalizedScore: nil,
+                rawValue: "unavailable",
+                location: entity.location,
+                note: "Coverage provider unavailable; no zero-valued risk was fabricated."
+            )
+        }
     }
 
     private func describe(_ error: DecodingError) -> String {

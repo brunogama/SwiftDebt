@@ -48,11 +48,16 @@ package struct MetricsCalculator {
                 callableNames: owned.map(\.name).sorted()
             )
         }
-        let debtItems = StructuralDebtBuilder().items(
+        let structuralDebtItems = StructuralDebtBuilder().items(
             files: files,
             types: structuralTypes,
             functions: functions,
             duplicateBlocks: duplication.blocks
+        )
+        let debtItems = enrichDebtItems(
+            structuralDebtItems,
+            functionalEvidence: DebtFunctionalEvidenceBuilder().evidence(for: files),
+            dependencyContexts: dependencyGraph.dependencyContexts
         )
         var observations: [Metric: [MetricObservation]] = [:]
         for type in types.values.sorted(by: { $0.key.displayName < $1.key.displayName }) {
@@ -151,6 +156,41 @@ package struct MetricsCalculator {
             findings: findings, diagnostics: diagnostics, couplings: edges,
             dependencyGraph: dependencyGraph, duplicateBlocks: duplication.blocks, debtItems: debtItems
         )
+    }
+
+    private func enrichDebtItems(
+        _ items: [DebtItem],
+        functionalEvidence: [DebtEvidence],
+        dependencyContexts: [DependencyContext]
+    ) -> [DebtItem] {
+        let dependencyEvidenceByID = Dictionary(uniqueKeysWithValues: dependencyContexts.map { context in
+            (context.entity.id, context.evidence)
+        })
+        return items.map { item in
+            var evidence = item.evidence
+            evidence += functionalEvidence.filter { candidate in
+                guard let location = candidate.location else { return false }
+                if item.entity.level == .callable {
+                    return location == item.entity.location
+                }
+                return item.entity.level == .file && location.file == item.entity.location.file
+            }
+            evidence += dependencyEvidenceByID[item.entity.id, default: []]
+            return DebtItem(
+                id: item.id,
+                entity: item.entity,
+                evidence: evidence.sorted { lhs, rhs in
+                    if lhs.id != rhs.id { return lhs.id < rhs.id }
+                    if lhs.kind != rhs.kind { return lhs.kind < rhs.kind }
+                    return lhs.rawValue < rhs.rawValue
+                }
+            )
+        }.sorted { lhs, rhs in
+            if lhs.entity.level.rawValue != rhs.entity.level.rawValue {
+                return lhs.entity.level.rawValue < rhs.entity.level.rawValue
+            }
+            return lhs.id < rhs.id
+        }
     }
 
     private func aggregate(

@@ -11,9 +11,11 @@ okf_version: "0.1"
 * [LCOV coverage matching and score dampening](core/lcov-coverage-matching.md) - SCMACore parses LCOV reports, matches coverage to debt entities, emits coverage diagnostics, and treats coverage as a score dampener.
 * [Git history risk evidence](core/git-history-risk-evidence.md) - SCMAKit derives deterministic debt evidence from bounded local Git history for file-level entities.
 * [Swift functional evidence extraction](core/swift-functional-evidence-extraction.md) - SCMASyntax extracts syntax-level side-effect and functional-composition facts, and SCMACore converts them into deterministic debt evidence.
+* [Ranked debt analysis composition](core/ranked-debt-analysis-composition.md) - SCMACore and SCMAKit compose structural, functional, coverage, Git history, and dependency evidence into deterministic ranked debt analysis results.
 
 # Tests
 
 * [Debtmap parity fixture harness](tests/debtmap-parity-fixture-harness.md) - Test harness coverage for the debtmap parity matrix, golden fixture determinism, and benchmark methodology metadata.
 * [Swift structural debt evidence assertions](tests/swift-structural-debt-evidence.md) - Swift Testing coverage asserts structural debt evidence locations, raw values, and nested callable metrics.
 * [Git history evidence provider tests](tests/git-history-evidence-provider-tests.md) - Swift Testing coverage validates deterministic Git history evidence, unavailable-history handling, and structured Git process arguments.
+* [Ranked debt analysis composition tests](tests/ranked-debt-analysis-tests.md) - Swift Testing coverage verifies deterministic ranked debt analysis composition, provider evidence, unavailable evidence, filters, aggregation, and configuration activation.
