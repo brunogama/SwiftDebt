@@ -1,6 +1,7 @@
 # Bundle Update Log
 
 ## 2026-09-13
+* **Creation**: Created the [Git history risk evidence](/core/git-history-risk-evidence.md) and [Git history evidence provider tests](/tests/git-history-evidence-provider-tests.md) concepts for the implementation range `a9167cf81f752bf2fdc9c30cc594784efa822ce1..f0427b863f72d169e6bb91c7ac9664ee4798154f`.
 * **Creation**: Created the [Swift functional evidence extraction](/core/swift-functional-evidence-extraction.md) concept for the implementation range `7de1c3fd4d102ff3dabea5c33220dab1171e0fd8..66fa501d80513c2cf0bbe4e7117d6514b2d87044`.
 
 ## 2026-09-12
