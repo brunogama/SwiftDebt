@@ -7,3 +7,4 @@
 * [Swift functional evidence extraction](swift-functional-evidence-extraction.md) - SCMASyntax extracts syntax-level side-effect and functional-composition facts, and SCMACore converts them into deterministic debt evidence.
 * [Ranked debt analysis composition](ranked-debt-analysis-composition.md) - SCMACore and SCMAKit compose structural, functional, coverage, Git history, and dependency evidence into deterministic ranked debt analysis results.
 * [Debt report output formats](debt-report-output-formats.md) - SwiftSCMA renders ranked debt analysis as native debt JSON, Markdown, DOT, text, compact text, and a Debtmap compatibility JSON projection.
+* [Interactive terminal debt explorer](interactive-terminal-debt-explorer.md) - SCMAInteractive renders ranked debt analysis as a terminal debt explorer with deterministic selection, filtering, detail context, and non-TTY fallback behavior.
