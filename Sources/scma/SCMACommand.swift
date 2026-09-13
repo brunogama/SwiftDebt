@@ -1,4 +1,5 @@
 import Foundation
+import SCMAInteractive
 import SCMAKit
 
 #if canImport(Darwin)
@@ -16,8 +17,32 @@ struct SCMACommand {
                 print(CLIOptions.help)
             case .version:
                 print("SwiftSCMA 0.1.0")
-            case .analyze(let request):
+            case .analyze(let request, let interactiveDebt):
                 let result = try await AnalysisService().run(request)
+                if interactiveDebt, let rankedDebtAnalysis = result.rankedDebtAnalysis {
+                    let explorer = TerminalDebtExplorer.render(
+                        rankedDebtAnalysis,
+                        environment: .current(),
+                        fallbackOutput: result.standardOutput
+                    )
+                    FileHandle.standardOutput.write(Data(explorer.text.utf8))
+                } else {
+                    FileHandle.standardOutput.write(Data(result.standardOutput.utf8))
+                }
+                exit(result.exitStatus)
+            case .debtValidate(let request, let validation):
+                let result = try await AnalysisService().run(request)
+                let outcome = DebtValidationOutcome(analysis: result.rankedDebtAnalysis, validation: validation)
+                if !validation.quiet {
+                    FileHandle.standardOutput.write(Data(outcome.summary.utf8))
+                }
+                exit(result.exitStatus == 2 ? 2 : outcome.exitStatus)
+            case .compare(let request):
+                let result = try DebtImprovementService().compare(request)
+                FileHandle.standardOutput.write(Data(result.standardOutput.utf8))
+                exit(result.exitStatus)
+            case .validateImprovement(let request):
+                let result = try DebtImprovementService().validateImprovement(request)
                 FileHandle.standardOutput.write(Data(result.standardOutput.utf8))
                 exit(result.exitStatus)
             case .explainCoverage(let request):

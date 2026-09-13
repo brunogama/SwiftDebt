@@ -45,7 +45,7 @@ swift run scma analyze /path/to/project \
 
 An explicit input directory becomes the configuration/discovery root. For example, `analyze /project/Sources` looks for `/project/Sources/.scma.json`, not `/project/.scma.json`; use `--config /project/.scma.json` when needed. Output paths are relative to the current working directory, not the scanned root.
 
-Supported formats are `text`, `json`, `csv`, `html`, and `diagnostics`. HTML is standalone and script-free. JSON is the full machine-readable report; CSV is a flat observation export, not an equivalent serialization of the report. Sample outputs are in [Examples/Reports](Examples/Reports).
+Supported SCMA-paper formats are `text`, `json`, `csv`, `html`, and `diagnostics`. HTML is standalone and script-free. JSON is the full machine-readable SCMA report; CSV is a flat observation export, not an equivalent serialization of the report. Ranked debt analysis can additionally render `debt-json`, `debt-markdown`, `debt-dot`, `debt-text`, `debt-compact`, `debtmap-json`, and `debt-dashboard` when `debtAnalysis` is configured. `debtmap-json` is a deterministic compatibility projection for Debtmap-oriented automation, not the native SwiftSCMA debt model. `debt-dashboard` is a self-contained browser dashboard over the native debt-report schema. The closed conformance record supports `Debtmap 0.23.0 workflow/capability parity for Swift` for the frozen Swift workflow matrix. Sample outputs are in [Examples/Reports](Examples/Reports), and release evidence is in [the Debtmap acceptance record](docs/debtmap/release-quality-acceptance.md).
 
 Enforce an explicit CI threshold policy:
 
@@ -277,4 +277,4 @@ Run full validation on your own toolchain:
 ./scripts/verify.sh
 ```
 
-This tool does not type-check or expand macros, perform compiler-backed name binding, evaluate `#if`, model dispatch, prove architecture compliance, or validate the paper's quality score against outcomes. There is no empirical large-repository performance claim and no claimed parity with the original SCMA/Lizard results. Read [METRICS.md](docs/METRICS.md) before comparing results with another analyzer.
+This tool does not type-check or expand macros, perform compiler-backed name binding, evaluate `#if`, model dispatch, prove architecture compliance, or validate the paper's quality score against outcomes. Debtmap parsers for non-Swift languages are outside the SwiftSCMA parity target. There is no empirical large-repository performance claim and no claimed parity with the original SCMA/Lizard results. Read [METRICS.md](docs/METRICS.md) before comparing results with another analyzer.

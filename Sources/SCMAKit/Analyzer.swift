@@ -11,6 +11,13 @@ public struct Analyzer: Sendable {
     public func analyze(
         _ sources: [SourceUnit], options: AnalysisOptions = .init(), jobs: Int = 1
     ) async throws -> AnalysisReport {
+        try await analyze(sources, options: options, jobs: jobs, phaseSink: nil)
+    }
+
+    package func analyze(
+        _ sources: [SourceUnit], options: AnalysisOptions = .init(), jobs: Int = 1,
+        phaseSink: (any AnalysisPhaseSink)?
+    ) async throws -> AnalysisReport {
         try options.validate()
         guard (1...64).contains(jobs) else {
             throw AnalysisFailure.invalidConfiguration("jobs must be between 1 and 64")
@@ -23,22 +30,14 @@ public struct Analyzer: Sendable {
                 "Source paths must be unique and paths/modules must not be empty")
         }
         let parser = self.parser
-        let parsed = try await withThrowingTaskGroup(of: ParsedSource.self) { group in
-            var next = 0
-            var results: [ParsedSource] = []
-            results.reserveCapacity(sources.count)
-            for _ in 0..<min(jobs, sources.count) {
-                let source = sources[next]
-                next += 1
-                group.addTask {
-                    try Task.checkCancellation()
-                    return parser.parse(source)
-                }
-            }
-            while let result = try await group.next() {
-                try Task.checkCancellation()
-                results.append(result)
-                if next < sources.count {
+        let parsed: [ParsedSource] = try await { () async throws -> [ParsedSource] in
+            phaseSink?.begin(.parsing)
+            defer { phaseSink?.end(.parsing) }
+            return try await withThrowingTaskGroup(of: ParsedSource.self) { group in
+                var next = 0
+                var results: [ParsedSource] = []
+                results.reserveCapacity(sources.count)
+                for _ in 0..<min(jobs, sources.count) {
                     let source = sources[next]
                     next += 1
                     group.addTask {
@@ -46,10 +45,22 @@ public struct Analyzer: Sendable {
                         return parser.parse(source)
                     }
                 }
+                while let result = try await group.next() {
+                    try Task.checkCancellation()
+                    results.append(result)
+                    if next < sources.count {
+                        let source = sources[next]
+                        next += 1
+                        group.addTask {
+                            try Task.checkCancellation()
+                            return parser.parse(source)
+                        }
+                    }
+                }
+                return results
             }
-            return results
-        }
+        }()
         try Task.checkCancellation()
-        return try MetricsCalculator().analyze(parsed, options: options)
+        return try MetricsCalculator().analyze(parsed, options: options, phaseSink: phaseSink)
     }
 }

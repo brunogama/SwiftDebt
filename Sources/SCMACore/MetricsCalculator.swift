@@ -8,9 +8,12 @@ package struct MetricsCalculator {
         let fragments: [TypeFragment]
     }
 
-    package func analyze(_ parsed: [ParsedSource], options: AnalysisOptions) throws -> AnalysisReport {
+    package func analyze(
+        _ parsed: [ParsedSource], options: AnalysisOptions, phaseSink: (any AnalysisPhaseSink)? = nil
+    ) throws -> AnalysisReport {
         try options.validate()
         guard !parsed.isEmpty else { throw AnalysisFailure.noSources }
+        phaseSink?.begin(.structuralEvidence)
         let files = parsed.filter(\.isValid).sorted { $0.path < $1.path }
         var diagnostics = parsed.flatMap { file -> [AnalysisDiagnostic] in
             guard !file.isValid, !options.strictSyntax else { return file.diagnostics }
@@ -34,7 +37,11 @@ package struct MetricsCalculator {
             couplingCounts[edge.first, default: 0] += 1
             couplingCounts[edge.second, default: 0] += 1
         }
-        let dependencyGraph = DependencyGraphBuilder().build(from: files, typeScope: options.typeScope)
+        let dependencyGraph: SwiftDependencyGraph = {
+            phaseSink?.begin(.graph)
+            defer { phaseSink?.end(.graph) }
+            return DependencyGraphBuilder().build(from: files, typeScope: options.typeScope)
+        }()
         let duplication = try DuplicateDetector().detect(files, options: options)
         let structuralTypes = types.values.map { type in
             let owned = ownedByType[type.key, default: []]
@@ -48,12 +55,27 @@ package struct MetricsCalculator {
                 callableNames: owned.map(\.name).sorted()
             )
         }
-        let debtItems = StructuralDebtBuilder().items(
+        let structuralDebtItems = StructuralDebtBuilder().items(
             files: files,
             types: structuralTypes,
             functions: functions,
             duplicateBlocks: duplication.blocks
         )
+        phaseSink?.end(.structuralEvidence)
+        let functionalEvidence: [DebtEvidence] = {
+            phaseSink?.begin(.functionalEvidence)
+            defer { phaseSink?.end(.functionalEvidence) }
+            return DebtFunctionalEvidenceBuilder().evidence(for: files)
+        }()
+        let debtItems = {
+            phaseSink?.begin(.aggregation)
+            defer { phaseSink?.end(.aggregation) }
+            return enrichDebtItems(
+                structuralDebtItems,
+                functionalEvidence: functionalEvidence,
+                dependencyContexts: dependencyGraph.dependencyContexts
+            )
+        }()
         var observations: [Metric: [MetricObservation]] = [:]
         for type in types.values.sorted(by: { $0.key.displayName < $1.key.displayName }) {
             let owned = ownedByType[type.key, default: []]
@@ -102,6 +124,7 @@ package struct MetricsCalculator {
             duplicateLines: duplication.uniqueLines, totalLines: codeLines
         )
         var findings: [Finding] = []
+        phaseSink?.begin(.scoring)
         let summaries = Metric.allCases.map { metric in
             let items = observations[metric, default: []].sorted {
                 if $0.location != $1.location { return locationOrder($0.location, $1.location) }
@@ -127,6 +150,7 @@ package struct MetricsCalculator {
                 measurementNote: measurementNote(metric)
             )
         }
+        phaseSink?.end(.scoring)
         let scores = summaries.compactMap(\.score)
         let overall =
             complete && scores.count == Metric.allCases.count
@@ -151,6 +175,41 @@ package struct MetricsCalculator {
             findings: findings, diagnostics: diagnostics, couplings: edges,
             dependencyGraph: dependencyGraph, duplicateBlocks: duplication.blocks, debtItems: debtItems
         )
+    }
+
+    private func enrichDebtItems(
+        _ items: [DebtItem],
+        functionalEvidence: [DebtEvidence],
+        dependencyContexts: [DependencyContext]
+    ) -> [DebtItem] {
+        let dependencyEvidenceByID = Dictionary(uniqueKeysWithValues: dependencyContexts.map { context in
+            (context.entity.id, context.evidence)
+        })
+        return items.map { item in
+            var evidence = item.evidence
+            evidence += functionalEvidence.filter { candidate in
+                guard let location = candidate.location else { return false }
+                if item.entity.level == .callable {
+                    return location == item.entity.location
+                }
+                return item.entity.level == .file && location.file == item.entity.location.file
+            }
+            evidence += dependencyEvidenceByID[item.entity.id, default: []]
+            return DebtItem(
+                id: item.id,
+                entity: item.entity,
+                evidence: evidence.sorted { lhs, rhs in
+                    if lhs.id != rhs.id { return lhs.id < rhs.id }
+                    if lhs.kind != rhs.kind { return lhs.kind < rhs.kind }
+                    return lhs.rawValue < rhs.rawValue
+                }
+            )
+        }.sorted { lhs, rhs in
+            if lhs.entity.level.rawValue != rhs.entity.level.rawValue {
+                return lhs.entity.level.rawValue < rhs.entity.level.rawValue
+            }
+            return lhs.id < rhs.id
+        }
     }
 
     private func aggregate(

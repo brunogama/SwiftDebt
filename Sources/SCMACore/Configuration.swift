@@ -127,4 +127,20 @@ public enum AnalysisFailure: Error, Sendable, CustomStringConvertible {
 
 public enum ReportFormat: String, Codable, CaseIterable, Sendable {
     case text, json, csv, html, diagnostics
+    case debtJSON = "debt-json"
+    case debtMarkdown = "debt-markdown"
+    case debtDot = "debt-dot"
+    case debtText = "debt-text"
+    case debtCompact = "debt-compact"
+    case debtmapJSON = "debtmap-json"
+    case debtDashboard = "debt-dashboard"
+
+    public var isDebtReportFormat: Bool {
+        switch self {
+        case .text, .json, .csv, .html, .diagnostics:
+            false
+        case .debtJSON, .debtMarkdown, .debtDot, .debtText, .debtCompact, .debtmapJSON, .debtDashboard:
+            true
+        }
+    }
 }

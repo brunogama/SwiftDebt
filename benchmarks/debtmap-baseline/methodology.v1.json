@@ -7,11 +7,11 @@
     },
     {
       "name": "measure-macos",
-      "argv": ["/usr/bin/time", "-l", ".build/release/scma", "analyze", "Examples/Sources", "--format", "json", "--jobs", "1", "--output", ".scma/benchmarks/debtmap-baseline/examples-sources.json"]
+      "argv": ["/usr/bin/time", "-l", ".build/release/scma", "analyze", "Examples/Sources", "--format", "json", "--jobs", "1", "--output", ".scma/benchmarks/debtmap-baseline/examples-sources.json", "--profile-output", ".scma/benchmarks/debtmap-baseline/examples-sources.profile.json"]
     },
     {
       "name": "measure-linux",
-      "argv": ["/usr/bin/time", "-v", ".build/release/scma", "analyze", "Examples/Sources", "--format", "json", "--jobs", "1", "--output", ".scma/benchmarks/debtmap-baseline/examples-sources.json"]
+      "argv": ["/usr/bin/time", "-v", ".build/release/scma", "analyze", "Examples/Sources", "--format", "json", "--jobs", "1", "--output", ".scma/benchmarks/debtmap-baseline/examples-sources.json", "--profile-output", ".scma/benchmarks/debtmap-baseline/examples-sources.profile.json"]
     }
   ],
   "inputs": [
@@ -29,7 +29,7 @@
     }
   ],
   "measuredRuns": 5,
-  "measurements": ["wall-clock-seconds", "peak-memory-bytes"],
+  "measurements": ["wall-clock-seconds", "peak-memory-bytes", "phase-wall-clock-nanoseconds"],
   "methodology": [
     "Use a clean checkout at the baseline commit.",
     "Resolve dependencies before the first measured run.",
@@ -37,9 +37,56 @@
     "Run the selected platform measure command for one warmup run and discard that sample.",
     "Run the same command for five measured runs without changing inputs.",
     "Record elapsed wall-clock seconds and peak resident memory from the platform time tool.",
-    "Report every raw sample, median, minimum and maximum with the Swift version, OS, CPU model and memory size."
+    "Record phase-wall-clock nanoseconds from the analyzer profile output for discovery, parsing, structural evidence, graph, coverage, repository history, functional evidence, scoring, aggregation and rendering when those phases run.",
+    "Report every raw sample, median, minimum and maximum with the Swift version, OS, CPU model and memory size.",
+    "Use medians for CI regression gates and include all raw samples when requesting an approved exception."
   ],
   "outputDirectory": ".scma/benchmarks/debtmap-baseline",
+  "performanceGate": {
+    "comparisonUnit": "Equivalent SwiftSCMA workload only",
+    "disallowedComparisons": [
+      "Debtmap Rust workload",
+      "non-Swift parser workload",
+      "different input checksum",
+      "different optional context"
+    ],
+    "approvedExceptionEvidence": [
+      "all raw wall-clock and peak-memory samples",
+      "profile output for the candidate run",
+      "platform metadata",
+      "written justification for accepting the regression"
+    ]
+  },
+  "platformVariance": {
+    "ciUsage": "Compare medians from the same OS family and architecture where possible; otherwise require approved exception evidence.",
+    "noiseControls": [
+      "release build",
+      "one discarded warmup run",
+      "five measured runs",
+      "fixed --jobs 1 parallelism",
+      "frozen input SHA-256 checksums",
+      "raw sample reporting"
+    ],
+    "requiredMetadata": ["swift-version", "os", "architecture", "cpu-model", "memory-bytes"]
+  },
+  "regressionBudgets": [
+    {
+      "name": "baseline-analysis",
+      "analysisMode": "baseline",
+      "optionalContext": "none",
+      "workloadFamily": "SwiftSCMA",
+      "maximumWallClockRegressionPercent": 10,
+      "maximumPeakMemoryRegressionPercent": 15
+    },
+    {
+      "name": "full-evidence-analysis",
+      "analysisMode": "full-evidence",
+      "optionalContext": "coverage-and-repository-history",
+      "workloadFamily": "SwiftSCMA",
+      "maximumWallClockRegressionPercent": 20,
+      "maximumPeakMemoryRegressionPercent": 15
+    }
+  ],
   "schemaVersion": 1,
   "warmupRuns": 1
 }
