@@ -82,6 +82,21 @@ struct PluginWorkflowTests {
         #expect((failedBuild.stdout + failedBuild.stderr).contains("SCMA [DEBT]"))
     }
 
+    @Test func commandPluginDoesNotPrefixPlainAnalyzeTwice() throws {
+        let consumer = try makePluginConsumer()
+        defer { try? FileManager.default.removeItem(at: consumer) }
+
+        try writeConfig("{\"typeScope\":\"nominals\",\"jobs\":1}", in: consumer)
+
+        let command = try runSwiftPackage(
+            ["package", "scma", "analyze", "--target", "Demo", "--format", "json"],
+            in: consumer
+        )
+
+        let report = try JSONDecoder().decode(AnalysisReport.self, from: Data(command.stdout.utf8))
+        #expect(report.complete)
+    }
+
     private func makePluginConsumer() throws -> URL {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("scma-plugin-tests-\(UUID().uuidString)")
         let sources = root.appendingPathComponent("Sources/Demo")

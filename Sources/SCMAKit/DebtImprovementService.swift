@@ -80,7 +80,7 @@ public struct DebtImprovementService: Sendable {
         } catch let failure as AnalysisFailure {
             throw failure
         } catch let failure as DecodingError {
-            throw AnalysisFailure.invalidConfiguration("Invalid \(label) debt report \(path): \(describe(failure))")
+            throw AnalysisFailure.invalidConfiguration("Invalid \(label) debt report \(path): \(decodingErrorDescription(failure))")
         } catch {
             throw WorkspaceError("Unable to read \(label) debt report \(path): \(error)")
         }
@@ -103,16 +103,4 @@ public struct DebtImprovementService: Sendable {
         try content.write(to: outputURL, atomically: true, encoding: .utf8)
     }
 
-    private func describe(_ error: DecodingError) -> String {
-        func path(_ context: DecodingError.Context) -> String {
-            let keys = context.codingPath.map(\.stringValue).joined(separator: ".")
-            return keys.isEmpty ? context.debugDescription : "\(keys): \(context.debugDescription)"
-        }
-        switch error {
-        case .typeMismatch(_, let context), .valueNotFound(_, let context), .keyNotFound(_, let context),
-            .dataCorrupted(let context):
-            return path(context)
-        @unknown default: return "\(error)"
-        }
-    }
 }

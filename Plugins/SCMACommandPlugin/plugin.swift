@@ -47,7 +47,8 @@ struct SCMACommandPlugin: CommandPlugin {
             return Array(remaining.prefix(2)) + ["--manifest", manifest, "--plugin-evidence-limitations"]
                 + Array(remaining.dropFirst(2))
         }
-        return ["analyze", "--manifest", manifest, "--plugin-evidence-limitations"] + remaining
+        let analysisArguments = remaining.first == "analyze" ? Array(remaining.dropFirst()) : remaining
+        return ["analyze", "--manifest", manifest, "--plugin-evidence-limitations"] + analysisArguments
     }
 
     private func validateTargets(_ arguments: [String]) throws {

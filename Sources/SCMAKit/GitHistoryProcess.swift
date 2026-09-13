@@ -45,7 +45,8 @@ struct GitHistorySubprocessRunner: GitHistoryProcessRunning {
             try process.run()
             let deadline = Date().addingTimeInterval(timeoutSeconds)
             while process.isRunning {
-                if Date() >= deadline {
+                let remainingTime = deadline.timeIntervalSinceNow
+                if remainingTime <= 0 {
                     process.terminate()
                     process.waitUntilExit()
                     return GitHistoryProcessResult(
@@ -55,7 +56,7 @@ struct GitHistorySubprocessRunner: GitHistoryProcessRunning {
                         timedOut: true
                     )
                 }
-                Thread.sleep(forTimeInterval: 0.01)
+                Thread.sleep(forTimeInterval: min(remainingTime, 0.1))
             }
             process.waitUntilExit()
             return GitHistoryProcessResult(

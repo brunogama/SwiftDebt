@@ -182,9 +182,8 @@ package struct MetricsCalculator {
         functionalEvidence: [DebtEvidence],
         dependencyContexts: [DependencyContext]
     ) -> [DebtItem] {
-        let dependencyEvidenceByID = Dictionary(uniqueKeysWithValues: dependencyContexts.map { context in
-            (context.entity.id, context.evidence)
-        })
+        let dependencyEvidenceByID = Dictionary(grouping: dependencyContexts, by: { $0.entity.id })
+            .mapValues { contexts in contexts.flatMap(\.evidence) }
         return items.map { item in
             var evidence = item.evidence
             evidence += functionalEvidence.filter { candidate in

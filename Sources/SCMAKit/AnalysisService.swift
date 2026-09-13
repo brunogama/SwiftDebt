@@ -25,7 +25,7 @@ public struct AnalysisService: Sendable {
                 } catch let failure as AnalysisFailure {
                     throw AnalysisFailure.invalidConfiguration("\(configurationURL.path): \(failure)")
                 } catch let failure as DecodingError {
-                    throw AnalysisFailure.invalidConfiguration("\(configurationURL.path): \(describe(failure))")
+                    throw AnalysisFailure.invalidConfiguration("\(configurationURL.path): \(decodingErrorDescription(failure))")
                 } catch {
                     throw WorkspaceError("Unable to read configuration \(configurationURL.path): \(error)")
                 }
@@ -246,19 +246,6 @@ public struct AnalysisService: Sendable {
             return "\(absolute):\(line):\(column): warning: SCMA [DEBT] \(item.item.entity.displayName): debt score \(score) exceeds \(limit)"
         }.sorted()
         return failures.isEmpty ? "" : failures.joined(separator: "\n") + "\n"
-    }
-
-    private func describe(_ error: DecodingError) -> String {
-        func path(_ context: DecodingError.Context) -> String {
-            let keys = context.codingPath.map(\.stringValue).joined(separator: ".")
-            return keys.isEmpty ? context.debugDescription : "\(keys): \(context.debugDescription)"
-        }
-        switch error {
-        case .typeMismatch(_, let context), .valueNotFound(_, let context), .keyNotFound(_, let context),
-            .dataCorrupted(let context):
-            return path(context)
-        @unknown default: return "\(error)"
-        }
     }
 
     private func write(_ content: String, to url: URL) throws {

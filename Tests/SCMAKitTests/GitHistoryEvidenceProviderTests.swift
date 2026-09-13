@@ -135,4 +135,17 @@ struct GitHistoryEvidenceProviderTests {
         ])
         #expect(runner.calls.allSatisfy { call in !call.arguments.contains { $0.contains("git -C") } })
     }
+    @Test func subprocessRunnerTerminatesAtConfiguredTimeout() throws {
+        let directory = try temporaryGitTestDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let result = GitHistorySubprocessRunner().run(
+            executableURL: URL(fileURLWithPath: "/bin/sh"),
+            arguments: ["-c", "sleep 1"],
+            workingDirectory: directory,
+            timeoutSeconds: 0.01
+        )
+
+        #expect(result.timedOut)
+    }
 }
