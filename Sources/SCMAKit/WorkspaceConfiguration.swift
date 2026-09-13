@@ -14,6 +14,7 @@ struct WorkspaceConfiguration: Decodable {
     var maximumDuplicateComparisons = 250_000
     var maximumFileBytes = 16 * 1024 * 1024
     var debtAnalysis: DebtAnalysisOptions?
+    var debtValidation: WorkspaceDebtValidation?
     var lcovPath: String?
 
     /// Parsing is embarrassingly parallel; bounded to keep memory predictable.
@@ -21,7 +22,7 @@ struct WorkspaceConfiguration: Decodable {
 
     private enum CodingKeys: String, CodingKey, CaseIterable {
         case typeScope, scoring, format, thresholds, exclude, jobs, failOnViolation, strictSyntax
-        case minimumDuplicateLines, maximumDuplicateComparisons, maximumFileBytes, debtAnalysis, lcovPath
+        case minimumDuplicateLines, maximumDuplicateComparisons, maximumFileBytes, debtAnalysis, debtValidation, lcovPath
     }
     init() {}
     init(from decoder: any Decoder) throws {
@@ -46,6 +47,7 @@ struct WorkspaceConfiguration: Decodable {
             try values.decodeIfPresent(Int.self, forKey: .maximumDuplicateComparisons) ?? maximumDuplicateComparisons
         maximumFileBytes = try values.decodeIfPresent(Int.self, forKey: .maximumFileBytes) ?? maximumFileBytes
         debtAnalysis = try values.decodeIfPresent(DebtAnalysisOptions.self, forKey: .debtAnalysis)
+        debtValidation = try values.decodeIfPresent(WorkspaceDebtValidation.self, forKey: .debtValidation)
         lcovPath = try values.decodeIfPresent(String.self, forKey: .lcovPath)
     }
 
@@ -100,6 +102,36 @@ struct WorkspaceConfiguration: Decodable {
     }
 }
 
+struct WorkspaceDebtValidation: Decodable, Sendable {
+    let maxScore: Double
+
+    private enum CodingKeys: String, CodingKey, CaseIterable {
+        case maxScore
+    }
+
+    init(from decoder: any Decoder) throws {
+        let raw = try decoder.container(keyedBy: AnyKey.self)
+        let known = Set(CodingKeys.allCases.map(\.rawValue))
+        let unknown = raw.allKeys.map(\.stringValue).filter { !known.contains($0) }.sorted()
+        guard unknown.isEmpty else {
+            throw AnalysisFailure.invalidConfiguration(
+                "Unknown debt validation configuration keys: \(unknown.joined(separator: ", "))")
+        }
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        maxScore = try values.decode(Double.self, forKey: .maxScore)
+        guard (0...100).contains(maxScore) else {
+            throw AnalysisFailure.invalidConfiguration("debtValidation.maxScore must be between 0 and 100")
+        }
+    }
+
+    private struct AnyKey: CodingKey {
+        let stringValue: String
+        var intValue: Int? { nil }
+        init?(stringValue: String) { self.stringValue = stringValue }
+        init?(intValue: Int) { return nil }
+    }
+}
+
 public struct AnalysisRequest: Sendable {
     public let path: String
     public let manifestPath: String?
@@ -118,6 +150,7 @@ public struct AnalysisRequest: Sendable {
     public let enableDebtAnalysis: Bool
     public let lcovPath: String?
     public let debtReferenceTime: Date?
+    public let pluginEvidenceLimitations: Bool
 
     public init(
         path: String = ".", manifestPath: String? = nil, configurationPath: String? = nil,
@@ -125,7 +158,8 @@ public struct AnalysisRequest: Sendable {
         scoring: ScoringMode? = nil, format: ReportFormat? = nil, jobs: Int? = nil,
         failOnViolation: Bool = false, strictSyntax: Bool = false, exclude: [String] = [],
         thresholds: [Metric: Int] = [:], debtAnalysisOptions: DebtAnalysisOptions? = nil,
-        enableDebtAnalysis: Bool = false, lcovPath: String? = nil, debtReferenceTime: Date? = nil
+        enableDebtAnalysis: Bool = false, lcovPath: String? = nil, debtReferenceTime: Date? = nil,
+        pluginEvidenceLimitations: Bool = false
     ) {
         self.path = path
         self.manifestPath = manifestPath
@@ -144,6 +178,7 @@ public struct AnalysisRequest: Sendable {
         self.enableDebtAnalysis = enableDebtAnalysis
         self.lcovPath = lcovPath
         self.debtReferenceTime = debtReferenceTime
+        self.pluginEvidenceLimitations = pluginEvidenceLimitations
     }
 }
 

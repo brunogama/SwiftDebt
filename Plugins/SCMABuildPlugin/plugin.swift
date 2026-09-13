@@ -34,7 +34,7 @@ struct SCMABuildPlugin: BuildToolPlugin {
         let dependencies = inputs + [manifestURL, configuration]
         let arguments = [
             "analyze", "--manifest", manifestURL.path, "--format", "diagnostics",
-            "--stamp", stamp.path, "--config", configuration.path,
+            "--plugin-evidence-limitations", "--stamp", stamp.path, "--config", configuration.path,
         ]
         return [
             .buildCommand(

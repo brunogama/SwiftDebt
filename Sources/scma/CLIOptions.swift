@@ -89,6 +89,7 @@ struct CLIOptions {
         var fail = false
         var strict = false
         var interactiveDebt = false
+        var pluginEvidenceLimitations = false
         var literal = false
         var index = 0
         let valuedOptions: Set<String> = [
@@ -116,6 +117,11 @@ struct CLIOptions {
             if !literal && argument == "--interactive-debt" {
                 guard !interactiveDebt else { throw CLIError("Duplicate --interactive-debt") }
                 interactiveDebt = true
+                continue
+            }
+            if !literal && argument == "--plugin-evidence-limitations" {
+                guard !pluginEvidenceLimitations else { throw CLIError("Duplicate --plugin-evidence-limitations") }
+                pluginEvidenceLimitations = true
                 continue
             }
             if !literal && argument.hasPrefix("-") {
@@ -184,7 +190,8 @@ struct CLIOptions {
                 scoring: scoring, format: format ?? (interactiveDebt ? .debtCompact : nil), jobs: jobs,
                 failOnViolation: fail, strictSyntax: strict, exclude: exclusions, thresholds: thresholds,
                 debtAnalysisOptions: interactiveDebt ? DebtAnalysisOptions() : nil,
-                lcovPath: values["--lcov"]
+                lcovPath: values["--lcov"],
+                pluginEvidenceLimitations: pluginEvidenceLimitations
             ),
             interactiveDebt: interactiveDebt
         )
