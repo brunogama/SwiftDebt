@@ -15,6 +15,7 @@ okf_version: "0.1"
 * [Debt report output formats](core/debt-report-output-formats.md) - SwiftSCMA renders ranked debt analysis as native debt JSON, Markdown, DOT, text, compact text, and a Debtmap compatibility JSON projection.
 * [Debt analyze and validate CLI workflows](core/debt-cli-workflows.md) - SwiftSCMA exposes namespaced debt analyze and validate commands with deterministic filtering, formatting, coverage, and score-gate options.
 * [Debt improvement comparison and validation workflows](core/debt-improvement-workflows.md) - SCMACore, SCMAKit, and the scma CLI compare two native debt reports and validate whether total debt score improved by a configured threshold.
+* [Interactive terminal debt explorer](core/interactive-terminal-debt-explorer.md) - SCMAInteractive renders ranked debt analysis as a terminal debt explorer with deterministic selection, filtering, detail context, and non-TTY fallback behavior.
 
 # Tests
 
@@ -25,3 +26,4 @@ okf_version: "0.1"
 * [Debt report renderer tests](tests/debt-report-renderer-tests.md) - Swift Testing coverage verifies deterministic native debt reports, Debtmap compatibility projection output, DOT rendering, text renderers, and service-level debt JSON rendering.
 * [CLI debt workflow subprocess tests](tests/cli-debt-workflow-tests.md) - Swift Testing coverage verifies deterministic debt analyze output, validation gate exits, argument errors, and preservation of existing analyze forms.
 * [Debt improvement workflow tests](tests/debt-improvement-workflow-tests.md) - Swift Testing coverage verifies deterministic debt report comparison, schema rejection, validation JSON output, and failing improvement-gate exit status.
+* [Interactive terminal debt explorer tests](tests/interactive-terminal-debt-explorer-tests.md) - Swift Testing coverage verifies deterministic debt explorer reducer behavior, terminal fallback detection, CLI fallback output, and large-result reducer performance.

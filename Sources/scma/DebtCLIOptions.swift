@@ -15,7 +15,7 @@ extension CLIOptions {
         switch command {
         case "analyze":
             let parsed = try parseDebtArguments(arguments, validates: false)
-            return .analyze(parsed.request)
+            return .analyze(parsed.request, interactiveDebt: false)
         case "validate":
             let parsed = try parseDebtArguments(arguments, validates: true)
             guard let validation = parsed.validation else { throw CLIError("Missing validation options") }

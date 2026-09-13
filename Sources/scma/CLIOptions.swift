@@ -9,7 +9,7 @@ struct CLIError: Error, CustomStringConvertible {
 enum CLIAction {
     case help
     case version
-    case analyze(AnalysisRequest)
+    case analyze(AnalysisRequest, interactiveDebt: Bool)
     case debtValidate(AnalysisRequest, DebtValidationOptions)
     case compare(DebtComparisonRequest)
     case validateImprovement(DebtValidationRequest)
@@ -34,6 +34,7 @@ struct CLIOptions {
           --format FORMAT                text, json, csv, html, diagnostics (default: text),
                                          plus debt-json, debt-markdown, debt-dot,
                                          debt-text, debt-compact, debtmap-json.
+          --interactive-debt             Open ranked debt explorer when terminal supports it.
           --output PATH                  Write a report atomically instead of stdout.
           --threshold SCORE              Required improvement for validate-improvement.
           --type-scope SCOPE             classes (paper scope) or nominals.
@@ -86,6 +87,7 @@ struct CLIOptions {
         var path: String?
         var fail = false
         var strict = false
+        var interactiveDebt = false
         var literal = false
         var index = 0
         let valuedOptions: Set<String> = [
@@ -108,6 +110,11 @@ struct CLIOptions {
             if !literal && argument == "--strict" {
                 guard !strict else { throw CLIError("Duplicate --strict") }
                 strict = true
+                continue
+            }
+            if !literal && argument == "--interactive-debt" {
+                guard !interactiveDebt else { throw CLIError("Duplicate --interactive-debt") }
+                interactiveDebt = true
                 continue
             }
             if !literal && argument.hasPrefix("-") {
@@ -152,6 +159,14 @@ struct CLIOptions {
             throw CLIError("Use either an input path or --manifest, not both")
         }
         let format: ReportFormat? = try decode(values["--format"], named: "format")
+        if interactiveDebt {
+            if values["--output"] != nil {
+                throw CLIError("Use either --interactive-debt or --output, not both")
+            }
+            if let format, !format.isDebtReportFormat {
+                throw CLIError("--interactive-debt requires a debt report format when --format is provided")
+            }
+        }
         let scope: TypeScope? = try decode(values["--type-scope"], named: "type scope")
         let scoring: ScoringMode? = try decode(values["--scoring"], named: "scoring mode")
         var jobs: Int?
@@ -165,9 +180,13 @@ struct CLIOptions {
             AnalysisRequest(
                 path: path ?? ".", manifestPath: values["--manifest"], configurationPath: values["--config"],
                 outputPath: values["--output"], stampPath: values["--stamp"], typeScope: scope,
-                scoring: scoring, format: format, jobs: jobs, failOnViolation: fail, strictSyntax: strict,
-                exclude: exclusions, thresholds: thresholds, lcovPath: values["--lcov"]
-            ))
+                scoring: scoring, format: format ?? (interactiveDebt ? .debtCompact : nil), jobs: jobs,
+                failOnViolation: fail, strictSyntax: strict, exclude: exclusions, thresholds: thresholds,
+                debtAnalysisOptions: interactiveDebt ? DebtAnalysisOptions() : nil,
+                lcovPath: values["--lcov"]
+            ),
+            interactiveDebt: interactiveDebt
+        )
     }
 
     private func isDebtNamespace(_ arguments: [String]) -> Bool {
