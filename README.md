@@ -74,6 +74,7 @@ swift run scma analyze Examples/Sources --scoring corrected  # bounded, plus DC 
 `paper` can produce results greater than 5. Undefined scores are `null` in JSON, never replaced with a passing grade. The overall average is absent/null unless analysis is complete and all ten individual scores are defined. `bounded` is a convenience transform, not a scientifically corrected scoring model. `corrected` additionally replaces the paper's printed DC ratio (`duplicatedLines * totalLines / totalParams`, which zeroes the score on any clone) with `duplicatedLines / totalLines`; every other equation is unchanged.
 
 ## Command plugin
+
 Add the published package to a consumer's `Package.swift` by pinning the `v0.0.1` release tag. The SwiftPM version is `0.0.1`; the Git tag name is `v0.0.1`:
 
 ```swift
@@ -147,7 +148,6 @@ swift package scma --target Demo --type-scope nominals --format json
 ```
 
 A conditional `XcodeBuildToolPlugin` adapter is included for Xcode project targets. It has **not been compiled or exercised on macOS/Xcode in this environment**. See [PLUGINS.md](docs/PLUGINS.md) before relying on it.
-
 
 ---
 

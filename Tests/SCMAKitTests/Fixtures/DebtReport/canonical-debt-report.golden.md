@@ -18,7 +18,6 @@ Unavailable evidence: 1
 - Missing evidence:
   - coverage.lcov `callable:Beta.run:coverage`: LCOV file missing
 
-
 ## High priority
 
 ### App.Alpha.help()
@@ -30,4 +29,3 @@ Unavailable evidence: 1
 - Evidence: 1 available, 0 unavailable
 - Why: High fan-in concentrates change risk.
 - Action: Reduce fan-in before adding features.
-
