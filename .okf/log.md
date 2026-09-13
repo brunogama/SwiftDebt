@@ -2,6 +2,7 @@
 
 ## 2026-09-13
 * **Creation**: Created the [Performance profiling and regression budgets](/core/performance-profiling-budgets.md) and [Performance profiling and budget tests](/tests/performance-profiling-tests.md) concepts for the implementation range `61adcc22a6d63ee7d6ec5d2e3b81e843d34a2a71..a073fc62ad3f04c300618caf54d253a5bee9e19b`.
+* **Creation**: Created the [SwiftPM plugin debt workflow tests](/tests/swiftpm-plugin-debt-workflow-tests.md) concept for the implementation range `d39b2a62d59a26a167b0718b38416c6e601498a0..fb33b630f3244effe4676a9be1e2288a6735d9dd`.
 * **Creation**: Created the [Debt analyze and validate CLI workflows](/core/debt-cli-workflows.md) and [CLI debt workflow subprocess tests](/tests/cli-debt-workflow-tests.md) concepts for the implementation range `81cd248d637cd12ec5bf8ac12a39ed77b2d4b54c..a0c8b0258519f6842097b52157b757942d3b1489`.
 * **Creation**: Created the [Debt improvement comparison and validation workflows](/core/debt-improvement-workflows.md) and [Debt improvement workflow tests](/tests/debt-improvement-workflow-tests.md) concepts for the implementation range `81cd248d637cd12ec5bf8ac12a39ed77b2d4b54c..3b897685e2a73cdc8b630ace5180ee4bd4977f0f`.
 * **Creation**: Created the [Interactive terminal debt explorer](/core/interactive-terminal-debt-explorer.md) and [Interactive terminal debt explorer tests](/tests/interactive-terminal-debt-explorer-tests.md) concepts for the implementation range `81cd248d637cd12ec5bf8ac12a39ed77b2d4b54c..a4ecbd6912de1cc589200096cef1cc6508d4fb72`.

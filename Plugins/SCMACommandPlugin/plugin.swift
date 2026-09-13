@@ -32,13 +32,22 @@ struct SCMACommandPlugin: CommandPlugin {
         if (try? Data(contentsOf: manifest)) != data { try data.write(to: manifest, options: .atomic) }
         let process = Process()
         process.executableURL = try context.tool(named: "scma").url
-        process.arguments = ["analyze", "--manifest", manifest.path] + extractor.remainingArguments
+        process.arguments = scmaArguments(manifest: manifest.path, remaining: extractor.remainingArguments)
         process.currentDirectoryURL = context.package.directoryURL
         try process.run()
         process.waitUntilExit()
         guard process.terminationReason == .exit && process.terminationStatus == 0 else {
             throw PluginFailure("SCMA failed with exit status \(process.terminationStatus)")
         }
+    }
+
+    private func scmaArguments(manifest: String, remaining: [String]) -> [String] {
+        let command = Array(remaining.prefix(2))
+        if command == ["debt", "analyze"] || command == ["debt", "validate"] {
+            return Array(remaining.prefix(2)) + ["--manifest", manifest, "--plugin-evidence-limitations"]
+                + Array(remaining.dropFirst(2))
+        }
+        return ["analyze", "--manifest", manifest, "--plugin-evidence-limitations"] + remaining
     }
 
     private func validateTargets(_ arguments: [String]) throws {

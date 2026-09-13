@@ -35,6 +35,7 @@ extension CLIOptions {
         var path: String?
         var literal = false
         var quiet = false
+        var pluginEvidenceLimitations = false
         var index = 0
         let valuedOptions: Set<String> = [
             "--config", "--format", "--output", "--profile-output", "--jobs", "--manifest", "--stamp", "--exclude",
@@ -61,6 +62,11 @@ extension CLIOptions {
                 guard validates else { throw CLIError("--quiet is only valid for debt validate") }
                 guard !quiet else { throw CLIError("Duplicate --quiet") }
                 quiet = true
+                continue
+            }
+            if !literal && argument == "--plugin-evidence-limitations" {
+                guard !pluginEvidenceLimitations else { throw CLIError("Duplicate --plugin-evidence-limitations") }
+                pluginEvidenceLimitations = true
                 continue
             }
             if !literal && argument.hasPrefix("-") {
@@ -139,7 +145,8 @@ extension CLIOptions {
             debtAnalysisOptions: options,
             enableDebtAnalysis: true,
             lcovPath: values["--lcov"],
-            profileOutputPath: values["--profile-output"]
+            profileOutputPath: values["--profile-output"],
+            pluginEvidenceLimitations: pluginEvidenceLimitations
         )
         let maxScore = try optionalScore(values["--max-score"], named: "--max-score")
         if validates, maxScore == nil { throw CLIError("Missing required --max-score for debt validate") }
