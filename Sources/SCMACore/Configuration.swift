@@ -133,12 +133,13 @@ public enum ReportFormat: String, Codable, CaseIterable, Sendable {
     case debtText = "debt-text"
     case debtCompact = "debt-compact"
     case debtmapJSON = "debtmap-json"
+    case debtDashboard = "debt-dashboard"
 
     public var isDebtReportFormat: Bool {
         switch self {
         case .text, .json, .csv, .html, .diagnostics:
             false
-        case .debtJSON, .debtMarkdown, .debtDot, .debtText, .debtCompact, .debtmapJSON:
+        case .debtJSON, .debtMarkdown, .debtDot, .debtText, .debtCompact, .debtmapJSON, .debtDashboard:
             true
         }
     }

@@ -8,3 +8,4 @@
 * [CLI debt workflow subprocess tests](cli-debt-workflow-tests.md) - Swift Testing coverage verifies deterministic debt analyze output, validation gate exits, argument errors, and preservation of existing analyze forms.
 * [Debt improvement workflow tests](debt-improvement-workflow-tests.md) - Swift Testing coverage verifies deterministic debt report comparison, schema rejection, validation JSON output, and failing improvement-gate exit status.
 * [Interactive terminal debt explorer tests](interactive-terminal-debt-explorer-tests.md) - Swift Testing coverage verifies deterministic debt explorer reducer behavior, terminal fallback detection, CLI fallback output, and large-result reducer performance.
+* [Debt dashboard renderer tests](debt-dashboard-renderer-tests.md) - Swift Testing coverage verifies deterministic self-contained debt dashboard HTML, local report loading controls, comparison behavior, filtering, and schema validation.

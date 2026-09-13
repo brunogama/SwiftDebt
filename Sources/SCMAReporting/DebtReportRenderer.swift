@@ -21,6 +21,8 @@ extension ReportRenderer {
             return compact(builder.nativeReport(from: analysis))
         case .debtmapJSON:
             return try encode(builder.projection(from: analysis))
+        case .debtDashboard:
+            return try renderDebtDashboard(builder.nativeReport(from: analysis))
         case .text, .json, .csv, .html, .diagnostics:
             throw AnalysisFailure.invalidConfiguration("Use a debt report format for ranked debt output")
         }
