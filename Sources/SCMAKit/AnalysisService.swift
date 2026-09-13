@@ -7,48 +7,58 @@ public struct AnalysisService: Sendable {
     public init() {}
 
     public func run(_ request: AnalysisRequest) async throws -> AnalysisRunResult {
+        let profiler = request.profileOutputPath == nil ? nil : AnalysisProfiler()
         let discovery = SourceDiscovery()
-        let root = try discovery.root(for: request)
-        let configurationURL =
-            request.configurationPath.map { URL(fileURLWithPath: $0) }
-            ?? root.appendingPathComponent(".scma.json")
-        var configuration = WorkspaceConfiguration()
-        let hasConfiguration = FileManager.default.fileExists(atPath: configurationURL.path)
-        if request.configurationPath != nil || hasConfiguration {
-            do {
-                let data = try Data(contentsOf: configurationURL)
-                configuration = try JSONDecoder().decode(WorkspaceConfiguration.self, from: data)
-            } catch let failure as AnalysisFailure {
-                throw AnalysisFailure.invalidConfiguration("\(configurationURL.path): \(failure)")
-            } catch let failure as DecodingError {
-                throw AnalysisFailure.invalidConfiguration("\(configurationURL.path): \(describe(failure))")
-            } catch {
-                throw WorkspaceError("Unable to read configuration \(configurationURL.path): \(error)")
+        let (root, configurationURL, configuration, options, selection, sources) = try {
+            profiler?.begin(.discovery)
+            defer { profiler?.end(.discovery) }
+            let root = try discovery.root(for: request)
+            let configurationURL =
+                request.configurationPath.map { URL(fileURLWithPath: $0) }
+                ?? root.appendingPathComponent(".scma.json")
+            var configuration = WorkspaceConfiguration()
+            let hasConfiguration = FileManager.default.fileExists(atPath: configurationURL.path)
+            if request.configurationPath != nil || hasConfiguration {
+                do {
+                    let data = try Data(contentsOf: configurationURL)
+                    configuration = try JSONDecoder().decode(WorkspaceConfiguration.self, from: data)
+                } catch let failure as AnalysisFailure {
+                    throw AnalysisFailure.invalidConfiguration("\(configurationURL.path): \(failure)")
+                } catch let failure as DecodingError {
+                    throw AnalysisFailure.invalidConfiguration("\(configurationURL.path): \(describe(failure))")
+                } catch {
+                    throw WorkspaceError("Unable to read configuration \(configurationURL.path): \(error)")
+                }
             }
-        }
-        let options = try configuration.analysisOptions(overrides: request)
-        let selection = try discovery.select(
-            request: request, root: root, excludes: configuration.exclude + request.exclude)
-        let sources = try discovery.read(selection, maximumFileBytes: configuration.maximumFileBytes)
-        let report = try await Analyzer().analyze(sources, options: options, jobs: request.jobs ?? configuration.jobs)
+            let options = try configuration.analysisOptions(overrides: request)
+            let selection = try discovery.select(
+                request: request, root: root, excludes: configuration.exclude + request.exclude)
+            let sources = try discovery.read(selection, maximumFileBytes: configuration.maximumFileBytes)
+            return (root, configurationURL, configuration, options, selection, sources)
+        }()
+        let report = try await Analyzer().analyze(
+            sources, options: options, jobs: request.jobs ?? configuration.jobs, phaseSink: profiler)
         let rankedDebtAnalysis = makeRankedDebtAnalysis(
             report: report,
             root: root,
             options: request.debtAnalysisOptions ?? configuration.debtAnalysis
                 ?? (request.enableDebtAnalysis ? DebtAnalysisOptions() : nil),
             lcovPath: request.lcovPath ?? configuration.lcovPath,
-            referenceTime: request.debtReferenceTime
+            referenceTime: request.debtReferenceTime,
+            profiler: profiler
         )
         let format = request.format ?? configuration.format
-        let rendered: String
-        if format.isDebtReportFormat {
-            guard let rankedDebtAnalysis else {
-                throw AnalysisFailure.invalidConfiguration("Debt report formats require debtAnalysis configuration")
+        let rendered: String = try {
+            profiler?.begin(.rendering)
+            defer { profiler?.end(.rendering) }
+            if format.isDebtReportFormat {
+                guard let rankedDebtAnalysis else {
+                    throw AnalysisFailure.invalidConfiguration("Debt report formats require debtAnalysis configuration")
+                }
+                return try ReportRenderer().renderDebt(rankedDebtAnalysis, format: format, graph: report.dependencyGraph)
             }
-            rendered = try ReportRenderer().renderDebt(rankedDebtAnalysis, format: format, graph: report.dependencyGraph)
-        } else {
-            rendered = try ReportRenderer().render(report, format: format, root: root.path)
-        }
+            return try ReportRenderer().render(report, format: format, root: root.path)
+        }()
         var protectedPaths = Set(selection.entries.map { URL(fileURLWithPath: $0.path).resolvingSymlinksInPath().path })
         protectedPaths.insert(configurationURL.resolvingSymlinksInPath().path)
         if let manifest = request.manifestPath {
@@ -61,6 +71,20 @@ public struct AnalysisService: Sendable {
                     "Refusing to overwrite a source, configuration, manifest, or Swift file with a report")
             }
             try write(rendered, to: url)
+            protectedPaths.insert(url.path)
+        }
+        let profile = profiler?.profile()
+        if let profileOutput = request.profileOutputPath, let profile {
+            let url = URL(fileURLWithPath: profileOutput).standardizedFileURL.resolvingSymlinksInPath()
+            guard !protectedPaths.contains(url.path), url.pathExtension != "swift" else {
+                throw WorkspaceError(
+                    "Refusing to overwrite a source, configuration, manifest, report, or Swift file with a profile")
+            }
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+            let data = try encoder.encode(profile)
+            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try data.write(to: url, options: .atomic)
             protectedPaths.insert(url.path)
         }
         let failOnViolation = request.failOnViolation || configuration.failOnViolation
@@ -82,7 +106,8 @@ public struct AnalysisService: Sendable {
             report: report,
             standardOutput: request.outputPath == nil ? rendered : "",
             exitStatus: status,
-            rankedDebtAnalysis: rankedDebtAnalysis
+            rankedDebtAnalysis: rankedDebtAnalysis,
+            profile: profile
         )
     }
 
@@ -91,12 +116,14 @@ public struct AnalysisService: Sendable {
         root: URL,
         options: DebtAnalysisOptions?,
         lcovPath: String?,
-        referenceTime: Date?
+        referenceTime: Date?,
+        profiler: AnalysisProfiler?
     ) -> RankedDebtAnalysis? {
         guard let options else { return nil }
         let entities = report.debtItems.map(\.entity)
         var evidence: [DebtEvidence] = []
         if let lcovPath {
+            profiler?.begin(.coverage)
             let url = (lcovPath as NSString).isAbsolutePath
                 ? URL(fileURLWithPath: lcovPath)
                 : root.appendingPathComponent(lcovPath)
@@ -107,7 +134,9 @@ public struct AnalysisService: Sendable {
             } catch {
                 evidence += unavailableCoverageEvidence(for: entities, reason: "LCOV unavailable: \(error)")
             }
+            profiler?.end(.coverage)
         }
+        profiler?.begin(.repositoryHistory)
         let history = GitHistoryEvidenceProvider().evidence(
             for: GitHistoryEvidenceRequest(
                 repositoryRoot: root.path,
@@ -115,9 +144,18 @@ public struct AnalysisService: Sendable {
                 entities: entities
             )
         )
+        profiler?.end(.repositoryHistory)
         evidence += history.evidence
-        let merged = merge(evidence: evidence, into: report.debtItems)
-        return DebtAnalysisBuilder(options: options).analyze(items: merged)
+        let merged = {
+            profiler?.begin(.aggregation)
+            defer { profiler?.end(.aggregation) }
+            return merge(evidence: evidence, into: report.debtItems)
+        }()
+        return {
+            profiler?.begin(.scoring)
+            defer { profiler?.end(.scoring) }
+            return DebtAnalysisBuilder(options: options).analyze(items: merged)
+        }()
     }
 
     private func merge(evidence: [DebtEvidence], into items: [DebtItem]) -> [DebtItem] {

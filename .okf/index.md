@@ -17,6 +17,7 @@ okf_version: "0.1"
 * [Debt improvement comparison and validation workflows](core/debt-improvement-workflows.md) - SCMACore, SCMAKit, and the scma CLI compare two native debt reports and validate whether total debt score improved by a configured threshold.
 * [Interactive terminal debt explorer](core/interactive-terminal-debt-explorer.md) - SCMAInteractive renders ranked debt analysis as a terminal debt explorer with deterministic selection, filtering, detail context, and non-TTY fallback behavior.
 * [Interactive browser debt dashboard](core/debt-dashboard-browser-report.md) - SwiftSCMA renders ranked debt analysis as a self-contained browser dashboard over the native debt-report schema.
+* [Performance profiling and regression budgets](core/performance-profiling-budgets.md) - SwiftSCMA records opt-in phase profiling output and evaluates comparable benchmark results against wall-clock and peak-memory regression budgets.
 
 # Tests
 
@@ -29,3 +30,4 @@ okf_version: "0.1"
 * [Debt improvement workflow tests](tests/debt-improvement-workflow-tests.md) - Swift Testing coverage verifies deterministic debt report comparison, schema rejection, validation JSON output, and failing improvement-gate exit status.
 * [Interactive terminal debt explorer tests](tests/interactive-terminal-debt-explorer-tests.md) - Swift Testing coverage verifies deterministic debt explorer reducer behavior, terminal fallback detection, CLI fallback output, and large-result reducer performance.
 * [Debt dashboard renderer tests](tests/debt-dashboard-renderer-tests.md) - Swift Testing coverage verifies deterministic self-contained debt dashboard HTML, local report loading controls, comparison behavior, filtering, and schema validation.
+* [Performance profiling and budget tests](tests/performance-profiling-tests.md) - Swift Testing coverage verifies opt-in profiling output, disabled profiling overhead, incomparable workload rejection, and budget enforcement for equivalent workloads.

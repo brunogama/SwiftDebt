@@ -118,6 +118,7 @@ public struct AnalysisRequest: Sendable {
     public let enableDebtAnalysis: Bool
     public let lcovPath: String?
     public let debtReferenceTime: Date?
+    public let profileOutputPath: String?
 
     public init(
         path: String = ".", manifestPath: String? = nil, configurationPath: String? = nil,
@@ -125,7 +126,8 @@ public struct AnalysisRequest: Sendable {
         scoring: ScoringMode? = nil, format: ReportFormat? = nil, jobs: Int? = nil,
         failOnViolation: Bool = false, strictSyntax: Bool = false, exclude: [String] = [],
         thresholds: [Metric: Int] = [:], debtAnalysisOptions: DebtAnalysisOptions? = nil,
-        enableDebtAnalysis: Bool = false, lcovPath: String? = nil, debtReferenceTime: Date? = nil
+        enableDebtAnalysis: Bool = false, lcovPath: String? = nil, debtReferenceTime: Date? = nil,
+        profileOutputPath: String? = nil
     ) {
         self.path = path
         self.manifestPath = manifestPath
@@ -144,6 +146,7 @@ public struct AnalysisRequest: Sendable {
         self.enableDebtAnalysis = enableDebtAnalysis
         self.lcovPath = lcovPath
         self.debtReferenceTime = debtReferenceTime
+        self.profileOutputPath = profileOutputPath
     }
 }
 
@@ -154,16 +157,19 @@ public struct AnalysisRunResult: Sendable {
     /// 0 = success, 1 = opted-in threshold gate, 2 = incomplete analysis.
     public let exitStatus: Int32
     public let rankedDebtAnalysis: RankedDebtAnalysis?
+    public let profile: AnalysisProfile?
 
     public init(
         report: AnalysisReport,
         standardOutput: String,
         exitStatus: Int32,
-        rankedDebtAnalysis: RankedDebtAnalysis? = nil
+        rankedDebtAnalysis: RankedDebtAnalysis? = nil,
+        profile: AnalysisProfile? = nil
     ) {
         self.report = report
         self.standardOutput = standardOutput
         self.exitStatus = exitStatus
         self.rankedDebtAnalysis = rankedDebtAnalysis
+        self.profile = profile
     }
 }

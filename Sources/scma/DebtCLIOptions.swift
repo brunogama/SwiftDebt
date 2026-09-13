@@ -37,8 +37,8 @@ extension CLIOptions {
         var quiet = false
         var index = 0
         let valuedOptions: Set<String> = [
-            "--config", "--format", "--output", "--jobs", "--manifest", "--stamp", "--exclude", "--lcov",
-            "--coverage", "--preset", "--aggregation", "--top", "--head", "--tail", "--min-score",
+            "--config", "--format", "--output", "--profile-output", "--jobs", "--manifest", "--stamp", "--exclude",
+            "--lcov", "--coverage", "--preset", "--aggregation", "--top", "--head", "--tail", "--min-score",
             "--min-priority", "--category", "--level", "--max-score",
         ]
         while index < arguments.count {
@@ -138,7 +138,8 @@ extension CLIOptions {
             exclude: exclusions,
             debtAnalysisOptions: options,
             enableDebtAnalysis: true,
-            lcovPath: values["--lcov"]
+            lcovPath: values["--lcov"],
+            profileOutputPath: values["--profile-output"]
         )
         let maxScore = try optionalScore(values["--max-score"], named: "--max-score")
         if validates, maxScore == nil { throw CLIError("Missing required --max-score for debt validate") }

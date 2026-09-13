@@ -37,6 +37,7 @@ struct CLIOptions {
                                          debt-dashboard.
           --interactive-debt             Open ranked debt explorer when terminal supports it.
           --output PATH                  Write a report atomically instead of stdout.
+          --profile-output PATH          Write machine-readable phase profiling JSON.
           --threshold SCORE              Required improvement for validate-improvement.
           --type-scope SCOPE             classes (paper scope) or nominals.
           --scoring MODE                 none (default), paper (literal), bounded (clamped),
@@ -92,8 +93,8 @@ struct CLIOptions {
         var literal = false
         var index = 0
         let valuedOptions: Set<String> = [
-            "--config", "--format", "--output", "--type-scope", "--scoring", "--jobs", "--manifest", "--stamp",
-            "--exclude", "--threshold", "--lcov",
+            "--config", "--format", "--output", "--profile-output", "--type-scope", "--scoring", "--jobs",
+            "--manifest", "--stamp", "--exclude", "--threshold", "--lcov",
         ]
         while index < arguments.count {
             let argument = arguments[index]
@@ -184,7 +185,8 @@ struct CLIOptions {
                 scoring: scoring, format: format ?? (interactiveDebt ? .debtCompact : nil), jobs: jobs,
                 failOnViolation: fail, strictSyntax: strict, exclude: exclusions, thresholds: thresholds,
                 debtAnalysisOptions: interactiveDebt ? DebtAnalysisOptions() : nil,
-                lcovPath: values["--lcov"]
+                lcovPath: values["--lcov"],
+                profileOutputPath: values["--profile-output"]
             ),
             interactiveDebt: interactiveDebt
         )
