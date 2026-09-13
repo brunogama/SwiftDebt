@@ -83,8 +83,14 @@ struct DebtmapParityFixtureTests {
         #expect(methodology.baselineCommit == "b0ae66be2065084b29b8b5da0a86d5cd049feced")
         #expect(methodology.schemaVersion == 1)
         #expect(methodology.outputDirectory == ".scma/benchmarks/debtmap-baseline")
-        #expect(methodology.measurements == ["wall-clock-seconds", "peak-memory-bytes"])
+        #expect(
+            methodology.measurements == [
+                "wall-clock-seconds", "peak-memory-bytes", "phase-wall-clock-nanoseconds",
+            ]
+        )
         #expect(methodology.methodology.allSatisfy { !$0.isEmpty })
+        #expect(methodology.platformVariance.noiseControls.contains("five measured runs"))
+        #expect(methodology.platformVariance.requiredMetadata.contains("swift-version"))
         #expect(methodology.warmupRuns == 1)
         #expect(methodology.measuredRuns == 5)
         #expect(!methodology.commands.isEmpty)
@@ -94,6 +100,21 @@ struct DebtmapParityFixtureTests {
             #expect(!command.argv.isEmpty)
             #expect(command.argv.allSatisfy { !$0.isEmpty })
         }
+        #expect(
+            methodology.commands.filter { $0.name.hasPrefix("measure-") }.allSatisfy {
+                $0.argv.contains("--profile-output")
+            }
+        )
+        #expect(methodology.performanceGate.comparisonUnit == "Equivalent SwiftSCMA workload only")
+        #expect(methodology.performanceGate.disallowedComparisons.contains("Debtmap Rust workload"))
+        #expect(methodology.performanceGate.approvedExceptionEvidence.contains("written justification for accepting the regression"))
+        #expect(methodology.regressionBudgets.map(\.name) == ["baseline-analysis", "full-evidence-analysis"])
+        #expect(methodology.regressionBudgets.allSatisfy { $0.workloadFamily == "SwiftSCMA" })
+        #expect(methodology.regressionBudgets.map(\.maximumPeakMemoryRegressionPercent) == [15, 15])
+        #expect(methodology.regressionBudgets[0].maximumWallClockRegressionPercent == 10)
+        #expect(methodology.regressionBudgets[0].optionalContext == "none")
+        #expect(methodology.regressionBudgets[1].maximumWallClockRegressionPercent == 20)
+        #expect(methodology.regressionBudgets[1].optionalContext == "coverage-and-repository-history")
 
         for input in methodology.inputs {
             let url = root.appendingPathComponent(input.path)

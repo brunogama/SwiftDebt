@@ -34,6 +34,9 @@ struct BenchmarkMethodology: Decodable {
     let methodology: [String]
     let inputs: [BenchmarkInput]
     let commands: [BenchmarkCommand]
+    let performanceGate: BenchmarkPerformanceGate
+    let platformVariance: BenchmarkPlatformVariance
+    let regressionBudgets: [BenchmarkRegressionBudget]
 }
 
 struct BenchmarkInput: Decodable {
@@ -46,6 +49,27 @@ struct BenchmarkInput: Decodable {
 struct BenchmarkCommand: Decodable {
     let name: String
     let argv: [String]
+}
+
+struct BenchmarkPerformanceGate: Decodable {
+    let comparisonUnit: String
+    let disallowedComparisons: [String]
+    let approvedExceptionEvidence: [String]
+}
+
+struct BenchmarkPlatformVariance: Decodable {
+    let ciUsage: String
+    let noiseControls: [String]
+    let requiredMetadata: [String]
+}
+
+struct BenchmarkRegressionBudget: Decodable {
+    let name: String
+    let analysisMode: String
+    let optionalContext: String
+    let workloadFamily: String
+    let maximumWallClockRegressionPercent: Double
+    let maximumPeakMemoryRegressionPercent: Double
 }
 
 struct GoldenFixture: Decodable {
