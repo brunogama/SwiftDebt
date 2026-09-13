@@ -135,6 +135,7 @@ public struct AnalysisReport: Codable, Sendable {
     public let findings: [Finding]
     public let diagnostics: [AnalysisDiagnostic]
     public let couplings: [CouplingEdge]
+    public let dependencyGraph: SwiftDependencyGraph
     public let duplicateBlocks: [DuplicateBlock]
 
     public var hasViolations: Bool { !findings.isEmpty }
@@ -162,6 +163,7 @@ public struct AnalysisReport: Codable, Sendable {
         case findings
         case diagnostics
         case couplings
+        case dependencyGraph
         case duplicateBlocks
     }
 
@@ -189,6 +191,7 @@ public struct AnalysisReport: Codable, Sendable {
         try values.encode(findings, forKey: .findings)
         try values.encode(diagnostics, forKey: .diagnostics)
         try values.encode(couplings, forKey: .couplings)
+        try values.encode(dependencyGraph, forKey: .dependencyGraph)
         try values.encode(duplicateBlocks, forKey: .duplicateBlocks)
     }
 }
@@ -309,12 +312,14 @@ package struct FunctionFacts: Sendable {
     package let shadowedNames: Set<String>
     package let effectFacts: [SyntaxEffectFact]
     package let compositionFacts: [FunctionalCompositionFact]
+    package let callSites: [CallSiteFact]
 
     package init(
         name: String, kind: CallableKind = .method, owner: TypeKey?, location: SourceLocation, codeLines: Int,
         complexity: Int, parameters: Int, bareReferences: Set<String>,
         explicitSelfReferences: Set<String>, shadowedNames: Set<String>,
-        effectFacts: [SyntaxEffectFact] = [], compositionFacts: [FunctionalCompositionFact] = []
+        effectFacts: [SyntaxEffectFact] = [], compositionFacts: [FunctionalCompositionFact] = [],
+        callSites: [CallSiteFact] = []
     ) {
         self.name = name
         self.kind = kind
@@ -328,6 +333,7 @@ package struct FunctionFacts: Sendable {
         self.shadowedNames = shadowedNames
         self.effectFacts = effectFacts
         self.compositionFacts = compositionFacts
+        self.callSites = callSites
     }
 }
 

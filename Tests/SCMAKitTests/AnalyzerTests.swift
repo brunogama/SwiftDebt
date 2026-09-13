@@ -47,6 +47,85 @@ struct AnalyzerTests {
         #expect(report.couplings.count == 1)
         #expect(metric(.nocc, in: report).observations.map(\.value) == [1, 1])
     }
+    @Test func dependencyGraphClassifiesSyntaxOnlyResolutionAndTestCallers() async throws {
+        let sources = [
+            source(
+                "Sources/App/Service.swift",
+                """
+                protocol Runnable { func run() }
+                func globalHelper() {}
+                class Service {
+                    func make(_ value: Int) {}
+                    func make(_ value: String) {}
+                    func consume(_ runner: Runnable) {
+                        globalHelper()
+                        make(1)
+                        missing()
+                        runner.run()
+                    }
+                }
+                """,
+                module: "App"
+            ),
+            source(
+                "Sources/App/Outer.swift",
+                """
+                class Outer {
+                    class Inner: Runnable { func run() {} }
+                }
+                extension Service {
+                    func extended(_ inner: Outer.Inner) { consume(inner) }
+                }
+                """,
+                module: "App"
+            ),
+            source(
+                "Tests/AppTests/ServiceTests.swift",
+                """
+                class ServiceTests {
+                    func testCallsProduction() { globalHelper() }
+                }
+                """,
+                module: "App"
+            ),
+        ]
+        let report = try await Analyzer().analyze(sources, options: AnalysisOptions(typeScope: .nominals), jobs: 4)
+        let graph = report.dependencyGraph
+
+        #expect(graph.nodes.contains { $0.kind == .type && $0.displayName == "App.Runnable" })
+        #expect(graph.nodes.contains { $0.kind == .type && $0.displayName == "App.Outer.Inner" })
+        #expect(graph.nodes.contains { $0.kind == .callable && $0.displayName == "App.Service.extended(_:)" })
+        #expect(graph.edges.contains { $0.kind == .typeReference && $0.target?.contains("App.Outer.Inner") == true })
+
+        let ambiguousCall = try #require(
+            graph.edges.first { $0.kind == .call && $0.confidence == .ambiguousSyntax && $0.unresolvedName == "make(_:)" }
+        )
+        #expect(ambiguousCall.target == nil)
+        #expect(ambiguousCall.targetCandidates.count == 2)
+        #expect(ambiguousCall.note.contains("overload binding requires the compiler"))
+
+        let unresolvedNames = Set(
+            graph.edges.filter { $0.kind == .call && $0.confidence == .unresolvedSyntax }.compactMap(\.unresolvedName)
+        )
+        #expect(unresolvedNames.contains("missing()"))
+        #expect(unresolvedNames.contains("run()"))
+        #expect(graph.statistics.syntaxOnlyNote.contains("not compiler semantic proof"))
+
+        let helperRisk = try #require(
+            graph.couplingRisks.first { $0.entityDisplayName == "App.globalHelper()" }
+        )
+        #expect(helperRisk.productionCallerCount == 1)
+        #expect(helperRisk.testCallerCount == 1)
+        #expect(helperRisk.callerCount == 2)
+        #expect(graph.dependencyContexts.contains { $0.entity.id == helperRisk.entityID })
+        #expect(graph.dot.contains("digraph SwiftDependencyGraph"))
+
+        let sequential = try await Analyzer().analyze(sources, options: AnalysisOptions(typeScope: .nominals), jobs: 1)
+        #expect(
+            try ReportRenderer().render(report, format: .json, root: "/parallel")
+                == ReportRenderer().render(sequential, format: .json, root: "/sequential")
+        )
+    }
     @Test func equalNamesInDifferentModulesAreNotMerged() async throws {
         let report = try await Analyzer().analyze([
             source("A.swift", "class C {}", module: "A"), source("B.swift", "class C {}", module: "B"),
