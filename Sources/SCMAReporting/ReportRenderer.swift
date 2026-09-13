@@ -14,7 +14,7 @@ package struct ReportRenderer {
         case .csv: return csv(report)
         case .html: return html(report)
         case .diagnostics: return diagnostics(report, root: root)
-        case .debtJSON, .debtMarkdown, .debtDot, .debtText, .debtCompact, .debtmapJSON:
+        case .debtJSON, .debtMarkdown, .debtDot, .debtText, .debtCompact, .debtmapJSON, .debtDashboard:
             throw AnalysisFailure.invalidConfiguration("Debt report formats require debt analysis results")
         }
     }

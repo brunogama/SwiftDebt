@@ -26,7 +26,8 @@ struct CLIOptions {
           --config PATH                  JSON configuration (default: <root>/.scma.json).
           --format FORMAT                text, json, csv, html, diagnostics (default: text),
                                          plus debt-json, debt-markdown, debt-dot,
-                                         debt-text, debt-compact, debtmap-json.
+                                         debt-text, debt-compact, debtmap-json,
+                                         debt-dashboard.
           --output PATH                  Write a report atomically instead of stdout.
           --type-scope SCOPE             classes (paper scope) or nominals.
           --scoring MODE                 none (default), paper (literal), bounded (clamped),
