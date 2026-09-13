@@ -25,8 +25,9 @@ let package = Package(
             ]
         ),
         .target(name: "SCMAReporting", dependencies: ["SCMACore"]),
+        .target(name: "SCMAInteractive", dependencies: ["SCMACore"]),
         .target(name: "SCMAKit", dependencies: ["SCMACore", "SCMASyntax", "SCMAReporting"]),
-        .executableTarget(name: "scma", dependencies: ["SCMACore", "SCMAKit"]),
+        .executableTarget(name: "scma", dependencies: ["SCMACore", "SCMAInteractive", "SCMAKit"]),
         .plugin(
             name: "SCMACommandPlugin",
             capability: .command(
@@ -50,6 +51,10 @@ let package = Package(
             name: "SCMAKitTests",
             dependencies: ["SCMACore", "SCMAKit", "SCMAReporting"],
             resources: [.process("Fixtures")]
+        ),
+        .testTarget(
+            name: "SCMAInteractiveTests",
+            dependencies: ["SCMACore", "SCMAInteractive", "scma"]
         ),
     ],
     swiftLanguageModes: [.v6]

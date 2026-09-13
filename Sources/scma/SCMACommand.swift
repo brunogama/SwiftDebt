@@ -1,4 +1,5 @@
 import Foundation
+import SCMAInteractive
 import SCMAKit
 
 #if canImport(Darwin)
@@ -16,9 +17,18 @@ struct SCMACommand {
                 print(CLIOptions.help)
             case .version:
                 print("SwiftSCMA 0.1.0")
-            case .analyze(let request):
+            case .analyze(let request, let interactiveDebt):
                 let result = try await AnalysisService().run(request)
-                FileHandle.standardOutput.write(Data(result.standardOutput.utf8))
+                if interactiveDebt, let rankedDebtAnalysis = result.rankedDebtAnalysis {
+                    let explorer = TerminalDebtExplorer.render(
+                        rankedDebtAnalysis,
+                        environment: .current(),
+                        fallbackOutput: result.standardOutput
+                    )
+                    FileHandle.standardOutput.write(Data(explorer.text.utf8))
+                } else {
+                    FileHandle.standardOutput.write(Data(result.standardOutput.utf8))
+                }
                 exit(result.exitStatus)
             case .explainCoverage(let request):
                 let result = try CoverageExplanationService().run(request)
