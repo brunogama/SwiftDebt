@@ -1,3 +1,4 @@
+import Foundation
 import SCMACore
 import SwiftParser
 import SwiftParserDiagnostics
@@ -181,6 +182,18 @@ private final class DeclarationCollector: SyntaxVisitor {
         ).union(implicitNames)
         let visitor = BodyVisitor(parameters: names)
         visitor.walk(statements)
+        let ownerProperties = owner.map { key in
+            types.filter { $0.key == key }.reduce(into: Set<String>()) { $0.formUnion($1.propertyNames) }
+        } ?? []
+        let effectVisitor = EffectVisitor(parameters: names, ownerProperties: ownerProperties, sourceLines: sourceLines)
+        for parameter in parameters {
+            guard parameter.type.description.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("inout ") else {
+                continue
+            }
+            let value = cleanName((parameter.secondName ?? parameter.firstName).text)
+            if value != "_" { effectVisitor.recordInoutParameter(name: value, location: sourceLines.location(parameter)) }
+        }
+        effectVisitor.walk(statements)
         let labels = parameters.map { cleanName($0.firstName.text) + ":" }.joined()
         let prefix = owner?.displayName ?? source.module
         functions.append(
@@ -188,7 +201,8 @@ private final class DeclarationCollector: SyntaxVisitor {
                 name: "\(prefix).\(name)(\(labels))", kind: kind, owner: owner, location: sourceLines.location(node),
                 codeLines: sourceLines.codeLines(statements).count, complexity: visitor.complexity,
                 parameters: parameters.count, bareReferences: visitor.bareReferences,
-                explicitSelfReferences: visitor.explicitSelfReferences, shadowedNames: visitor.shadowedNames
+                explicitSelfReferences: visitor.explicitSelfReferences, shadowedNames: visitor.shadowedNames,
+                effectFacts: effectVisitor.effectFacts, compositionFacts: effectVisitor.compositionFacts
             ))
     }
 }

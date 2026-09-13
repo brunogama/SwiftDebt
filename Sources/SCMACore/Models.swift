@@ -238,6 +238,62 @@ package enum CallableKind: Sendable {
     case accessor
 }
 
+package enum SyntaxEvidenceConfidence: String, Codable, Sendable {
+    case measuredSyntax
+    case heuristic
+}
+
+package enum SyntaxEffectCategory: String, Codable, CaseIterable, Sendable {
+    case mutation
+    case inoutMutation
+    case propertyWrite
+    case globalOrStaticState
+    case asyncEffect
+    case throwingEffect
+    case closureEffect
+}
+
+package struct SyntaxEffectFact: Codable, Hashable, Sendable {
+    package let category: SyntaxEffectCategory
+    package let detail: String
+    package let location: SourceLocation
+    package let confidence: SyntaxEvidenceConfidence
+    package let inClosure: Bool
+
+    package init(
+        category: SyntaxEffectCategory,
+        detail: String,
+        location: SourceLocation,
+        confidence: SyntaxEvidenceConfidence = .measuredSyntax,
+        inClosure: Bool = false
+    ) {
+        self.category = category
+        self.detail = detail
+        self.location = location
+        self.confidence = confidence
+        self.inClosure = inClosure
+    }
+}
+
+package struct FunctionalCompositionFact: Codable, Hashable, Sendable {
+    package let operation: String
+    package let location: SourceLocation
+    package let closureHasSideEffects: Bool
+    package let confidence: SyntaxEvidenceConfidence
+
+    package init(
+        operation: String,
+        location: SourceLocation,
+        closureHasSideEffects: Bool,
+        confidence: SyntaxEvidenceConfidence = .measuredSyntax
+    ) {
+        self.operation = operation
+        self.location = location
+        self.closureHasSideEffects = closureHasSideEffects
+        self.confidence = confidence
+    }
+}
+
 package struct FunctionFacts: Sendable {
     package let name: String
     package let kind: CallableKind
@@ -251,11 +307,14 @@ package struct FunctionFacts: Sendable {
     package let explicitSelfReferences: Set<String>
     /// Every local binding name seen anywhere in the body; informational.
     package let shadowedNames: Set<String>
+    package let effectFacts: [SyntaxEffectFact]
+    package let compositionFacts: [FunctionalCompositionFact]
 
     package init(
         name: String, kind: CallableKind = .method, owner: TypeKey?, location: SourceLocation, codeLines: Int,
         complexity: Int, parameters: Int, bareReferences: Set<String>,
-        explicitSelfReferences: Set<String>, shadowedNames: Set<String>
+        explicitSelfReferences: Set<String>, shadowedNames: Set<String>,
+        effectFacts: [SyntaxEffectFact] = [], compositionFacts: [FunctionalCompositionFact] = []
     ) {
         self.name = name
         self.kind = kind
@@ -267,6 +326,8 @@ package struct FunctionFacts: Sendable {
         self.bareReferences = bareReferences
         self.explicitSelfReferences = explicitSelfReferences
         self.shadowedNames = shadowedNames
+        self.effectFacts = effectFacts
+        self.compositionFacts = compositionFacts
     }
 }
 
