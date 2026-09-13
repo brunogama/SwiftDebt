@@ -194,7 +194,7 @@ package struct DependencyGraphBuilder: Sendable {
                             targetCandidates: candidates.map(\.nodeID).sorted(), kind: .call,
                             unresolvedName: display, confidence: .ambiguousSyntax, location: call.location,
                             isTestCaller: function.isTest,
-                            note: "SwiftSyntax-only call matched multiple in-input callables; overload binding requires the compiler."
+                            note: "SwiftSyntax-only call matched multiple in-input callables; overload binding requires the compiler; no compiler binding is claimed."
                         )
                     )
                 case .unresolved:
