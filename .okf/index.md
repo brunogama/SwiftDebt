@@ -13,6 +13,7 @@ okf_version: "0.1"
 * [Swift functional evidence extraction](core/swift-functional-evidence-extraction.md) - SCMASyntax extracts syntax-level side-effect and functional-composition facts, and SCMACore converts them into deterministic debt evidence.
 * [Ranked debt analysis composition](core/ranked-debt-analysis-composition.md) - SCMACore and SCMAKit compose structural, functional, coverage, Git history, and dependency evidence into deterministic ranked debt analysis results.
 * [Debt report output formats](core/debt-report-output-formats.md) - SwiftSCMA renders ranked debt analysis as native debt JSON, Markdown, DOT, text, compact text, and a Debtmap compatibility JSON projection.
+* [Debt analyze and validate CLI workflows](core/debt-cli-workflows.md) - SwiftSCMA exposes namespaced debt analyze and validate commands with deterministic filtering, formatting, coverage, and score-gate options.
 
 # Tests
 
@@ -21,3 +22,4 @@ okf_version: "0.1"
 * [Git history evidence provider tests](tests/git-history-evidence-provider-tests.md) - Swift Testing coverage validates deterministic Git history evidence, unavailable-history handling, and structured Git process arguments.
 * [Ranked debt analysis composition tests](tests/ranked-debt-analysis-tests.md) - Swift Testing coverage verifies deterministic ranked debt analysis composition, provider evidence, unavailable evidence, filters, aggregation, and configuration activation.
 * [Debt report renderer tests](tests/debt-report-renderer-tests.md) - Swift Testing coverage verifies deterministic native debt reports, Debtmap compatibility projection output, DOT rendering, text renderers, and service-level debt JSON rendering.
+* [CLI debt workflow subprocess tests](tests/cli-debt-workflow-tests.md) - Swift Testing coverage verifies deterministic debt analyze output, validation gate exits, argument errors, and preservation of existing analyze forms.
