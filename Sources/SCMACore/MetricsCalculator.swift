@@ -34,6 +34,7 @@ package struct MetricsCalculator {
             couplingCounts[edge.first, default: 0] += 1
             couplingCounts[edge.second, default: 0] += 1
         }
+        let dependencyGraph = DependencyGraphBuilder().build(from: files, typeScope: options.typeScope)
         let duplication = try DuplicateDetector().detect(files, options: options)
         let structuralTypes = types.values.map { type in
             let owned = ownedByType[type.key, default: []]
@@ -147,8 +148,8 @@ package struct MetricsCalculator {
             metrics: summaries, overallScore: overall,
             overallScoreNote: overall == nil
                 ? "An overall score requires a complete analysis and all ten defined metric scores." : nil,
-            findings: findings, diagnostics: diagnostics, couplings: edges, duplicateBlocks: duplication.blocks,
-            debtItems: debtItems
+            findings: findings, diagnostics: diagnostics, couplings: edges,
+            dependencyGraph: dependencyGraph, duplicateBlocks: duplication.blocks, debtItems: debtItems
         )
     }
 

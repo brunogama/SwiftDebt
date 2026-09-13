@@ -1,3 +1,4 @@
+import SCMACore
 import SwiftSyntax
 
 /// Policy is deliberately explicit; the paper does not define Swift decision-node rules.
@@ -15,11 +16,14 @@ final class BodyVisitor: SyntaxVisitor {
     var explicitSelfReferences: Set<String> = []
     /// Every local binding name seen anywhere in the body; informational.
     var shadowedNames: Set<String>
+    var callSites: [CallSiteFact] = []
+    private let sourceLines: SourceLines?
     private var scopes: [Set<String>]
     private var nestingDepth = 0
 
-    init(parameters: Set<String>) {
+    init(parameters: Set<String>, sourceLines: SourceLines? = nil) {
         shadowedNames = parameters
+        self.sourceLines = sourceLines
         scopes = [parameters]
         super.init(viewMode: .sourceAccurate)
     }
@@ -142,6 +146,15 @@ final class BodyVisitor: SyntaxVisitor {
         if case .binaryOperator(let text) = token.tokenKind, text == "&&" || text == "||" {
             complexity += 1
             recordFlowBreak()
+        }
+        return .visitChildren
+    }
+    override func visit(_ node: FunctionCallExprSyntax) -> SyntaxVisitorContinueKind {
+        if let sourceLines, let name = expressionName(node.calledExpression) {
+            let labels = node.arguments.map { argument in
+                "\(cleanName(argument.label?.text ?? "_")):"
+            }.joined()
+            callSites.append(CallSiteFact(name: name, labels: labels, location: sourceLines.location(node)))
         }
         return .visitChildren
     }

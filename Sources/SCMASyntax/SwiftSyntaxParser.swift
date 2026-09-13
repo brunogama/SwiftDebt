@@ -78,6 +78,10 @@ private final class DeclarationCollector: SyntaxVisitor {
         addType(Syntax(node), name: cleanName(node.name.text), kind: "actor")
         return .visitChildren
     }
+    override func visit(_ node: ProtocolDeclSyntax) -> SyntaxVisitorContinueKind {
+        addType(Syntax(node), name: cleanName(node.name.text), kind: "protocol")
+        return .visitChildren
+    }
     override func visit(_ node: ExtensionDeclSyntax) -> SyntaxVisitorContinueKind {
         if let name = typeName(node.extendedType) { addType(Syntax(node), name: name, kind: "extension") }
         return .visitChildren
@@ -215,7 +219,7 @@ private final class DeclarationCollector: SyntaxVisitor {
                 return value == "_" ? nil : value
             }
         ).union(implicitNames)
-        let visitor = BodyVisitor(parameters: names)
+        let visitor = BodyVisitor(parameters: names, sourceLines: sourceLines)
         visitor.walk(statements)
         let ownerProperties = owner.map { key in
             types.filter { $0.key == key }.reduce(into: Set<String>()) { $0.formUnion($1.propertyNames) }
@@ -239,7 +243,8 @@ private final class DeclarationCollector: SyntaxVisitor {
                 maxNestingDepth: visitor.maxNestingDepth,
                 parameters: parameters.count, bareReferences: visitor.bareReferences,
                 explicitSelfReferences: visitor.explicitSelfReferences, shadowedNames: visitor.shadowedNames,
-                effectFacts: effectVisitor.effectFacts, compositionFacts: effectVisitor.compositionFacts
+                effectFacts: effectVisitor.effectFacts, compositionFacts: effectVisitor.compositionFacts,
+                callSites: visitor.callSites
             ))
     }
 }
