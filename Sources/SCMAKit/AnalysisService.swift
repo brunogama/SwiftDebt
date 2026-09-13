@@ -34,7 +34,8 @@ public struct AnalysisService: Sendable {
         let rankedDebtAnalysis = makeRankedDebtAnalysis(
             report: report,
             root: root,
-            options: request.debtAnalysisOptions ?? configuration.debtAnalysis,
+            options: request.debtAnalysisOptions ?? configuration.debtAnalysis
+                ?? (request.enableDebtAnalysis ? DebtAnalysisOptions() : nil),
             lcovPath: request.lcovPath ?? configuration.lcovPath,
             referenceTime: request.debtReferenceTime
         )

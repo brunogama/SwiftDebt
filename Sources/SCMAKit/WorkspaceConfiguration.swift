@@ -115,6 +115,7 @@ public struct AnalysisRequest: Sendable {
     public let exclude: [String]
     public let thresholds: [Metric: Int]
     public let debtAnalysisOptions: DebtAnalysisOptions?
+    public let enableDebtAnalysis: Bool
     public let lcovPath: String?
     public let debtReferenceTime: Date?
 
@@ -124,7 +125,7 @@ public struct AnalysisRequest: Sendable {
         scoring: ScoringMode? = nil, format: ReportFormat? = nil, jobs: Int? = nil,
         failOnViolation: Bool = false, strictSyntax: Bool = false, exclude: [String] = [],
         thresholds: [Metric: Int] = [:], debtAnalysisOptions: DebtAnalysisOptions? = nil,
-        lcovPath: String? = nil, debtReferenceTime: Date? = nil
+        enableDebtAnalysis: Bool = false, lcovPath: String? = nil, debtReferenceTime: Date? = nil
     ) {
         self.path = path
         self.manifestPath = manifestPath
@@ -140,6 +141,7 @@ public struct AnalysisRequest: Sendable {
         self.exclude = exclude
         self.thresholds = thresholds
         self.debtAnalysisOptions = debtAnalysisOptions
+        self.enableDebtAnalysis = enableDebtAnalysis
         self.lcovPath = lcovPath
         self.debtReferenceTime = debtReferenceTime
     }

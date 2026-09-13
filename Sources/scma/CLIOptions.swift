@@ -10,6 +10,7 @@ enum CLIAction {
     case help
     case version
     case analyze(AnalysisRequest)
+    case debtValidate(AnalysisRequest, DebtValidationOptions)
     case explainCoverage(CoverageExplanationRequest)
 }
 
@@ -18,6 +19,8 @@ struct CLIOptions {
         OVERVIEW: SwiftSCMA - Swift source metrics based on the SCMA paper.
 
         USAGE: scma analyze [path] [options]
+               scma debt analyze [path] [options]
+               scma debt validate [path] --max-score SCORE [options]
                scma explain coverage [path] --lcov PATH [options]
                scma --help
                scma --version
@@ -37,7 +40,17 @@ struct CLIOptions {
           --fail-on-violation            Exit 1 when configured thresholds are exceeded.
           --strict                       Exit 2 on any parse error instead of skipping that file.
           --manifest PATH                Explicit JSON source manifest (used by plugins).
-          --lcov PATH                    LCOV input for explain coverage.
+          --lcov PATH                    LCOV input for explain coverage or debt evidence.
+          --coverage PATH                Alias for --lcov in debt workflows.
+          --preset PRESET                Debt preset: strict, balanced, lenient.
+          --aggregation MODE             Debt aggregation: none, file, aggregateOnly.
+          --top N | --head N | --tail N  Limit ranked debt output deterministically.
+          --min-score SCORE              Keep debt items with score at least SCORE.
+          --min-priority PRIORITY        Keep debt items at least low, medium, high, critical.
+          --category NAME                Keep a debt category; repeatable.
+          --level LEVEL                  Keep callable, type, file, or module; repeatable.
+          --max-score SCORE              Validate that no debt score exceeds SCORE.
+          --quiet                        Suppress validation summary output.
           --stamp PATH                   Internal build-plugin completion marker.
           --                             Treat the remaining argument as a literal path.
 
@@ -52,6 +65,9 @@ struct CLIOptions {
         if arguments.first == "explain", arguments.dropFirst().first == "coverage" {
             return try parseExplainCoverage(Array(arguments.dropFirst(2)))
         }
+        if arguments.first == "debt", isDebtNamespace(Array(arguments.dropFirst())) {
+            return try parseDebt(Array(arguments.dropFirst()))
+        }
         if arguments.first == "analyze" { arguments.removeFirst() }
         var values: [String: String] = [:]
         var exclusions: [String] = []
@@ -63,7 +79,7 @@ struct CLIOptions {
         var index = 0
         let valuedOptions: Set<String> = [
             "--config", "--format", "--output", "--type-scope", "--scoring", "--jobs", "--manifest", "--stamp",
-            "--exclude", "--threshold",
+            "--exclude", "--threshold", "--lcov",
         ]
         while index < arguments.count {
             let argument = arguments[index]
@@ -139,8 +155,18 @@ struct CLIOptions {
                 path: path ?? ".", manifestPath: values["--manifest"], configurationPath: values["--config"],
                 outputPath: values["--output"], stampPath: values["--stamp"], typeScope: scope,
                 scoring: scoring, format: format, jobs: jobs, failOnViolation: fail, strictSyntax: strict,
-                exclude: exclusions, thresholds: thresholds
+                exclude: exclusions, thresholds: thresholds, lcovPath: values["--lcov"]
             ))
+    }
+
+    private func isDebtNamespace(_ arguments: [String]) -> Bool {
+        guard let command = arguments.first else { return false }
+        switch command {
+        case "analyze", "validate", "--help", "-h", "help":
+            return true
+        default:
+            return false
+        }
     }
 
     private func parseExplainCoverage(_ arguments: [String]) throws -> CLIAction {
