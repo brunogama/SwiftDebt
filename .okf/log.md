@@ -1,6 +1,7 @@
 # Bundle Update Log
 
 ## 2026-09-13
+* **Creation**: Created the [Debt report output formats](/core/debt-report-output-formats.md) and [Debt report renderer tests](/tests/debt-report-renderer-tests.md) concepts for the implementation range `c1511be4d0ee192859e39eba400c6d8110ca58a1..b8c632bf5eb9da7d14d6cdc37f079d952068c122`.
 * **Creation**: Created the [Ranked debt analysis composition](/core/ranked-debt-analysis-composition.md) and [Ranked debt analysis composition tests](/tests/ranked-debt-analysis-tests.md) concepts for the implementation range `4e101cf06b8d697a934064872c972582b9acdbcf..6fcac2fbbb1963b9cbae3f379d9befbf33d550db`.
 * **Creation**: Created the [Swift structural debt evidence assertions](/tests/swift-structural-debt-evidence.md) concept for the implementation range `451de719b23a3fd0b4251c94642eedc402e2f65b..ceb3057a519fd34116428cc011986b41acd3c36e`.
 * **Creation**: Created the [Swift call graph and coupling risk analysis](/core/swift-call-graph-analysis.md) concept for the implementation range `90ba5404cbc5e3777c0e5ec0cfa3eb34c1607836..c3a53c8a913450448fc8823c5ed3cdcbadcf28de`.
