@@ -27,6 +27,15 @@ struct PluginWorkflowTests {
         let report = try JSONDecoder().decode(DebtReport.self, from: Data(command.stdout.utf8))
         #expect(report.reportKind == "swiftscma-debt-report")
         #expect(report.items.count == 1)
+        let reportedItem = try #require(report.items.first)
+        #expect(reportedItem.score != nil)
+        #expect(reportedItem.scoreBreakdown.unavailableEvidence.contains { evidence in
+            evidence.kind == "coverage.lcov" && evidence.reason?.contains("SwiftPM plugin context") == true
+        })
+        #expect(reportedItem.scoreBreakdown.unavailableEvidence.contains { evidence in
+            evidence.kind.hasPrefix("git-history.") && evidence.reason?.contains("not a git repository") == true
+        })
+        #expect(!reportedItem.scoreBreakdown.contributions.contains { $0.kind == "coverage.lcov" })
         #expect(report.missingEvidence.contains { evidence in
             evidence.kind == "coverage.lcov" && evidence.reason.contains("SwiftPM plugin context")
         })
@@ -34,12 +43,22 @@ struct PluginWorkflowTests {
             evidence.kind.hasPrefix("git-history.") && evidence.reason.contains("not a git repository")
         })
 
+        let markdown = try runSwiftPackage(
+            ["package", "scma", "debt", "analyze", "--target", "Demo", "--format", "markdown"],
+            in: consumer
+        )
+        #expect(markdown.stdout.contains("# SwiftSCMA debt report"))
+        #expect(markdown.stdout.contains("- Missing evidence:"))
+        #expect(markdown.stdout.contains("coverage.lcov"))
+
         let debtmap = try runSwiftPackage(
             ["package", "scma", "debt", "analyze", "--target", "Demo", "--format", "debtmap-json"],
             in: consumer
         )
         let projection = try JSONDecoder().decode(DebtmapCompatibilityProjection.self, from: Data(debtmap.stdout.utf8))
         #expect(projection.projection == "debtmap-compatibility")
+        let projectedItem = try #require(projection.items.first)
+        #expect(projectedItem.score == reportedItem.score)
         #expect(projection.missingEvidence.contains { $0.kind == "coverage.lcov" })
         #expect(projection.missingEvidence.contains { evidence in
             evidence.kind.hasPrefix("git-history.") && evidence.reason.contains("not a git repository")
