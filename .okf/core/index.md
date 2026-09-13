@@ -8,3 +8,4 @@
 * [Ranked debt analysis composition](ranked-debt-analysis-composition.md) - SCMACore and SCMAKit compose structural, functional, coverage, Git history, and dependency evidence into deterministic ranked debt analysis results.
 * [Debt report output formats](debt-report-output-formats.md) - SwiftSCMA renders ranked debt analysis as native debt JSON, Markdown, DOT, text, compact text, and a Debtmap compatibility JSON projection.
 * [Debt analyze and validate CLI workflows](debt-cli-workflows.md) - SwiftSCMA exposes namespaced debt analyze and validate commands with deterministic filtering, formatting, coverage, and score-gate options.
+* [Debt improvement comparison and validation workflows](debt-improvement-workflows.md) - SCMACore, SCMAKit, and the scma CLI compare two native debt reports and validate whether total debt score improved by a configured threshold.

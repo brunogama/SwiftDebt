@@ -27,6 +27,14 @@ struct SCMACommand {
                     FileHandle.standardOutput.write(Data(outcome.summary.utf8))
                 }
                 exit(result.exitStatus == 2 ? 2 : outcome.exitStatus)
+            case .compare(let request):
+                let result = try DebtImprovementService().compare(request)
+                FileHandle.standardOutput.write(Data(result.standardOutput.utf8))
+                exit(result.exitStatus)
+            case .validateImprovement(let request):
+                let result = try DebtImprovementService().validateImprovement(request)
+                FileHandle.standardOutput.write(Data(result.standardOutput.utf8))
+                exit(result.exitStatus)
             case .explainCoverage(let request):
                 let result = try CoverageExplanationService().run(request)
                 FileHandle.standardOutput.write(Data(result.standardOutput.utf8))

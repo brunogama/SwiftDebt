@@ -11,6 +11,8 @@ enum CLIAction {
     case version
     case analyze(AnalysisRequest)
     case debtValidate(AnalysisRequest, DebtValidationOptions)
+    case compare(DebtComparisonRequest)
+    case validateImprovement(DebtValidationRequest)
     case explainCoverage(CoverageExplanationRequest)
 }
 
@@ -21,6 +23,8 @@ struct CLIOptions {
         USAGE: scma analyze [path] [options]
                scma debt analyze [path] [options]
                scma debt validate [path] --max-score SCORE [options]
+               scma compare BEFORE_JSON AFTER_JSON [--output PATH]
+               scma validate-improvement BEFORE_JSON AFTER_JSON [--threshold SCORE] [--output PATH]
                scma explain coverage [path] --lcov PATH [options]
                scma --help
                scma --version
@@ -31,6 +35,7 @@ struct CLIOptions {
                                          plus debt-json, debt-markdown, debt-dot,
                                          debt-text, debt-compact, debtmap-json.
           --output PATH                  Write a report atomically instead of stdout.
+          --threshold SCORE              Required improvement for validate-improvement.
           --type-scope SCOPE             classes (paper scope) or nominals.
           --scoring MODE                 none (default), paper (literal), bounded (clamped),
                                          corrected (clamped, DC ratio = duplicated/total lines).
@@ -54,7 +59,7 @@ struct CLIOptions {
           --stamp PATH                   Internal build-plugin completion marker.
           --                             Treat the remaining argument as a literal path.
 
-        EXIT STATUS: 0 success; 1 opted-in metric gate failed; 2 input/configuration/analysis error.
+        EXIT STATUS: 0 success; 1 opted-in metric or improvement gate failed; 2 input/configuration/analysis error.
         Paper equations are experimental. Undefined scores are not replaced with a passing grade.
         """
 
@@ -62,6 +67,12 @@ struct CLIOptions {
         if input == ["--help"] || input == ["-h"] || input == ["help"] { return .help }
         if input == ["--version"] || input == ["version"] { return .version }
         var arguments = input
+        if arguments.first == "compare" {
+            return try parseCompare(Array(arguments.dropFirst()))
+        }
+        if arguments.first == "validate-improvement" {
+            return try parseValidateImprovement(Array(arguments.dropFirst()))
+        }
         if arguments.first == "explain", arguments.dropFirst().first == "coverage" {
             return try parseExplainCoverage(Array(arguments.dropFirst(2)))
         }
@@ -167,6 +178,81 @@ struct CLIOptions {
         default:
             return false
         }
+    }
+
+    private func parseCompare(_ arguments: [String]) throws -> CLIAction {
+        if arguments == ["--help"] || arguments == ["-h"] { return .help }
+        let parsed = try parseDebtReportPair(arguments, allowsThreshold: false)
+        return .compare(
+            DebtComparisonRequest(
+                beforePath: parsed.beforePath,
+                afterPath: parsed.afterPath,
+                outputPath: parsed.outputPath
+            )
+        )
+    }
+
+    private func parseValidateImprovement(_ arguments: [String]) throws -> CLIAction {
+        if arguments == ["--help"] || arguments == ["-h"] { return .help }
+        let parsed = try parseDebtReportPair(arguments, allowsThreshold: true)
+        return .validateImprovement(
+            DebtValidationRequest(
+                beforePath: parsed.beforePath,
+                afterPath: parsed.afterPath,
+                minimumImprovement: parsed.threshold ?? 0,
+                outputPath: parsed.outputPath
+            )
+        )
+    }
+
+    private func parseDebtReportPair(
+        _ arguments: [String],
+        allowsThreshold: Bool
+    ) throws -> (beforePath: String, afterPath: String, outputPath: String?, threshold: Double?) {
+        var values: [String: String] = [:]
+        var paths: [String] = []
+        var literal = false
+        var index = 0
+        let valuedOptions: Set<String> = allowsThreshold ? ["--output", "--threshold"] : ["--output"]
+        while index < arguments.count {
+            let argument = arguments[index]
+            index += 1
+            if !literal && (argument == "--help" || argument == "-h") { throw CLIError("Unexpected help option") }
+            if !literal && argument == "--" {
+                literal = true
+                continue
+            }
+            if !literal && argument.hasPrefix("-") {
+                let split = argument.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false).map(
+                    String.init)
+                let key = split[0]
+                guard valuedOptions.contains(key) else { throw CLIError("Unknown option: \(key)") }
+                let value: String
+                if split.count == 2 {
+                    value = split[1]
+                } else {
+                    guard index < arguments.count, !arguments[index].hasPrefix("--") else {
+                        throw CLIError("Missing value for \(key)")
+                    }
+                    value = arguments[index]
+                    index += 1
+                }
+                guard !value.isEmpty else { throw CLIError("Empty value for \(key)") }
+                guard values[key] == nil else { throw CLIError("Duplicate option: \(key)") }
+                values[key] = value
+                continue
+            }
+            paths.append(argument)
+        }
+        guard paths.count == 2 else { throw CLIError("Expected before and after debt report paths") }
+        var threshold: Double?
+        if let value = values["--threshold"] {
+            guard let parsed = Double(value), parsed >= 0 else {
+                throw CLIError("threshold must be a nonnegative number")
+            }
+            threshold = parsed
+        }
+        return (paths[0], paths[1], values["--output"], threshold)
     }
 
     private func parseExplainCoverage(_ arguments: [String]) throws -> CLIAction {
