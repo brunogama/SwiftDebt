@@ -1,7 +1,7 @@
 ---
 type: Core Capability
 title: Debt report output formats
-description: SwiftSCMA renders ranked debt analysis as native debt JSON, Markdown, DOT, text, compact text, and a Debtmap compatibility JSON projection.
+description: SwiftSCMA renders ranked debt analysis as native debt JSON, Markdown, DOT, text, compact text, a Debtmap compatibility JSON projection, and a browser dashboard.
 resource: Sources/SCMACore/DebtReport.swift
 tags: [swift, debt-analysis, reporting, debtmap]
 timestamp: 2026-09-13T00:00:00Z
@@ -9,7 +9,7 @@ timestamp: 2026-09-13T00:00:00Z
 
 # Overview
 
-`ReportFormat` includes debt-specific formats: `debt-json`, `debt-markdown`, `debt-dot`, `debt-text`, `debt-compact`, and `debtmap-json`. The `isDebtReportFormat` helper separates ranked debt output from the existing SCMA-paper report formats.
+`ReportFormat` includes debt-specific formats: `debt-json`, `debt-markdown`, `debt-dot`, `debt-text`, `debt-compact`, `debtmap-json`, and `debt-dashboard`. The `isDebtReportFormat` helper separates ranked debt output from the existing SCMA-paper report formats.
 
 `AnalysisService` renders debt report formats only when ranked debt analysis is available. Selecting a debt report format without `debtAnalysis` configuration raises an invalid configuration error instead of rendering a non-debt report.
 
@@ -37,10 +37,11 @@ Each compatibility item preserves the ranked item ID, entity, level, location, p
 * `debt-text` as a pipe-delimited plain text report.
 * `debt-compact` as one compact remediation line per item.
 * `debtmap-json` as the Debtmap compatibility projection.
+* `debt-dashboard` as a self-contained browser dashboard over the native debt-report schema.
 
 # Command-line surface
 
-The CLI help lists the debt formats alongside the existing report formats. The README distinguishes SCMA-paper formats from ranked debt analysis formats and documents `debtmap-json` as a compatibility projection rather than the native model.
+The CLI help lists the debt formats alongside the existing report formats. The README distinguishes SCMA-paper formats from ranked debt analysis formats, documents `debtmap-json` as a compatibility projection rather than the native model, and documents `debt-dashboard` as a self-contained browser dashboard.
 
 # Citations
 
