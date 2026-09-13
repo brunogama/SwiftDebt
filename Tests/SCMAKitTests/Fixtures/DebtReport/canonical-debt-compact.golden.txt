@@ -1,0 +1,2 @@
+critical 91.2 callable:Beta.run Sources/Beta.swift:12:5 - Extract smaller operations and add coverage.
+high 72.5 callable:Alpha.help Sources/Alpha.swift:3:1 - Reduce fan-in before adding features.
