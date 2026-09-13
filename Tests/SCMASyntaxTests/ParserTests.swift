@@ -127,8 +127,14 @@ struct ParserTests {
             }
             """)
         #expect(result.functions.count == 2)
+        #expect(result.closures.count == 1)
         #expect(result.functions[0].complexity == 2)
         #expect(result.functions[1].complexity == 2)
+        #expect(result.functions.map(\.cognitiveComplexity) == [1, 1])
+        #expect(result.functions.map(\.maxNestingDepth) == [1, 1])
+        #expect(result.closures.first?.complexity == 2)
+        #expect(result.closures.first?.cognitiveComplexity == 1)
+        #expect(result.closures.first?.maxNestingDepth == 1)
         #expect(result.functions[1].owner == nil)
     }
     @Test(arguments: [

@@ -186,6 +186,8 @@ struct AnalyzerTests {
         #expect(report.metrics.map(\.metric) == Metric.allCases)
         #expect(!evidence.isEmpty)
         #expect(evidence.allSatisfy { $0.location?.file != nil && $0.location?.line != nil })
+        #expect(evidence.allSatisfy { $0.location?.column != nil })
+        #expect(evidence.allSatisfy { !$0.rawValue.isEmpty })
         #expect(evidence.allSatisfy { $0.note?.isEmpty == false })
         #expect(evidence.contains { $0.kind == "swift.cognitive-complexity" && $0.rawValue == "value=6" })
         #expect(evidence.contains { $0.kind == "swift.nesting-depth" && $0.rawValue == "value=3" })
