@@ -35,6 +35,79 @@ struct DebtmapParityFixtureTests {
         }
     }
 
+    @Test func finalReleaseAcceptanceRequiresClosedParityEvidence() throws {
+        let matrix: ParityMatrix = try loadJSON("docs/debtmap/parity-matrix.v0.23.0.json")
+        let readme = try read("README.md")
+        let releaseAcceptance = try read("docs/debtmap/release-quality-acceptance.md")
+        let parityClaim = "Debtmap 0.23.0 workflow/capability parity for Swift"
+        let inScope = matrix.capabilities.filter { $0.scope == "in-scope" }
+        let declaredTestProofReferences = try declaredTestProofReferences()
+
+        #expect(!inScope.isEmpty)
+        #expect(readme.contains(parityClaim))
+        #expect(releaseAcceptance.contains(parityClaim))
+        #expect(releaseAcceptance.contains("No approved exceptions were recorded for required gates."))
+
+        for capability in inScope {
+            #expect(capability.implementationState == "implemented", "Open implementation for \(capability.id)")
+            #expect(capability.status == "implemented" || capability.status == "intentional-divergence")
+            for proof in capability.proofs where proof.kind == "test" {
+                #expect(
+                    declaredTestProofReferences.contains(proof.reference),
+                    "Unresolved test proof for \(capability.id): \(proof.reference)"
+                )
+            }
+            #expect(
+                capability.proofs.contains {
+                    $0.kind == "test" && declaredTestProofReferences.contains($0.reference)
+                },
+                "Missing executable test proof for \(capability.id)"
+            )
+            #expect(
+                !capability.proofs.contains { $0.kind == "ticket" },
+                "Ticket planning reference is not release proof for \(capability.id)"
+            )
+            if capability.status == "intentional-divergence" {
+                #expect(
+                    capability.proofs.contains {
+                        $0.kind == "documentation"
+                            && $0.reference == "docs/debtmap/release-quality-acceptance.md"
+                    },
+                    "Missing documented divergence for \(capability.id)"
+                )
+            }
+        }
+    }
+
+    @Test func requiredRegressionGatesHavePassingReleaseEvidence() throws {
+        let matrix: ParityMatrix = try loadJSON("docs/debtmap/parity-matrix.v0.23.0.json")
+        let evidence: ReleaseGateEvidence = try loadJSON("docs/debtmap/release-gate-evidence.v1.json")
+        let regressionGates = try #require(matrix.capabilities.first { $0.id == "scma-regression-gates" })
+        let requiredCommands = [
+            "swift build --build-tests && swift test",
+            "python3 scripts/smoke-test.py --binary .build/debug/scma --plugins",
+        ]
+
+        #expect(evidence.schemaVersion == 1)
+        #expect(!evidence.generatedAt.isEmpty)
+        #expect(
+            regressionGates.proofs.contains {
+                $0.kind == "gate-evidence" && $0.reference == "docs/debtmap/release-gate-evidence.v1.json"
+            }
+        )
+        #expect(
+            Set(evidence.gates.map(\.id)) == Set(["swift-build-tests-and-test-suite", "scma-plugin-smoke-test"])
+        )
+
+        for command in requiredCommands {
+            let gate = try #require(evidence.gates.first { $0.command == command })
+            #expect(gate.status == "passed")
+            #expect(gate.exitStatus == 0)
+            #expect(!gate.observedAt.isEmpty)
+            #expect(gate.stdoutSummary.contains("pass") || gate.stdoutSummary.contains("PASS"))
+        }
+    }
+
     @Test func goldenFixtureOutputsRemainDeterministic() throws {
         let fixture: GoldenFixture = try loadJSON("Tests/SCMAKitTests/Fixtures/DebtmapParity/canonical-workflow.fixture.json")
 
@@ -133,6 +206,52 @@ struct DebtmapParityFixtureTests {
 
     private func read(_ path: String) throws -> String {
         try String(contentsOf: root.appendingPathComponent(path), encoding: .utf8)
+    }
+
+    private func declaredTestProofReferences() throws -> Set<String> {
+        let testsRoot = root.appendingPathComponent("Tests")
+        var references = Set<String>()
+        guard let enumerator = FileManager.default.enumerator(
+            at: testsRoot,
+            includingPropertiesForKeys: nil
+        ) else {
+            return references
+        }
+
+        for case let url as URL in enumerator {
+            guard url.pathExtension == "swift" else { continue }
+            let source = try String(contentsOf: url, encoding: .utf8)
+            for suite in try declaredSuites(in: source) {
+                for test in try declaredTests(in: source) {
+                    references.insert("\(suite).\(test)")
+                }
+            }
+        }
+
+        return references
+    }
+
+    private func declaredSuites(in source: String) throws -> [String] {
+        try captureGroups(
+            pattern: #"@Suite(?:\([^)]*\))?\s+(?:@[A-Za-z_][A-Za-z0-9_]*(?:\([^)]*\))?\s+)*(?:struct|final\s+class|class|actor)\s+([A-Za-z_][A-Za-z0-9_]*)\b"#,
+            source: source
+        )
+    }
+
+    private func declaredTests(in source: String) throws -> [String] {
+        try captureGroups(
+            pattern: #"@Test(?:\([^)]*\))?\s+(?:@[A-Za-z_][A-Za-z0-9_]*(?:\([^)]*\))?\s+)*func\s+([A-Za-z_][A-Za-z0-9_]*)\b"#,
+            source: source
+        )
+    }
+
+    private func captureGroups(pattern: String, source: String) throws -> [String] {
+        let regex = try NSRegularExpression(pattern: pattern)
+        let range = NSRange(source.startIndex..<source.endIndex, in: source)
+        return regex.matches(in: source, range: range).compactMap { match in
+            guard let captureRange = Range(match.range(at: 1), in: source) else { return nil }
+            return String(source[captureRange])
+        }
     }
 
     private func sha256Hex(_ data: Data) -> String {
