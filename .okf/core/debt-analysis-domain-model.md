@@ -4,12 +4,12 @@ title: Debt analysis domain model and deterministic scoring
 description: SCMACore models debt entities, evidence, aggregations, scoring policies, deterministic weighted scoring, and priority classification.
 resource: Sources/SCMACore/DebtModels.swift
 tags: [swift, debt-analysis, scoring, scmacore]
-timestamp: 2026-09-12T00:00:00Z
+timestamp: 2026-09-13T00:00:00Z
 ---
 
 # Overview
 
-`SCMACore` defines debt analysis as `Codable`, `Sendable` value types for entities, evidence, aggregations, score contributions, unavailable evidence, score breakdowns, and scores.
+`SCMACore` defines debt analysis as `Codable`, `Sendable` value types for entities, evidence, aggregations, score contributions, unavailable evidence, score breakdowns, scores, syntax effects, Swift risk facts, and functional-composition facts.
 
 `DebtAggregationLevel` supports `callable`, `type`, `file`, and `module` scopes. `DebtLocation` records optional module, file, line, and column coordinates, including an initializer from `SourceLocation`. `DebtEntity` identifies the scored entity, `DebtItem` pairs an entity with evidence, and `DebtAggregation` groups member item IDs with an optional `DebtScore`.
 
@@ -18,6 +18,8 @@ timestamp: 2026-09-12T00:00:00Z
 `DebtEvidence` records an evidence ID, kind, requirement, availability, configured weight, optional normalized score, raw value, optional location, and optional note.
 
 `DebtEvidenceRequirement` distinguishes `required` from `optional` evidence. `DebtEvidenceAvailability` records `available` or `unavailable` state plus an optional reason, exposes `.available`, `.unavailable(reason:)`, and `isAvailable`.
+
+`SwiftRiskCategory` enumerates Swift-specific risk categories including isolation crossings, actor and global actor isolation, Sendable declarations, unchecked Sendable, unstructured tasks, nonisolated declarations, mutable shared state, and unsafe escape hatches. `FunctionFacts` carries optional access level and per-function risk facts, and `ParsedSource` carries file-level risk facts.
 
 # Scoring model
 
@@ -38,4 +40,5 @@ Available normalized scores are clamped to `0...100`; clamping is reflected in c
 [1] [DebtModels.swift](../../Sources/SCMACore/DebtModels.swift)
 [2] [DebtScoreModels.swift](../../Sources/SCMACore/DebtScoreModels.swift)
 [3] [DebtScoring.swift](../../Sources/SCMACore/DebtScoring.swift)
-[4] [DebtScoringTests.swift](../../Tests/SCMACoreTests/DebtScoringTests.swift)
+[4] [Models.swift](../../Sources/SCMACore/Models.swift)
+[5] [DebtScoringTests.swift](../../Tests/SCMACoreTests/DebtScoringTests.swift)

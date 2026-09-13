@@ -1,15 +1,15 @@
 ---
 type: Static Analysis Component
 title: Swift functional evidence extraction
-description: SCMASyntax extracts syntax-level side-effect and functional-composition facts, and SCMACore converts them into deterministic debt evidence.
+description: SCMASyntax extracts syntax-level side-effect, functional-composition, Swift concurrency, and API-risk facts, and SCMACore converts them into deterministic debt evidence.
 resource: Sources/SCMASyntax/EffectVisitor.swift
-tags: [swift, debt-analysis, syntax, side-effects, functional-composition]
+tags: [swift, debt-analysis, syntax, side-effects, functional-composition, concurrency-risk, api-risk]
 timestamp: 2026-09-13T00:00:00Z
 ---
 
 # Overview
 
-`EffectVisitor` scans SwiftSyntax function bodies for syntax-level side-effect markers and functional-composition calls. The parser attaches the collected facts to each `FunctionFacts` value, and `DebtFunctionalEvidenceBuilder` turns valid parsed sources into deterministic `DebtEvidence` entries.
+`EffectVisitor` scans SwiftSyntax function bodies for syntax-level side-effect markers, functional-composition calls, and Swift-specific risk markers. The parser attaches collected facts to `FunctionFacts` values and file-level `ParsedSource` data, and `DebtFunctionalEvidenceBuilder` turns valid parsed sources into deterministic `DebtEvidence` entries.
 
 # Captured facts
 
@@ -17,15 +17,19 @@ timestamp: 2026-09-13T00:00:00Z
 
 `FunctionalCompositionFact` records recognized operations such as `map`, `compactMap`, `filter`, `reduce`, `flatMap`, and `sorted`, along with the source location, whether a closure appears effectful, and confidence.
 
+`SwiftRiskFact` records Swift concurrency and API risk markers for actor isolation, global actor isolation, Sendable and unchecked Sendable declarations, await isolation crossings, unstructured `Task` creation, nonisolated declarations, mutable shared state, and unsafe escape hatches.
+
 # Evidence generation
 
-`DebtFunctionalEvidenceBuilder` emits `swift.side-effect.<category>` evidence for grouped side-effect facts, `swift.purity.heuristic` evidence when no recognized effects are present, `swift.functional-composition` evidence for composition facts, and `swift.pattern-consistency.heuristic` evidence derived from deterministic syntax counts.
+`DebtFunctionalEvidenceBuilder` emits `swift.side-effect.<category>` evidence for grouped side-effect facts, `swift.purity.heuristic` evidence when no recognized effects are present, `swift.functional-composition` evidence for composition facts, `swift.pattern-consistency.heuristic` evidence derived from deterministic syntax counts, `swift.concurrency-risk.<category>` or `swift.shared-state.mutable` evidence for grouped Swift risk facts, and API risk evidence for large parameter surfaces and complex public, open, or package callables.
 
-The generated notes state that syntax findings and heuristic purity or pattern consistency are not compiler semantic proof.
+`DebtFunctionalEvidenceOptions` can disable Swift-specific risk evidence while preserving deterministic output.
+
+The generated notes state that syntax findings, Swift-specific risk, and heuristic purity, API-risk, or pattern consistency evidence are not compiler semantic proof.
 
 # Verification coverage
 
-`FunctionalEvidenceTests` covers fixtures for each side-effect category, benign functional composition that does not become side-effect evidence, explanatory heuristic notes, and deterministic evidence and score output when functions are reordered.
+`FunctionalEvidenceTests` covers fixtures for each side-effect and strict-concurrency risk category, benign functional composition that does not become side-effect evidence, explanatory heuristic notes for concurrency and API risk, deterministic evidence and score output when functions are reordered, and deterministic output when Swift-specific risk evidence is disabled.
 
 # Citations
 
