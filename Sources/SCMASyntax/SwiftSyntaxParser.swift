@@ -31,7 +31,8 @@ package struct SwiftSyntaxParser: SourceParsing {
         return ParsedSource(
             path: source.path, module: source.module, types: collector.types,
             functions: collector.functions, lines: collector.sourceLines.codeLines(tree),
-            topLevelVariables: collector.topLevelVariables, diagnostics: diagnostics
+            topLevelVariables: collector.topLevelVariables, diagnostics: diagnostics,
+            riskFacts: collector.riskFacts
         )
     }
 }
@@ -51,6 +52,7 @@ private final class DeclarationCollector: SyntaxVisitor {
     let imports: Set<String>
     var types: [TypeFragment] = []
     var functions: [FunctionFacts] = []
+    var riskFacts: [SwiftRiskFact] = []
     var topLevelVariables = 0
 
     init(source: SourceUnit, converter: SourceLocationConverter, imports: Set<String>) {
@@ -146,11 +148,41 @@ private final class DeclarationCollector: SyntaxVisitor {
             }
             parent = current.parent
         }
-        if global { topLevelVariables += node.bindings.reduce(0) { $0 + bindingNames($1.pattern).count } }
+        if global {
+            topLevelVariables += node.bindings.reduce(0) { $0 + bindingNames($1.pattern).count }
+            if node.bindingSpecifier.text == "var" {
+                riskFacts.append(
+                    SwiftRiskFact(
+                        category: .mutableSharedState,
+                        detail: "top-level var declaration",
+                        location: sourceLines.location(node)
+                    )
+                )
+            }
+        } else if node.bindingSpecifier.text == "var", hasStaticModifier(Syntax(node)) {
+            riskFacts.append(
+                SwiftRiskFact(
+                    category: .mutableSharedState,
+                    detail: "static var declaration",
+                    location: sourceLines.location(node)
+                )
+            )
+        }
         return .visitChildren
     }
 
     private func addType(_ node: Syntax, name: String, kind: String) {
+        if kind == "actor" {
+            riskFacts.append(
+                SwiftRiskFact(
+                    category: .actorIsolation,
+                    detail: "actor declaration \(name)",
+                    location: sourceLines.location(node),
+                    confidence: .measuredSyntax
+                )
+            )
+        }
+        riskFacts.append(contentsOf: declarationRiskFacts(for: node, name: name))
         let key = TypeKey(module: source.module, name: qualifiedName(of: node, ownName: name))
         let visitor = TypeFactsVisitor(root: node.id, owner: key)
         visitor.walk(node)
@@ -194,6 +226,9 @@ private final class DeclarationCollector: SyntaxVisitor {
             if value != "_" { effectVisitor.recordInoutParameter(name: value, location: sourceLines.location(parameter)) }
         }
         effectVisitor.walk(statements)
+        var functionRiskFacts = effectVisitor.riskFacts
+        functionRiskFacts.append(contentsOf: declarationRiskFacts(for: node, name: name))
+        functionRiskFacts.append(contentsOf: unsafeParameterRiskFacts(in: parameters))
         let labels = parameters.map { cleanName($0.firstName.text) + ":" }.joined()
         let prefix = owner?.displayName ?? source.module
         functions.append(
@@ -202,7 +237,103 @@ private final class DeclarationCollector: SyntaxVisitor {
                 codeLines: sourceLines.codeLines(statements).count, complexity: visitor.complexity,
                 parameters: parameters.count, bareReferences: visitor.bareReferences,
                 explicitSelfReferences: visitor.explicitSelfReferences, shadowedNames: visitor.shadowedNames,
-                effectFacts: effectVisitor.effectFacts, compositionFacts: effectVisitor.compositionFacts
+                accessLevel: accessLevel(of: node), effectFacts: effectVisitor.effectFacts,
+                compositionFacts: effectVisitor.compositionFacts, riskFacts: functionRiskFacts
             ))
     }
+
+    private func declarationRiskFacts(for node: Syntax, name: String) -> [SwiftRiskFact] {
+        let text = node.description
+        var facts: [SwiftRiskFact] = []
+        if mentionsGlobalActor(text) {
+            facts.append(
+                SwiftRiskFact(
+                    category: .globalActorIsolation,
+                    detail: "global actor annotation on \(name)",
+                    location: sourceLines.location(node)
+                )
+            )
+        }
+        if mentionsUncheckedSendable(text) {
+            facts.append(
+                SwiftRiskFact(
+                    category: .uncheckedSendable,
+                    detail: "@unchecked Sendable on \(name)",
+                    location: sourceLines.location(node)
+                )
+            )
+        } else if mentionsSendable(text) {
+            facts.append(
+                SwiftRiskFact(
+                    category: .sendableConformance,
+                    detail: "Sendable conformance on \(name)",
+                    location: sourceLines.location(node),
+                    confidence: .measuredSyntax
+                )
+            )
+        }
+        if mentionsNonisolated(text) {
+            facts.append(
+                SwiftRiskFact(
+                    category: .nonisolatedDeclaration,
+                    detail: "nonisolated declaration \(name)",
+                    location: sourceLines.location(node)
+                )
+            )
+        }
+        if mentionsUnsafe(text) {
+            facts.append(
+                SwiftRiskFact(
+                    category: .unsafeEscapeHatch,
+                    detail: "unsafe syntax near \(name)",
+                    location: sourceLines.location(node)
+                )
+            )
+        }
+        return facts
+    }
+
+    private func unsafeParameterRiskFacts(in parameters: FunctionParameterListSyntax) -> [SwiftRiskFact] {
+        parameters.compactMap { parameter in
+            guard mentionsUnsafe(parameter.type.description) else { return nil }
+            return SwiftRiskFact(
+                category: .unsafeEscapeHatch,
+                detail: "unsafe parameter \(cleanName((parameter.secondName ?? parameter.firstName).text))",
+                location: sourceLines.location(parameter)
+            )
+        }
+    }
+}
+
+private func hasStaticModifier(_ node: Syntax) -> Bool {
+    let text = node.description
+    return text.contains("static var") || text.contains("class var")
+}
+
+private func accessLevel(of node: Syntax) -> String? {
+    let text = node.description.trimmingCharacters(in: .whitespacesAndNewlines)
+    for level in ["open", "public", "package"] where text.hasPrefix(level + " ") || text.contains("\n\(level) ") {
+        return level
+    }
+    return nil
+}
+
+private func mentionsGlobalActor(_ text: String) -> Bool {
+    text.contains("@MainActor") || text.contains("@globalActor") || text.contains("@GlobalActor")
+}
+
+private func mentionsUncheckedSendable(_ text: String) -> Bool {
+    text.contains("@unchecked Sendable")
+}
+
+private func mentionsSendable(_ text: String) -> Bool {
+    text.contains("Sendable")
+}
+
+private func mentionsNonisolated(_ text: String) -> Bool {
+    text.contains("nonisolated")
+}
+
+private func mentionsUnsafe(_ text: String) -> Bool {
+    text.localizedCaseInsensitiveContains("unsafe") || text.contains("Unsafe")
 }

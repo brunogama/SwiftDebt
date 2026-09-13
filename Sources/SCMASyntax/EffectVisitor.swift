@@ -12,6 +12,7 @@ final class EffectVisitor: SyntaxVisitor {
 
     var effectFacts: [SyntaxEffectFact] = []
     var compositionFacts: [FunctionalCompositionFact] = []
+    var riskFacts: [SwiftRiskFact] = []
 
     init(parameters: Set<String>, ownerProperties: Set<String>, sourceLines: SourceLines) {
         self.localNames = parameters
@@ -86,6 +87,13 @@ final class EffectVisitor: SyntaxVisitor {
                 inClosure: closureDepth > 0
             )
         )
+        riskFacts.append(
+            SwiftRiskFact(
+                category: .isolationCrossing,
+                detail: "await expression",
+                location: sourceLines.location(node)
+            )
+        )
         return .visitChildren
     }
 
@@ -120,6 +128,24 @@ final class EffectVisitor: SyntaxVisitor {
                     operation: operation,
                     location: sourceLines.location(node),
                     closureHasSideEffects: callContainsEffectfulClosure(node)
+                )
+            )
+        }
+        if let name = expressionName(node.calledExpression), isTaskCreation(name) {
+            riskFacts.append(
+                SwiftRiskFact(
+                    category: .unstructuredTask,
+                    detail: "unstructured task \(name)",
+                    location: sourceLines.location(node)
+                )
+            )
+        }
+        if node.description.localizedCaseInsensitiveContains("unsafe") || node.description.contains("Unsafe") {
+            riskFacts.append(
+                SwiftRiskFact(
+                    category: .unsafeEscapeHatch,
+                    detail: "unsafe expression",
+                    location: sourceLines.location(node)
                 )
             )
         }
@@ -265,6 +291,10 @@ final class EffectVisitor: SyntaxVisitor {
 
     private func lastComponent(_ text: String) -> String {
         text.split(separator: ".").last.map(String.init) ?? text
+    }
+
+    private func isTaskCreation(_ text: String) -> Bool {
+        text == "Task" || text == "Task.detached"
     }
 
     private func compact(_ text: String) -> String {

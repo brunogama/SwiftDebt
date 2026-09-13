@@ -253,6 +253,18 @@ package enum SyntaxEffectCategory: String, Codable, CaseIterable, Sendable {
     case closureEffect
 }
 
+package enum SwiftRiskCategory: String, Codable, CaseIterable, Sendable {
+    case isolationCrossing
+    case actorIsolation
+    case globalActorIsolation
+    case sendableConformance
+    case uncheckedSendable
+    case unstructuredTask
+    case nonisolatedDeclaration
+    case mutableSharedState
+    case unsafeEscapeHatch
+}
+
 package struct SyntaxEffectFact: Codable, Hashable, Sendable {
     package let category: SyntaxEffectCategory
     package let detail: String
@@ -272,6 +284,25 @@ package struct SyntaxEffectFact: Codable, Hashable, Sendable {
         self.location = location
         self.confidence = confidence
         self.inClosure = inClosure
+    }
+}
+
+package struct SwiftRiskFact: Codable, Hashable, Sendable {
+    package let category: SwiftRiskCategory
+    package let detail: String
+    package let location: SourceLocation
+    package let confidence: SyntaxEvidenceConfidence
+
+    package init(
+        category: SwiftRiskCategory,
+        detail: String,
+        location: SourceLocation,
+        confidence: SyntaxEvidenceConfidence = .heuristic
+    ) {
+        self.category = category
+        self.detail = detail
+        self.location = location
+        self.confidence = confidence
     }
 }
 
@@ -307,14 +338,17 @@ package struct FunctionFacts: Sendable {
     package let explicitSelfReferences: Set<String>
     /// Every local binding name seen anywhere in the body; informational.
     package let shadowedNames: Set<String>
+    package let accessLevel: String?
     package let effectFacts: [SyntaxEffectFact]
     package let compositionFacts: [FunctionalCompositionFact]
+    package let riskFacts: [SwiftRiskFact]
 
     package init(
         name: String, kind: CallableKind = .method, owner: TypeKey?, location: SourceLocation, codeLines: Int,
         complexity: Int, parameters: Int, bareReferences: Set<String>,
-        explicitSelfReferences: Set<String>, shadowedNames: Set<String>,
-        effectFacts: [SyntaxEffectFact] = [], compositionFacts: [FunctionalCompositionFact] = []
+        explicitSelfReferences: Set<String>, shadowedNames: Set<String>, accessLevel: String? = nil,
+        effectFacts: [SyntaxEffectFact] = [], compositionFacts: [FunctionalCompositionFact] = [],
+        riskFacts: [SwiftRiskFact] = []
     ) {
         self.name = name
         self.kind = kind
@@ -326,8 +360,10 @@ package struct FunctionFacts: Sendable {
         self.bareReferences = bareReferences
         self.explicitSelfReferences = explicitSelfReferences
         self.shadowedNames = shadowedNames
+        self.accessLevel = accessLevel
         self.effectFacts = effectFacts
         self.compositionFacts = compositionFacts
+        self.riskFacts = riskFacts
     }
 }
 
@@ -348,10 +384,12 @@ package struct ParsedSource: Sendable {
     package let lines: [CodeLine]
     package let topLevelVariables: Int
     package let diagnostics: [AnalysisDiagnostic]
+    package let riskFacts: [SwiftRiskFact]
 
     package init(
         path: String, module: String, types: [TypeFragment], functions: [FunctionFacts],
-        lines: [CodeLine], topLevelVariables: Int, diagnostics: [AnalysisDiagnostic]
+        lines: [CodeLine], topLevelVariables: Int, diagnostics: [AnalysisDiagnostic],
+        riskFacts: [SwiftRiskFact] = []
     ) {
         self.path = path
         self.module = module
@@ -360,6 +398,7 @@ package struct ParsedSource: Sendable {
         self.lines = lines
         self.topLevelVariables = topLevelVariables
         self.diagnostics = diagnostics
+        self.riskFacts = riskFacts
     }
 
     package var isValid: Bool { !diagnostics.contains { $0.severity == .error } }
