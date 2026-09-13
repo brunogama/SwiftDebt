@@ -53,6 +53,10 @@ public struct DebtEvidenceAvailability: Codable, Equatable, Sendable {
     public enum State: String, Codable, Sendable {
         case available
         case unavailable
+        case missingFile
+        case unmatchedEntity
+        case zeroCoverage
+        case measuredCoverage
     }
 
     public let state: State
@@ -71,7 +75,9 @@ public struct DebtEvidenceAvailability: Codable, Equatable, Sendable {
         DebtEvidenceAvailability(state: .unavailable, reason: reason)
     }
 
-    public var isAvailable: Bool { state == .available }
+    public var isAvailable: Bool {
+        state == .available || state == .zeroCoverage || state == .measuredCoverage
+    }
 }
 
 public enum DebtEvidenceRequirement: String, Codable, Sendable {

@@ -188,6 +188,31 @@ struct AnalyzerTests {
         #expect(metric(.noav, in: report).score == nil)
         #expect(report.overallScore == nil)
     }
+    @Test func coverageExplanationWorkflowReportsMatchingStrategies() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory.appendingPathComponent("Sources"), withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let source = directory.appendingPathComponent("Sources/Processor.swift")
+        try "struct Processor { func run(value: Int) { print(value) } }".write(
+            to: source,
+            atomically: true,
+            encoding: .utf8
+        )
+        let lcov = directory.appendingPathComponent("coverage.lcov")
+        try """
+            SF:\(source.path)
+            FN:1,Workspace.Processor.run(value:)
+            FNDA:1,Workspace.Processor.run(value:)
+            DA:1,1
+            end_of_record
+            """.write(to: lcov, atomically: true, encoding: .utf8)
+
+        let result = try CoverageExplanationService().run(.init(path: directory.path, lcovPath: lcov.path))
+
+        #expect(result.standardOutput.contains("Workspace.Processor.run(value:): measuredCoverage"))
+        #expect(result.standardOutput.contains("strategies=sourcePathExact>functionNameExact"))
+    }
+
     @Test func configurationDecodeErrorsNameTheFile() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
