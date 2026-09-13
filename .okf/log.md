@@ -1,6 +1,7 @@
 # Bundle Update Log
 
 ## 2026-09-13
+* **Update**: Updated the [Swift functional evidence extraction](/core/swift-functional-evidence-extraction.md) and [Debt analysis domain model and deterministic scoring](/core/debt-analysis-domain-model.md) concepts for Swift concurrency risk facts, API risk evidence, and the implementation range `a9167cf81f752bf2fdc9c30cc594784efa822ce1..499955d65421a5dd1217d45783fec43c765f224c`.
 * **Creation**: Created the [Swift functional evidence extraction](/core/swift-functional-evidence-extraction.md) concept for the implementation range `7de1c3fd4d102ff3dabea5c33220dab1171e0fd8..66fa501d80513c2cf0bbe4e7117d6514b2d87044`.
 
 ## 2026-09-12
