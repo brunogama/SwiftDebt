@@ -1,0 +1,52 @@
+{
+  "items" : [
+    {
+      "action" : "Extract smaller operations and add coverage.",
+      "entity" : "App.Beta.run()",
+      "evidenceKinds" : [
+        "coverage.lcov",
+        "swift.cognitive-complexity"
+      ],
+      "id" : "callable:Beta.run",
+      "level" : "callable",
+      "location" : {
+        "column" : 5,
+        "file" : "Sources/Beta.swift",
+        "line" : 12,
+        "module" : "App"
+      },
+      "priority" : "critical",
+      "score" : 91.25
+    },
+    {
+      "action" : "Reduce fan-in before adding features.",
+      "entity" : "App.Alpha.help()",
+      "evidenceKinds" : [
+        "graph.coupling"
+      ],
+      "id" : "callable:Alpha.help",
+      "level" : "callable",
+      "location" : {
+        "column" : 1,
+        "file" : "Sources/Alpha.swift",
+        "line" : 3,
+        "module" : "App"
+      },
+      "priority" : "high",
+      "score" : 72.5
+    }
+  ],
+  "missingEvidence" : [
+    {
+      "configuredWeight" : 1,
+      "evidenceID" : "callable:Beta.run:coverage",
+      "itemID" : "callable:Beta.run",
+      "kind" : "coverage.lcov",
+      "reason" : "LCOV file missing",
+      "requirement" : "required"
+    }
+  ],
+  "projection" : "debtmap-compatibility",
+  "projectionNote" : "Deterministic SwiftSCMA projection for Debtmap-oriented automation; not the native SwiftSCMA debt model.",
+  "schemaVersion" : 1
+}

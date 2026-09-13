@@ -39,7 +39,15 @@ public struct AnalysisService: Sendable {
             referenceTime: request.debtReferenceTime
         )
         let format = request.format ?? configuration.format
-        let rendered = try ReportRenderer().render(report, format: format, root: root.path)
+        let rendered: String
+        if format.isDebtReportFormat {
+            guard let rankedDebtAnalysis else {
+                throw AnalysisFailure.invalidConfiguration("Debt report formats require debtAnalysis configuration")
+            }
+            rendered = try ReportRenderer().renderDebt(rankedDebtAnalysis, format: format, graph: report.dependencyGraph)
+        } else {
+            rendered = try ReportRenderer().render(report, format: format, root: root.path)
+        }
         var protectedPaths = Set(selection.entries.map { URL(fileURLWithPath: $0.path).resolvingSymlinksInPath().path })
         protectedPaths.insert(configurationURL.resolvingSymlinksInPath().path)
         if let manifest = request.manifestPath {
