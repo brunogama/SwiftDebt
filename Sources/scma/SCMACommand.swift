@@ -20,6 +20,14 @@ struct SCMACommand {
                 let result = try await AnalysisService().run(request)
                 FileHandle.standardOutput.write(Data(result.standardOutput.utf8))
                 exit(result.exitStatus)
+            case .compare(let request):
+                let result = try DebtImprovementService().compare(request)
+                FileHandle.standardOutput.write(Data(result.standardOutput.utf8))
+                exit(result.exitStatus)
+            case .validateImprovement(let request):
+                let result = try DebtImprovementService().validateImprovement(request)
+                FileHandle.standardOutput.write(Data(result.standardOutput.utf8))
+                exit(result.exitStatus)
             case .explainCoverage(let request):
                 let result = try CoverageExplanationService().run(request)
                 FileHandle.standardOutput.write(Data(result.standardOutput.utf8))

@@ -1,0 +1,24 @@
+{
+  "comparisonSummary" : {
+    "addedAggregationCount" : 0,
+    "addedItemCount" : 1,
+    "afterItemCount" : 2,
+    "afterTotalScore" : 135,
+    "afterUnavailableEvidenceCount" : 1,
+    "beforeItemCount" : 2,
+    "beforeTotalScore" : 140,
+    "beforeUnavailableEvidenceCount" : 1,
+    "changedAggregationCount" : 1,
+    "changedItemCount" : 1,
+    "removedAggregationCount" : 0,
+    "removedItemCount" : 1,
+    "totalScoreDelta" : -5,
+    "unavailableEvidenceDelta" : 0,
+    "unchangedItemCount" : 0
+  },
+  "exitStatus" : 0,
+  "observedImprovement" : 5,
+  "passed" : true,
+  "schemaVersion" : 1,
+  "threshold" : 5
+}
