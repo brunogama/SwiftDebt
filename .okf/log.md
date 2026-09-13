@@ -1,6 +1,7 @@
 # Bundle Update Log
 
 ## 2026-09-13
+* **Creation**: Created the [LCOV coverage matching and score dampening](/core/lcov-coverage-matching.md) concept for the implementation range `a9167cf81f752bf2fdc9c30cc594784efa822ce1..c095c009dd261ae332b9d3f152f7e16f943092e6`.
 * **Creation**: Created the [Swift functional evidence extraction](/core/swift-functional-evidence-extraction.md) concept for the implementation range `7de1c3fd4d102ff3dabea5c33220dab1171e0fd8..66fa501d80513c2cf0bbe4e7117d6514b2d87044`.
 
 ## 2026-09-12
