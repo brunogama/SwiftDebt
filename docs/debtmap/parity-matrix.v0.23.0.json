@@ -22,26 +22,54 @@
     {
       "capability": "Self-contained browser dashboard consuming the debt report schema",
       "id": "browser-dashboard",
-      "implementationState": "planned",
+      "implementationState": "implemented",
       "ownerTicket": "20-implement-interactive-browser-dashboard",
       "proofs": [
         {
-          "kind": "ticket",
-          "reference": ".scratch/tickets/20-implement-interactive-browser-dashboard.md"
+          "kind": "fixture",
+          "reference": "Tests/SCMAKitTests/Fixtures/DebtReport/canonical-debt-dashboard.golden.html"
+        },
+        {
+          "kind": "test",
+          "reference": "DebtDashboardRendererTests.deterministicFixtureReportRendersDashboardWithoutRunningAnalysis"
+        },
+        {
+          "kind": "test",
+          "reference": "DebtDashboardRendererTests.dashboardAssetsIncludeReportLoadingControlsAndRemainSelfContained"
+        },
+        {
+          "kind": "test",
+          "reference": "DebtDashboardRendererTests.selectedDashboardReportFilesValidateAndRender"
+        },
+        {
+          "kind": "test",
+          "reference": "DebtDashboardRendererTests.analysisServiceRendersDebtDashboardWhenFormatIsSelected"
         }
       ],
       "scope": "in-scope",
-      "status": "intentional-divergence"
+      "status": "implemented"
     },
     {
       "capability": "CI-oriented debt analyze and validate CLI workflows",
       "id": "cli-analyze-validate",
-      "implementationState": "planned",
+      "implementationState": "implemented",
       "ownerTicket": "16-implement-analyze-and-validate-cli-workflows",
       "proofs": [
         {
-          "kind": "ticket",
-          "reference": ".scratch/tickets/16-implement-analyze-and-validate-cli-workflows.md"
+          "kind": "test",
+          "reference": "CLIWorkflowTests.debtAnalyzeJSONSucceedsAndIsDeterministicWithoutTTY"
+        },
+        {
+          "kind": "test",
+          "reference": "CLIWorkflowTests.invalidDebtAnalyzeArgumentsExitTwo"
+        },
+        {
+          "kind": "test",
+          "reference": "CLIWorkflowTests.debtValidateSucceedsWhenScoresAreWithinThreshold"
+        },
+        {
+          "kind": "test",
+          "reference": "CLIWorkflowTests.debtValidateGateFailureExitsOneAndCanBeQuiet"
         }
       ],
       "scope": "in-scope",
@@ -50,12 +78,24 @@
     {
       "capability": "Before and after debt report comparison and improvement validation",
       "id": "compare-validate-improvement",
-      "implementationState": "planned",
+      "implementationState": "implemented",
       "ownerTicket": "17-implement-compare-and-validate-improvement-workflows",
       "proofs": [
         {
-          "kind": "ticket",
-          "reference": ".scratch/tickets/17-implement-compare-and-validate-improvement-workflows.md"
+          "kind": "fixture",
+          "reference": "Tests/SCMAKitTests/Fixtures/DebtImprovement/comparison.golden.json"
+        },
+        {
+          "kind": "test",
+          "reference": "DebtImprovementWorkflowTests.goldenBeforeAfterComparisonIsDeterministicAndSchemaAware"
+        },
+        {
+          "kind": "test",
+          "reference": "DebtImprovementWorkflowTests.validationRendersMachineReadableResultAndAutomationExitStatuses"
+        },
+        {
+          "kind": "test",
+          "reference": "DebtImprovementWorkflowTests.validationExecutableReturnsNonzeroStatusWhenImprovementGateFails"
         }
       ],
       "scope": "in-scope",
@@ -64,26 +104,42 @@
     {
       "capability": "Swift concurrency and API-risk evidence for Swift 6 code",
       "id": "concurrency-api-risk",
-      "implementationState": "planned",
+      "implementationState": "implemented",
       "ownerTicket": "13-add-swift-concurrency-and-api-risk-evidence",
       "proofs": [
         {
-          "kind": "ticket",
-          "reference": ".scratch/tickets/13-add-swift-concurrency-and-api-risk-evidence.md"
+          "kind": "test",
+          "reference": "RankedDebtAnalysisTests.endToEndServiceProducesStableRankedDebtWithProviderEvidence"
+        },
+        {
+          "kind": "test",
+          "reference": "FunctionalEvidenceTests.apiAndConcurrencyRiskEvidenceExplainsHeuristicLimits"
+        },
+        {
+          "kind": "documentation",
+          "reference": "docs/debtmap/release-quality-acceptance.md"
         }
       ],
       "scope": "in-scope",
-      "status": "intentional-divergence"
+      "status": "implemented"
     },
     {
       "capability": "Optional LCOV coverage evidence with explicit matching diagnostics",
       "id": "coverage-lcov",
-      "implementationState": "planned",
+      "implementationState": "implemented",
       "ownerTicket": "10-ingest-lcov-and-explain-coverage-matching",
       "proofs": [
         {
-          "kind": "ticket",
-          "reference": ".scratch/tickets/10-ingest-lcov-and-explain-coverage-matching.md"
+          "kind": "test",
+          "reference": "AnalyzerTests.coverageExplanationWorkflowReportsMatchingStrategies"
+        },
+        {
+          "kind": "test",
+          "reference": "RankedDebtAnalysisTests.endToEndServiceProducesStableRankedDebtWithProviderEvidence"
+        },
+        {
+          "kind": "test",
+          "reference": "RankedDebtAnalysisTests.providerUnavailabilityIsRankedAsUnavailableEvidenceNotZero"
         }
       ],
       "scope": "in-scope",
@@ -92,12 +148,20 @@
     {
       "capability": "Import-free debt domain values, evidence availability and deterministic scoring",
       "id": "debt-domain-scoring",
-      "implementationState": "planned",
+      "implementationState": "implemented",
       "ownerTicket": "07-introduce-debt-analysis-domain-model-and-deterministic-scoring",
       "proofs": [
         {
-          "kind": "ticket",
-          "reference": ".scratch/tickets/07-introduce-debt-analysis-domain-model-and-deterministic-scoring.md"
+          "kind": "test",
+          "reference": "RankedDebtAnalysisTests.providerUnavailabilityIsRankedAsUnavailableEvidenceNotZero"
+        },
+        {
+          "kind": "test",
+          "reference": "RankedDebtAnalysisTests.aggregateOnlyNoAggregationAndFiltersAreDeterministic"
+        },
+        {
+          "kind": "test",
+          "reference": "DebtScoringTests.scmaCoreSourcesRemainImportFree"
         }
       ],
       "scope": "in-scope",
@@ -124,12 +188,20 @@
     {
       "capability": "Provider orchestration, ranked debt analysis, aggregation and filtering",
       "id": "evidence-composition-ranked-analysis",
-      "implementationState": "planned",
+      "implementationState": "implemented",
       "ownerTicket": "14-compose-evidence-providers-and-ranked-debt-analysis",
       "proofs": [
         {
-          "kind": "ticket",
-          "reference": ".scratch/tickets/14-compose-evidence-providers-and-ranked-debt-analysis.md"
+          "kind": "test",
+          "reference": "RankedDebtAnalysisTests.endToEndServiceProducesStableRankedDebtWithProviderEvidence"
+        },
+        {
+          "kind": "test",
+          "reference": "RankedDebtAnalysisTests.aggregateOnlyNoAggregationAndFiltersAreDeterministic"
+        },
+        {
+          "kind": "test",
+          "reference": "RankedDebtAnalysisTests.configurationPresetCanEnableRankedDebtWithoutChangingReportFormat"
         }
       ],
       "scope": "in-scope",
@@ -138,16 +210,24 @@
     {
       "capability": "Optional Git-history risk evidence using frozen reference time",
       "id": "git-history-risk",
-      "implementationState": "planned",
+      "implementationState": "implemented",
       "ownerTicket": "11-add-git-history-risk-evidence",
       "proofs": [
         {
-          "kind": "ticket",
-          "reference": ".scratch/tickets/11-add-git-history-risk-evidence.md"
-        },
-        {
           "kind": "fixture",
           "reference": "Tests/SCMAKitTests/Fixtures/DebtmapParity/canonical-workflow.fixture.json"
+        },
+        {
+          "kind": "test",
+          "reference": "GitHistoryEvidenceProviderTests.temporaryRepositoryWithFrozenTimestampsProducesHistoryEvidence"
+        },
+        {
+          "kind": "test",
+          "reference": "GitHistoryEvidenceProviderTests.sameRepositoryAndReferenceTimeProduceStableEvidence"
+        },
+        {
+          "kind": "test",
+          "reference": "GitHistoryEvidenceProviderTests.unavailableRepositoryHistoryDoesNotFabricateZeroes"
         }
       ],
       "scope": "in-scope",
@@ -156,12 +236,20 @@
     {
       "capability": "Swift call graph, dependency graph and coupling-risk evidence",
       "id": "graph-coupling-risk",
-      "implementationState": "planned",
+      "implementationState": "implemented",
       "ownerTicket": "09-build-swift-call-graph-and-coupling-risk-analysis",
       "proofs": [
         {
-          "kind": "ticket",
-          "reference": ".scratch/tickets/09-build-swift-call-graph-and-coupling-risk-analysis.md"
+          "kind": "test",
+          "reference": "AnalyzerTests.dependencyGraphClassifiesSyntaxOnlyResolutionAndTestCallers"
+        },
+        {
+          "kind": "fixture",
+          "reference": "Tests/SCMAKitTests/Fixtures/DebtmapParity/canonical-graph.golden.dot"
+        },
+        {
+          "kind": "documentation",
+          "reference": "docs/debtmap/release-quality-acceptance.md"
         }
       ],
       "scope": "in-scope",
@@ -170,12 +258,24 @@
     {
       "capability": "Interactive terminal debt explorer with non-interactive fallback",
       "id": "interactive-terminal-explorer",
-      "implementationState": "planned",
+      "implementationState": "implemented",
       "ownerTicket": "19-implement-interactive-terminal-debt-explorer",
       "proofs": [
         {
-          "kind": "ticket",
-          "reference": ".scratch/tickets/19-implement-interactive-terminal-debt-explorer.md"
+          "kind": "test",
+          "reference": "DebtExplorerTests.reducerAppliesPrioritySearchSelectionAndDetailDeterministically"
+        },
+        {
+          "kind": "test",
+          "reference": "DebtExplorerTests.terminalCapabilityDetectionFallsBackWhenInteractiveOutputIsUnsafe"
+        },
+        {
+          "kind": "test",
+          "reference": "DebtExplorerTests.commandFallsBackToDebtReportWhenInteractiveDebtRunsWithoutTTY"
+        },
+        {
+          "kind": "test",
+          "reference": "DebtExplorerTests.largeResultSetsStayWithinReducerPerformanceBudget"
         }
       ],
       "scope": "in-scope",
@@ -184,13 +284,9 @@
     {
       "capability": "Versioned native debt JSON schema, Markdown report and Graphviz DOT output",
       "id": "markdown-json-dot-output",
-      "implementationState": "planned",
+      "implementationState": "implemented",
       "ownerTicket": "15-add-debt-report-schema-markdown-json-and-dot-output",
       "proofs": [
-        {
-          "kind": "ticket",
-          "reference": ".scratch/tickets/15-add-debt-report-schema-markdown-json-and-dot-output.md"
-        },
         {
           "kind": "fixture",
           "reference": "Tests/SCMAKitTests/Fixtures/DebtmapParity/canonical-report.golden.json"
@@ -202,6 +298,18 @@
         {
           "kind": "fixture",
           "reference": "Tests/SCMAKitTests/Fixtures/DebtmapParity/canonical-graph.golden.dot"
+        },
+        {
+          "kind": "test",
+          "reference": "DebtReportRendererTests.nativeDebtOutputsMatchGoldenFixturesAndExposeSchemaVersion"
+        },
+        {
+          "kind": "test",
+          "reference": "DebtReportRendererTests.shuffledAnalysisStillRendersInStableOrder"
+        },
+        {
+          "kind": "test",
+          "reference": "DebtReportRendererTests.analysisServiceRendersDebtJSONWhenDebtFormatIsSelected"
         }
       ],
       "scope": "in-scope",
@@ -216,6 +324,10 @@
         {
           "kind": "documentation",
           "reference": "README.md#validation-and-limitations"
+        },
+        {
+          "kind": "documentation",
+          "reference": "docs/debtmap/release-quality-acceptance.md"
         }
       ],
       "scope": "out-of-scope",
@@ -234,6 +346,10 @@
         {
           "kind": "test",
           "reference": "DebtmapParityFixtureTests.parityMatrixRequiresProofForEveryInScopeCapability"
+        },
+        {
+          "kind": "test",
+          "reference": "DebtmapParityFixtureTests.finalReleaseAcceptanceRequiresClosedParityEvidence"
         }
       ],
       "scope": "in-scope",
@@ -252,6 +368,18 @@
         {
           "kind": "smoke-command",
           "reference": "python3 scripts/smoke-test.py --binary .build/debug/scma --plugins"
+        },
+        {
+          "kind": "gate-evidence",
+          "reference": "docs/debtmap/release-gate-evidence.v1.json"
+        },
+        {
+          "kind": "test",
+          "reference": "DebtmapParityFixtureTests.requiredRegressionGatesHavePassingReleaseEvidence"
+        },
+        {
+          "kind": "test",
+          "reference": "DebtmapParityFixtureTests.finalReleaseAcceptanceRequiresClosedParityEvidence"
         }
       ],
       "scope": "in-scope",
@@ -260,26 +388,42 @@
     {
       "capability": "Swift structural debt evidence for complexity, size and duplication",
       "id": "swift-structural-evidence",
-      "implementationState": "planned",
+      "implementationState": "implemented",
       "ownerTicket": "08-add-swift-structural-debt-evidence",
       "proofs": [
         {
-          "kind": "ticket",
-          "reference": ".scratch/tickets/08-add-swift-structural-debt-evidence.md"
+          "kind": "fixture",
+          "reference": "Tests/SCMASyntaxTests/Fixtures/ModernStructuralDebt.golden.json"
+        },
+        {
+          "kind": "test",
+          "reference": "AnalyzerTests.structuralDebtEvidenceCarriesLocationsAndExplanations"
+        },
+        {
+          "kind": "test",
+          "reference": "AnalyzerTests.structuralDebtEvidenceIsDeterministicUnderParallelParsing"
+        },
+        {
+          "kind": "test",
+          "reference": "ParserTests.modernSwiftSyntaxGoldenFixtureCoversStructuralDebtFacts"
         }
       ],
       "scope": "in-scope",
-      "status": "intentional-divergence"
+      "status": "implemented"
     },
     {
       "capability": "SwiftPM command and build plugin access to debt workflows",
       "id": "swiftpm-plugin-integration",
-      "implementationState": "planned",
+      "implementationState": "implemented",
       "ownerTicket": "21-integrate-debt-analysis-with-swiftpm-plugins",
       "proofs": [
         {
-          "kind": "ticket",
-          "reference": ".scratch/tickets/21-integrate-debt-analysis-with-swiftpm-plugins.md"
+          "kind": "test",
+          "reference": "PluginWorkflowTests.commandAndBuildPluginsRunDebtWorkflows"
+        },
+        {
+          "kind": "documentation",
+          "reference": "docs/PLUGINS.md"
         }
       ],
       "scope": "in-scope",

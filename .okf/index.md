@@ -18,10 +18,11 @@ okf_version: "0.1"
 * [Interactive terminal debt explorer](core/interactive-terminal-debt-explorer.md) - SCMAInteractive renders ranked debt analysis as a terminal debt explorer with deterministic selection, filtering, detail context, and non-TTY fallback behavior.
 * [Interactive browser debt dashboard](core/debt-dashboard-browser-report.md) - SwiftSCMA renders ranked debt analysis as a self-contained browser dashboard over the native debt-report schema.
 * [Performance profiling and regression budgets](core/performance-profiling-budgets.md) - SwiftSCMA records opt-in phase profiling output and evaluates comparable benchmark results against wall-clock and peak-memory regression budgets.
+* [Debtmap release-quality acceptance](core/debtmap-release-quality-acceptance.md) - SwiftSCMA records closed Debtmap 0.23.0 Swift workflow and capability parity with release gate evidence and documented scope boundaries.
 
 # Tests
 
-* [Debtmap parity fixture harness](tests/debtmap-parity-fixture-harness.md) - Test harness coverage for the debtmap parity matrix, golden fixture determinism, and benchmark methodology metadata.
+* [Debtmap parity fixture harness](tests/debtmap-parity-fixture-harness.md) - Test harness coverage for the debtmap parity matrix, release acceptance evidence, golden fixture determinism, and benchmark methodology metadata.
 * [Swift structural debt evidence assertions](tests/swift-structural-debt-evidence.md) - Swift Testing coverage asserts structural debt evidence locations, raw values, and nested callable metrics.
 * [Git history evidence provider tests](tests/git-history-evidence-provider-tests.md) - Swift Testing coverage validates deterministic Git history evidence, unavailable-history handling, and structured Git process arguments.
 * [Ranked debt analysis composition tests](tests/ranked-debt-analysis-tests.md) - Swift Testing coverage verifies deterministic ranked debt analysis composition, provider evidence, unavailable evidence, filters, aggregation, and configuration activation.

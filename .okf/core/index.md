@@ -12,3 +12,4 @@
 * [Interactive terminal debt explorer](interactive-terminal-debt-explorer.md) - SCMAInteractive renders ranked debt analysis as a terminal debt explorer with deterministic selection, filtering, detail context, and non-TTY fallback behavior.
 * [Interactive browser debt dashboard](debt-dashboard-browser-report.md) - SwiftSCMA renders ranked debt analysis as a self-contained browser dashboard over the native debt-report schema.
 * [Performance profiling and regression budgets](performance-profiling-budgets.md) - SwiftSCMA records opt-in phase profiling output and evaluates comparable benchmark results against wall-clock and peak-memory regression budgets.
+* [Debtmap release-quality acceptance](debtmap-release-quality-acceptance.md) - SwiftSCMA records closed Debtmap 0.23.0 Swift workflow and capability parity with release gate evidence and documented scope boundaries.

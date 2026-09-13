@@ -15,13 +15,30 @@ struct ParityValidation: Decodable {
 
 struct ParityCapability: Decodable {
     let id: String
+    let implementationState: String
     let scope: String
     let status: String
     let proofs: [ParityProof]
 }
 
 struct ParityProof: Decodable {
+    let kind: String
     let reference: String
+}
+
+struct ReleaseGateEvidence: Decodable {
+    let schemaVersion: Int
+    let generatedAt: String
+    let gates: [ReleaseGateResult]
+}
+
+struct ReleaseGateResult: Decodable {
+    let id: String
+    let command: String
+    let observedAt: String
+    let status: String
+    let exitStatus: Int
+    let stdoutSummary: String
 }
 
 struct BenchmarkMethodology: Decodable {
