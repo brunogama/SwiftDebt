@@ -19,12 +19,14 @@ struct SCMABuildPlugin: BuildToolPlugin {
         guard FileManager.default.fileExists(atPath: configuration.path) else {
             throw PluginFailure(
                 "SCMABuildPlugin requires \(configuration.path) before its first build (an empty {} is valid). "
-                    + "This makes configuration changes explicit SwiftPM inputs. The CLI and command plugin do not require this file."
+                    + "This makes configuration changes explicit SwiftPM inputs. "
+                    + "The CLI and command plugin do not require this file."
             )
         }
         try FileManager.default.createDirectory(at: work, withIntermediateDirectories: true)
         let manifestURL = work.appendingPathComponent("inputs.json")
-        let manifest = Manifest(root: root.path, sources: inputs.map { Entry(path: $0.path, module: module) })
+        let entries = inputs.map { Entry(path: $0.path, module: module) }
+        let manifest = Manifest(root: root.path, sources: entries)
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys]
         let data = try encoder.encode(manifest)
@@ -34,7 +36,7 @@ struct SCMABuildPlugin: BuildToolPlugin {
         let dependencies = inputs + [manifestURL, configuration]
         let arguments = [
             "analyze", "--manifest", manifestURL.path, "--format", "diagnostics",
-            "--plugin-evidence-limitations", "--stamp", stamp.path, "--config", configuration.path,
+            "--plugin-evidence-limitations", "--stamp", stamp.path, "--config", configuration.path
         ]
         return [
             .buildCommand(
@@ -58,22 +60,3 @@ struct SCMABuildPlugin: BuildToolPlugin {
         let sources: [Entry]
     }
 }
-
-#if canImport(XcodeProjectPlugin)
-    import XcodeProjectPlugin
-
-    extension SCMABuildPlugin: XcodeBuildToolPlugin {
-        func createBuildCommands(context: XcodePluginContext, target: XcodeTarget) throws -> [Command] {
-            // These Path-based Xcode APIs are retained for compatibility with Xcode's plugin host.
-            // The SwiftPM adapter above uses URL APIs. Validate this adapter on your Xcode toolchain.
-            try commands(
-                root: URL(fileURLWithPath: context.xcodeProject.directory.string),
-                work: URL(fileURLWithPath: context.pluginWorkDirectory.string),
-                module: target.displayName,
-                files: target.inputFiles.filter { $0.type == .source && $0.path.extension == "swift" }
-                    .map { URL(fileURLWithPath: $0.path.string) },
-                executable: URL(fileURLWithPath: context.tool(named: "scma").path.string)
-            )
-        }
-    }
-#endif
