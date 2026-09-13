@@ -19,6 +19,7 @@ struct AnalyzerTests {
             source("C.swift", "class C { var x = 0; func f(_ n: Int) { x = n } }")
         ])
         #expect(report.complete)
+        #expect(report.schemaVersion == 2)
         #expect(report.metrics.map(\.metric) == Metric.allCases)
         #expect(metric(.noav, in: report).total == 1)
         #expect(report.overallScore == nil)
@@ -46,6 +47,143 @@ struct AnalyzerTests {
         ])
         #expect(report.couplings.count == 1)
         #expect(metric(.nocc, in: report).observations.map(\.value) == [1, 1])
+    }
+    @Test func dependencyGraphClassifiesSyntaxOnlyResolutionAndTestCallers() async throws {
+        let sources = [
+            source(
+                "Sources/App/Service.swift",
+                """
+                import Models
+                protocol Runnable { func run() }
+                func globalHelper() {}
+                class Service {
+                    var peer: Peer?
+                    var model: ExternalModel?
+                    func make(_ value: Int) {}
+                    func make(_ value: String) {}
+                    func consume(_ runner: Runnable) {
+                        globalHelper()
+                        crossFileTarget()
+                        make(1)
+                        missing()
+                        runner.run()
+                    }
+                }
+                """,
+                module: "App"
+            ),
+            source(
+                "Sources/App/Outer.swift",
+                """
+                class Outer {
+                    class Inner: Runnable { func run() {} }
+                }
+                extension Service {
+                    func extended(_ inner: Outer.Inner) { consume(inner) }
+                }
+                """,
+                module: "App"
+            ),
+            source(
+                "Sources/App/Peer.swift",
+                """
+                class Peer {}
+                func crossFileTarget() {}
+                """,
+                module: "App"
+            ),
+            source(
+                "Sources/Models/ExternalModel.swift",
+                """
+                class ExternalModel {}
+                """,
+                module: "Models"
+            ),
+            source(
+                "Tests/AppTests/ServiceTests.swift",
+                """
+                class ServiceTests {
+                    func testCallsProduction() { globalHelper() }
+                }
+                """,
+                module: "App"
+            ),
+        ]
+        let report = try await Analyzer().analyze(sources, options: AnalysisOptions(typeScope: .nominals), jobs: 4)
+        let graph = report.dependencyGraph
+
+        #expect(graph.nodes.contains { $0.kind == .type && $0.displayName == "App.Runnable" })
+        #expect(graph.nodes.contains { $0.kind == .type && $0.displayName == "App.Outer.Inner" })
+        #expect(graph.nodes.contains { $0.kind == .callable && $0.displayName == "App.Service.extended(_:)" })
+        #expect(graph.edges.contains { $0.kind == .typeReference && $0.target?.contains("App.Outer.Inner") == true })
+        #expect(graph.edges.contains { $0.kind == .typeReference && $0.target?.contains("App.Peer") == true })
+
+        let resolvedTypeReference = try #require(
+            graph.edges.first { edge in
+                guard edge.kind == .typeReference, edge.confidence == .resolvedSyntax, let target = edge.target,
+                    let targetNode = graph.nodes.first(where: { $0.id == target })
+                else { return false }
+                return targetNode.displayName == "Models.ExternalModel"
+            }
+        )
+        #expect(resolvedTypeReference.note.contains("SwiftSyntax-only"))
+        #expect(resolvedTypeReference.note.contains("not compiler semantic proof"))
+
+        let resolvedModuleDependency = try #require(
+            graph.edges.first { edge in
+                guard edge.kind == .moduleDependency, edge.confidence == .resolvedSyntax, let target = edge.target,
+                    let sourceNode = graph.nodes.first(where: { $0.id == edge.source }),
+                    let targetNode = graph.nodes.first(where: { $0.id == target })
+                else { return false }
+                return sourceNode.displayName == "App" && targetNode.displayName == "Models"
+            }
+        )
+        #expect(resolvedModuleDependency.note.contains("SwiftSyntax-only"))
+        #expect(resolvedModuleDependency.note.contains("not compiler semantic proof"))
+
+        let resolvedCall = try #require(
+            graph.edges.first { edge in
+                guard edge.kind == .call, edge.confidence == .resolvedSyntax, let target = edge.target,
+                    let targetNode = graph.nodes.first(where: { $0.id == target })
+                else { return false }
+                return targetNode.displayName == "App.crossFileTarget()"
+            }
+        )
+        #expect(resolvedCall.note.contains("SwiftSyntax-only"))
+        #expect(resolvedCall.note.contains("not compiler semantic proof"))
+
+        let ambiguousCall = try #require(
+            graph.edges.first { $0.kind == .call && $0.confidence == .ambiguousSyntax && $0.unresolvedName == "make(_:)" }
+        )
+        #expect(ambiguousCall.target == nil)
+        #expect(ambiguousCall.targetCandidates.count == 2)
+        #expect(ambiguousCall.note.contains("overload binding requires the compiler"))
+        #expect(ambiguousCall.note.contains("no compiler binding is claimed"))
+
+        let unresolvedNames = Set(
+            graph.edges.filter { $0.kind == .call && $0.confidence == .unresolvedSyntax }.compactMap(\.unresolvedName)
+        )
+        #expect(unresolvedNames.contains("missing()"))
+        #expect(unresolvedNames.contains("run()"))
+        #expect(graph.statistics.syntaxOnlyNote.contains("not compiler semantic proof"))
+
+        let helperRisk = try #require(
+            graph.couplingRisks.first { $0.entityDisplayName == "App.globalHelper()" }
+        )
+        #expect(helperRisk.productionCallerCount == 1)
+        #expect(helperRisk.testCallerCount == 1)
+        #expect(helperRisk.callerCount == 2)
+        #expect(graph.dependencyContexts.contains { $0.entity.id == helperRisk.entityID })
+        #expect(graph.dot.contains("digraph SwiftDependencyGraph"))
+
+        let sequential = try await Analyzer().analyze(sources, options: AnalysisOptions(typeScope: .nominals), jobs: 1)
+        let shuffled = try await Analyzer().analyze(
+            Array(sources.reversed()), options: AnalysisOptions(typeScope: .nominals), jobs: 4)
+        #expect(graph == shuffled.dependencyGraph)
+        #expect(
+            try ReportRenderer().render(report, format: .json, root: "/parallel")
+                == ReportRenderer().render(sequential, format: .json, root: "/sequential")
+        )
     }
     @Test func equalNamesInDifferentModulesAreNotMerged() async throws {
         let report = try await Analyzer().analyze([
@@ -154,6 +292,76 @@ struct AnalyzerTests {
         ])
         #expect(metric(.noav, in: report).observations.map(\.value) == [2, 1, 0])
     }
+    @Test func structuralDebtEvidenceCarriesLocationsAndExplanations() async throws {
+        let repeated = (0..<3).map { "    let v\($0) = \($0)" }.joined(separator: "\n")
+        let code = """
+        class Worker {
+            var values: [Int] = []
+            func risky(flag: Bool) async throws {
+                if flag {
+                    for value in values {
+                        if value > 0 {
+                            print(value)
+                        }
+                    }
+                }
+            }
+            func cloneA() {
+        \(repeated)
+            }
+            func cloneB() {
+        \(repeated)
+            }
+        }
+        """
+        let report = try await Analyzer().analyze(
+            [source("Structural.swift", code)],
+            options: .init(minimumDuplicateLines: 3)
+        )
+        let evidence = report.debtItems.flatMap(\.evidence)
+
+        #expect(report.metrics.map(\.metric) == Metric.allCases)
+        #expect(!evidence.isEmpty)
+        #expect(evidence.allSatisfy { $0.location?.file != nil && $0.location?.line != nil })
+        #expect(evidence.allSatisfy { $0.location?.column != nil })
+        #expect(evidence.allSatisfy { !$0.rawValue.isEmpty })
+        #expect(evidence.allSatisfy { $0.note?.isEmpty == false })
+        #expect(evidence.contains { $0.kind == "swift.cognitive-complexity" && $0.rawValue == "value=6" })
+        #expect(evidence.contains { $0.kind == "swift.nesting-depth" && $0.rawValue == "value=3" })
+        #expect(evidence.contains { $0.kind == "swift.oversized-type" })
+        #expect(evidence.contains { $0.kind == "swift.duplicate-lines" && $0.rawValue != "value=0" })
+    }
+
+    @Test func structuralDebtEvidenceIsDeterministicUnderParallelParsing() async throws {
+        let body = (0..<4).map { "        let v\($0) = \($0)" }.joined(separator: "\n")
+        let sources = (0..<12).map { index in
+            source(
+                "\(index).swift",
+                """
+                class C\(index) {
+                    var value = \(index)
+                    func f(_ flag: Bool) {
+                        if flag {
+                            for item in [value] {
+                                if item > 0 { print(item) }
+                            }
+                        }
+                \(body)
+                    }
+                }
+                """
+            )
+        }
+        let first = try await Analyzer().analyze(sources, options: .init(minimumDuplicateLines: 3), jobs: 1)
+        let second = try await Analyzer().analyze(
+            Array(sources.reversed()),
+            options: .init(minimumDuplicateLines: 3),
+            jobs: 4
+        )
+
+        #expect(first.debtItems == second.debtItems)
+    }
+
     @Test func correctedScoringRepairsDuplicateRatioOnly() async throws {
         let block = (0..<12).map { "    let v\($0) = \($0)" }.joined(separator: "\n")
         let code = "class C {\n    func a(_ p: Int) {\n\(block)\n    }\n    func b() {\n\(block)\n    }\n}"
@@ -188,6 +396,31 @@ struct AnalyzerTests {
         #expect(metric(.noav, in: report).score == nil)
         #expect(report.overallScore == nil)
     }
+    @Test func coverageExplanationWorkflowReportsMatchingStrategies() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory.appendingPathComponent("Sources"), withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let source = directory.appendingPathComponent("Sources/Processor.swift")
+        try "struct Processor { func run(value: Int) { print(value) } }".write(
+            to: source,
+            atomically: true,
+            encoding: .utf8
+        )
+        let lcov = directory.appendingPathComponent("coverage.lcov")
+        try """
+            SF:\(source.path)
+            FN:1,Workspace.Processor.run(value:)
+            FNDA:1,Workspace.Processor.run(value:)
+            DA:1,1
+            end_of_record
+            """.write(to: lcov, atomically: true, encoding: .utf8)
+
+        let result = try CoverageExplanationService().run(.init(path: directory.path, lcovPath: lcov.path))
+
+        #expect(result.standardOutput.contains("Workspace.Processor.run(value:): measuredCoverage"))
+        #expect(result.standardOutput.contains("strategies=sourcePathExact>functionNameExact"))
+    }
+
     @Test func configurationDecodeErrorsNameTheFile() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -205,6 +438,18 @@ struct AnalyzerTests {
             #expect("\(error)".contains("jobs"))
         }
     }
+    @Test func legacyReportsDecodeWithAnEmptyDependencyGraph() async throws {
+        let report = try await Analyzer().analyze([source("Legacy.swift", "class Legacy {}")])
+        let json = try ReportRenderer().render(report, format: .json, root: "/legacy")
+        var legacy = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
+        legacy.removeValue(forKey: "dependencyGraph")
+        let data = try JSONSerialization.data(withJSONObject: legacy, options: [.sortedKeys])
+        let decoded = try JSONDecoder().decode(AnalysisReport.self, from: data)
+        #expect(decoded.dependencyGraph.nodes.isEmpty)
+        #expect(decoded.dependencyGraph.edges.isEmpty)
+    }
+
+
     @Test func parallelismDoesNotChangeJSON() async throws {
         let sources = (0..<20).map { source("\($0).swift", "class C\($0) { func f(_ n: Int) { if n > 1 {} } }") }
         let first = try await Analyzer().analyze(sources, jobs: 1)

@@ -36,9 +36,21 @@ let package = Package(
             dependencies: ["scma"]
         ),
         .plugin(name: "SCMABuildPlugin", capability: .buildTool(), dependencies: ["scma"]),
-        .testTarget(name: "SCMACoreTests", dependencies: ["SCMACore"]),
-        .testTarget(name: "SCMASyntaxTests", dependencies: ["SCMACore", "SCMASyntax"]),
-        .testTarget(name: "SCMAKitTests", dependencies: ["SCMACore", "SCMAKit", "SCMAReporting"]),
+        .testTarget(
+            name: "SCMACoreTests",
+            dependencies: ["SCMACore"],
+            resources: [.process("Fixtures")]
+        ),
+        .testTarget(
+            name: "SCMASyntaxTests",
+            dependencies: ["SCMACore", "SCMASyntax"],
+            resources: [.process("Fixtures")]
+        ),
+        .testTarget(
+            name: "SCMAKitTests",
+            dependencies: ["SCMACore", "SCMAKit", "SCMAReporting"],
+            resources: [.process("Fixtures")]
+        ),
     ],
     swiftLanguageModes: [.v6]
 )

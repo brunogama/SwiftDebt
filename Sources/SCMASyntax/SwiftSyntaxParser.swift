@@ -1,3 +1,4 @@
+import Foundation
 import SCMACore
 import SwiftParser
 import SwiftParserDiagnostics
@@ -20,7 +21,7 @@ package struct SwiftSyntaxParser: SourceParsing {
         guard !diagnostics.contains(where: { $0.severity == .error }) else {
             // Error recovery is useful to editors, but must not manufacture quality metrics.
             return ParsedSource(
-                path: source.path, module: source.module, types: [], functions: [],
+                path: source.path, module: source.module, types: [], functions: [], closures: [],
                 lines: [], topLevelVariables: 0, diagnostics: diagnostics)
         }
         let imports = ImportVisitor()
@@ -29,8 +30,9 @@ package struct SwiftSyntaxParser: SourceParsing {
         collector.walk(tree)
         return ParsedSource(
             path: source.path, module: source.module, types: collector.types,
-            functions: collector.functions, lines: collector.sourceLines.codeLines(tree),
-            topLevelVariables: collector.topLevelVariables, diagnostics: diagnostics
+            functions: collector.functions, closures: collector.closures,
+            lines: collector.sourceLines.codeLines(tree), topLevelVariables: collector.topLevelVariables,
+            diagnostics: diagnostics, riskFacts: collector.riskFacts
         )
     }
 }
@@ -50,6 +52,8 @@ private final class DeclarationCollector: SyntaxVisitor {
     let imports: Set<String>
     var types: [TypeFragment] = []
     var functions: [FunctionFacts] = []
+    var closures: [ClosureFacts] = []
+    var riskFacts: [SwiftRiskFact] = []
     var topLevelVariables = 0
 
     init(source: SourceUnit, converter: SourceLocationConverter, imports: Set<String>) {
@@ -73,6 +77,10 @@ private final class DeclarationCollector: SyntaxVisitor {
     }
     override func visit(_ node: ActorDeclSyntax) -> SyntaxVisitorContinueKind {
         addType(Syntax(node), name: cleanName(node.name.text), kind: "actor")
+        return .visitChildren
+    }
+    override func visit(_ node: ProtocolDeclSyntax) -> SyntaxVisitorContinueKind {
+        addType(Syntax(node), name: cleanName(node.name.text), kind: "protocol")
         return .visitChildren
     }
     override func visit(_ node: ExtensionDeclSyntax) -> SyntaxVisitorContinueKind {
@@ -133,6 +141,10 @@ private final class DeclarationCollector: SyntaxVisitor {
         }
         return .visitChildren
     }
+    override func visit(_ node: ClosureExprSyntax) -> SyntaxVisitorContinueKind {
+        addClosure(node)
+        return .visitChildren
+    }
     override func visit(_ node: VariableDeclSyntax) -> SyntaxVisitorContinueKind {
         var parent = node.parent
         var global = true
@@ -145,11 +157,41 @@ private final class DeclarationCollector: SyntaxVisitor {
             }
             parent = current.parent
         }
-        if global { topLevelVariables += node.bindings.reduce(0) { $0 + bindingNames($1.pattern).count } }
+        if global {
+            topLevelVariables += node.bindings.reduce(0) { $0 + bindingNames($1.pattern).count }
+            if node.bindingSpecifier.text == "var" {
+                riskFacts.append(
+                    SwiftRiskFact(
+                        category: .mutableSharedState,
+                        detail: "top-level var declaration",
+                        location: sourceLines.location(node)
+                    )
+                )
+            }
+        } else if node.bindingSpecifier.text == "var", hasStaticModifier(Syntax(node)) {
+            riskFacts.append(
+                SwiftRiskFact(
+                    category: .mutableSharedState,
+                    detail: "static var declaration",
+                    location: sourceLines.location(node)
+                )
+            )
+        }
         return .visitChildren
     }
 
     private func addType(_ node: Syntax, name: String, kind: String) {
+        if kind == "actor" {
+            riskFacts.append(
+                SwiftRiskFact(
+                    category: .actorIsolation,
+                    detail: "actor declaration \(name)",
+                    location: sourceLines.location(node),
+                    confidence: .measuredSyntax
+                )
+            )
+        }
+        riskFacts.append(contentsOf: declarationRiskFacts(for: node, name: name))
         let key = TypeKey(module: source.module, name: qualifiedName(of: node, ownName: name))
         let visitor = TypeFactsVisitor(root: node.id, owner: key)
         visitor.walk(node)
@@ -168,6 +210,35 @@ private final class DeclarationCollector: SyntaxVisitor {
             node, kind: .method, name: name, parameters: parameters, statements: body.statements, ownerAnchor: node)
     }
 
+    private func addClosure(_ node: ClosureExprSyntax) {
+        let names = closureParameterNames(node.signature)
+        let visitor = BodyVisitor(parameters: names)
+        visitor.walk(node.statements)
+        closures.append(
+            ClosureFacts(
+                owner: directOwner(of: Syntax(node), module: source.module), location: sourceLines.location(node),
+                codeLines: sourceLines.codeLines(node.statements).count, complexity: visitor.complexity,
+                cognitiveComplexity: visitor.cognitiveComplexity, maxNestingDepth: visitor.maxNestingDepth,
+                parameters: names.count
+            ))
+    }
+
+    private func closureParameterNames(_ signature: ClosureSignatureSyntax?) -> Set<String> {
+        guard let parameterClause = signature?.parameterClause else { return [] }
+        switch parameterClause {
+        case .simpleInput(let parameters):
+            return Set(parameters.compactMap { parameter in
+                let value = cleanName(parameter.name.text)
+                return value == "_" ? nil : value
+            })
+        case .parameterClause(let clause):
+            return Set(clause.parameters.compactMap { parameter in
+                let value = cleanName((parameter.secondName ?? parameter.firstName).text)
+                return value == "_" ? nil : value
+            })
+        }
+    }
+
     private func addFunction(
         _ node: Syntax, kind: CallableKind, name: String, parameters: FunctionParameterListSyntax,
         statements: CodeBlockItemListSyntax, ownerAnchor: Syntax, implicitNames: Set<String> = []
@@ -179,16 +250,131 @@ private final class DeclarationCollector: SyntaxVisitor {
                 return value == "_" ? nil : value
             }
         ).union(implicitNames)
-        let visitor = BodyVisitor(parameters: names)
+        let visitor = BodyVisitor(parameters: names, sourceLines: sourceLines)
         visitor.walk(statements)
+        let ownerProperties = owner.map { key in
+            types.filter { $0.key == key }.reduce(into: Set<String>()) { $0.formUnion($1.propertyNames) }
+        } ?? []
+        let effectVisitor = EffectVisitor(parameters: names, ownerProperties: ownerProperties, sourceLines: sourceLines)
+        for parameter in parameters {
+            guard parameter.type.description.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("inout ") else {
+                continue
+            }
+            let value = cleanName((parameter.secondName ?? parameter.firstName).text)
+            if value != "_" { effectVisitor.recordInoutParameter(name: value, location: sourceLines.location(parameter)) }
+        }
+        effectVisitor.walk(statements)
+        var functionRiskFacts = effectVisitor.riskFacts
+        functionRiskFacts.append(contentsOf: declarationRiskFacts(for: node, name: name))
+        functionRiskFacts.append(contentsOf: unsafeParameterRiskFacts(in: parameters))
         let labels = parameters.map { cleanName($0.firstName.text) + ":" }.joined()
         let prefix = owner?.displayName ?? source.module
         functions.append(
             FunctionFacts(
                 name: "\(prefix).\(name)(\(labels))", kind: kind, owner: owner, location: sourceLines.location(node),
                 codeLines: sourceLines.codeLines(statements).count, complexity: visitor.complexity,
+                cognitiveComplexity: visitor.cognitiveComplexity,
+                maxNestingDepth: visitor.maxNestingDepth,
                 parameters: parameters.count, bareReferences: visitor.bareReferences,
-                explicitSelfReferences: visitor.explicitSelfReferences, shadowedNames: visitor.shadowedNames
+                explicitSelfReferences: visitor.explicitSelfReferences, shadowedNames: visitor.shadowedNames,
+                accessLevel: accessLevel(of: node), effectFacts: effectVisitor.effectFacts,
+                compositionFacts: effectVisitor.compositionFacts, callSites: visitor.callSites,
+                riskFacts: functionRiskFacts
             ))
     }
+
+    private func declarationRiskFacts(for node: Syntax, name: String) -> [SwiftRiskFact] {
+        let text = node.description
+        var facts: [SwiftRiskFact] = []
+        if mentionsGlobalActor(text) {
+            facts.append(
+                SwiftRiskFact(
+                    category: .globalActorIsolation,
+                    detail: "global actor annotation on \(name)",
+                    location: sourceLines.location(node)
+                )
+            )
+        }
+        if mentionsUncheckedSendable(text) {
+            facts.append(
+                SwiftRiskFact(
+                    category: .uncheckedSendable,
+                    detail: "@unchecked Sendable on \(name)",
+                    location: sourceLines.location(node)
+                )
+            )
+        } else if mentionsSendable(text) {
+            facts.append(
+                SwiftRiskFact(
+                    category: .sendableConformance,
+                    detail: "Sendable conformance on \(name)",
+                    location: sourceLines.location(node),
+                    confidence: .measuredSyntax
+                )
+            )
+        }
+        if mentionsNonisolated(text) {
+            facts.append(
+                SwiftRiskFact(
+                    category: .nonisolatedDeclaration,
+                    detail: "nonisolated declaration \(name)",
+                    location: sourceLines.location(node)
+                )
+            )
+        }
+        if mentionsUnsafe(text) {
+            facts.append(
+                SwiftRiskFact(
+                    category: .unsafeEscapeHatch,
+                    detail: "unsafe syntax near \(name)",
+                    location: sourceLines.location(node)
+                )
+            )
+        }
+        return facts
+    }
+
+    private func unsafeParameterRiskFacts(in parameters: FunctionParameterListSyntax) -> [SwiftRiskFact] {
+        parameters.compactMap { parameter in
+            guard mentionsUnsafe(parameter.type.description) else { return nil }
+            return SwiftRiskFact(
+                category: .unsafeEscapeHatch,
+                detail: "unsafe parameter \(cleanName((parameter.secondName ?? parameter.firstName).text))",
+                location: sourceLines.location(parameter)
+            )
+        }
+    }
+}
+
+private func hasStaticModifier(_ node: Syntax) -> Bool {
+    let text = node.description
+    return text.contains("static var") || text.contains("class var")
+}
+
+private func accessLevel(of node: Syntax) -> String? {
+    let text = node.description.trimmingCharacters(in: .whitespacesAndNewlines)
+    for level in ["open", "public", "package"] where text.hasPrefix(level + " ") || text.contains("\n\(level) ") {
+        return level
+    }
+    return nil
+}
+
+private func mentionsGlobalActor(_ text: String) -> Bool {
+    text.contains("@MainActor") || text.contains("@globalActor") || text.contains("@GlobalActor")
+}
+
+private func mentionsUncheckedSendable(_ text: String) -> Bool {
+    text.contains("@unchecked Sendable")
+}
+
+private func mentionsSendable(_ text: String) -> Bool {
+    text.contains("Sendable")
+}
+
+private func mentionsNonisolated(_ text: String) -> Bool {
+    text.contains("nonisolated")
+}
+
+private func mentionsUnsafe(_ text: String) -> Bool {
+    text.localizedCaseInsensitiveContains("unsafe") || text.contains("Unsafe")
 }

@@ -1,0 +1,45 @@
+{
+  "baselineCommit": "b0ae66be2065084b29b8b5da0a86d5cd049feced",
+  "commands": [
+    {
+      "name": "build-release-analyzer",
+      "argv": ["swift", "build", "-c", "release"]
+    },
+    {
+      "name": "measure-macos",
+      "argv": ["/usr/bin/time", "-l", ".build/release/scma", "analyze", "Examples/Sources", "--format", "json", "--jobs", "1", "--output", ".scma/benchmarks/debtmap-baseline/examples-sources.json"]
+    },
+    {
+      "name": "measure-linux",
+      "argv": ["/usr/bin/time", "-v", ".build/release/scma", "analyze", "Examples/Sources", "--format", "json", "--jobs", "1", "--output", ".scma/benchmarks/debtmap-baseline/examples-sources.json"]
+    }
+  ],
+  "inputs": [
+    {
+      "path": "Examples/Sources/Example.swift",
+      "sha256": "478cec226511f60e51516b49cae2a8952b2f3b9b21e3e30dbb6771ea410201e4",
+      "utf8ByteCount": 1245,
+      "lineCount": 63
+    },
+    {
+      "path": ".scma.example.json",
+      "sha256": "2ab8f21e5a4b4433a2d4637de71f8cc05c6479c75991712e93aed9152f4f565c",
+      "utf8ByteCount": 381,
+      "lineCount": 20
+    }
+  ],
+  "measuredRuns": 5,
+  "measurements": ["wall-clock-seconds", "peak-memory-bytes"],
+  "methodology": [
+    "Use a clean checkout at the baseline commit.",
+    "Resolve dependencies before the first measured run.",
+    "Run the release build command once after dependency resolution.",
+    "Run the selected platform measure command for one warmup run and discard that sample.",
+    "Run the same command for five measured runs without changing inputs.",
+    "Record elapsed wall-clock seconds and peak resident memory from the platform time tool.",
+    "Report every raw sample, median, minimum and maximum with the Swift version, OS, CPU model and memory size."
+  ],
+  "outputDirectory": ".scma/benchmarks/debtmap-baseline",
+  "schemaVersion": 1,
+  "warmupRuns": 1
+}

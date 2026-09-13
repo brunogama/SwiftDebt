@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-12T00:00:00Z",
+  "gitHistory": {
+    "referenceTime": "2026-09-12T00:00:00Z",
+    "commits": [
+      {
+        "sha": "1111111111111111111111111111111111111111",
+        "authorId": "author-a",
+        "timestamp": "2026-09-10T12:00:00Z",
+        "paths": ["Sources/Processor.swift", "Tests/ProcessorTests.swift"]
+      },
+      {
+        "sha": "2222222222222222222222222222222222222222",
+        "authorId": "author-b",
+        "timestamp": "2026-09-11T12:00:00Z",
+        "paths": ["Sources/Store.swift"]
+      }
+    ]
+  },
+  "evidenceAvailability": [
+    {
+      "id": "coverage",
+      "state": "available",
+      "reason": null
+    },
+    {
+      "id": "git-history",
+      "state": "available",
+      "reason": null
+    },
+    {
+      "id": "semantic-bindings",
+      "state": "unavailable",
+      "reason": "SwiftSyntax-only fixture has no compiler binding"
+    }
+  ],
+  "items": [
+    {
+      "id": "callable:App.Processor.process",
+      "entity": "App.Processor.process(values:enabled:)",
+      "priority": "high",
+      "score": 78.4,
+      "location": "Sources/Processor.swift:12",
+      "evidence": ["complexity", "coverage", "git-history"]
+    },
+    {
+      "id": "type:App.Store",
+      "entity": "App.Store",
+      "priority": "medium",
+      "score": 41.2,
+      "location": "Sources/Store.swift:1",
+      "evidence": ["coupling", "mutation"]
+    }
+  ],
+  "graphEdges": [
+    {
+      "source": "App.Processor",
+      "target": "App.Store",
+      "label": "uses"
+    },
+    {
+      "source": "Tests.ProcessorTests",
+      "target": "App.Processor",
+      "label": "tests"
+    }
+  ],
+  "cliCases": [
+    {
+      "command": "scma debt analyze Fixtures/DebtmapParity --format json",
+      "exitStatus": 0,
+      "purpose": "successful deterministic analysis"
+    },
+    {
+      "command": "scma debt validate Fixtures/DebtmapParity --max-score 70",
+      "exitStatus": 1,
+      "purpose": "completed validation with threshold failure"
+    },
+    {
+      "command": "scma debt analyze Fixtures/Missing --coverage missing.lcov",
+      "exitStatus": 2,
+      "purpose": "invalid input path"
+    }
+  ]
+}

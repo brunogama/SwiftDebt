@@ -135,7 +135,9 @@ public struct AnalysisReport: Codable, Sendable {
     public let findings: [Finding]
     public let diagnostics: [AnalysisDiagnostic]
     public let couplings: [CouplingEdge]
+    public let dependencyGraph: SwiftDependencyGraph
     public let duplicateBlocks: [DuplicateBlock]
+    public let debtItems: [DebtItem]
 
     public var hasViolations: Bool { !findings.isEmpty }
 
@@ -162,7 +164,9 @@ public struct AnalysisReport: Codable, Sendable {
         case findings
         case diagnostics
         case couplings
+        case dependencyGraph
         case duplicateBlocks
+        case debtItems
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -189,10 +193,60 @@ public struct AnalysisReport: Codable, Sendable {
         try values.encode(findings, forKey: .findings)
         try values.encode(diagnostics, forKey: .diagnostics)
         try values.encode(couplings, forKey: .couplings)
+        try values.encode(dependencyGraph, forKey: .dependencyGraph)
         try values.encode(duplicateBlocks, forKey: .duplicateBlocks)
+        try values.encode(debtItems, forKey: .debtItems)
     }
 }
 
+
+extension AnalysisReport {
+    public init(from decoder: any Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        schemaVersion = try values.decode(Int.self, forKey: .schemaVersion)
+        engineVersion = try values.decode(String.self, forKey: .engineVersion)
+        typeScope = try values.decode(TypeScope.self, forKey: .typeScope)
+        scoringMode = try values.decode(ScoringMode.self, forKey: .scoringMode)
+        complete = try values.decode(Bool.self, forKey: .complete)
+        inputFileCount = try values.decode(Int.self, forKey: .inputFileCount)
+        inputFiles = try values.decode([String].self, forKey: .inputFiles)
+        minimumDuplicateLines = try values.decode(Int.self, forKey: .minimumDuplicateLines)
+        analyzedFileCount = try values.decode(Int.self, forKey: .analyzedFileCount)
+        modules = try values.decode([String].self, forKey: .modules)
+        codeLineCount = try values.decode(Int.self, forKey: .codeLineCount)
+        classScopeVariableCount = try values.decode(Int.self, forKey: .classScopeVariableCount)
+        topLevelVariableCount = try values.decode(Int.self, forKey: .topLevelVariableCount)
+        methodCount = try values.decode(Int.self, forKey: .methodCount)
+        functionCount = try values.decode(Int.self, forKey: .functionCount)
+        uniqueDuplicatedLineCount = try values.decode(Int.self, forKey: .uniqueDuplicatedLineCount)
+        metrics = try values.decode([MetricSummary].self, forKey: .metrics)
+        overallScore = try values.decodeIfPresent(Double.self, forKey: .overallScore)
+        overallScoreNote = try values.decodeIfPresent(String.self, forKey: .overallScoreNote)
+        findings = try values.decode([Finding].self, forKey: .findings)
+        diagnostics = try values.decode([AnalysisDiagnostic].self, forKey: .diagnostics)
+        couplings = try values.decode([CouplingEdge].self, forKey: .couplings)
+        dependencyGraph = try values.decodeIfPresent(SwiftDependencyGraph.self, forKey: .dependencyGraph)
+            ?? Self.emptyDependencyGraph
+        duplicateBlocks = try values.decode([DuplicateBlock].self, forKey: .duplicateBlocks)
+        debtItems = try values.decode([DebtItem].self, forKey: .debtItems)
+    }
+
+    private static let emptyDependencyGraph = SwiftDependencyGraph(
+        nodes: [],
+        edges: [],
+        couplingRisks: [],
+        dependencyContexts: [],
+        statistics: CallGraphStatistics(
+            nodeCount: 0,
+            edgeCount: 0,
+            resolvedEdgeCount: 0,
+            ambiguousEdgeCount: 0,
+            unresolvedEdgeCount: 0,
+            syntaxOnlyNote: "No dependency graph evidence is available in this legacy report."
+        ),
+        dot: "digraph SwiftDependencyGraph {\n}\n"
+    )
+}
 // Parser-to-core boundaries are package-visible, not public implementation API.
 package struct TypeKey: Hashable, Sendable {
     package let module: String
@@ -238,6 +292,93 @@ package enum CallableKind: Sendable {
     case accessor
 }
 
+package enum SyntaxEvidenceConfidence: String, Codable, Sendable {
+    case measuredSyntax
+    case heuristic
+}
+
+package enum SyntaxEffectCategory: String, Codable, CaseIterable, Sendable {
+    case mutation
+    case inoutMutation
+    case propertyWrite
+    case globalOrStaticState
+    case asyncEffect
+    case throwingEffect
+    case closureEffect
+}
+
+package enum SwiftRiskCategory: String, Codable, CaseIterable, Sendable {
+    case isolationCrossing
+    case actorIsolation
+    case globalActorIsolation
+    case sendableConformance
+    case uncheckedSendable
+    case unstructuredTask
+    case nonisolatedDeclaration
+    case mutableSharedState
+    case unsafeEscapeHatch
+}
+
+package struct SyntaxEffectFact: Codable, Hashable, Sendable {
+    package let category: SyntaxEffectCategory
+    package let detail: String
+    package let location: SourceLocation
+    package let confidence: SyntaxEvidenceConfidence
+    package let inClosure: Bool
+
+    package init(
+        category: SyntaxEffectCategory,
+        detail: String,
+        location: SourceLocation,
+        confidence: SyntaxEvidenceConfidence = .measuredSyntax,
+        inClosure: Bool = false
+    ) {
+        self.category = category
+        self.detail = detail
+        self.location = location
+        self.confidence = confidence
+        self.inClosure = inClosure
+    }
+}
+
+package struct SwiftRiskFact: Codable, Hashable, Sendable {
+    package let category: SwiftRiskCategory
+    package let detail: String
+    package let location: SourceLocation
+    package let confidence: SyntaxEvidenceConfidence
+
+    package init(
+        category: SwiftRiskCategory,
+        detail: String,
+        location: SourceLocation,
+        confidence: SyntaxEvidenceConfidence = .heuristic
+    ) {
+        self.category = category
+        self.detail = detail
+        self.location = location
+        self.confidence = confidence
+    }
+}
+
+package struct FunctionalCompositionFact: Codable, Hashable, Sendable {
+    package let operation: String
+    package let location: SourceLocation
+    package let closureHasSideEffects: Bool
+    package let confidence: SyntaxEvidenceConfidence
+
+    package init(
+        operation: String,
+        location: SourceLocation,
+        closureHasSideEffects: Bool,
+        confidence: SyntaxEvidenceConfidence = .measuredSyntax
+    ) {
+        self.operation = operation
+        self.location = location
+        self.closureHasSideEffects = closureHasSideEffects
+        self.confidence = confidence
+    }
+}
+
 package struct FunctionFacts: Sendable {
     package let name: String
     package let kind: CallableKind
@@ -245,17 +386,27 @@ package struct FunctionFacts: Sendable {
     package let location: SourceLocation
     package let codeLines: Int
     package let complexity: Int
+    package let cognitiveComplexity: Int
+    package let maxNestingDepth: Int
     package let parameters: Int
     /// Bare identifiers that were not shadowed by a lexically enclosing local binding.
     package let bareReferences: Set<String>
     package let explicitSelfReferences: Set<String>
     /// Every local binding name seen anywhere in the body; informational.
     package let shadowedNames: Set<String>
+    package let accessLevel: String?
+    package let effectFacts: [SyntaxEffectFact]
+    package let compositionFacts: [FunctionalCompositionFact]
+    package let callSites: [CallSiteFact]
+    package let riskFacts: [SwiftRiskFact]
 
     package init(
         name: String, kind: CallableKind = .method, owner: TypeKey?, location: SourceLocation, codeLines: Int,
-        complexity: Int, parameters: Int, bareReferences: Set<String>,
-        explicitSelfReferences: Set<String>, shadowedNames: Set<String>
+        complexity: Int, cognitiveComplexity: Int = 0, maxNestingDepth: Int = 0, parameters: Int,
+        bareReferences: Set<String>, explicitSelfReferences: Set<String>, shadowedNames: Set<String>,
+        accessLevel: String? = nil, effectFacts: [SyntaxEffectFact] = [],
+        compositionFacts: [FunctionalCompositionFact] = [], callSites: [CallSiteFact] = [],
+        riskFacts: [SwiftRiskFact] = []
     ) {
         self.name = name
         self.kind = kind
@@ -263,10 +414,40 @@ package struct FunctionFacts: Sendable {
         self.location = location
         self.codeLines = codeLines
         self.complexity = complexity
+        self.cognitiveComplexity = cognitiveComplexity
+        self.maxNestingDepth = maxNestingDepth
         self.parameters = parameters
         self.bareReferences = bareReferences
         self.explicitSelfReferences = explicitSelfReferences
         self.shadowedNames = shadowedNames
+        self.accessLevel = accessLevel
+        self.effectFacts = effectFacts
+        self.compositionFacts = compositionFacts
+        self.callSites = callSites
+        self.riskFacts = riskFacts
+    }
+}
+
+package struct ClosureFacts: Sendable {
+    package let owner: TypeKey?
+    package let location: SourceLocation
+    package let codeLines: Int
+    package let complexity: Int
+    package let cognitiveComplexity: Int
+    package let maxNestingDepth: Int
+    package let parameters: Int
+
+    package init(
+        owner: TypeKey?, location: SourceLocation, codeLines: Int, complexity: Int,
+        cognitiveComplexity: Int, maxNestingDepth: Int, parameters: Int
+    ) {
+        self.owner = owner
+        self.location = location
+        self.codeLines = codeLines
+        self.complexity = complexity
+        self.cognitiveComplexity = cognitiveComplexity
+        self.maxNestingDepth = maxNestingDepth
+        self.parameters = parameters
     }
 }
 
@@ -284,21 +465,26 @@ package struct ParsedSource: Sendable {
     package let module: String
     package let types: [TypeFragment]
     package let functions: [FunctionFacts]
+    package let closures: [ClosureFacts]
     package let lines: [CodeLine]
     package let topLevelVariables: Int
     package let diagnostics: [AnalysisDiagnostic]
+    package let riskFacts: [SwiftRiskFact]
 
     package init(
         path: String, module: String, types: [TypeFragment], functions: [FunctionFacts],
-        lines: [CodeLine], topLevelVariables: Int, diagnostics: [AnalysisDiagnostic]
+        closures: [ClosureFacts] = [], lines: [CodeLine], topLevelVariables: Int,
+        diagnostics: [AnalysisDiagnostic], riskFacts: [SwiftRiskFact] = []
     ) {
         self.path = path
         self.module = module
         self.types = types
         self.functions = functions
+        self.closures = closures
         self.lines = lines
         self.topLevelVariables = topLevelVariables
         self.diagnostics = diagnostics
+        self.riskFacts = riskFacts
     }
 
     package var isValid: Bool { !diagnostics.contains { $0.severity == .error } }

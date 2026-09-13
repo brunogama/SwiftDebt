@@ -1,3 +1,4 @@
+import SCMACore
 import SwiftSyntax
 
 /// Policy is deliberately explicit; the paper does not define Swift decision-node rules.
@@ -8,15 +9,21 @@ import SwiftSyntax
 /// `catch` clause, or the remainder of the enclosing block for `guard`).
 final class BodyVisitor: SyntaxVisitor {
     var complexity = 1
+    var cognitiveComplexity = 0
+    var maxNestingDepth = 0
     /// Bare identifiers that were not shadowed at their point of use.
     var bareReferences: Set<String> = []
     var explicitSelfReferences: Set<String> = []
     /// Every local binding name seen anywhere in the body; informational.
     var shadowedNames: Set<String>
+    var callSites: [CallSiteFact] = []
+    private let sourceLines: SourceLines?
     private var scopes: [Set<String>]
+    private var nestingDepth = 0
 
-    init(parameters: Set<String>) {
+    init(parameters: Set<String>, sourceLines: SourceLines? = nil) {
         shadowedNames = parameters
+        self.sourceLines = sourceLines
         scopes = [parameters]
         super.init(viewMode: .sourceAccurate)
     }
@@ -33,51 +40,82 @@ final class BodyVisitor: SyntaxVisitor {
         return .visitChildren
     }
     private func pop() { scopes.removeLast() }
+    private func recordFlowBreak() {
+        cognitiveComplexity += 1 + nestingDepth
+    }
+    private func enterNestedFlow() -> SyntaxVisitorContinueKind {
+        nestingDepth += 1
+        maxNestingDepth = max(maxNestingDepth, nestingDepth)
+        return push()
+    }
+    private func leaveNestedFlow() {
+        pop()
+        nestingDepth -= 1
+    }
 
     // Scope-introducing constructs. Decision counting happens in the same overrides.
     override func visit(_ node: CodeBlockSyntax) -> SyntaxVisitorContinueKind { push() }
     override func visitPost(_ node: CodeBlockSyntax) { pop() }
     override func visit(_ node: IfExprSyntax) -> SyntaxVisitorContinueKind {
         complexity += 1
-        return push()
+        recordFlowBreak()
+        return enterNestedFlow()
     }
-    override func visitPost(_ node: IfExprSyntax) { pop() }
+    override func visitPost(_ node: IfExprSyntax) { leaveNestedFlow() }
     override func visit(_ node: GuardStmtSyntax) -> SyntaxVisitorContinueKind {
         // Guard bindings live in the enclosing scope; no push.
         complexity += 1
+        recordFlowBreak()
         return .visitChildren
     }
     override func visit(_ node: ForStmtSyntax) -> SyntaxVisitorContinueKind {
         complexity += 1
-        return push()
+        recordFlowBreak()
+        return enterNestedFlow()
     }
-    override func visitPost(_ node: ForStmtSyntax) { pop() }
+    override func visitPost(_ node: ForStmtSyntax) { leaveNestedFlow() }
     override func visit(_ node: WhileStmtSyntax) -> SyntaxVisitorContinueKind {
         complexity += 1
-        return push()
+        recordFlowBreak()
+        return enterNestedFlow()
     }
-    override func visitPost(_ node: WhileStmtSyntax) { pop() }
+    override func visitPost(_ node: WhileStmtSyntax) { leaveNestedFlow() }
     override func visit(_ node: RepeatStmtSyntax) -> SyntaxVisitorContinueKind {
         complexity += 1
+        recordFlowBreak()
+        nestingDepth += 1
+        maxNestingDepth = max(maxNestingDepth, nestingDepth)
         return .visitChildren
     }
+    override func visitPost(_ node: RepeatStmtSyntax) { nestingDepth -= 1 }
     override func visit(_ node: CatchClauseSyntax) -> SyntaxVisitorContinueKind {
         complexity += 1
+        recordFlowBreak()
+        nestingDepth += 1
+        maxNestingDepth = max(maxNestingDepth, nestingDepth)
         scopes.append(node.catchItems.isEmpty ? ["error"] : [])
         return .visitChildren
     }
-    override func visitPost(_ node: CatchClauseSyntax) { pop() }
-    override func visit(_ node: SwitchCaseSyntax) -> SyntaxVisitorContinueKind {
-        if node.label.is(SwitchCaseLabelSyntax.self) { complexity += 1 }
-        return push()
+    override func visitPost(_ node: CatchClauseSyntax) {
+        pop()
+        nestingDepth -= 1
     }
-    override func visitPost(_ node: SwitchCaseSyntax) { pop() }
+    override func visit(_ node: SwitchCaseSyntax) -> SyntaxVisitorContinueKind {
+        if node.label.is(SwitchCaseLabelSyntax.self) {
+            complexity += 1
+            recordFlowBreak()
+        }
+        return enterNestedFlow()
+    }
+    override func visitPost(_ node: SwitchCaseSyntax) { leaveNestedFlow() }
     override func visit(_ node: UnresolvedTernaryExprSyntax) -> SyntaxVisitorContinueKind {
         complexity += 1
+        recordFlowBreak()
         return .visitChildren
     }
     override func visit(_ node: TernaryExprSyntax) -> SyntaxVisitorContinueKind {
         complexity += 1
+        recordFlowBreak()
         return .visitChildren
     }
     // A binding's initializer is evaluated before the name exists: `if let title = Optional(title)`
@@ -107,6 +145,16 @@ final class BodyVisitor: SyntaxVisitor {
         // Unfolded parser expressions still expose short-circuit operators as tokens.
         if case .binaryOperator(let text) = token.tokenKind, text == "&&" || text == "||" {
             complexity += 1
+            recordFlowBreak()
+        }
+        return .visitChildren
+    }
+    override func visit(_ node: FunctionCallExprSyntax) -> SyntaxVisitorContinueKind {
+        if let sourceLines, let name = expressionName(node.calledExpression) {
+            let labels = node.arguments.map { argument in
+                "\(cleanName(argument.label?.text ?? "_")):"
+            }.joined()
+            callSites.append(CallSiteFact(name: name, labels: labels, location: sourceLines.location(node)))
         }
         return .visitChildren
     }

@@ -10,6 +10,7 @@ enum CLIAction {
     case help
     case version
     case analyze(AnalysisRequest)
+    case explainCoverage(CoverageExplanationRequest)
 }
 
 struct CLIOptions {
@@ -17,6 +18,7 @@ struct CLIOptions {
         OVERVIEW: SwiftSCMA - Swift source metrics based on the SCMA paper.
 
         USAGE: scma analyze [path] [options]
+               scma explain coverage [path] --lcov PATH [options]
                scma --help
                scma --version
 
@@ -33,6 +35,7 @@ struct CLIOptions {
           --fail-on-violation            Exit 1 when configured thresholds are exceeded.
           --strict                       Exit 2 on any parse error instead of skipping that file.
           --manifest PATH                Explicit JSON source manifest (used by plugins).
+          --lcov PATH                    LCOV input for explain coverage.
           --stamp PATH                   Internal build-plugin completion marker.
           --                             Treat the remaining argument as a literal path.
 
@@ -44,6 +47,9 @@ struct CLIOptions {
         if input == ["--help"] || input == ["-h"] || input == ["help"] { return .help }
         if input == ["--version"] || input == ["version"] { return .version }
         var arguments = input
+        if arguments.first == "explain", arguments.dropFirst().first == "coverage" {
+            return try parseExplainCoverage(Array(arguments.dropFirst(2)))
+        }
         if arguments.first == "analyze" { arguments.removeFirst() }
         var values: [String: String] = [:]
         var exclusions: [String] = []
@@ -133,6 +139,63 @@ struct CLIOptions {
                 scoring: scoring, format: format, jobs: jobs, failOnViolation: fail, strictSyntax: strict,
                 exclude: exclusions, thresholds: thresholds
             ))
+    }
+
+    private func parseExplainCoverage(_ arguments: [String]) throws -> CLIAction {
+        var values: [String: String] = [:]
+        var exclusions: [String] = []
+        var path: String?
+        var literal = false
+        var index = 0
+        let valuedOptions: Set<String> = ["--config", "--manifest", "--exclude", "--lcov"]
+        while index < arguments.count {
+            let argument = arguments[index]
+            index += 1
+            if !literal && (argument == "--help" || argument == "-h") { return .help }
+            if !literal && argument == "--" {
+                literal = true
+                continue
+            }
+            if !literal && argument.hasPrefix("-") {
+                let split = argument.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false).map(
+                    String.init)
+                let key = split[0]
+                guard valuedOptions.contains(key) else { throw CLIError("Unknown option: \(key)") }
+                let value: String
+                if split.count == 2 {
+                    value = split[1]
+                } else {
+                    guard index < arguments.count, !arguments[index].hasPrefix("--") else {
+                        throw CLIError("Missing value for \(key)")
+                    }
+                    value = arguments[index]
+                    index += 1
+                }
+                guard !value.isEmpty else { throw CLIError("Empty value for \(key)") }
+                if key == "--exclude" {
+                    exclusions.append(value)
+                    continue
+                }
+                guard values[key] == nil else { throw CLIError("Duplicate option: \(key)") }
+                values[key] = value
+                continue
+            }
+            guard path == nil else { throw CLIError("Only one input path is accepted") }
+            path = argument
+        }
+        guard let lcovPath = values["--lcov"] else { throw CLIError("Missing required --lcov for explain coverage") }
+        if values["--manifest"] != nil && path != nil {
+            throw CLIError("Use either an input path or --manifest, not both")
+        }
+        return .explainCoverage(
+            CoverageExplanationRequest(
+                path: path ?? ".",
+                lcovPath: lcovPath,
+                manifestPath: values["--manifest"],
+                configurationPath: values["--config"],
+                exclude: exclusions
+            )
+        )
     }
 
     private func decode<T: RawRepresentable>(_ value: String?, named name: String) throws -> T?
