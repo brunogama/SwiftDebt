@@ -1,0 +1,32 @@
+{
+  "capabilities": [
+    {
+      "id": "debtmap.baseline.methodology",
+      "status": "implemented"
+    },
+    {
+      "id": "debtmap.output.dot",
+      "status": "implemented"
+    },
+    {
+      "id": "debtmap.output.json",
+      "status": "implemented"
+    },
+    {
+      "id": "debtmap.output.markdown",
+      "status": "implemented"
+    }
+  ],
+  "evidence": "unavailable",
+  "frozenClock": "2026-01-02T03:04:05Z",
+  "gitHistory": [
+    {
+      "child": "1111111",
+      "parent": "0000000"
+    },
+    {
+      "child": "2222222",
+      "parent": "1111111"
+    }
+  ]
+}

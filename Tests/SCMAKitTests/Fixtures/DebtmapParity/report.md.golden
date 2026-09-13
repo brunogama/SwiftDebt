@@ -1,0 +1,16 @@
+# Debtmap parity fixture
+
+Frozen clock: 2026-01-02T03:04:05Z
+Evidence: unavailable
+
+| Capability | Status |
+| --- | --- |
+| debtmap.baseline.methodology | implemented |
+| debtmap.output.dot | implemented |
+| debtmap.output.json | implemented |
+| debtmap.output.markdown | implemented |
+
+## Git history
+
+- 0000000 -> 1111111
+- 1111111 -> 2222222
