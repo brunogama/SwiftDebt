@@ -14,7 +14,7 @@ public struct DebtScoring: Sendable {
         let totalConfiguredWeight = orderedEvidence.reduce(0.0) { partial, evidence in
             partial + positiveWeight(evidence.weight)
         }
-        var available: [DebtEvidence] = []
+        var available: [AvailableDebtEvidence] = []
         var unavailable: [DebtUnavailableEvidence] = []
         var hasUnavailableRequiredEvidence = false
 
@@ -33,7 +33,7 @@ public struct DebtScoring: Sendable {
                 )
                 continue
             }
-            guard evidence.normalizedScore != nil, weight > 0 else {
+            guard let normalizedScore = evidence.normalizedScore, weight > 0 else {
                 if evidence.requirement == .required { hasUnavailableRequiredEvidence = true }
                 unavailable.append(
                     DebtUnavailableEvidence(
@@ -41,19 +41,21 @@ public struct DebtScoring: Sendable {
                         kind: evidence.kind,
                         requirement: evidence.requirement,
                         configuredWeight: weight,
-                        reason: evidence.normalizedScore == nil ? "normalized score unavailable" : "weight is not positive"
+                        reason: evidence.normalizedScore == nil
+                            ? "normalized score unavailable" : "weight is not positive"
                     )
                 )
                 continue
             }
-            available.append(evidence)
+            available.append((evidence, normalizedScore))
         }
 
-        let dampeners = available.filter(isScoreDampener)
-        let primaryEvidence = available.filter { !isScoreDampener($0) }
-        let totalAvailableWeight = primaryEvidence.reduce(0.0) { $0 + positiveWeight($1.weight) }
-        var contributions = primaryEvidence.map { evidence -> DebtScoreContribution in
-            let normalizedScore = bounded(evidence.normalizedScore ?? 0)
+        let dampeners = available.filter { isScoreDampener($0.evidence) }
+        let primaryEvidence = available.filter { !isScoreDampener($0.evidence) }
+        let totalAvailableWeight = primaryEvidence.reduce(0.0) { $0 + positiveWeight($1.evidence.weight) }
+        var contributions = primaryEvidence.map { availableEvidence -> DebtScoreContribution in
+            let evidence = availableEvidence.evidence
+            let normalizedScore = bounded(availableEvidence.normalizedScore)
             let effectiveWeight = positiveWeight(evidence.weight) / totalAvailableWeight
             let contribution = normalizedScore * effectiveWeight
             return DebtScoreContribution(
@@ -96,13 +98,17 @@ public struct DebtScoring: Sendable {
     }
 }
 
+private typealias AvailableDebtEvidence = (evidence: DebtEvidence, normalizedScore: Double)
+
 private func isOrderedBefore(_ lhs: DebtEvidence, _ rhs: DebtEvidence) -> Bool {
     if let ordered = isOrdered(lhs.id, before: rhs.id) { return ordered }
     if let ordered = isOrdered(lhs.kind, before: rhs.kind) { return ordered }
     if let ordered = isOrdered(lhs.rawValue, before: rhs.rawValue) { return ordered }
     if let ordered = isOrdered(lhs.note, before: rhs.note) { return ordered }
     if let ordered = isOrdered(lhs.requirement.rawValue, before: rhs.requirement.rawValue) { return ordered }
-    if let ordered = isOrdered(lhs.availability.state.rawValue, before: rhs.availability.state.rawValue) { return ordered }
+    if let ordered = isOrdered(lhs.availability.state.rawValue, before: rhs.availability.state.rawValue) {
+        return ordered
+    }
     if let ordered = isOrdered(lhs.availability.reason, before: rhs.availability.reason) { return ordered }
     if let ordered = isOrdered(lhs.weight, before: rhs.weight) { return ordered }
     if let ordered = isOrdered(lhs.normalizedScore, before: rhs.normalizedScore) { return ordered }
@@ -125,7 +131,7 @@ private func isOrdered<T: Comparable>(_ lhs: T?, before rhs: T?) -> Bool? {
         return true
     case (.some, .none):
         return false
-    case let (.some(lhs), .some(rhs)):
+    case (.some(let lhs), .some(let rhs)):
         return isOrdered(lhs, before: rhs)
     }
 }
@@ -145,7 +151,7 @@ private func isOrdered(_ lhs: Double?, before rhs: Double?) -> Bool? {
         return true
     case (.some, .none):
         return false
-    case let (.some(lhs), .some(rhs)):
+    case (.some(let lhs), .some(let rhs)):
         return isOrdered(lhs, before: rhs)
     }
 }
@@ -154,10 +160,14 @@ private func isScoreDampener(_ evidence: DebtEvidence) -> Bool {
     evidence.kind.hasPrefix("coverage.")
 }
 
-private func dampenerContributions(_ dampeners: [DebtEvidence], startingValue: Double?) -> [DebtScoreContribution] {
+private func dampenerContributions(
+    _ dampeners: [AvailableDebtEvidence],
+    startingValue: Double?
+) -> [DebtScoreContribution] {
     var currentValue = startingValue
-    return dampeners.map { evidence -> DebtScoreContribution in
-        let normalizedScore = bounded(evidence.normalizedScore ?? 0)
+    return dampeners.map { availableEvidence -> DebtScoreContribution in
+        let evidence = availableEvidence.evidence
+        let normalizedScore = bounded(availableEvidence.normalizedScore)
         let nextValue = currentValue.map { $0 * (normalizedScore / 100) }
         let contribution = nextValue.flatMap { next in currentValue.map { next - $0 } } ?? 0
         currentValue = nextValue
