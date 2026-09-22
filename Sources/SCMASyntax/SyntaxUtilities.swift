@@ -19,7 +19,44 @@ func typeName(_ node: TypeSyntax) -> String? {
     if let member = node.as(MemberTypeSyntax.self), let base = typeName(member.baseType) {
         return base + "." + cleanName(member.name.text)
     }
+    if let attributed = node.as(AttributedTypeSyntax.self) { return typeName(attributed.baseType) }
     return nil
+}
+
+private let unsafeStandardLibraryTypeNames: Set<String> = [
+    "AutoreleasingUnsafeMutablePointer",
+    "UnsafeBufferPointer",
+    "UnsafeContinuation",
+    "UnsafeMutableBufferPointer",
+    "UnsafeMutablePointer",
+    "UnsafeMutableRawBufferPointer",
+    "UnsafeMutableRawPointer",
+    "UnsafePointer",
+    "UnsafeRawBufferPointer",
+    "UnsafeRawPointer",
+    "UnsafeThrowingContinuation"
+]
+
+func isUnsafeStandardLibraryTypeName(_ name: String) -> Bool {
+    guard let component = name.split(separator: ".").last else { return false }
+    return unsafeStandardLibraryTypeNames.contains(String(component))
+}
+
+func containsUnsafeStandardLibraryType(_ type: TypeSyntax) -> Bool {
+    let visitor = UnsafeTypeVisitor()
+    visitor.walk(type)
+    return visitor.found
+}
+
+private final class UnsafeTypeVisitor: SyntaxVisitor {
+    var found = false
+
+    init() { super.init(viewMode: .sourceAccurate) }
+
+    override func visit(_ node: IdentifierTypeSyntax) -> SyntaxVisitorContinueKind {
+        if isUnsafeStandardLibraryTypeName(cleanName(node.name.text)) { found = true }
+        return found ? .skipChildren : .visitChildren
+    }
 }
 
 func expressionName(_ node: ExprSyntax) -> String? {

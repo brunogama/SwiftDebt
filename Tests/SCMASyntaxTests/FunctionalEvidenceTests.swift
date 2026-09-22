@@ -181,6 +181,36 @@ struct FunctionalEvidenceTests {
         #expect(facts.allSatisfy { $0.confidence == .measuredSyntax || $0.confidence == .heuristic })
     }
 
+    @Test func unsafeWordsOutsideTypeSyntaxDoNotBecomeUnsafeEscapeHatchEvidence() {
+        let result = parse(
+            """
+            struct UnsafeNameOnly {
+              let value: Int
+            }
+
+            func describeSafety(_ value: UnsafeNameOnly) -> String {
+              "This string says unsafe but uses no unsafe Swift construct."
+            }
+            """)
+        let facts = result.riskFacts + result.functions.flatMap(\.riskFacts)
+
+        #expect(result.isValid)
+        #expect(!facts.contains { $0.category == .unsafeEscapeHatch })
+    }
+
+    @Test func unsafeStandardLibraryConstructionProducesUnsafeEscapeHatchEvidence() throws {
+        let result = parse(
+            """
+            func pointer() -> UnsafeRawPointer? {
+              UnsafeRawPointer(bitPattern: 0)
+            }
+            """)
+        let function = try #require(result.functions.first)
+
+        #expect(result.isValid)
+        #expect(function.riskFacts.contains { $0.category == .unsafeEscapeHatch })
+    }
+
     @Test func knownBenignFunctionalCompositionDoesNotBecomeSideEffectEvidence() throws {
         let result = parse(
             """

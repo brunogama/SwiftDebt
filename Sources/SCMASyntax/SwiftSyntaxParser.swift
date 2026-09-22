@@ -168,7 +168,8 @@ private final class DeclarationCollector: SyntaxVisitor {
                     )
                 )
             }
-        } else if node.bindingSpecifier.text == "var", hasStaticModifier(Syntax(node)) {
+        } else if node.bindingSpecifier.text == "var",
+            hasAnyModifier(Syntax(node), named: ["class", "static"]) {
             riskFacts.append(
                 SwiftRiskFact(
                     category: .mutableSharedState,
@@ -284,9 +285,10 @@ private final class DeclarationCollector: SyntaxVisitor {
     }
 
     private func declarationRiskFacts(for node: Syntax, name: String) -> [SwiftRiskFact] {
-        let text = node.description
         var facts: [SwiftRiskFact] = []
-        if mentionsGlobalActor(text) {
+        let attributes = attributeNames(of: node)
+        let inherited = inheritedTypes(of: node)
+        if !attributes.isDisjoint(with: ["MainActor", "globalActor", "GlobalActor"]) {
             facts.append(
                 SwiftRiskFact(
                     category: .globalActorIsolation,
@@ -295,7 +297,7 @@ private final class DeclarationCollector: SyntaxVisitor {
                 )
             )
         }
-        if mentionsUncheckedSendable(text) {
+        if inherited.contains(where: isUncheckedSendableConformance) {
             facts.append(
                 SwiftRiskFact(
                     category: .uncheckedSendable,
@@ -303,7 +305,7 @@ private final class DeclarationCollector: SyntaxVisitor {
                     location: sourceLines.location(node)
                 )
             )
-        } else if mentionsSendable(text) {
+        } else if inherited.contains(where: isSendableConformance) {
             facts.append(
                 SwiftRiskFact(
                     category: .sendableConformance,
@@ -313,20 +315,11 @@ private final class DeclarationCollector: SyntaxVisitor {
                 )
             )
         }
-        if mentionsNonisolated(text) {
+        if hasModifier(node, named: "nonisolated") {
             facts.append(
                 SwiftRiskFact(
                     category: .nonisolatedDeclaration,
                     detail: "nonisolated declaration \(name)",
-                    location: sourceLines.location(node)
-                )
-            )
-        }
-        if mentionsUnsafe(text) {
-            facts.append(
-                SwiftRiskFact(
-                    category: .unsafeEscapeHatch,
-                    detail: "unsafe syntax near \(name)",
                     location: sourceLines.location(node)
                 )
             )
@@ -336,7 +329,7 @@ private final class DeclarationCollector: SyntaxVisitor {
 
     private func unsafeParameterRiskFacts(in parameters: FunctionParameterListSyntax) -> [SwiftRiskFact] {
         parameters.compactMap { parameter in
-            guard mentionsUnsafe(parameter.type.description) else { return nil }
+            guard containsUnsafeStandardLibraryType(parameter.type) else { return nil }
             return SwiftRiskFact(
                 category: .unsafeEscapeHatch,
                 detail: "unsafe parameter \(cleanName((parameter.secondName ?? parameter.firstName).text))",
@@ -346,35 +339,40 @@ private final class DeclarationCollector: SyntaxVisitor {
     }
 }
 
-private func hasStaticModifier(_ node: Syntax) -> Bool {
-    let text = node.description
-    return text.contains("static var") || text.contains("class var")
+private func attributeNames(of node: Syntax) -> Set<String> {
+    guard let declaration = node.asProtocol(WithAttributesSyntax.self) else { return [] }
+    return Set(
+        declaration.attributes.compactMap { element in
+            guard case .attribute(let attribute) = element else { return nil }
+            return typeName(attribute.attributeName)
+        })
 }
 
 private func accessLevel(of node: Syntax) -> String? {
-    let text = node.description.trimmingCharacters(in: .whitespacesAndNewlines)
-    for level in ["open", "public", "package"] where text.hasPrefix(level + " ") || text.contains("\n\(level) ") {
-        return level
-    }
-    return nil
+    ["open", "public", "package"].first { hasModifier(node, named: $0) }
 }
 
-private func mentionsGlobalActor(_ text: String) -> Bool {
-    text.contains("@MainActor") || text.contains("@globalActor") || text.contains("@GlobalActor")
+private func hasModifier(_ node: Syntax, named name: String) -> Bool {
+    node.asProtocol(WithModifiersSyntax.self)?.modifiers.contains {
+        cleanName($0.name.text) == name
+    } == true
 }
 
-private func mentionsUncheckedSendable(_ text: String) -> Bool {
-    text.contains("@unchecked Sendable")
+private func hasAnyModifier(_ node: Syntax, named names: Set<String>) -> Bool {
+    node.asProtocol(WithModifiersSyntax.self)?.modifiers.contains {
+        names.contains(cleanName($0.name.text))
+    } == true
 }
 
-private func mentionsSendable(_ text: String) -> Bool {
-    text.contains("Sendable")
+private func inheritedTypes(of node: Syntax) -> [TypeSyntax] {
+    node.asProtocol(DeclGroupSyntax.self)?.inheritanceClause?.inheritedTypes.map(\.type) ?? []
 }
 
-private func mentionsNonisolated(_ text: String) -> Bool {
-    text.contains("nonisolated")
+private func isSendableConformance(_ type: TypeSyntax) -> Bool {
+    typeName(type)?.split(separator: ".").last == "Sendable"
 }
 
-private func mentionsUnsafe(_ text: String) -> Bool {
-    text.localizedCaseInsensitiveContains("unsafe") || text.contains("Unsafe")
+private func isUncheckedSendableConformance(_ type: TypeSyntax) -> Bool {
+    guard isSendableConformance(type), let attributed = type.as(AttributedTypeSyntax.self) else { return false }
+    return attributeNames(of: Syntax(attributed)).contains("unchecked")
 }

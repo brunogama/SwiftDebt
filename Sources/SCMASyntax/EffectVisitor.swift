@@ -140,11 +140,12 @@ final class EffectVisitor: SyntaxVisitor {
                 )
             )
         }
-        if node.description.localizedCaseInsensitiveContains("unsafe") || node.description.contains("Unsafe") {
+        if let name = expressionName(node.calledExpression),
+            name.split(separator: ".").contains(where: { isUnsafeStandardLibraryTypeName(String($0)) }) {
             riskFacts.append(
                 SwiftRiskFact(
                     category: .unsafeEscapeHatch,
-                    detail: "unsafe expression",
+                    detail: "unsafe standard-library call \(name)",
                     location: sourceLines.location(node)
                 )
             )
@@ -159,6 +160,18 @@ final class EffectVisitor: SyntaxVisitor {
                 )
             )
         }
+        return .visitChildren
+    }
+
+    override func visit(_ node: UnsafeExprSyntax) -> SyntaxVisitorContinueKind {
+        riskFacts.append(
+            SwiftRiskFact(
+                category: .unsafeEscapeHatch,
+                detail: "unsafe expression",
+                location: sourceLines.location(node),
+                confidence: .measuredSyntax
+            )
+        )
         return .visitChildren
     }
 
