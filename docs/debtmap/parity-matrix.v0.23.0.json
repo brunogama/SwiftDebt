@@ -208,6 +208,28 @@
       "status": "implemented"
     },
     {
+      "capability": "Swift purity, side-effect, functional-composition, entropy and pattern-consistency evidence",
+      "id": "functional-pattern-evidence",
+      "implementationState": "implemented",
+      "ownerTicket": "12-analyze-purity-side-effects-entropy-and-pattern-consistency",
+      "proofs": [
+        {
+          "kind": "test",
+          "reference": "FunctionalEvidenceTests.knownBenignFunctionalCompositionDoesNotBecomeSideEffectEvidence"
+        },
+        {
+          "kind": "test",
+          "reference": "FunctionalEvidenceTests.heuristicEvidenceExplainsConfidenceAndSemanticLimits"
+        },
+        {
+          "kind": "test",
+          "reference": "FunctionalEvidenceTests.scoringInputsAndExplanationsAreDeterministic"
+        }
+      ],
+      "scope": "in-scope",
+      "status": "implemented"
+    },
+    {
       "capability": "Optional Git-history risk evidence using frozen reference time",
       "id": "git-history-risk",
       "implementationState": "implemented",
@@ -350,6 +372,36 @@
         {
           "kind": "test",
           "reference": "DebtmapParityFixtureTests.finalReleaseAcceptanceRequiresClosedParityEvidence"
+        }
+      ],
+      "scope": "in-scope",
+      "status": "implemented"
+    },
+    {
+      "capability": "Executable phase profiling and equivalent-workload performance regression budgets",
+      "id": "performance-profiling-budgets",
+      "implementationState": "implemented",
+      "ownerTicket": "18-add-profiling-and-enforce-performance-budgets",
+      "proofs": [
+        {
+          "kind": "workflow",
+          "reference": ".github/workflows/debtmap-performance.yml"
+        },
+        {
+          "kind": "script",
+          "reference": "scripts/run_debtmap_benchmark.py"
+        },
+        {
+          "kind": "test",
+          "reference": "PerformanceProfilingTests.benchmarkHarnessRecordsRawSamplesAndMachineReadableMedian"
+        },
+        {
+          "kind": "test",
+          "reference": "PerformanceProfilingTests.performanceGateCLIRejectsMeasuredRegression"
+        },
+        {
+          "kind": "test",
+          "reference": "PerformanceProfilingTests.performanceGateAppliesWallClockAndMemoryBudgetsForEquivalentWorkloads"
         }
       ],
       "scope": "in-scope",

@@ -15,6 +15,7 @@ struct ParityValidation: Decodable {
 
 struct ParityCapability: Decodable {
     let id: String
+    let ownerTicket: String?
     let implementationState: String
     let scope: String
     let status: String

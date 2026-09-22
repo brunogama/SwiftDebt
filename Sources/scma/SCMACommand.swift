@@ -49,6 +49,10 @@ struct SCMACommand {
                 let result = try CoverageExplanationService().run(request)
                 FileHandle.standardOutput.write(Data(result.standardOutput.utf8))
                 exit(0)
+            case .performanceGate(let request):
+                let result = try PerformanceGateCLI.run(request)
+                FileHandle.standardOutput.write(Data(result.output.utf8))
+                exit(result.exitStatus)
             }
         } catch {
             let message = "scma: error: \(error)\n"

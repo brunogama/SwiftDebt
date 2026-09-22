@@ -12,6 +12,14 @@
     {
       "name": "measure-linux",
       "argv": ["/usr/bin/time", "-v", ".build/release/scma", "analyze", "Examples/Sources", "--format", "json", "--jobs", "1", "--output", ".scma/benchmarks/debtmap-baseline/examples-sources.json", "--profile-output", ".scma/benchmarks/debtmap-baseline/examples-sources.profile.json"]
+    },
+    {
+      "name": "benchmark-harness",
+      "argv": ["python3", "scripts/run_debtmap_benchmark.py", "--output", "RESULT.json", "--input", "Examples/Sources/Example.swift", "--input", ".scma.example.json", "--analyzer", "SwiftSCMA", "--workload-family", "SwiftSCMA", "--command-fingerprint", "WORKLOAD", "--analysis-mode", "MODE", "--optional-context", "CONTEXT", "--", "COMMAND"]
+    },
+    {
+      "name": "enforce-merge-budget",
+      "argv": [".build/release/scma", "performance-gate", "BASELINE.json", "CANDIDATE.json", "--name", "BUDGET", "--max-wall-clock-regression", "PERCENT", "--max-peak-memory-regression", "PERCENT", "--output", "EVALUATION.json"]
     }
   ],
   "inputs": [
@@ -39,7 +47,8 @@
     "Record elapsed wall-clock seconds and peak resident memory from the platform time tool.",
     "Record phase-wall-clock nanoseconds from the analyzer profile output for discovery, parsing, structural evidence, graph, coverage, repository history, functional evidence, scoring, aggregation and rendering when those phases run.",
     "Report every raw sample, median, minimum and maximum with the Swift version, OS, CPU model and memory size.",
-    "Use medians for CI regression gates and include all raw samples when requesting an approved exception."
+    "Use medians for CI regression gates and include all raw samples when requesting an approved exception.",
+    "Run .github/workflows/debtmap-performance.yml on pull requests to enforce both regression budgets against equivalent frozen SwiftSCMA workloads."
   ],
   "outputDirectory": ".scma/benchmarks/debtmap-baseline",
   "performanceGate": {

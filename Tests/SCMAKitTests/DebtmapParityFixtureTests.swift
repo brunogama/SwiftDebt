@@ -22,6 +22,14 @@ struct DebtmapParityFixtureTests {
         )
         #expect(matrix.capabilities.map(\.id) == matrix.capabilities.map(\.id).sorted())
         #expect(Set(matrix.capabilities.map(\.id)).count == matrix.capabilities.count)
+        let requiredOwnerTickets = Set((6...21).map { String(format: "%02d", $0) })
+        let representedOwnerTickets = Set(
+            matrix.capabilities.compactMap(\.ownerTicket).compactMap { $0.split(separator: "-").first.map(String.init) }
+        )
+        #expect(
+            requiredOwnerTickets.isSubset(of: representedOwnerTickets),
+            "Parity matrix omits ticket capabilities: \(requiredOwnerTickets.subtracting(representedOwnerTickets).sorted())"
+        )
 
         for capability in matrix.capabilities {
             #expect(matrix.statuses.contains(capability.status), "Unknown status for \(capability.id)")
@@ -152,6 +160,7 @@ struct DebtmapParityFixtureTests {
 
     @Test func benchmarkMethodologyReferencesFrozenInputs() throws {
         let methodology: BenchmarkMethodology = try loadJSON("benchmarks/debtmap-baseline/methodology.v1.json")
+        let workflow = try read(".github/workflows/debtmap-performance.yml")
 
         #expect(methodology.baselineCommit == "b0ae66be2065084b29b8b5da0a86d5cd049feced")
         #expect(methodology.schemaVersion == 1)
@@ -188,6 +197,11 @@ struct DebtmapParityFixtureTests {
         #expect(methodology.regressionBudgets[0].optionalContext == "none")
         #expect(methodology.regressionBudgets[1].maximumWallClockRegressionPercent == 20)
         #expect(methodology.regressionBudgets[1].optionalContext == "coverage-and-repository-history")
+        #expect(workflow.contains("scripts/run_debtmap_benchmark.py"))
+        #expect(workflow.contains("scma performance-gate"))
+        #expect(workflow.contains(methodology.baselineCommit))
+        #expect(workflow.contains("--max-wall-clock-regression 10"))
+        #expect(workflow.contains("--max-peak-memory-regression 15"))
 
         for input in methodology.inputs {
             let url = root.appendingPathComponent(input.path)

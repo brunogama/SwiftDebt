@@ -135,6 +135,117 @@ struct PerformanceProfilingTests {
         #expect(evaluation.reasons.contains("peak-memory regression exceeds 15.0%"))
     }
 
+    @Test func performanceGateCLIRejectsMeasuredRegression() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SwiftSCMAPerformanceGate-")
+            .appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let baseline = directory.appendingPathComponent("baseline.json")
+        let candidate = directory.appendingPathComponent("candidate.json")
+        let output = directory.appendingPathComponent("evaluation.json")
+        let workload = PerformanceWorkloadIdentity(
+            analyzer: "SwiftSCMA",
+            workloadFamily: "SwiftSCMA",
+            inputSHA256: "frozen-input",
+            commandFingerprint: "scma debt analyze Examples/Sources --jobs 1",
+            analysisMode: "full-evidence",
+            optionalContext: "coverage-and-repository-history"
+        )
+        try write(
+            PerformanceBenchmarkResult(
+                workload: workload,
+                wallClockSecondsMedian: 10,
+                peakMemoryBytesMedian: 1_000
+            ),
+            to: baseline
+        )
+        try write(
+            PerformanceBenchmarkResult(
+                workload: workload,
+                wallClockSecondsMedian: 13,
+                peakMemoryBytesMedian: 1_200
+            ),
+            to: candidate
+        )
+
+        let result = try runSCMA(arguments: [
+            "performance-gate",
+            baseline.path,
+            candidate.path,
+            "--name", "full-evidence-analysis",
+            "--max-wall-clock-regression", "20",
+            "--max-peak-memory-regression", "15",
+            "--output", output.path,
+        ])
+        let evaluation = try JSONDecoder().decode(
+            PerformanceBudgetEvaluation.self,
+            from: Data(contentsOf: output)
+        )
+
+        #expect(result.status == 1)
+        #expect(result.stdout.isEmpty)
+        #expect(result.stderr.isEmpty)
+        #expect(evaluation.comparable)
+        #expect(!evaluation.passed)
+        #expect(evaluation.wallClockRegressionPercent == 30)
+        #expect(evaluation.peakMemoryRegressionPercent == 20)
+    }
+
+    @Test func benchmarkHarnessRecordsRawSamplesAndMachineReadableMedian() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SwiftSCMABenchmarkHarness-")
+            .appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let input = directory.appendingPathComponent("input.swift")
+        let output = directory.appendingPathComponent("result.json")
+        try "struct Input {}\n".write(to: input, atomically: true, encoding: .utf8)
+        let root = repositoryRoot
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
+        process.arguments = [
+            root.appendingPathComponent("scripts/run_debtmap_benchmark.py").path,
+            "--output", output.path,
+            "--input", input.path,
+            "--analyzer", "SwiftSCMA",
+            "--workload-family", "SwiftSCMA",
+            "--command-fingerprint", "true",
+            "--analysis-mode", "baseline",
+            "--optional-context", "none",
+            "--warmups", "0",
+            "--runs", "2",
+            "--",
+            "/usr/bin/true",
+        ]
+        let stderr = Pipe()
+        process.standardError = stderr
+        try process.run()
+        process.waitUntilExit()
+        let errorText = String(data: stderr.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+
+        #expect(process.terminationStatus == 0, Comment(rawValue: errorText))
+        let object = try #require(
+            JSONSerialization.jsonObject(with: Data(contentsOf: output)) as? [String: Any]
+        )
+        let samples = try #require(object["samples"] as? [[String: Any]])
+        #expect(samples.count == 2)
+        #expect((object["wallClockSecondsMedian"] as? Double) ?? 0 > 0)
+        #expect((object["wallClockSecondsMinimum"] as? Double) ?? 0 > 0)
+        #expect((object["wallClockSecondsMaximum"] as? Double) ?? 0 > 0)
+        #expect((object["peakMemoryBytesMedian"] as? Int) ?? 0 > 0)
+        #expect((object["peakMemoryBytesMinimum"] as? Int) ?? 0 > 0)
+        #expect((object["peakMemoryBytesMaximum"] as? Int) ?? 0 > 0)
+        let metadata = try #require(object["metadata"] as? [String: Any])
+        #expect(!((metadata["swiftVersion"] as? String) ?? "").isEmpty)
+        #expect(!((metadata["os"] as? String) ?? "").isEmpty)
+        #expect(!((metadata["cpuModel"] as? String) ?? "").isEmpty)
+        #expect((metadata["memoryBytes"] as? Int) ?? 0 > 0)
+        let decoded = try JSONDecoder().decode(PerformanceBenchmarkResult.self, from: Data(contentsOf: output))
+        #expect(decoded.workload.inputSHA256.count == 64)
+        #expect(decoded.workload.analysisMode == "baseline")
+    }
+
     private func makeWorkspace() throws -> URL {
         let workspace = FileManager.default.temporaryDirectory
             .appendingPathComponent("SwiftSCMAPerformanceProfiling-")
@@ -158,5 +269,48 @@ struct PerformanceProfilingTests {
             encoding: .utf8
         )
         return workspace
+    }
+
+    private var repositoryRoot: URL {
+        URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+    }
+
+    private func write<T: Encodable>(_ value: T, to url: URL) throws {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+        try encoder.encode(value).write(to: url, options: .atomic)
+    }
+
+    private func runSCMA(arguments: [String]) throws -> (status: Int32, stdout: String, stderr: String) {
+        let process = Process()
+        process.executableURL = try scmaExecutableURL()
+        process.arguments = arguments
+        let stdout = Pipe()
+        let stderr = Pipe()
+        process.standardOutput = stdout
+        process.standardError = stderr
+        try process.run()
+        process.waitUntilExit()
+        return (
+            process.terminationStatus,
+            String(data: stdout.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? "",
+            String(data: stderr.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+        )
+    }
+
+    private func scmaExecutableURL() throws -> URL {
+        let buildDirectory = repositoryRoot.appendingPathComponent(".build")
+        let manager = FileManager.default
+        let enumerator = try #require(manager.enumerator(at: buildDirectory, includingPropertiesForKeys: nil))
+        let candidates = enumerator.compactMap { entry -> URL? in
+            guard let url = entry as? URL, url.lastPathComponent == "scma",
+                manager.isExecutableFile(atPath: url.path)
+            else { return nil }
+            return url
+        }
+        return try #require(candidates.sorted { $0.path < $1.path }.first)
     }
 }

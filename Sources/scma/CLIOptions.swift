@@ -14,6 +14,7 @@ enum CLIAction {
     case compare(DebtComparisonRequest)
     case validateImprovement(DebtValidationRequest)
     case explainCoverage(CoverageExplanationRequest)
+    case performanceGate(PerformanceGateRequest)
 }
 
 struct CLIOptions {
@@ -26,6 +27,7 @@ struct CLIOptions {
                scma compare BEFORE_JSON AFTER_JSON [--output PATH]
                scma validate-improvement BEFORE_JSON AFTER_JSON [--threshold SCORE] [--output PATH]
                scma explain coverage [path] --lcov PATH [options]
+               scma performance-gate BASELINE_JSON CANDIDATE_JSON [options]
                scma --help
                scma --version
 
@@ -38,6 +40,11 @@ struct CLIOptions {
           --interactive-debt             Open ranked debt explorer when terminal supports it.
           --output PATH                  Write a report atomically instead of stdout.
           --profile-output PATH          Write machine-readable phase profiling JSON.
+          --name NAME                    Performance budget name.
+          --max-wall-clock-regression PERCENT
+                                         Maximum accepted wall-clock regression.
+          --max-peak-memory-regression PERCENT
+                                         Maximum accepted peak-memory regression.
           --threshold SCORE              Required improvement for validate-improvement.
           --type-scope SCOPE             classes (paper scope) or nominals.
           --scoring MODE                 none (default), paper (literal), bounded (clamped),
@@ -78,6 +85,9 @@ struct CLIOptions {
         }
         if arguments.first == "explain", arguments.dropFirst().first == "coverage" {
             return try parseExplainCoverage(Array(arguments.dropFirst(2)))
+        }
+        if arguments.first == "performance-gate" {
+            return try parsePerformanceGate(Array(arguments.dropFirst()))
         }
         if arguments.first == "debt", isDebtNamespace(Array(arguments.dropFirst())) {
             return try parseDebt(Array(arguments.dropFirst()))
