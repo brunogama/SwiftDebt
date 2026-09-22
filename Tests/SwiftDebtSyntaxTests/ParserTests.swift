@@ -12,7 +12,7 @@ struct ParserTests {
 
     @Test func modernSwiftSyntaxGoldenFixtureCoversStructuralDebtFacts() throws {
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-        let sourceURL = root.appendingPathComponent("Fixtures/ModernStructuralDebt.swift")
+        let sourceURL = root.appendingPathComponent("Fixtures/ModernStructuralDebt.swift.txt")
         let goldenURL = root.appendingPathComponent("Fixtures/ModernStructuralDebt.golden.json")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
         let expected = try JSONDecoder().decode(SwiftSyntaxGolden.self, from: Data(contentsOf: goldenURL))
