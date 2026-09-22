@@ -6,6 +6,13 @@ from pathlib import Path
 
 REPOSITORY = Path(__file__).resolve().parents[2]
 WORKFLOW = REPOSITORY / ".github" / "workflows" / "release.yml"
+SWIFT_SETUP = "swift-actions/setup-swift@7ca6abe6b3b0e8b5421b88be48feee39cbf52c6a"
+SWIFT_WORKFLOWS = (
+    "debtmap-performance.yml",
+    "domain-coverage.yml",
+    "genesis-code-reviewer.yml",
+    "release.yml",
+)
 
 
 class ReleaseWorkflowTests(unittest.TestCase):
@@ -23,6 +30,14 @@ class ReleaseWorkflowTests(unittest.TestCase):
         for action in expected:
             with self.subTest(action=action):
                 self.assertIn(action, self.workflow)
+
+    def test_swift_workflows_select_the_required_toolchain(self) -> None:
+        for name in SWIFT_WORKFLOWS:
+            with self.subTest(workflow=name):
+                workflow = (WORKFLOW.parent / name).read_text(encoding="utf-8")
+                self.assertIn(SWIFT_SETUP, workflow)
+                self.assertIn('swift-version: "6.2.0"', workflow)
+                self.assertIn("swift --version | grep 'Swift version 6.2'", workflow)
 
     def test_release_is_serialized_and_push_is_atomic(self) -> None:
         self.assertIn("branches: [main]", self.workflow)
