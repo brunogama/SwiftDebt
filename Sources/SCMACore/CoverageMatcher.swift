@@ -1,7 +1,9 @@
 public struct CoverageMatcher: Sendable {
     public init() {}
 
-    public func match(report: LcovReport, entities: [DebtEntity], repositoryRoot: String? = nil) -> CoverageMatchingResult {
+    public func match(report: LcovReport, entities: [DebtEntity], repositoryRoot: String? = nil)
+        -> CoverageMatchingResult
+    {
         let root = repositoryRoot.map(normalizedPath)
         let records = report.records.sorted(by: recordOrder)
         let indexedRecords = records.map { record in
@@ -28,7 +30,9 @@ public struct CoverageMatcher: Sendable {
                     matchedFunction: nil,
                     availability: .unmatchedEntity,
                     confidence: .unmatched,
-                    attemptedStrategies: [.sourcePathExact, .sourcePathSuffix, .functionNameExact, .functionNameSuffix],
+                    attemptedStrategies: [
+                        .sourcePathExact, .sourcePathSuffix, .functionNameExact, .functionNameSuffix,
+                    ],
                     message: "LCOV record did not match any debt entity"
                 )
             )
@@ -46,23 +50,28 @@ public struct CoverageMatcher: Sendable {
             let source = diagnostic.matchedSourcePath ?? diagnostic.sourcePath ?? "<none>"
             let function = diagnostic.matchedFunction.map { " function=\($0)" } ?? ""
             let strategies = diagnostic.attemptedStrategies.map(\.rawValue).joined(separator: ">")
-            return "coverage: \(subject): \(diagnostic.availability.rawValue) confidence=\(diagnostic.confidence.rawValue) source=\(source)\(function) strategies=\(strategies) - \(diagnostic.message)"
+            return
+                "coverage: \(subject): \(diagnostic.availability.rawValue) confidence=\(diagnostic.confidence.rawValue) source=\(source)\(function) strategies=\(strategies) - \(diagnostic.message)"
         }.joined(separator: "\n") + (diagnostics.isEmpty ? "" : "\n")
     }
 
     private func match(entity: DebtEntity, records: [IndexedRecord]) -> Match {
         let sourcePath = entity.location.file.map(normalizedPath)
         guard let sourcePath else {
-            return Match(attempted: [.sourcePathExact, .sourcePathSuffix], availability: .missingFile, message: "Debt entity has no source file")
+            return Match(
+                attempted: [.sourcePathExact, .sourcePathSuffix], availability: .missingFile,
+                message: "Debt entity has no source file")
         }
-        guard let record = exactRecord(for: sourcePath, in: records) ?? suffixRecord(for: sourcePath, in: records) else {
+        guard let record = exactRecord(for: sourcePath, in: records) ?? suffixRecord(for: sourcePath, in: records)
+        else {
             return Match(
                 attempted: [.sourcePathExact, .sourcePathSuffix],
                 availability: .missingFile,
                 message: "No LCOV source file matched \(sourcePath)"
             )
         }
-        let pathStrategy: CoverageMatchingStrategy = record.normalizedPath == sourcePath ? .sourcePathExact : .sourcePathSuffix
+        let pathStrategy: CoverageMatchingStrategy =
+            record.normalizedPath == sourcePath ? .sourcePathExact : .sourcePathSuffix
         let pathConfidence: CoverageMatchingConfidence = pathStrategy == .sourcePathExact ? .exact : .high
         if entity.level == .file || entity.level == .module || entity.level == .type {
             guard !record.record.lineHits.isEmpty else {
@@ -96,7 +105,8 @@ public struct CoverageMatcher: Sendable {
                 attempted: [pathStrategy, .functionNameExact],
                 availability: function.hits > 0 ? .measuredCoverage : .zeroCoverage,
                 confidence: .exact,
-                message: function.hits > 0 ? "Matched LCOV function with executed hits" : "Matched LCOV function with zero hits"
+                message: function.hits > 0
+                    ? "Matched LCOV function with executed hits" : "Matched LCOV function with zero hits"
             )
         }
         if let function = suffixFunction(for: names, in: record.record) {
@@ -108,7 +118,8 @@ public struct CoverageMatcher: Sendable {
                 attempted: [pathStrategy, .functionNameExact, .functionNameSuffix],
                 availability: function.hits > 0 ? .measuredCoverage : .zeroCoverage,
                 confidence: .high,
-                message: function.hits > 0 ? "Matched LCOV function suffix with executed hits" : "Matched LCOV function suffix with zero hits"
+                message: function.hits > 0
+                    ? "Matched LCOV function suffix with executed hits" : "Matched LCOV function suffix with zero hits"
             )
         }
         if let line = entity.location.line, let hit = record.record.lineHits.first(where: { $0.line == line }) {
@@ -116,10 +127,13 @@ public struct CoverageMatcher: Sendable {
                 record: record,
                 covered: hit.hits > 0 ? 1 : 0,
                 total: 1,
-                attempted: [pathStrategy, .functionNameExact, .functionNameSuffix, .functionStartLine, .executableLine],
+                attempted: [
+                    pathStrategy, .functionNameExact, .functionNameSuffix, .functionStartLine, .executableLine,
+                ],
                 availability: hit.hits > 0 ? .measuredCoverage : .zeroCoverage,
                 confidence: .fallback,
-                message: hit.hits > 0 ? "Matched executable line with executed hits" : "Matched executable line with zero hits"
+                message: hit.hits > 0
+                    ? "Matched executable line with executed hits" : "Matched executable line with zero hits"
             )
         }
         return Match(
@@ -159,10 +173,17 @@ public struct CoverageMatcher: Sendable {
 
     private func coverageEvidence(for entity: DebtEntity, match: Match) -> DebtEvidence {
         let availability = evidenceAvailability(for: match)
-        let score = match.total > 0 ? (Double(match.covered) / Double(match.total) * 100) : nil
-        let raw = match.total > 0
-            ? "covered=\(match.covered)/\(match.total);coverage=\(format(score ?? 0))%;confidence=\(match.confidence.rawValue)"
-            : "coverage=unavailable;confidence=\(match.confidence.rawValue)"
+        let score: Double?
+        let raw: String
+        if match.total > 0 {
+            let percentage = Double(match.covered) / Double(match.total) * 100
+            score = percentage
+            raw =
+                "covered=\(match.covered)/\(match.total);coverage=\(format(percentage))%;confidence=\(match.confidence.rawValue)"
+        } else {
+            score = nil
+            raw = "coverage=unavailable;confidence=\(match.confidence.rawValue)"
+        }
         return DebtEvidence(
             id: "\(entity.id):coverage:lcov",
             kind: "coverage.lcov",
@@ -172,7 +193,8 @@ public struct CoverageMatcher: Sendable {
             normalizedScore: score,
             rawValue: raw,
             location: entity.location,
-            note: "Coverage dampener matched with strategies \(match.attempted.map(\.rawValue).joined(separator: ">")); \(match.message)"
+            note:
+                "Coverage dampener matched with strategies \(match.attempted.map(\.rawValue).joined(separator: ">")); \(match.message)"
         )
     }
 
@@ -230,9 +252,7 @@ private func entityOrder(_ lhs: DebtEntity, _ rhs: DebtEntity) -> Bool {
 }
 
 private func evidenceOrder(_ lhs: DebtEvidence, _ rhs: DebtEvidence) -> Bool {
-    if lhs.id != rhs.id { return lhs.id < rhs.id }
-    if lhs.kind != rhs.kind { return lhs.kind < rhs.kind }
-    return lhs.rawValue < rhs.rawValue
+    (lhs.id, lhs.rawValue) < (rhs.id, rhs.rawValue)
 }
 
 private func diagnosticOrder(_ lhs: CoverageDiagnostic, _ rhs: CoverageDiagnostic) -> Bool {

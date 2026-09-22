@@ -87,11 +87,11 @@ package struct DuplicateDetector {
         }
         return Result(
             blocks: blocks.sorted { lhs, rhs in
-                if lhs.first.file != rhs.first.file { return lhs.first.file < rhs.first.file }
-                if lhs.first.startLine != rhs.first.startLine { return lhs.first.startLine < rhs.first.startLine }
-                if lhs.second.file != rhs.second.file { return lhs.second.file < rhs.second.file }
-                if lhs.second.startLine != rhs.second.startLine { return lhs.second.startLine < rhs.second.startLine }
-                return lhs.first.codeLines < rhs.first.codeLines
+                (
+                    lhs.first.file, lhs.first.startLine, lhs.second.file, lhs.second.startLine
+                ) < (
+                    rhs.first.file, rhs.first.startLine, rhs.second.file, rhs.second.startLine
+                )
             },
             uniqueLines: duplicated.values.reduce(0) { $0 + $1.count }
         )

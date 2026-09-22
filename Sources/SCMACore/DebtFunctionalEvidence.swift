@@ -54,7 +54,8 @@ package struct DebtFunctionalEvidenceBuilder: Sendable {
                     normalizedScore: score(for: category, count: ordered.count),
                     rawValue: "count=\(ordered.count);details=\(ordered.map(\.detail).joined(separator: ","))",
                     location: location,
-                    note: "Measured SwiftSyntax facts with \(confidenceSummary(ordered.map(\.confidence))) confidence; not compiler semantic proof."
+                    note:
+                        "Measured SwiftSyntax facts with \(confidenceSummary(ordered.map(\.confidence))) confidence; not compiler semantic proof."
                 )
             )
         }
@@ -67,7 +68,8 @@ package struct DebtFunctionalEvidenceBuilder: Sendable {
                     normalizedScore: 0,
                     rawValue: "measuredSyntaxEffects=0",
                     location: location,
-                    note: "Heuristic inference from absence of recognized SwiftSyntax effect markers; not compiler semantic proof."
+                    note:
+                        "Heuristic inference from absence of recognized SwiftSyntax effect markers; not compiler semantic proof."
                 )
             )
         }
@@ -80,14 +82,18 @@ package struct DebtFunctionalEvidenceBuilder: Sendable {
                     kind: "swift.functional-composition",
                     weight: 0.5,
                     normalizedScore: Double(impureClosures * 15),
-                    rawValue: "operations=\(ordered.map(\.operation).joined(separator: ","));impureClosures=\(impureClosures)",
+                    rawValue:
+                        "operations=\(ordered.map(\.operation).joined(separator: ","));impureClosures=\(impureClosures)",
                     location: location,
-                    note: "Measured functional call syntax; benign pure closures reduce false positives, but not compiler semantic proof."
+                    note:
+                        "Measured functional call syntax; benign pure closures reduce false positives, but not compiler semantic proof."
                 )
             )
         }
         if options.includesSwiftSpecificRiskEvidence {
-            result.append(contentsOf: groupedRiskEvidence(facts: function.riskFacts, idPrefix: function.name, locationModule: module))
+            result.append(
+                contentsOf: groupedRiskEvidence(
+                    facts: function.riskFacts, idPrefix: function.name, locationModule: module))
             result.append(contentsOf: apiRiskEvidence(for: function, module: module))
         }
         let entropyInputs = [
@@ -105,7 +111,8 @@ package struct DebtFunctionalEvidenceBuilder: Sendable {
                 normalizedScore: patternScore(function),
                 rawValue: entropyInputs.joined(separator: ";"),
                 location: location,
-                note: "Heuristic pattern-consistency score from deterministic syntax counts; not compiler semantic proof."
+                note:
+                    "Heuristic pattern-consistency score from deterministic syntax counts; not compiler semantic proof."
             )
         )
         return result.sorted(by: evidenceOrder)
@@ -127,7 +134,8 @@ package struct DebtFunctionalEvidenceBuilder: Sendable {
                 normalizedScore: riskScore(for: category, count: ordered.count),
                 rawValue: "count=\(ordered.count);details=\(ordered.map(\.detail).joined(separator: ","))",
                 location: DebtLocation(module: locationModule, source: ordered[0].location),
-                note: "Heuristic SwiftSyntax risk evidence with \(confidenceSummary(ordered.map(\.confidence))) confidence; not compiler semantic proof."
+                note:
+                    "Heuristic SwiftSyntax risk evidence with \(confidenceSummary(ordered.map(\.confidence))) confidence; not compiler semantic proof."
             )
         }
     }
@@ -157,9 +165,11 @@ package struct DebtFunctionalEvidenceBuilder: Sendable {
                         kind: "swift.api-risk.public-boundary-complexity",
                         weight: 1.5,
                         normalizedScore: Double(min(100, raw)),
-                        rawValue: "access=\(function.accessLevel ?? "unknown");ccf=\(function.complexity);parameters=\(function.parameters);locf=\(function.codeLines)",
+                        rawValue:
+                            "access=\(accessLevel);ccf=\(function.complexity);parameters=\(function.parameters);locf=\(function.codeLines)",
                         location: location,
-                        note: "Heuristic public-boundary complexity from SwiftSyntax counts; not compiler semantic proof."
+                        note:
+                            "Heuristic public-boundary complexity from SwiftSyntax counts; not compiler semantic proof."
                     )
                 )
             }
@@ -169,7 +179,8 @@ package struct DebtFunctionalEvidenceBuilder: Sendable {
 
     private func patternScore(_ function: FunctionFacts) -> Double {
         let effectKinds = Set(function.effectFacts.map(\.category)).count
-        let raw = function.complexity * 6 + function.parameters * 4 + effectKinds * 10 + max(0, function.codeLines - 8) * 3
+        let raw =
+            function.complexity * 6 + function.parameters * 4 + effectKinds * 10 + max(0, function.codeLines - 8) * 3
         return Double(min(100, raw))
     }
 
@@ -224,17 +235,15 @@ package struct DebtFunctionalEvidenceBuilder: Sendable {
 
 private func evidenceOrder(_ lhs: DebtEvidence, _ rhs: DebtEvidence) -> Bool {
     if lhs.id != rhs.id { return lhs.id < rhs.id }
-    if lhs.kind != rhs.kind { return lhs.kind < rhs.kind }
     if lhs.rawValue != rhs.rawValue { return lhs.rawValue < rhs.rawValue }
-    return (lhs.note ?? "") < (rhs.note ?? "")
+    return String(reflecting: lhs.note) < String(reflecting: rhs.note)
 }
 
 private func effectOrder(_ lhs: SyntaxEffectFact, _ rhs: SyntaxEffectFact) -> Bool {
     if lhs.location != rhs.location { return locationOrder(lhs.location, rhs.location) }
-    if lhs.category != rhs.category { return lhs.category.rawValue < rhs.category.rawValue }
     if lhs.detail != rhs.detail { return lhs.detail < rhs.detail }
     if lhs.confidence != rhs.confidence { return lhs.confidence.rawValue < rhs.confidence.rawValue }
-    return !lhs.inClosure && rhs.inClosure
+    return false
 }
 
 private func compositionOrder(_ lhs: FunctionalCompositionFact, _ rhs: FunctionalCompositionFact) -> Bool {
@@ -246,7 +255,6 @@ private func compositionOrder(_ lhs: FunctionalCompositionFact, _ rhs: Functiona
 
 private func riskOrder(_ lhs: SwiftRiskFact, _ rhs: SwiftRiskFact) -> Bool {
     if lhs.location != rhs.location { return locationOrder(lhs.location, rhs.location) }
-    if lhs.category != rhs.category { return lhs.category.rawValue < rhs.category.rawValue }
     if lhs.detail != rhs.detail { return lhs.detail < rhs.detail }
     return lhs.confidence.rawValue < rhs.confidence.rawValue
 }

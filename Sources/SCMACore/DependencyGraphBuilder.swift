@@ -57,7 +57,24 @@ package struct DependencyGraphBuilder: Sendable {
         edges += callEdges(functions: functions, functionNames: functionNames)
         edges.sort(by: edgeOrder)
         let risks = couplingRisks(nodes: nodes, edges: edges)
-        let contexts = dependencyContexts(for: risks, nodes: nodes, edges: edges)
+        let contextEntities =
+            (typeInfos.map { type in
+                DebtEntity(
+                    id: typeNodeID(type.key),
+                    displayName: type.key.displayName,
+                    level: .type,
+                    location: DebtLocation(module: type.key.module, source: type.location)
+                )
+            }
+            + functions.map { function in
+                DebtEntity(
+                    id: function.nodeID,
+                    displayName: function.fact.name,
+                    level: .callable,
+                    location: DebtLocation(module: function.module, source: function.fact.location)
+                )
+            }).sorted { $0.id < $1.id }
+        let contexts = dependencyContexts(for: risks, entities: contextEntities, edges: edges)
         let statistics = statistics(nodes: nodes, edges: edges)
         return SwiftDependencyGraph(
             nodes: nodes, edges: edges, couplingRisks: risks,
@@ -102,16 +119,12 @@ package struct DependencyGraphBuilder: Sendable {
         var edges: Set<SwiftGraphEdge> = []
         for type in typeInfos {
             for fragment in type.fragments {
-                if case .resolved(let other) = resolveType(
-                    fragment.key.name, from: type.key, imports: fragment.importedModules, types: typeByKey
-                ), other.module != type.key.module {
-                    edges.insert(moduleEdge(source: type.key.module, target: other.module, location: fragment.location))
-                }
                 for name in fragment.referencedTypes {
                     if case .resolved(let other) = resolveType(
                         name, from: type.key, imports: fragment.importedModules, types: typeByKey
                     ), other.module != type.key.module {
-                        edges.insert(moduleEdge(source: type.key.module, target: other.module, location: fragment.location))
+                        edges.insert(
+                            moduleEdge(source: type.key.module, target: other.module, location: fragment.location))
                     }
                 }
             }
@@ -123,7 +136,8 @@ package struct DependencyGraphBuilder: Sendable {
         SwiftGraphEdge(
             source: moduleNodeID(source), target: moduleNodeID(target), kind: .moduleDependency,
             confidence: .resolvedSyntax, location: location,
-            note: "SwiftSyntax-only module dependency inferred from resolved in-input syntax; not compiler semantic proof."
+            note:
+                "SwiftSyntax-only module dependency inferred from resolved in-input syntax; not compiler semantic proof."
         )
     }
 
@@ -143,7 +157,8 @@ package struct DependencyGraphBuilder: Sendable {
                                 source: source, target: typeNodeID(target), kind: .typeReference,
                                 unresolvedName: nil, confidence: .resolvedSyntax, location: fragment.location,
                                 isTestCaller: type.isTest,
-                                note: "SwiftSyntax-only type reference matched to one in-input declaration; not compiler semantic proof."
+                                note:
+                                    "SwiftSyntax-only type reference matched to one in-input declaration; not compiler semantic proof."
                             )
                         )
                     case .ambiguous(let candidates):
@@ -152,7 +167,8 @@ package struct DependencyGraphBuilder: Sendable {
                                 source: source, target: nil, targetCandidates: candidates.map(typeNodeID).sorted(),
                                 kind: .typeReference, unresolvedName: name, confidence: .ambiguousSyntax,
                                 location: fragment.location, isTestCaller: type.isTest,
-                                note: "SwiftSyntax-only type reference matched multiple in-input declarations; no compiler binding is claimed."
+                                note:
+                                    "SwiftSyntax-only type reference matched multiple in-input declarations; no compiler binding is claimed."
                             )
                         )
                     case .unresolved:
@@ -160,7 +176,8 @@ package struct DependencyGraphBuilder: Sendable {
                             SwiftGraphEdge(
                                 source: source, target: nil, kind: .typeReference, unresolvedName: name,
                                 confidence: .unresolvedSyntax, location: fragment.location, isTestCaller: type.isTest,
-                                note: "SwiftSyntax-only type reference was not resolved inside selected inputs; no compiler binding is claimed."
+                                note:
+                                    "SwiftSyntax-only type reference was not resolved inside selected inputs; no compiler binding is claimed."
                             )
                         )
                     }
@@ -184,7 +201,8 @@ package struct DependencyGraphBuilder: Sendable {
                             source: function.nodeID, target: target.nodeID, kind: .call,
                             unresolvedName: nil, confidence: .resolvedSyntax, location: call.location,
                             isTestCaller: function.isTest,
-                            note: "SwiftSyntax-only call matched to one in-input callable by name and argument labels; not compiler semantic proof."
+                            note:
+                                "SwiftSyntax-only call matched to one in-input callable by name and argument labels; not compiler semantic proof."
                         )
                     )
                 case .ambiguous(let candidates):
@@ -194,7 +212,8 @@ package struct DependencyGraphBuilder: Sendable {
                             targetCandidates: candidates.map(\.nodeID).sorted(), kind: .call,
                             unresolvedName: display, confidence: .ambiguousSyntax, location: call.location,
                             isTestCaller: function.isTest,
-                            note: "SwiftSyntax-only call matched multiple in-input callables; overload binding requires the compiler; no compiler binding is claimed."
+                            note:
+                                "SwiftSyntax-only call matched multiple in-input callables; overload binding requires the compiler; no compiler binding is claimed."
                         )
                     )
                 case .unresolved:
@@ -203,7 +222,8 @@ package struct DependencyGraphBuilder: Sendable {
                             source: function.nodeID, target: nil, kind: .call,
                             unresolvedName: display, confidence: .unresolvedSyntax, location: call.location,
                             isTestCaller: function.isTest,
-                            note: "SwiftSyntax-only call was not resolved inside selected inputs; no compiler binding is claimed."
+                            note:
+                                "SwiftSyntax-only call was not resolved inside selected inputs; no compiler binding is claimed."
                         )
                     )
                 }
@@ -227,8 +247,6 @@ package struct DependencyGraphBuilder: Sendable {
         if parts.count > 1 {
             let qualified = TypeKey(module: parts[0], name: parts.dropFirst().joined(separator: "."))
             if types[qualified] != nil { return .resolved(qualified) }
-            let nestedSameModule = TypeKey(module: source.module, name: name)
-            if types[nestedSameModule] != nil { return .resolved(nestedSameModule) }
         }
         let imported = imports.map { TypeKey(module: $0, name: name) }.filter { types[$0] != nil }.sorted {
             $0.displayName < $1.displayName
@@ -280,18 +298,17 @@ package struct DependencyGraphBuilder: Sendable {
                 callerCount: callerIDs.count, productionCallerCount: productionCallers.count,
                 testCallerCount: testCallers.count, fanIn: Set(incoming).count,
                 fanOut: Set(outgoing).count, instability: instability,
-                note: "Deterministic SwiftSyntax graph counts; unresolved and ambiguous edges are excluded rather than treated as compiler facts."
+                note:
+                    "Deterministic SwiftSyntax graph counts; unresolved and ambiguous edges are excluded rather than treated as compiler facts."
             )
         }.sorted { $0.entityID < $1.entityID }
     }
 
     private func dependencyContexts(
-        for risks: [CouplingRiskEvidence], nodes: [SwiftGraphNode], edges: [SwiftGraphEdge]
+        for risks: [CouplingRiskEvidence], entities: [DebtEntity], edges: [SwiftGraphEdge]
     ) -> [DependencyContext] {
-        let nodeByID = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
         let resolved = edges.filter { $0.confidence == .resolvedSyntax }
-        return risks.map { risk in
-            let node = nodeByID[risk.entityID]
+        return zip(risks, entities).map { risk, entity in
             let upstream = Set(resolved.filter { $0.source == risk.entityID }.compactMap(\.target)).sorted()
             let downstream = Set(resolved.filter { $0.target == risk.entityID }.map(\.source)).sorted()
             let instability = risk.instability.map { String($0) } ?? "n/a"
@@ -306,11 +323,6 @@ package struct DependencyGraphBuilder: Sendable {
                 "instability=\(instability)",
             ]
             let raw = rawParts.joined(separator: ";")
-            let entity = DebtEntity(
-                id: risk.entityID, displayName: risk.entityDisplayName,
-                level: risk.entityKind == .callable ? .callable : .type,
-                location: DebtLocation(module: node?.module, source: node?.location ?? SourceLocation(file: "", line: 1))
-            )
             return DependencyContext(
                 entity: entity, upstreamDependencies: upstream, downstreamDependents: downstream,
                 evidence: [
@@ -321,7 +333,8 @@ package struct DependencyGraphBuilder: Sendable {
                         normalizedScore: Double(min(100, risk.fanIn * 10 + risk.fanOut * 10 + risk.callerCount * 5)),
                         rawValue: raw,
                         location: entity.location,
-                        note: "Critical-path dependency context from deterministic SwiftSyntax edges; not compiler semantic proof."
+                        note:
+                            "Critical-path dependency context from deterministic SwiftSyntax edges; not compiler semantic proof."
                     )
                 ]
             )
@@ -335,17 +348,23 @@ package struct DependencyGraphBuilder: Sendable {
             resolvedEdgeCount: edges.filter { $0.confidence == .resolvedSyntax }.count,
             ambiguousEdgeCount: edges.filter { $0.confidence == .ambiguousSyntax }.count,
             unresolvedEdgeCount: edges.filter { $0.confidence == .unresolvedSyntax }.count,
-            syntaxOnlyNote: "SwiftSyntax-only graph evidence; unresolved and ambiguous edges are explicit and not compiler semantic proof."
+            syntaxOnlyNote:
+                "SwiftSyntax-only graph evidence; unresolved and ambiguous edges are explicit and not compiler semantic proof."
         )
     }
 
     private func dot(nodes: [SwiftGraphNode], edges: [SwiftGraphEdge]) -> String {
         var lines = ["digraph SwiftDependencyGraph {", "  rankdir=LR;"]
         for node in nodes {
-            lines.append("  \"\(escapeDOT(node.id))\" [label=\"\(escapeDOT(node.displayName))\", kind=\"\(node.kind.rawValue)\"];")
+            lines.append(
+                "  \"\(escapeDOT(node.id))\" [label=\"\(escapeDOT(node.displayName))\", kind=\"\(node.kind.rawValue)\"];"
+            )
         }
         for edge in edges {
-            let target = edge.target ?? "unresolved:\(edge.kind.rawValue):\(edge.unresolvedName ?? "unknown")"
+            let unresolvedTarget = ["unresolved", edge.kind.rawValue, edge.unresolvedName]
+                .compactMap { $0 }
+                .joined(separator: ":")
+            let target = edge.target ?? unresolvedTarget
             lines.append(
                 "  \"\(escapeDOT(edge.source))\" -> \"\(escapeDOT(target))\" [label=\"\(edge.kind.rawValue):\(edge.confidence.rawValue)\"];"
             )
@@ -371,35 +390,44 @@ package struct DependencyGraphBuilder: Sendable {
     private func escapeDOT(_ value: String) -> String {
         var result = ""
         for character in value {
-            if character == "\\" { result += "\\\\" }
-            else if character == "\"" { result += "\\\"" }
-            else { result.append(character) }
+            if character == "\\" {
+                result += "\\\\"
+            } else if character == "\"" {
+                result += "\\\""
+            } else {
+                result.append(character)
+            }
         }
         return result
     }
 }
 
 private func nodeOrder(_ lhs: SwiftGraphNode, _ rhs: SwiftGraphNode) -> Bool {
-    if lhs.kind != rhs.kind { return lhs.kind.rawValue < rhs.kind.rawValue }
-    if lhs.id != rhs.id { return lhs.id < rhs.id }
-    return lhs.displayName < rhs.displayName
+    (lhs.kind.rawValue, lhs.id) < (rhs.kind.rawValue, rhs.id)
 }
 
 private func edgeOrder(_ lhs: SwiftGraphEdge, _ rhs: SwiftGraphEdge) -> Bool {
+    let lhsTarget = lhs.target ?? ""
+    let rhsTarget = rhs.target ?? ""
+    let lhsUnresolvedName = lhs.unresolvedName ?? ""
+    let rhsUnresolvedName = rhs.unresolvedName ?? ""
     if lhs.source != rhs.source { return lhs.source < rhs.source }
-    if lhs.kind != rhs.kind { return lhs.kind.rawValue < rhs.kind.rawValue }
-    if (lhs.target ?? "") != (rhs.target ?? "") { return (lhs.target ?? "") < (rhs.target ?? "") }
-    if (lhs.unresolvedName ?? "") != (rhs.unresolvedName ?? "") {
-        return (lhs.unresolvedName ?? "") < (rhs.unresolvedName ?? "")
+    if lhsTarget != rhsTarget { return lhsTarget < rhsTarget }
+    if lhsUnresolvedName != rhsUnresolvedName {
+        return lhsUnresolvedName < rhsUnresolvedName
     }
     if lhs.location != rhs.location { return locationOrder(lhs.location, rhs.location) }
     return lhs.confidence.rawValue < rhs.confidence.rawValue
 }
 
-private func functionOrder(_ lhs: DependencyGraphBuilder.FunctionInfo, _ rhs: DependencyGraphBuilder.FunctionInfo) -> Bool {
-    if lhs.fact.name != rhs.fact.name { return lhs.fact.name < rhs.fact.name }
-    if lhs.fact.location != rhs.fact.location { return locationOrder(lhs.fact.location, rhs.fact.location) }
-    return lhs.nodeID < rhs.nodeID
+private func functionOrder(_ lhs: DependencyGraphBuilder.FunctionInfo, _ rhs: DependencyGraphBuilder.FunctionInfo)
+    -> Bool
+{
+    (
+        lhs.fact.name, lhs.fact.location.file, lhs.fact.location.line, lhs.fact.location.column
+    ) < (
+        rhs.fact.name, rhs.fact.location.file, rhs.fact.location.line, rhs.fact.location.column
+    )
 }
 
 private func callSiteOrder(_ lhs: CallSiteFact, _ rhs: CallSiteFact) -> Bool {

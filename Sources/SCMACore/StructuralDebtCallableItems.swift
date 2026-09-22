@@ -31,7 +31,8 @@ extension StructuralDebtBuilder {
                     threshold: 20,
                     weight: 1,
                     location: location,
-                    note: "Cyclomatic complexity follows the existing CCF decision policy, preserving SCMA metric behavior."
+                    note:
+                        "Cyclomatic complexity follows the existing CCF decision policy, preserving SCMA metric behavior."
                 ),
                 evidence(
                     itemID: itemID,
@@ -51,7 +52,8 @@ extension StructuralDebtBuilder {
                     threshold: 60,
                     weight: 0.5,
                     location: location,
-                    note: "Physical token-bearing lines inside the callable body, excluding the outer signature and braces."
+                    note:
+                        "Physical token-bearing lines inside the callable body, excluding the outer signature and braces."
                 ),
                 evidence(
                     itemID: itemID,
@@ -76,14 +78,19 @@ extension StructuralDebtBuilder {
             level: .type,
             location: location
         )
-        let oversizedScore = [
-            normalized(type.codeLines, threshold: 500),
-            normalized(type.methodCount, threshold: 30),
-            normalized(type.propertyCount, threshold: 20),
-            normalized(type.weightedMethodComplexity, threshold: 200),
-        ].max() ?? 0
+        let oversizedScore = max(
+            max(
+                normalized(type.codeLines, threshold: 500),
+                normalized(type.methodCount, threshold: 30)
+            ),
+            max(
+                normalized(type.propertyCount, threshold: 20),
+                normalized(type.weightedMethodComplexity, threshold: 200)
+            )
+        )
         let decomposition = type.callableNames.prefix(5).joined(separator: ", ")
-        let decompositionNote = decomposition.isEmpty
+        let decompositionNote =
+            decomposition.isEmpty
             ? "No direct callables were available for deterministic decomposition evidence."
             : "Direct callables provide deterministic decomposition seeds: \(decomposition)."
         return DebtItem(

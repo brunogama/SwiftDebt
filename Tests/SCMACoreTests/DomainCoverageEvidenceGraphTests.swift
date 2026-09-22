@@ -93,6 +93,28 @@ struct CoverageEvidenceBoundaryTests {
                 attemptedStrategies: [],
                 message: "unknown"
             ),
+            CoverageDiagnostic(
+                entityID: "nil-source",
+                entityDisplayName: "Nil source A",
+                sourcePath: nil,
+                matchedSourcePath: nil,
+                matchedFunction: nil,
+                availability: .missingFile,
+                confidence: .unmatched,
+                attemptedStrategies: [],
+                message: "nil-source-a"
+            ),
+            CoverageDiagnostic(
+                entityID: "nil-source",
+                entityDisplayName: "Nil source B",
+                sourcePath: nil,
+                matchedSourcePath: nil,
+                matchedFunction: nil,
+                availability: .missingFile,
+                confidence: .unmatched,
+                attemptedStrategies: [],
+                message: "nil-source-b"
+            ),
         ]
 
         let output = CoverageMatcher().renderDiagnostics(diagnostics)
