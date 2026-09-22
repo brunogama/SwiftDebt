@@ -40,7 +40,8 @@ struct WorkspaceConfiguration: Decodable {
 
     private enum CodingKeys: String, CodingKey, CaseIterable {
         case typeScope, scoring, format, thresholds, exclude, jobs, failOnViolation, strictSyntax
-        case minimumDuplicateLines, maximumDuplicateComparisons, maximumFileBytes, debtAnalysis, debtValidation, lcovPath
+        case minimumDuplicateLines, maximumDuplicateComparisons, maximumFileBytes, debtAnalysis, debtValidation,
+            lcovPath
         case debtReferenceTime
     }
     init() {}

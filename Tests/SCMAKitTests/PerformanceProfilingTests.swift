@@ -33,7 +33,9 @@ struct PerformanceProfilingTests {
         #expect(decoded.disabledOverhead.clockReads == 0)
         #expect(decoded.disabledOverhead.peakMemoryReads == 0)
         #expect(decoded.disabledOverhead.perSourceWork == 0)
-        #expect(decoded.disabledOverhead.phaseBoundaryChecks == AnalysisProfile.disabledInstrumentationOverhead.phaseBoundaryChecks)
+        #expect(
+            decoded.disabledOverhead.phaseBoundaryChecks
+                == AnalysisProfile.disabledInstrumentationOverhead.phaseBoundaryChecks)
         #expect(phases.isSuperset(of: [.discovery, .parsing, .structuralEvidence, .graph, .coverage]))
         #expect(phases.isSuperset(of: [.repositoryHistory, .functionalEvidence, .scoring, .aggregation, .rendering]))
         #expect(decoded.phases.allSatisfy { $0.elapsedNanoseconds > 0 })

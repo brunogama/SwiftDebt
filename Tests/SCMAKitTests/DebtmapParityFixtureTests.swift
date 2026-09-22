@@ -117,7 +117,8 @@ struct DebtmapParityFixtureTests {
     }
 
     @Test func goldenFixtureOutputsRemainDeterministic() throws {
-        let fixture: GoldenFixture = try loadJSON("Tests/SCMAKitTests/Fixtures/DebtmapParity/canonical-workflow.fixture.json")
+        let fixture: GoldenFixture = try loadJSON(
+            "Tests/SCMAKitTests/Fixtures/DebtmapParity/canonical-workflow.fixture.json")
 
         #expect(fixture.schemaVersion == 1)
         #expect(fixture.generatedAt == "2026-09-12T00:00:00Z")
@@ -189,7 +190,9 @@ struct DebtmapParityFixtureTests {
         )
         #expect(methodology.performanceGate.comparisonUnit == "Equivalent SwiftSCMA workload only")
         #expect(methodology.performanceGate.disallowedComparisons.contains("Debtmap Rust workload"))
-        #expect(methodology.performanceGate.approvedExceptionEvidence.contains("written justification for accepting the regression"))
+        #expect(
+            methodology.performanceGate.approvedExceptionEvidence.contains(
+                "written justification for accepting the regression"))
         #expect(methodology.regressionBudgets.map(\.name) == ["baseline-analysis", "full-evidence-analysis"])
         #expect(methodology.regressionBudgets.allSatisfy { $0.workloadFamily == "SwiftSCMA" })
         #expect(methodology.regressionBudgets.map(\.maximumPeakMemoryRegressionPercent) == [15, 15])
@@ -225,10 +228,12 @@ struct DebtmapParityFixtureTests {
     private func declaredTestProofReferences() throws -> Set<String> {
         let testsRoot = root.appendingPathComponent("Tests")
         var references = Set<String>()
-        guard let enumerator = FileManager.default.enumerator(
-            at: testsRoot,
-            includingPropertiesForKeys: nil
-        ) else {
+        guard
+            let enumerator = FileManager.default.enumerator(
+                at: testsRoot,
+                includingPropertiesForKeys: nil
+            )
+        else {
             return references
         }
 
@@ -247,14 +252,16 @@ struct DebtmapParityFixtureTests {
 
     private func declaredSuites(in source: String) throws -> [String] {
         try captureGroups(
-            pattern: #"@Suite(?:\([^)]*\))?\s+(?:@[A-Za-z_][A-Za-z0-9_]*(?:\([^)]*\))?\s+)*(?:struct|final\s+class|class|actor)\s+([A-Za-z_][A-Za-z0-9_]*)\b"#,
+            pattern:
+                #"@Suite(?:\([^)]*\))?\s+(?:@[A-Za-z_][A-Za-z0-9_]*(?:\([^)]*\))?\s+)*(?:struct|final\s+class|class|actor)\s+([A-Za-z_][A-Za-z0-9_]*)\b"#,
             source: source
         )
     }
 
     private func declaredTests(in source: String) throws -> [String] {
         try captureGroups(
-            pattern: #"@Test(?:\([^)]*\))?\s+(?:@[A-Za-z_][A-Za-z0-9_]*(?:\([^)]*\))?\s+)*func\s+([A-Za-z_][A-Za-z0-9_]*)\b"#,
+            pattern:
+                #"@Test(?:\([^)]*\))?\s+(?:@[A-Za-z_][A-Za-z0-9_]*(?:\([^)]*\))?\s+)*func\s+([A-Za-z_][A-Za-z0-9_]*)\b"#,
             source: source
         )
     }
