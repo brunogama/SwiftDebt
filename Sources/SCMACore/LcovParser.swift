@@ -24,7 +24,7 @@ public struct LcovParser: Sendable {
             lineHits = []
         }
 
-        for rawLine in text.split(separator: "\n", omittingEmptySubsequences: false) {
+        for rawLine in text.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline) {
             let line = trimmed(String(rawLine))
             if line.isEmpty { continue }
             if line == "end_of_record" {
