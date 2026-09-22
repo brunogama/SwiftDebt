@@ -1,0 +1,17 @@
+[
+  {
+    "command" : "swift-debt debt analyze Fixtures/DebtmapParity --format json",
+    "exitStatus" : 0,
+    "purpose" : "successful deterministic analysis"
+  },
+  {
+    "command" : "swift-debt debt analyze Fixtures/Missing --coverage missing.lcov",
+    "exitStatus" : 2,
+    "purpose" : "invalid input path"
+  },
+  {
+    "command" : "swift-debt debt validate Fixtures/DebtmapParity --max-score 70",
+    "exitStatus" : 1,
+    "purpose" : "completed validation with threshold failure"
+  }
+]

@@ -1,15 +1,15 @@
 ---
 type: Domain Model
 title: Debt analysis domain model and deterministic scoring
-description: SCMACore models debt entities, evidence, aggregations, scoring policies, deterministic weighted scoring, and priority classification.
-resource: Sources/SCMACore/DebtModels.swift
+description: SwiftDebtCore models debt entities, evidence, aggregations, scoring policies, deterministic weighted scoring, and priority classification.
+resource: Sources/SwiftDebtCore/DebtModels.swift
 tags: [swift, debt-analysis, scoring, scmacore]
 timestamp: 2026-09-13T00:00:00Z
 ---
 
 # Overview
 
-`SCMACore` defines debt analysis as `Codable`, `Sendable` value types for entities, evidence, aggregations, score contributions, unavailable evidence, score breakdowns, scores, syntax effects, Swift risk facts, and functional-composition facts.
+`SwiftDebtCore` defines debt analysis as `Codable`, `Sendable` value types for entities, evidence, aggregations, score contributions, unavailable evidence, score breakdowns, scores, syntax effects, Swift risk facts, and functional-composition facts.
 
 `DebtAggregationLevel` supports `callable`, `type`, `file`, and `module` scopes. `DebtLocation` records optional module, file, line, and column coordinates, including an initializer from `SourceLocation`. `DebtEntity` identifies the scored entity, `DebtItem` pairs an entity with evidence, and `DebtAggregation` groups member item IDs with an optional `DebtScore`.
 
@@ -33,12 +33,12 @@ Available normalized scores are clamped to `0...100`; clamping is reflected in c
 
 # Verification coverage
 
-`DebtScoringTests` covers import-free SCMACore sources, no ambient clock or mutable shared state in debt scoring sources, optional evidence renormalization, required evidence withholding, deterministic ordering, priority boundaries, explanation preservation, input clamping, separation from `PaperScoring`, and aggregation contracts for callable, type, file, and module scopes.
+`DebtScoringTests` covers import-free SwiftDebtCore sources, no ambient clock or mutable shared state in debt scoring sources, optional evidence renormalization, required evidence withholding, deterministic ordering, priority boundaries, explanation preservation, input clamping, separation from `PaperScoring`, and aggregation contracts for callable, type, file, and module scopes.
 
 # Citations
 
-[1] [DebtModels.swift](../../Sources/SCMACore/DebtModels.swift)
-[2] [DebtScoreModels.swift](../../Sources/SCMACore/DebtScoreModels.swift)
-[3] [DebtScoring.swift](../../Sources/SCMACore/DebtScoring.swift)
-[4] [Models.swift](../../Sources/SCMACore/Models.swift)
-[5] [DebtScoringTests.swift](../../Tests/SCMACoreTests/DebtScoringTests.swift)
+[1] [DebtModels.swift](../../Sources/SwiftDebtCore/DebtModels.swift)
+[2] [DebtScoreModels.swift](../../Sources/SwiftDebtCore/DebtScoreModels.swift)
+[3] [DebtScoring.swift](../../Sources/SwiftDebtCore/DebtScoring.swift)
+[4] [Models.swift](../../Sources/SwiftDebtCore/Models.swift)
+[5] [DebtScoringTests.swift](../../Tests/SwiftDebtCoreTests/DebtScoringTests.swift)

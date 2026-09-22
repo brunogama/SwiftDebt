@@ -2,37 +2,37 @@
 
 ## Project
 
-- Name: swift-deep-research
-- Purpose: A Swift package that answers a research question with an auditable
-  chain of evidence. Every factual sentence in an answer traces to an exact
-  quotation in a retrieved document, and the cost and duration of a run are
-  bounded before it starts.
-- Package: `DeepResearch` (SwiftPM, root of this repository)
-- Tags: swift, research, evidence, citations, agents
-- Do not edit formating filess and `.swift-format`, `.swiftlint.yml`.
+- Name: SwiftDebt
+- Purpose: A Swift package for deterministic technical-debt analysis, ranking,
+  reporting, visualization, and enforcement with auditable evidence.
+- Package: `SwiftDebt` (SwiftPM, root of this repository)
+- Tags: swift, technical-debt, static-analysis, reporting, plugins
+- Do not edit formatting files, `.swift-format`, or `.swiftlint.yml`.
 
 ## Required startup
 
 1. Read `CLAUDE.md` when the active harness loads it.
-2. Read `CONTEXT.md`. It is the glossary; use its terms with exactly the
-   meanings recorded there.
-3. Read the decisions in `docs/adr/`. They are settled - implement them rather
-   than relitigating them.
-4. Consult `atomic-final-spec.md` for the authoritative contract of whatever
-   you are about to build. It is long; read the sections your work touches.
+2. Read `CONTEXT.md` when it exists. It is the glossary; use its terms with
+   exactly the meanings recorded there.
+3. Read the decisions in `docs/adr/` when the directory exists. They are
+   settled - implement them rather than relitigating them.
+4. Consult `atomic-final-spec.md` when it exists for the authoritative contract
+   of whatever you are about to build.
 5. Read `docs/agents/domain.md`, `docs/agents/issue-tracker.md`, and
    `docs/agents/triage-labels.md` before changing agent infrastructure.
 
 ## Implementation
 
-- Swift 6.4, tools version 6.0, macOS 14 minimum, complete concurrency
-  checking.
+- Swift 6 language mode, tools version 6.2, complete concurrency checking.
+- Deployment targets: macOS 13, iOS and iPadOS 16, tvOS 16, watchOS 9,
+  and visionOS 1.
 - Tests use Swift Testing (`@Suite`, `@Test`, `#expect`, `#require`), not
   XCTest. See `rules/testing.md`.
 - Targets are declared in `Package.swift` as their source directories land. A
   target whose directory does not exist yet cannot be declared, so add the
   declaration in the ticket that creates the sources.
-- Do not add dependencies that `atomic-final-spec.md` does not call for.
+- Add dependencies only for an explicit product need and document the
+  manifest-level justification.
 
 ## Work tracking
 

@@ -1,9 +1,9 @@
 ---
 type: Evidence Provider
 title: Git history risk evidence
-description: SCMAKit derives deterministic debt evidence from bounded local Git history for file-level entities.
-resource: Sources/SCMAKit/GitHistoryEvidenceProvider.swift
-tags: [swift, debt-analysis, git-history, scmikit]
+description: SwiftDebtKit derives deterministic debt evidence from bounded local Git history for file-level entities.
+resource: Sources/SwiftDebtKit/GitHistoryEvidenceProvider.swift
+tags: [swift, debt-analysis, git-history, swiftdebtkit]
 timestamp: 2026-09-13T00:00:00Z
 ---
 
@@ -17,7 +17,7 @@ The provider rejects unavailable history with explicit unavailable evidence inst
 
 `GitHistorySubprocessRunner` invokes `/usr/bin/env git` with structured arguments, captures stdout and stderr in temporary files, enforces a timeout, and reports `GitHistoryProcessResult` with exit code, output, and timeout state.
 
-The provider validates repository state with `rev-parse --is-inside-work-tree`, `rev-parse --is-shallow-repository`, and `rev-list --count HEAD` before running a bounded `git log --max-count=500` query for the requested entity file paths.
+The provider validates repository state with `rev-parse --is-inside-work-tree`, `rev-parse --is-shallow-repository`, and `rev-list --count HEAD` before running a rename-aware `git log --follow` query for each distinct entity file. Each query reads at most 501 commits, retains at most 500, and reports whether the history was truncated. Subprocess completion uses termination signaling rather than polling, so short Git commands do not incur a fixed sleep.
 
 # Evidence kinds
 
@@ -38,7 +38,7 @@ Entities, commits, paths, and evidence are sorted through deterministic ordering
 
 # Citations
 
-[1] [GitHistoryEvidenceProvider.swift](../../Sources/SCMAKit/GitHistoryEvidenceProvider.swift)
-[2] [GitHistoryEvidenceFactory.swift](../../Sources/SCMAKit/GitHistoryEvidenceFactory.swift)
-[3] [GitHistoryParsing.swift](../../Sources/SCMAKit/GitHistoryParsing.swift)
-[4] [GitHistoryProcess.swift](../../Sources/SCMAKit/GitHistoryProcess.swift)
+[1] [GitHistoryEvidenceProvider.swift](../../Sources/SwiftDebtKit/GitHistoryEvidenceProvider.swift)
+[2] [GitHistoryEvidenceFactory.swift](../../Sources/SwiftDebtKit/GitHistoryEvidenceFactory.swift)
+[3] [GitHistoryParsing.swift](../../Sources/SwiftDebtKit/GitHistoryParsing.swift)
+[4] [GitHistoryProcess.swift](../../Sources/SwiftDebtKit/GitHistoryProcess.swift)

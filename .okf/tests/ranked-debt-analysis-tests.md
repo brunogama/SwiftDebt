@@ -2,14 +2,14 @@
 type: Test Coverage
 title: Ranked debt analysis composition tests
 description: Swift Testing coverage verifies deterministic ranked debt analysis composition, provider evidence, unavailable evidence, filters, aggregation, and configuration activation.
-resource: Tests/SCMAKitTests/RankedDebtAnalysisTests.swift
+resource: Tests/SwiftDebtKitTests/RankedDebtAnalysisTests.swift
 tags: [swift-testing, debt-analysis, ranking, scmakit]
 timestamp: 2026-09-13T00:00:00Z
 ---
 
 # Coverage
 
-`RankedDebtAnalysisTests` exercises the SCMAKit service path that produces ranked debt analysis from a temporary Git repository, Swift source, LCOV coverage data, Git history, functional evidence, and dependency evidence.
+`RankedDebtAnalysisTests` exercises the SwiftDebtKit service path that produces ranked debt analysis from a temporary Git repository, Swift source, LCOV coverage data, Git history, functional evidence, and dependency evidence.
 
 The tests assert stable repeated output, nonempty ranked items and file aggregations, nonempty score contribution breakdowns, available Git history evidence, available LCOV coverage evidence, and Swift functional evidence with side-effect or API-risk kinds.
 
@@ -23,4 +23,4 @@ The tests cover deterministic filtering by minimum priority and category, disabl
 
 # Citations
 
-[1] [RankedDebtAnalysisTests.swift](../../Tests/SCMAKitTests/RankedDebtAnalysisTests.swift)
+[1] [RankedDebtAnalysisTests.swift](../../Tests/SwiftDebtKitTests/RankedDebtAnalysisTests.swift)

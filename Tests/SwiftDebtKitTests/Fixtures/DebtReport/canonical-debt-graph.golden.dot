@@ -1,0 +1,6 @@
+digraph SwiftDebtGraph {
+  rankdir=LR;
+  "App.Alpha.help()" [label="Alpha.help()"];
+  "App.Beta.run()" [label="Beta.run()"];
+  "App.Beta.run()" -> "App.Alpha.help()" [label="call"];
+}

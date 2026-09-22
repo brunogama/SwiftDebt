@@ -1,7 +1,7 @@
 .build/
 .swiftpm/
 .DS_Store
-.scma/
+.swift-debt/
 reports/
 *.xcodeproj/
 /report.html

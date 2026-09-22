@@ -2,7 +2,7 @@
 type: Test Coverage
 title: Swift structural debt evidence assertions
 description: Swift Testing coverage asserts structural debt evidence locations, raw values, and nested callable metrics.
-resource: Tests/SCMAKitTests/AnalyzerTests.swift
+resource: Tests/SwiftDebtKitTests/AnalyzerTests.swift
 tags: [swift-testing, debt-analysis, structural-evidence]
 timestamp: 2026-09-13T00:00:00Z
 ---
@@ -15,5 +15,5 @@ timestamp: 2026-09-13T00:00:00Z
 
 # Citations
 
-[1] [AnalyzerTests.swift](../../Tests/SCMAKitTests/AnalyzerTests.swift)
-[2] [ParserTests.swift](../../Tests/SCMASyntaxTests/ParserTests.swift)
+[1] [AnalyzerTests.swift](../../Tests/SwiftDebtKitTests/AnalyzerTests.swift)
+[2] [ParserTests.swift](../../Tests/SwiftDebtSyntaxTests/ParserTests.swift)

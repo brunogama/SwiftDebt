@@ -2,7 +2,7 @@
 type: Test Harness
 title: Git history evidence provider tests
 description: Swift Testing coverage validates deterministic Git history evidence, unavailable-history handling, and structured Git process arguments.
-resource: Tests/SCMAKitTests/GitHistoryEvidenceProviderTests.swift
+resource: Tests/SwiftDebtKitTests/GitHistoryEvidenceProviderTests.swift
 tags: [swift-testing, debt-analysis, git-history, fixtures]
 timestamp: 2026-09-13T00:00:00Z
 ---
@@ -25,5 +25,5 @@ The harness verifies that repeated calls with the same repository and reference 
 
 # Citations
 
-[1] [GitHistoryEvidenceProviderTests.swift](../../Tests/SCMAKitTests/GitHistoryEvidenceProviderTests.swift)
-[2] [GitHistoryFixtureSupport.swift](../../Tests/SCMAKitTests/GitHistoryFixtureSupport.swift)
+[1] [GitHistoryEvidenceProviderTests.swift](../../Tests/SwiftDebtKitTests/GitHistoryEvidenceProviderTests.swift)
+[2] [GitHistoryFixtureSupport.swift](../../Tests/SwiftDebtKitTests/GitHistoryFixtureSupport.swift)

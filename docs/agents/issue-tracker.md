@@ -47,6 +47,10 @@ Blocked by: none
 - Run `scripts/local-ticket-loop/proposed-loop.sh --run` to execute dependency-gated waves.
 - The wave orchestrator defaults to `feat/debtmap` for both `BASE_REVISION` and `MERGE_BACK_BRANCH`.
 
+## Completed tickets
+
+Delete an active ticket only after every acceptance criterion is implemented, its dependency wave is complete, and the required build, test, review, and release gates pass. Preserve the implementation and verification evidence in committed tests, quality records, or release documentation before deletion. Git history is the archive for deleted tickets; `.scratch/tickets/` contains active work only.
+
 ## Migrating existing GitHub tickets
 
 When a GitHub issue should become implementation work:

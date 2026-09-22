@@ -1,0 +1,378 @@
+import Foundation
+import SwiftDebtCore
+import SwiftParser
+import SwiftParserDiagnostics
+import SwiftSyntax
+
+package struct SwiftSyntaxParser: SourceParsing {
+    package init() {}
+
+    package func parse(_ source: SourceUnit) -> ParsedSource {
+        let tree = Parser.parse(source: source.content)
+        let converter = SourceLocationConverter(fileName: source.path, tree: tree)
+        let diagnostics = ParseDiagnosticsGenerator.diagnostics(for: tree).map { diagnostic in
+            let location = converter.location(for: diagnostic.position)
+            return AnalysisDiagnostic(
+                severity: diagnostic.diagMessage.severity == .error ? .error : .warning,
+                message: diagnostic.message,
+                location: SwiftDebtCore.SourceLocation(file: source.path, line: location.line, column: location.column)
+            )
+        }
+        guard !diagnostics.contains(where: { $0.severity == .error }) else {
+            // Error recovery is useful to editors, but must not manufacture quality metrics.
+            return ParsedSource(
+                path: source.path, module: source.module, types: [], functions: [], closures: [],
+                lines: [], topLevelVariables: 0, diagnostics: diagnostics)
+        }
+        let imports = ImportVisitor()
+        imports.walk(tree)
+        let collector = DeclarationCollector(source: source, converter: converter, imports: imports.modules)
+        collector.walk(tree)
+        return ParsedSource(
+            path: source.path, module: source.module, types: collector.types,
+            functions: collector.functions, closures: collector.closures,
+            lines: collector.sourceLines.codeLines(tree), topLevelVariables: collector.topLevelVariables,
+            diagnostics: diagnostics, riskFacts: collector.riskFacts
+        )
+    }
+}
+
+private final class ImportVisitor: SyntaxVisitor {
+    var modules: Set<String> = []
+    init() { super.init(viewMode: .sourceAccurate) }
+    override func visit(_ node: ImportDeclSyntax) -> SyntaxVisitorContinueKind {
+        if let component = node.path.first { modules.insert(cleanName(component.name.text)) }
+        return .skipChildren
+    }
+}
+
+private final class DeclarationCollector: SyntaxVisitor {
+    let source: SourceUnit
+    let sourceLines: SourceLines
+    let imports: Set<String>
+    var types: [TypeFragment] = []
+    var functions: [FunctionFacts] = []
+    var closures: [ClosureFacts] = []
+    var riskFacts: [SwiftRiskFact] = []
+    var topLevelVariables = 0
+
+    init(source: SourceUnit, converter: SourceLocationConverter, imports: Set<String>) {
+        self.source = source
+        self.sourceLines = SourceLines(file: source.path, converter: converter)
+        self.imports = imports
+        super.init(viewMode: .sourceAccurate)
+    }
+
+    override func visit(_ node: ClassDeclSyntax) -> SyntaxVisitorContinueKind {
+        addType(Syntax(node), name: cleanName(node.name.text), kind: "class")
+        return .visitChildren
+    }
+    override func visit(_ node: StructDeclSyntax) -> SyntaxVisitorContinueKind {
+        addType(Syntax(node), name: cleanName(node.name.text), kind: "struct")
+        return .visitChildren
+    }
+    override func visit(_ node: EnumDeclSyntax) -> SyntaxVisitorContinueKind {
+        addType(Syntax(node), name: cleanName(node.name.text), kind: "enum")
+        return .visitChildren
+    }
+    override func visit(_ node: ActorDeclSyntax) -> SyntaxVisitorContinueKind {
+        addType(Syntax(node), name: cleanName(node.name.text), kind: "actor")
+        return .visitChildren
+    }
+    override func visit(_ node: ProtocolDeclSyntax) -> SyntaxVisitorContinueKind {
+        addType(Syntax(node), name: cleanName(node.name.text), kind: "protocol")
+        return .visitChildren
+    }
+    override func visit(_ node: ExtensionDeclSyntax) -> SyntaxVisitorContinueKind {
+        if let name = typeName(node.extendedType) { addType(Syntax(node), name: name, kind: "extension") }
+        return .visitChildren
+    }
+    override func visit(_ node: FunctionDeclSyntax) -> SyntaxVisitorContinueKind {
+        if let body = node.body {
+            addFunction(
+                Syntax(node), name: cleanName(node.name.text), parameters: node.signature.parameterClause.parameters,
+                body: body)
+        }
+        return .visitChildren
+    }
+    override func visit(_ node: InitializerDeclSyntax) -> SyntaxVisitorContinueKind {
+        if let body = node.body {
+            addFunction(Syntax(node), name: "init", parameters: node.signature.parameterClause.parameters, body: body)
+        }
+        return .visitChildren
+    }
+    override func visit(_ node: DeinitializerDeclSyntax) -> SyntaxVisitorContinueKind {
+        if let body = node.body { addFunction(Syntax(node), name: "deinit", parameters: [], body: body) }
+        return .visitChildren
+    }
+    override func visit(_ node: AccessorBlockSyntax) -> SyntaxVisitorContinueKind {
+        // Property and subscript accessors are callables for LOCF/CCF/NOPF/WMCC/NOAV, not for NOMC.
+        let declared: (name: String, parameters: FunctionParameterListSyntax, decl: Syntax)?
+        if let binding = node.parent?.as(PatternBindingSyntax.self), let variable = binding.parent?.parent,
+            let name = bindingNames(binding.pattern).sorted().first
+        {
+            declared = (name, [], variable)
+        } else if let subscriptDecl = node.parent?.as(SubscriptDeclSyntax.self) {
+            declared = ("subscript", subscriptDecl.parameterClause.parameters, Syntax(subscriptDecl))
+        } else {
+            declared = nil
+        }
+        guard let declared else { return .visitChildren }
+        switch node.accessors {
+        case .getter(let statements):
+            addFunction(
+                Syntax(node), kind: .accessor, name: "\(declared.name).get", parameters: declared.parameters,
+                statements: statements, ownerAnchor: declared.decl)
+        case .accessors(let accessors):
+            for accessor in accessors {
+                guard let body = accessor.body else { continue }
+                let kind = accessor.accessorSpecifier.text
+                let implicit: Set<String> =
+                    switch kind {
+                    case "set", "willSet": [accessor.parameters.map { cleanName($0.name.text) } ?? "newValue"]
+                    case "didSet": [accessor.parameters.map { cleanName($0.name.text) } ?? "oldValue"]
+                    default: []
+                    }
+                addFunction(
+                    Syntax(accessor), kind: .accessor, name: "\(declared.name).\(kind)",
+                    parameters: declared.parameters, statements: body.statements, ownerAnchor: declared.decl,
+                    implicitNames: implicit)
+            }
+        }
+        return .visitChildren
+    }
+    override func visit(_ node: ClosureExprSyntax) -> SyntaxVisitorContinueKind {
+        addClosure(node)
+        return .visitChildren
+    }
+    override func visit(_ node: VariableDeclSyntax) -> SyntaxVisitorContinueKind {
+        var parent = node.parent
+        var global = true
+        while let current = parent {
+            if nominalName(current) != nil || current.is(ProtocolDeclSyntax.self)
+                || current.is(CodeBlockSyntax.self) || isCallableBoundary(current)
+            {
+                global = false
+                break
+            }
+            parent = current.parent
+        }
+        if global {
+            topLevelVariables += node.bindings.reduce(0) { $0 + bindingNames($1.pattern).count }
+            if node.bindingSpecifier.text == "var" {
+                riskFacts.append(
+                    SwiftRiskFact(
+                        category: .mutableSharedState,
+                        detail: "top-level var declaration",
+                        location: sourceLines.location(node)
+                    )
+                )
+            }
+        } else if node.bindingSpecifier.text == "var",
+            hasAnyModifier(Syntax(node), named: ["class", "static"]) {
+            riskFacts.append(
+                SwiftRiskFact(
+                    category: .mutableSharedState,
+                    detail: "static var declaration",
+                    location: sourceLines.location(node)
+                )
+            )
+        }
+        return .visitChildren
+    }
+
+    private func addType(_ node: Syntax, name: String, kind: String) {
+        if kind == "actor" {
+            riskFacts.append(
+                SwiftRiskFact(
+                    category: .actorIsolation,
+                    detail: "actor declaration \(name)",
+                    location: sourceLines.location(node),
+                    confidence: .measuredSyntax
+                )
+            )
+        }
+        riskFacts.append(contentsOf: declarationRiskFacts(for: node, name: name))
+        let key = TypeKey(module: source.module, name: qualifiedName(of: node, ownName: name))
+        let visitor = TypeFactsVisitor(root: node.id, owner: key)
+        visitor.walk(node)
+        types.append(
+            TypeFragment(
+                key: key, kind: kind, isExtension: kind == "extension", location: sourceLines.location(node),
+                codeLines: sourceLines.codeLines(node).count, propertyNames: visitor.properties,
+                referencedTypes: visitor.references, importedModules: imports
+            ))
+    }
+
+    private func addFunction(
+        _ node: Syntax, name: String, parameters: FunctionParameterListSyntax, body: CodeBlockSyntax
+    ) {
+        addFunction(
+            node, kind: .method, name: name, parameters: parameters, statements: body.statements, ownerAnchor: node)
+    }
+
+    private func addClosure(_ node: ClosureExprSyntax) {
+        let names = closureParameterNames(node.signature)
+        let visitor = BodyVisitor(parameters: names)
+        visitor.walk(node.statements)
+        closures.append(
+            ClosureFacts(
+                owner: directOwner(of: Syntax(node), module: source.module), location: sourceLines.location(node),
+                codeLines: sourceLines.codeLines(node.statements).count, complexity: visitor.complexity,
+                cognitiveComplexity: visitor.cognitiveComplexity, maxNestingDepth: visitor.maxNestingDepth,
+                parameters: names.count
+            ))
+    }
+
+    private func closureParameterNames(_ signature: ClosureSignatureSyntax?) -> Set<String> {
+        guard let parameterClause = signature?.parameterClause else { return [] }
+        switch parameterClause {
+        case .simpleInput(let parameters):
+            return Set(parameters.compactMap { parameter in
+                let value = cleanName(parameter.name.text)
+                return value == "_" ? nil : value
+            })
+        case .parameterClause(let clause):
+            return Set(clause.parameters.compactMap { parameter in
+                let value = cleanName((parameter.secondName ?? parameter.firstName).text)
+                return value == "_" ? nil : value
+            })
+        }
+    }
+
+    private func addFunction(
+        _ node: Syntax, kind: CallableKind, name: String, parameters: FunctionParameterListSyntax,
+        statements: CodeBlockItemListSyntax, ownerAnchor: Syntax, implicitNames: Set<String> = []
+    ) {
+        let owner = directOwner(of: ownerAnchor, module: source.module)
+        let names = Set(
+            parameters.compactMap { parameter -> String? in
+                let value = cleanName((parameter.secondName ?? parameter.firstName).text)
+                return value == "_" ? nil : value
+            }
+        ).union(implicitNames)
+        let visitor = BodyVisitor(parameters: names, sourceLines: sourceLines)
+        visitor.walk(statements)
+        let ownerProperties = owner.map { key in
+            types.filter { $0.key == key }.reduce(into: Set<String>()) { $0.formUnion($1.propertyNames) }
+        } ?? []
+        let effectVisitor = EffectVisitor(parameters: names, ownerProperties: ownerProperties, sourceLines: sourceLines)
+        for parameter in parameters {
+            guard parameter.type.description.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("inout ") else {
+                continue
+            }
+            let value = cleanName((parameter.secondName ?? parameter.firstName).text)
+            if value != "_" { effectVisitor.recordInoutParameter(name: value, location: sourceLines.location(parameter)) }
+        }
+        effectVisitor.walk(statements)
+        var functionRiskFacts = effectVisitor.riskFacts
+        functionRiskFacts.append(contentsOf: declarationRiskFacts(for: node, name: name))
+        functionRiskFacts.append(contentsOf: unsafeParameterRiskFacts(in: parameters))
+        let labels = parameters.map { cleanName($0.firstName.text) + ":" }.joined()
+        let prefix = owner?.displayName ?? source.module
+        functions.append(
+            FunctionFacts(
+                name: "\(prefix).\(name)(\(labels))", kind: kind, owner: owner, location: sourceLines.location(node),
+                codeLines: sourceLines.codeLines(statements).count, complexity: visitor.complexity,
+                cognitiveComplexity: visitor.cognitiveComplexity,
+                maxNestingDepth: visitor.maxNestingDepth,
+                parameters: parameters.count, bareReferences: visitor.bareReferences,
+                explicitSelfReferences: visitor.explicitSelfReferences, shadowedNames: visitor.shadowedNames,
+                accessLevel: accessLevel(of: node), effectFacts: effectVisitor.effectFacts,
+                compositionFacts: effectVisitor.compositionFacts, callSites: visitor.callSites,
+                riskFacts: functionRiskFacts
+            ))
+    }
+
+    private func declarationRiskFacts(for node: Syntax, name: String) -> [SwiftRiskFact] {
+        var facts: [SwiftRiskFact] = []
+        let attributes = attributeNames(of: node)
+        let inherited = inheritedTypes(of: node)
+        if !attributes.isDisjoint(with: ["MainActor", "globalActor", "GlobalActor"]) {
+            facts.append(
+                SwiftRiskFact(
+                    category: .globalActorIsolation,
+                    detail: "global actor annotation on \(name)",
+                    location: sourceLines.location(node)
+                )
+            )
+        }
+        if inherited.contains(where: isUncheckedSendableConformance) {
+            facts.append(
+                SwiftRiskFact(
+                    category: .uncheckedSendable,
+                    detail: "@unchecked Sendable on \(name)",
+                    location: sourceLines.location(node)
+                )
+            )
+        } else if inherited.contains(where: isSendableConformance) {
+            facts.append(
+                SwiftRiskFact(
+                    category: .sendableConformance,
+                    detail: "Sendable conformance on \(name)",
+                    location: sourceLines.location(node),
+                    confidence: .measuredSyntax
+                )
+            )
+        }
+        if hasModifier(node, named: "nonisolated") {
+            facts.append(
+                SwiftRiskFact(
+                    category: .nonisolatedDeclaration,
+                    detail: "nonisolated declaration \(name)",
+                    location: sourceLines.location(node)
+                )
+            )
+        }
+        return facts
+    }
+
+    private func unsafeParameterRiskFacts(in parameters: FunctionParameterListSyntax) -> [SwiftRiskFact] {
+        parameters.compactMap { parameter in
+            guard containsUnsafeStandardLibraryType(parameter.type) else { return nil }
+            return SwiftRiskFact(
+                category: .unsafeEscapeHatch,
+                detail: "unsafe parameter \(cleanName((parameter.secondName ?? parameter.firstName).text))",
+                location: sourceLines.location(parameter)
+            )
+        }
+    }
+}
+
+private func attributeNames(of node: Syntax) -> Set<String> {
+    guard let declaration = node.asProtocol(WithAttributesSyntax.self) else { return [] }
+    return Set(
+        declaration.attributes.compactMap { element in
+            guard case .attribute(let attribute) = element else { return nil }
+            return typeName(attribute.attributeName)
+        })
+}
+
+private func accessLevel(of node: Syntax) -> String? {
+    ["open", "public", "package"].first { hasModifier(node, named: $0) }
+}
+
+private func hasModifier(_ node: Syntax, named name: String) -> Bool {
+    node.asProtocol(WithModifiersSyntax.self)?.modifiers.contains {
+        cleanName($0.name.text) == name
+    } == true
+}
+
+private func hasAnyModifier(_ node: Syntax, named names: Set<String>) -> Bool {
+    node.asProtocol(WithModifiersSyntax.self)?.modifiers.contains {
+        names.contains(cleanName($0.name.text))
+    } == true
+}
+
+private func inheritedTypes(of node: Syntax) -> [TypeSyntax] {
+    node.asProtocol(DeclGroupSyntax.self)?.inheritanceClause?.inheritedTypes.map(\.type) ?? []
+}
+
+private func isSendableConformance(_ type: TypeSyntax) -> Bool {
+    typeName(type)?.split(separator: ".").last == "Sendable"
+}
+
+private func isUncheckedSendableConformance(_ type: TypeSyntax) -> Bool {
+    guard isSendableConformance(type), let attributed = type.as(AttributedTypeSyntax.self) else { return false }
+    return attributeNames(of: Syntax(attributed)).contains("unchecked")
+}

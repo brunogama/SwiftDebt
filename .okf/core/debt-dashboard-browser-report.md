@@ -1,8 +1,8 @@
 ---
 type: Core Capability
 title: Interactive browser debt dashboard
-description: SwiftSCMA renders ranked debt analysis as a self-contained browser dashboard over the native debt-report schema.
-resource: Sources/SCMAReporting/DebtDashboardRenderer.swift
+description: SwiftDebt renders ranked debt analysis as a self-contained browser dashboard over the native debt-report schema.
+resource: Sources/SwiftDebtReporting/DebtDashboardRenderer.swift
 tags: [swift, debt-analysis, reporting, dashboard]
 timestamp: 2026-09-13T00:00:00Z
 ---
@@ -15,7 +15,7 @@ timestamp: 2026-09-13T00:00:00Z
 
 # Dashboard contract
 
-The dashboard accepts only the current `DebtReport` schema version and the `swiftscma-debt-report` report kind. Unsupported schema versions or report kinds raise invalid configuration errors.
+The dashboard accepts only the current `DebtReport` schema version and the `swiftdebt-report` report kind. Unsupported schema versions or report kinds raise invalid configuration errors.
 
 The generated HTML is self-contained and embeds the native debt report as sorted, pretty-printed JSON in an `application/json` script tag. Embedded JSON escapes `<`, `>`, and `&` before insertion into the document.
 
@@ -27,9 +27,9 @@ The README and CLI help list `debt-dashboard` with the other ranked debt analysi
 
 # Citations
 
-[1] [Configuration.swift](../../Sources/SCMACore/Configuration.swift)
-[2] [DebtDashboardRenderer.swift](../../Sources/SCMAReporting/DebtDashboardRenderer.swift)
-[3] [DebtReportRenderer.swift](../../Sources/SCMAReporting/DebtReportRenderer.swift)
-[4] [ReportRenderer.swift](../../Sources/SCMAReporting/ReportRenderer.swift)
-[5] [CLIOptions.swift](../../Sources/scma/CLIOptions.swift)
+[1] [Configuration.swift](../../Sources/SwiftDebtCore/Configuration.swift)
+[2] [DebtDashboardRenderer.swift](../../Sources/SwiftDebtReporting/DebtDashboardRenderer.swift)
+[3] [DebtReportRenderer.swift](../../Sources/SwiftDebtReporting/DebtReportRenderer.swift)
+[4] [ReportRenderer.swift](../../Sources/SwiftDebtReporting/ReportRenderer.swift)
+[5] [CLIOptions.swift](../../Sources/swift-debt/CLIOptions.swift)
 [6] [README.md](../../README.md)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the test suite and require complete SCMACore line coverage."""
+"""Run the test suite and require complete SwiftDebtCore line coverage."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from typing import Optional
 
 def arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Require 100% executable line coverage for Sources/SCMACore."
+        description="Require 100% executable line coverage for Sources/SwiftDebtCore."
     )
     parser.add_argument(
         "--coverage-json",
@@ -44,7 +44,7 @@ def coverage_path(root: Path, supplied: Optional[Path]) -> Path:
 def main() -> int:
     options = arguments()
     root = Path(__file__).resolve().parent.parent
-    domain = (root / "Sources" / "SCMACore").resolve()
+    domain = (root / "Sources" / "SwiftDebtCore").resolve()
     report_path = coverage_path(root, options.coverage_json)
     report = json.loads(report_path.read_text(encoding="utf-8"))
     rows: dict[str, tuple[int, int]] = {}

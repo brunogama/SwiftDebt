@@ -2,14 +2,14 @@
   "baselineCommit": "b0ae66be2065084b29b8b5da0a86d5cd049feced",
   "capabilities": [
     {
-      "capability": "Frozen SwiftSCMA baseline benchmark inputs and measurement methodology",
+      "capability": "Frozen SwiftDebt baseline benchmark inputs and measurement methodology",
       "id": "baseline-benchmark",
       "implementationState": "implemented",
       "ownerTicket": "06-establish-executable-parity-matrix-and-fixture-harness",
       "proofs": [
         {
           "kind": "fixture",
-          "reference": "benchmarks/debtmap-baseline/methodology.v1.json"
+          "reference": "benchmarks/debtmap-baseline/methodology.v2.json"
         },
         {
           "kind": "test",
@@ -27,7 +27,7 @@
       "proofs": [
         {
           "kind": "fixture",
-          "reference": "Tests/SCMAKitTests/Fixtures/DebtReport/canonical-debt-dashboard.golden.html"
+          "reference": "Tests/SwiftDebtKitTests/Fixtures/DebtReport/canonical-debt-dashboard.golden.html"
         },
         {
           "kind": "test",
@@ -87,7 +87,7 @@
       "proofs": [
         {
           "kind": "fixture",
-          "reference": "Tests/SCMAKitTests/Fixtures/DebtImprovement/comparison.golden.json"
+          "reference": "Tests/SwiftDebtKitTests/Fixtures/DebtImprovement/comparison.golden.json"
         },
         {
           "kind": "test",
@@ -165,7 +165,7 @@
         },
         {
           "kind": "test",
-          "reference": "DebtScoringTests.scmaCoreSourcesRemainImportFree"
+          "reference": "DebtScoringTests.swiftDebtCoreSourcesRemainImportFree"
         }
       ],
       "scope": "in-scope",
@@ -179,7 +179,7 @@
       "proofs": [
         {
           "kind": "fixture",
-          "reference": "Tests/SCMAKitTests/Fixtures/DebtmapParity/canonical-workflow.fixture.json"
+          "reference": "Tests/SwiftDebtKitTests/Fixtures/DebtmapParity/canonical-workflow.fixture.json"
         },
         {
           "kind": "test",
@@ -241,7 +241,7 @@
       "proofs": [
         {
           "kind": "fixture",
-          "reference": "Tests/SCMAKitTests/Fixtures/DebtmapParity/canonical-workflow.fixture.json"
+          "reference": "Tests/SwiftDebtKitTests/Fixtures/DebtmapParity/canonical-workflow.fixture.json"
         },
         {
           "kind": "test",
@@ -279,7 +279,7 @@
         },
         {
           "kind": "fixture",
-          "reference": "Tests/SCMAKitTests/Fixtures/DebtmapParity/canonical-graph.golden.dot"
+          "reference": "Tests/SwiftDebtKitTests/Fixtures/DebtmapParity/canonical-graph.golden.dot"
         },
         {
           "kind": "documentation",
@@ -331,15 +331,15 @@
       "proofs": [
         {
           "kind": "fixture",
-          "reference": "Tests/SCMAKitTests/Fixtures/DebtmapParity/canonical-report.golden.json"
+          "reference": "Tests/SwiftDebtKitTests/Fixtures/DebtmapParity/canonical-report.golden.json"
         },
         {
           "kind": "fixture",
-          "reference": "Tests/SCMAKitTests/Fixtures/DebtmapParity/canonical-report.golden.md"
+          "reference": "Tests/SwiftDebtKitTests/Fixtures/DebtmapParity/canonical-report.golden.md"
         },
         {
           "kind": "fixture",
-          "reference": "Tests/SCMAKitTests/Fixtures/DebtmapParity/canonical-graph.golden.dot"
+          "reference": "Tests/SwiftDebtKitTests/Fixtures/DebtmapParity/canonical-graph.golden.dot"
         },
         {
           "kind": "test",
@@ -408,6 +408,14 @@
           "reference": ".github/workflows/debtmap-performance.yml"
         },
         {
+          "kind": "gate-evidence",
+          "reference": "benchmarks/debtmap-baseline/evidence/2026-09-22-swiftdebt-rename/baseline-evaluation.json"
+        },
+        {
+          "kind": "gate-evidence",
+          "reference": "benchmarks/debtmap-baseline/evidence/2026-09-22-swiftdebt-rename/full-evidence-evaluation.json"
+        },
+        {
           "kind": "script",
           "reference": "scripts/run_debtmap_benchmark.py"
         },
@@ -429,7 +437,7 @@
     },
     {
       "capability": "Existing SCMA metric and SwiftPM plugin regression gates",
-      "id": "scma-regression-gates",
+      "id": "swift-debt-regression-gates",
       "implementationState": "implemented",
       "ownerTicket": "06-establish-executable-parity-matrix-and-fixture-harness",
       "proofs": [
@@ -439,11 +447,11 @@
         },
         {
           "kind": "smoke-command",
-          "reference": "python3 scripts/smoke-test.py --binary .build/debug/scma --plugins"
+          "reference": "python3 scripts/smoke-test.py --binary .build/debug/swift-debt --plugins"
         },
         {
           "kind": "gate-evidence",
-          "reference": "docs/debtmap/release-gate-evidence.v1.json"
+          "reference": "docs/debtmap/release-gate-evidence.v2.json"
         },
         {
           "kind": "test",
@@ -465,7 +473,7 @@
       "proofs": [
         {
           "kind": "fixture",
-          "reference": "Tests/SCMASyntaxTests/Fixtures/ModernStructuralDebt.golden.json"
+          "reference": "Tests/SwiftDebtSyntaxTests/Fixtures/ModernStructuralDebt.golden.json"
         },
         {
           "kind": "test",

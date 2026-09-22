@@ -15,9 +15,10 @@ This is a single-context repository.
 
 ## Package context
 
-- Project name: `swift-deep-research`.
-- Swift package: `DeepResearch`.
-- Purpose: answer research questions with auditable evidence, exact quotations, bounded cost, and bounded duration.
+- Project name: `SwiftDebt`.
+- Swift package: `SwiftDebt`.
+- Purpose: analyze, rank, report, visualize, and enforce Swift technical debt
+  with deterministic, auditable evidence.
 
 ## Agent behavior
 

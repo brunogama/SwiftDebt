@@ -1,0 +1,741 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'none'; img-src 'none'; base-uri 'none'; form-action 'none'">
+<title>SwiftDebt debt dashboard</title>
+<style>
+:root{color-scheme:light dark;--line:#80808055;--soft:#80808018;--accent:#2463eb;--danger:#b42318;--warn:#b54708}body{font:16px/1.5 system-ui,sans-serif;max-width:1260px;margin:0 auto;padding:1.5rem;color:CanvasText;background:Canvas}.skip{position:absolute;left:-999px}.skip:focus{left:1rem;top:1rem;background:Canvas;padding:.5rem;border:2px solid var(--accent)}header{display:grid;gap:.35rem;margin:1rem 0 1.5rem}h1{font-size:2.25rem;margin:.2rem 0}h2{margin-top:2rem}.meta{opacity:.75}.panel{border:1px solid var(--line);border-radius:12px;padding:1rem;background:var(--soft)}.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.8rem;margin:1rem 0}.cards,.layout{display:grid;gap:1rem}.cards{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}.layout{grid-template-columns:minmax(0,1.5fr) minmax(280px,.9fr);align-items:start}.card{border:1px solid var(--line);border-radius:10px;padding:1rem}.scroll{overflow:auto}label{font-weight:700;display:grid;gap:.25rem}select,input,button{font:inherit;padding:.55rem;border:1px solid var(--line);border-radius:8px;background:Canvas;color:CanvasText}button{cursor:pointer}.status{min-height:1.5rem}.badge{border-radius:999px;padding:.15rem .45rem;background:var(--soft);white-space:nowrap}.critical{color:var(--danger);font-weight:700}.high{color:var(--warn);font-weight:700}table{width:100%;border-collapse:collapse;font-size:.92rem}th,td{text-align:left;border-bottom:1px solid var(--line);padding:.65rem;vertical-align:top}thead{background:var(--soft)}tr:target{outline:3px solid var(--accent)}details{border:1px solid var(--line);border-radius:10px;padding:.75rem;margin:.75rem 0}summary{cursor:pointer;font-weight:700}.graph{display:grid;gap:.5rem}.edge{display:flex;gap:.5rem;align-items:center}.edge:before{content:"";width:2rem;border-top:2px solid var(--accent)}footer{margin:2rem 0 1rem;border-top:1px solid var(--line);padding-top:1rem}.empty{opacity:.75}@media (max-width:860px){.layout{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<a class="skip" href="#items">Skip to ranked debt items</a>
+<header>
+<p class="meta">PRESENTATION WORKFLOW / VERSIONED DEBT REPORT</p>
+<h1>SwiftDebt debt dashboard</h1>
+<p id="report-title" class="meta">Loading embedded report.</p>
+</header>
+<main id="app" tabindex="-1">
+<section class="panel" aria-labelledby="loading-heading">
+<h2 id="loading-heading">Load reports</h2>
+<p>Open this file locally, or load another debt JSON report without running analysis.</p>
+<div class="controls">
+<label>Debt report JSON<input id="report-input" type="file" accept="application/json,.json"></label>
+<label>Comparison report JSON<input id="comparison-input" type="file" accept="application/json,.json"></label>
+<label>Priority filter<select id="priority-filter"><option value="all">All priorities</option></select></label>
+<label>Category filter<select id="category-filter"><option value="all">All categories</option></select></label>
+<label>File/type/function filter<select id="level-filter"><option value="all">All levels</option></select></label>
+<label>Search<input id="query-filter" type="search" placeholder="Filter by item, file, or evidence"></label>
+</div>
+<p id="status" class="status" role="status" aria-live="polite"></p>
+</section>
+<section aria-labelledby="summary-heading"><h2 id="summary-heading">Ranked overview</h2><div id="summary" class="cards"></div></section>
+<div class="layout">
+<section id="items" aria-labelledby="items-heading"><h2 id="items-heading">Debt items</h2><div id="item-table" class="scroll"></div><div id="drilldown"></div></section>
+<aside>
+<section aria-labelledby="graph-heading"><h2 id="graph-heading">Dependency and call graph</h2><div id="graph" class="panel graph"></div></section>
+<section aria-labelledby="comparison-heading"><h2 id="comparison-heading">Comparison</h2><div id="comparison" class="panel"></div></section>
+</aside>
+</div>
+</main>
+<footer>Self-contained dashboard; no hosted service, telemetry, or network assets. Scores, priorities, evidence, source locations, and graph facts are read from the versioned report artifacts.</footer>
+<script id="swiftdebt-initial-report" type="application/json">
+{
+  "aggregations" : [
+    {
+      "displayName" : "Sources",
+      "id" : "file:Sources",
+      "level" : "file",
+      "location" : {
+        "file" : "Sources",
+        "module" : "App"
+      },
+      "memberItemIDs" : [
+        "callable:Alpha.help",
+        "callable:Beta.run"
+      ],
+      "priority" : "high",
+      "score" : 81.875
+    }
+  ],
+  "compactItems" : [
+    {
+      "displayName" : "App.Beta.run()",
+      "id" : "callable:Beta.run",
+      "level" : "callable",
+      "location" : {
+        "column" : 5,
+        "file" : "Sources/Beta.swift",
+        "line" : 12,
+        "module" : "App"
+      },
+      "priority" : "critical",
+      "score" : 91.25
+    },
+    {
+      "displayName" : "App.Alpha.help()",
+      "id" : "callable:Alpha.help",
+      "level" : "callable",
+      "location" : {
+        "column" : 1,
+        "file" : "Sources/Alpha.swift",
+        "line" : 3,
+        "module" : "App"
+      },
+      "priority" : "high",
+      "score" : 72.5
+    }
+  ],
+  "dependencyGraph" : {
+    "edges" : [
+      {
+        "confidence" : "resolvedSyntax",
+        "isTestCaller" : false,
+        "kind" : "call",
+        "location" : {
+          "column" : 15,
+          "file" : "Sources/Beta.swift",
+          "line" : 12
+        },
+        "note" : "Beta.run calls Alpha.help",
+        "source" : "App.Beta.run()",
+        "target" : "App.Alpha.help()",
+        "targetCandidates" : [
+
+        ]
+      }
+    ],
+    "nodes" : [
+      {
+        "displayName" : "Alpha.help()",
+        "id" : "App.Alpha.help()",
+        "isTest" : false,
+        "kind" : "callable",
+        "location" : {
+          "column" : 1,
+          "file" : "Sources/Alpha.swift",
+          "line" : 3
+        },
+        "module" : "App"
+      },
+      {
+        "displayName" : "Beta.run()",
+        "id" : "App.Beta.run()",
+        "isTest" : false,
+        "kind" : "callable",
+        "location" : {
+          "column" : 5,
+          "file" : "Sources/Beta.swift",
+          "line" : 12
+        },
+        "module" : "App"
+      }
+    ],
+    "statistics" : {
+      "ambiguousEdgeCount" : 0,
+      "edgeCount" : 1,
+      "nodeCount" : 2,
+      "resolvedEdgeCount" : 1,
+      "syntaxOnlyNote" : "Syntax-only graph.",
+      "unresolvedEdgeCount" : 0
+    }
+  },
+  "generator" : "SwiftDebt",
+  "items" : [
+    {
+      "category" : "swift",
+      "displayName" : "App.Beta.run()",
+      "evidence" : [
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Beta.run:complexity",
+          "kind" : "swift.cognitive-complexity",
+          "location" : {
+            "column" : 5,
+            "file" : "Sources/Beta.swift",
+            "line" : 12,
+            "module" : "App"
+          },
+          "normalizedScore" : 91.25,
+          "note" : "measured",
+          "rawValue" : "cognitive=18",
+          "requirement" : "optional",
+          "weight" : 2
+        },
+        {
+          "availability" : {
+            "reason" : "LCOV file missing",
+            "state" : "unavailable"
+          },
+          "id" : "callable:Beta.run:coverage",
+          "kind" : "coverage.lcov",
+          "location" : {
+            "column" : 5,
+            "file" : "Sources/Beta.swift",
+            "line" : 12,
+            "module" : "App"
+          },
+          "note" : "No zero-valued risk was fabricated.",
+          "rawValue" : "unavailable",
+          "requirement" : "required",
+          "weight" : 1
+        }
+      ],
+      "explanation" : "Nested async work combines complexity and missing coverage.",
+      "id" : "callable:Beta.run",
+      "level" : "callable",
+      "location" : {
+        "column" : 5,
+        "file" : "Sources/Beta.swift",
+        "line" : 12,
+        "module" : "App"
+      },
+      "priority" : "critical",
+      "recommendation" : "Extract smaller operations and add coverage.",
+      "score" : 91.25,
+      "scoreBreakdown" : {
+        "contributions" : [
+          {
+            "configuredWeight" : 2,
+            "contribution" : 182.5,
+            "effectiveWeight" : 2,
+            "evidenceID" : "callable:Beta.run:complexity",
+            "kind" : "swift.cognitive-complexity",
+            "normalizedScore" : 91.25,
+            "note" : "measured",
+            "rawValue" : "cognitive=18"
+          }
+        ],
+        "totalAvailableWeight" : 2,
+        "totalConfiguredWeight" : 3,
+        "unavailableEvidence" : [
+          {
+            "configuredWeight" : 1,
+            "evidenceID" : "callable:Beta.run:coverage",
+            "kind" : "coverage.lcov",
+            "reason" : "LCOV file missing",
+            "requirement" : "required"
+          }
+        ]
+      }
+    },
+    {
+      "category" : "swift",
+      "displayName" : "App.Alpha.help()",
+      "evidence" : [
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Alpha.help:coupling",
+          "kind" : "graph.coupling",
+          "location" : {
+            "column" : 1,
+            "file" : "Sources/Alpha.swift",
+            "line" : 3,
+            "module" : "App"
+          },
+          "normalizedScore" : 72.5,
+          "note" : "measured",
+          "rawValue" : "fanIn=8",
+          "requirement" : "optional",
+          "weight" : 2
+        }
+      ],
+      "explanation" : "High fan-in concentrates change risk.",
+      "id" : "callable:Alpha.help",
+      "level" : "callable",
+      "location" : {
+        "column" : 1,
+        "file" : "Sources/Alpha.swift",
+        "line" : 3,
+        "module" : "App"
+      },
+      "priority" : "high",
+      "recommendation" : "Reduce fan-in before adding features.",
+      "score" : 72.5,
+      "scoreBreakdown" : {
+        "contributions" : [
+          {
+            "configuredWeight" : 2,
+            "contribution" : 145,
+            "effectiveWeight" : 2,
+            "evidenceID" : "callable:Alpha.help:coupling",
+            "kind" : "graph.coupling",
+            "normalizedScore" : 72.5,
+            "note" : "measured",
+            "rawValue" : "fanIn=8"
+          }
+        ],
+        "totalAvailableWeight" : 2,
+        "totalConfiguredWeight" : 2,
+        "unavailableEvidence" : [
+
+        ]
+      }
+    }
+  ],
+  "missingEvidence" : [
+    {
+      "configuredWeight" : 1,
+      "evidenceID" : "callable:Beta.run:coverage",
+      "itemID" : "callable:Beta.run",
+      "kind" : "coverage.lcov",
+      "reason" : "LCOV file missing",
+      "requirement" : "required"
+    }
+  ],
+  "options" : {
+    "aggregationStrategy" : "file",
+    "categories" : [
+
+    ],
+    "levels" : [
+
+    ],
+    "preset" : "balanced",
+    "problematicItemScoreThreshold" : 50,
+    "scoringPolicy" : {
+      "priorityThresholds" : {
+        "critical" : 85,
+        "high" : 70,
+        "medium" : 40
+      }
+    },
+    "top" : 10
+  },
+  "reportKind" : "swiftdebt-report",
+  "schemaVersion" : 2,
+  "summary" : {
+    "aggregationCount" : 1,
+    "priorityCounts" : {
+      "critical" : 1,
+      "high" : 1
+    },
+    "rankedItemCount" : 2,
+    "totalItemCount" : 2,
+    "unavailableEvidenceCount" : 1
+  }
+}
+</script>
+<script>
+(() => {
+  "use strict";
+  const reportSchemaVersion = 2;
+  const comparisonSchemaVersion = 1;
+  const q = id => document.getElementById(id);
+  const el = (name, value, className) => {
+    const element = document.createElement(name);
+    if (className) element.className = className;
+    if (value !== undefined) element.textContent = value;
+    return element;
+  };
+  const state = { priority: "all", category: "all", level: "all", query: "" };
+  let report = null;
+  let comparison = null;
+
+  function location(value) {
+    if (!value) return "unknown";
+    const parts = [value.file || "unknown"];
+    if (value.line) parts.push(value.line);
+    if (value.column) parts.push(value.column);
+    return parts.join(":");
+  }
+
+  function score(value) {
+    return value === null || value === undefined ? "N/A" : String(value);
+  }
+
+  function text(value) {
+    return value === null || value === undefined ? "" : String(value);
+  }
+
+  function signed(value) {
+    if (value === null || value === undefined) return "N/A";
+    return value > 0 ? `+${value}` : String(value);
+  }
+
+  function validateReport(value) {
+    if (!value || value.reportKind !== "swiftdebt-report"
+        || value.schemaVersion !== reportSchemaVersion || !Array.isArray(value.items)) {
+      throw new Error(`Expected SwiftDebt debt report schema version ${reportSchemaVersion}`);
+    }
+    return value;
+  }
+
+  function validateComparison(value) {
+    const validItems = value && value.itemChanges
+      && Array.isArray(value.itemChanges.added)
+      && Array.isArray(value.itemChanges.removed)
+      && Array.isArray(value.itemChanges.changed)
+      && Array.isArray(value.itemChanges.unchangedIDs);
+    const validAggregations = value && value.aggregationChanges
+      && Array.isArray(value.aggregationChanges.added)
+      && Array.isArray(value.aggregationChanges.removed)
+      && Array.isArray(value.aggregationChanges.changed)
+      && Array.isArray(value.aggregationChanges.unchangedIDs);
+    if (!value || value.schemaVersion !== comparisonSchemaVersion
+        || value.beforeReportSchemaVersion !== reportSchemaVersion
+        || value.afterReportSchemaVersion !== reportSchemaVersion
+        || !value.summary || !validItems || !validAggregations || !value.missingEvidence) {
+      throw new Error(`Expected SwiftDebt debt report comparison schema version ${comparisonSchemaVersion}`);
+    }
+    return value;
+  }
+
+  function setStatus(message) {
+    q("status").textContent = message;
+  }
+
+  function priorities(value) {
+    return ["critical", "high", "medium", "low", "unscored"].filter(priority =>
+      priority === "unscored"
+        ? value.items.some(item => !item.priority)
+        : value.items.some(item => item.priority === priority)
+    );
+  }
+
+  function categories(value) {
+    return [...new Set(value.items.map(item => item.category).filter(Boolean))].sort();
+  }
+
+  function levels(value) {
+    return [...new Set(value.items.map(item => item.level).filter(Boolean))].sort();
+  }
+
+  function fillSelect(id, values, label) {
+    const select = q(id);
+    const selected = select.value;
+    select.replaceChildren(el("option", label));
+    select.firstChild.value = "all";
+    values.forEach(value => {
+      const option = el("option", value);
+      option.value = value;
+      select.append(option);
+    });
+    select.value = ["all", ...values].includes(selected) ? selected : "all";
+  }
+
+  function filteredItems() {
+    const needle = state.query.trim().toLowerCase();
+    return report.items.filter(item =>
+      (state.priority === "all"
+        || (state.priority === "unscored" ? !item.priority : item.priority === state.priority))
+      && (state.category === "all" || item.category === state.category)
+      && (state.level === "all" || item.level === state.level)
+      && (!needle || [
+        item.id,
+        item.displayName,
+        item.category,
+        item.level,
+        location(item.location),
+        ...(item.evidence || []).flatMap(evidence => [
+          evidence.id, evidence.kind, evidence.rawValue, evidence.note,
+        ]),
+      ].some(value => text(value).toLowerCase().includes(needle)))
+    );
+  }
+
+  function appendCard(container, label, value, className) {
+    const card = el("article", undefined, "card");
+    card.append(el("strong", score(value), className), el("div", label));
+    container.append(card);
+  }
+
+  function renderSummary() {
+    const summary = report.summary || {};
+    const box = q("summary");
+    box.replaceChildren();
+    [
+      ["Ranked items", summary.rankedItemCount],
+      ["Unavailable evidence", summary.unavailableEvidenceCount],
+      ["Aggregations", summary.aggregationCount],
+      ["Total items", summary.totalItemCount],
+    ].forEach(([label, value]) => appendCard(box, label, value));
+    Object.entries(summary.priorityCounts || {}).sort().forEach(([priority, count]) =>
+      appendCard(box, `${priority} priority`, count, priority)
+    );
+  }
+
+  function appendRow(body, values, rowHeaderClass) {
+    const row = el("tr");
+    values.forEach((value, index) => {
+      const cell = el(index === 0 ? "th" : "td", value, index === 0 ? rowHeaderClass : undefined);
+      if (index === 0) cell.scope = "row";
+      row.append(cell);
+    });
+    body.append(row);
+  }
+
+  function renderTable(items) {
+    const wrap = q("item-table");
+    const table = el("table");
+    table.innerHTML = "<thead><tr><th>Priority</th><th>Score</th><th>Entity</th><th>Level</th><th>Location</th><th>Category</th><th>Recommendation</th></tr></thead>";
+    const body = el("tbody");
+    items.forEach(item => {
+      appendRow(body, [
+        item.priority || "unscored",
+        score(item.score),
+        item.displayName,
+        item.level,
+        location(item.location),
+        item.category,
+        item.recommendation,
+      ], item.priority || "");
+      body.children[body.children.length - 1].id = item.id;
+    });
+    table.append(body);
+    wrap.replaceChildren(table);
+  }
+
+  function renderDrilldown(items) {
+    const box = q("drilldown");
+    box.replaceChildren();
+    if (!items.length) {
+      box.append(el("p", "No items match the current filters.", "empty"));
+      return;
+    }
+    items.forEach(item => {
+      const details = el("details");
+      const summary = el(
+        "summary",
+        `${item.displayName} - ${item.priority || "unscored"} - ${score(item.score)}`
+      );
+      const body = el("div");
+      body.append(
+        el("p", item.explanation),
+        el("p", `Source: ${location(item.location)}`),
+        el("p", `Action: ${item.recommendation}`)
+      );
+      const evidence = el("ul");
+      (item.evidence || []).forEach(value => evidence.append(el(
+        "li",
+        `${value.kind}: ${value.rawValue} (${value.availability?.state || "unknown"}) ${value.availability?.reason || ""}`
+      )));
+      body.append(el("h3", "Evidence"), evidence);
+      const breakdown = el("ul");
+      ((item.scoreBreakdown && item.scoreBreakdown.contributions) || []).forEach(value =>
+        breakdown.append(el(
+          "li",
+          `${value.kind}: ${score(value.normalizedScore)} weight ${score(value.effectiveWeight)} - ${value.rawValue}`
+        ))
+      );
+      ((item.scoreBreakdown && item.scoreBreakdown.unavailableEvidence) || []).forEach(value =>
+        breakdown.append(el("li", `${value.kind}: unavailable - ${value.reason || "unspecified"}`))
+      );
+      body.append(el("h3", "Score breakdown"), breakdown);
+      details.append(summary, body);
+      box.append(details);
+    });
+  }
+  function renderGraph() {
+    const box = q("graph");
+    box.replaceChildren();
+    const graph = report.dependencyGraph;
+    if (!graph || !Array.isArray(graph.nodes) || !Array.isArray(graph.edges)) {
+      box.append(el("p", "No dependency or call graph is present in this report.", "empty"));
+      return;
+    }
+    const statistics = graph.statistics || {};
+    box.append(el(
+      "p",
+      `${score(statistics.nodeCount)} nodes; ${score(statistics.edgeCount)} edges; ${score(statistics.resolvedEdgeCount)} resolved; ${score(statistics.ambiguousEdgeCount)} ambiguous; ${score(statistics.unresolvedEdgeCount)} unresolved.`
+    ));
+    if (statistics.syntaxOnlyNote) box.append(el("p", statistics.syntaxOnlyNote, "meta"));
+    if (!graph.edges.length) {
+      box.append(el("p", "The dependency graph has no edges.", "empty"));
+      return;
+    }
+    const nodes = new Map(graph.nodes.map(node => [node.id, node]));
+    const list = el("ul");
+    list.ariaLabel = "Dependency and call graph edges";
+    graph.edges.forEach(edge => {
+      const source = nodes.get(edge.source)?.displayName || edge.source;
+      const resolvedTarget = edge.target && nodes.get(edge.target);
+      let target = resolvedTarget?.displayName || edge.target || edge.unresolvedName || "unresolved";
+      if (!edge.target && edge.targetCandidates && edge.targetCandidates.length) {
+        const candidates = edge.targetCandidates.map(id => nodes.get(id)?.displayName || id);
+        target += ` [candidates: ${candidates.join(", ")}]`;
+      }
+      const value = `${source} -> ${target} (${edge.kind}, ${edge.confidence}) at ${location(edge.location)}`;
+      list.append(el("li", value, "edge"));
+    });
+    box.append(list);
+  }
+  function snapshotState(item) {
+    return `${score(item.score)} / ${item.priority || "unscored"} at ${location(item.location)}`;
+  }
+
+  function deltaState(change) {
+    const parts = [signed(change.score && change.score.delta)];
+    if (change.moved) parts.push("moved");
+    const evidence = change.evidence || { added: [], removed: [] };
+    if (evidence.added.length || evidence.removed.length) {
+      parts.push(`evidence +${evidence.added.length}/-${evidence.removed.length}`);
+    }
+    return parts.join("; ");
+  }
+
+  function renderItemChanges(box) {
+    const changes = comparison.itemChanges;
+    const table = el("table");
+    table.innerHTML = "<thead><tr><th>Change</th><th>Item</th><th>Before</th><th>After</th><th>Delta</th></tr></thead>";
+    const body = el("tbody");
+    changes.added.forEach(item => appendRow(
+      body,
+      ["added", item.displayName, "not present", snapshotState(item), "added"]
+    ));
+    changes.removed.forEach(item => appendRow(
+      body,
+      ["removed", item.displayName, snapshotState(item), "not present", "removed"]
+    ));
+    changes.changed.forEach(item => appendRow(body, [
+      "changed",
+      item.displayName,
+      `${score(item.score.before)} / ${item.priority.before || "unscored"} at ${location(item.beforeLocation)}`,
+      `${score(item.score.after)} / ${item.priority.after || "unscored"} at ${location(item.afterLocation)}`,
+      deltaState(item),
+    ]));
+    table.append(body);
+    box.append(el("h3", "Item changes"), table);
+  }
+
+  function renderAggregationChanges(box) {
+    const changes = comparison.aggregationChanges;
+    if (!changes.added.length && !changes.removed.length && !changes.changed.length) return;
+    const table = el("table");
+    table.innerHTML = "<thead><tr><th>Change</th><th>Aggregation</th><th>Before</th><th>After</th><th>Delta</th></tr></thead>";
+    const body = el("tbody");
+    changes.added.forEach(value => appendRow(
+      body,
+      ["added", value.displayName, "not present", snapshotState(value), "added"]
+    ));
+    changes.removed.forEach(value => appendRow(
+      body,
+      ["removed", value.displayName, snapshotState(value), "not present", "removed"]
+    ));
+    changes.changed.forEach(value => appendRow(body, [
+      "changed",
+      value.displayName,
+      `${score(value.score.before)} / ${value.priority.before || "unscored"} at ${location(value.beforeLocation)}`,
+      `${score(value.score.after)} / ${value.priority.after || "unscored"} at ${location(value.afterLocation)}`,
+      `${signed(value.score.delta)}; members +${value.memberItemIDs.added.length}/-${value.memberItemIDs.removed.length}${value.moved ? "; moved" : ""}`,
+    ]));
+    table.append(body);
+    box.append(el("h3", "Aggregation changes"), table);
+  }
+
+  function renderComparison() {
+    const box = q("comparison");
+    box.replaceChildren();
+    if (!comparison) {
+      box.append(el(
+        "p",
+        "Load a comparison report JSON to visualize priority, score, evidence, and aggregation changes.",
+        "empty"
+      ));
+      return;
+    }
+    const summary = el("div", undefined, "cards");
+    appendCard(summary, "Added items", comparison.summary.addedItemCount);
+    appendCard(summary, "Removed items", comparison.summary.removedItemCount);
+    appendCard(summary, "Changed items", comparison.summary.changedItemCount);
+    appendCard(summary, "Total score delta", signed(comparison.summary.totalScoreDelta));
+    appendCard(summary, "Unavailable evidence delta", signed(comparison.summary.unavailableEvidenceDelta));
+    box.append(summary);
+    renderItemChanges(box);
+    renderAggregationChanges(box);
+    box.append(el(
+      "p",
+      `Missing evidence IDs: +${comparison.missingEvidence.added.length}/-${comparison.missingEvidence.removed.length}`
+    ));
+  }
+
+  function render() {
+    fillSelect("priority-filter", priorities(report), "All priorities");
+    fillSelect("category-filter", categories(report), "All categories");
+    fillSelect("level-filter", levels(report), "All levels");
+    q("report-title").textContent = `${report.generator || "SwiftDebt"} schema ${report.schemaVersion} - ${report.items.length} ranked items`;
+    const items = filteredItems();
+    renderSummary();
+    renderTable(items);
+    renderDrilldown(items);
+    renderGraph();
+    renderComparison();
+    setStatus(`Showing ${items.length} of ${report.items.length} ranked items.`);
+  }
+
+  function loadFile(input, validator, onLoad) {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        onLoad(validator(JSON.parse(String(reader.result))));
+        setStatus(`Loaded ${file.name}.`);
+      } catch (error) {
+        setStatus(error.message);
+      }
+    };
+    reader.onerror = () => setStatus(`Could not read ${file.name}.`);
+    reader.readAsText(file);
+  }
+
+  q("report-input").addEventListener("change", event => loadFile(
+    event.target,
+    validateReport,
+    value => {
+      report = value;
+      comparison = null;
+      render();
+    }
+  ));
+  q("comparison-input").addEventListener("change", event => loadFile(
+    event.target,
+    validateComparison,
+    value => {
+      comparison = value;
+      renderComparison();
+    }
+  ));
+  q("priority-filter").addEventListener("change", event => {
+    state.priority = event.target.value;
+    render();
+  });
+  q("category-filter").addEventListener("change", event => {
+    state.category = event.target.value;
+    render();
+  });
+  q("level-filter").addEventListener("change", event => {
+    state.level = event.target.value;
+    render();
+  });
+  q("query-filter").addEventListener("input", event => {
+    state.query = event.target.value;
+    render();
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "/" && document.activeElement !== q("query-filter")) {
+      event.preventDefault();
+      q("query-filter").focus();
+    }
+    if (event.key === "Escape") {
+      q("query-filter").value = "";
+      state.query = "";
+      render();
+    }
+  });
+
+  try {
+    report = validateReport(JSON.parse(q("swiftdebt-initial-report").textContent));
+    render();
+  } catch (error) {
+    setStatus(error.message);
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,17 +1,17 @@
 ---
 type: Feature
 title: LCOV coverage matching and score dampening
-description: SCMACore parses LCOV reports, matches coverage to debt entities, emits coverage diagnostics, and treats coverage as a score dampener.
-resource: Sources/SCMACore/CoverageMatcher.swift
-tags: [swift, coverage, lcov, debt-analysis, scmacore]
+description: SwiftDebtCore parses LCOV reports, matches coverage to debt entities, emits coverage diagnostics, and treats coverage as a score dampener.
+resource: Sources/SwiftDebtCore/CoverageMatcher.swift
+tags: [swift, coverage, lcov, debt-analysis, swiftdebtcore]
 timestamp: 2026-09-13T00:00:00Z
 ---
 
 # Overview
 
-`SCMACore` adds LCOV coverage models, an `LcovParser`, and `CoverageMatcher` to convert LCOV source, function, and executable-line data into optional `DebtEvidence` with kind `coverage.lcov`.
+`SwiftDebtCore` adds LCOV coverage models, an `LcovParser`, and `CoverageMatcher` to convert LCOV source, function, and executable-line data into optional `DebtEvidence` with kind `coverage.lcov`.
 
-`CoverageMatcher.match(report:entities:repositoryRoot:)` normalizes repository-root-relative paths, sorts inputs deterministically, attempts source-path exact and suffix matching, then matches callable entities by exact function name, function-name suffix, or executable line fallback. File, module, and type entities are scored from line coverage in the matched source file.
+`CoverageMatcher.match(report:entities:repositoryRoot:)` normalizes repository-root-relative paths, sorts inputs deterministically, attempts source-path exact and suffix matching, then matches callable entities by exact function name, function-name suffix, a unique LCOV function definition at the entity start line, or executable line fallback. File, module, and type entities are scored from line coverage in the matched source file.
 
 # Availability and diagnostics
 
@@ -25,20 +25,20 @@ The matcher returns `CoverageDiagnostic` values for every debt entity and for LC
 
 # CLI workflow
 
-The `scma explain coverage [path] --lcov PATH [options]` command runs source discovery, configuration and exclusion handling, Swift syntax parsing, LCOV parsing, entity matching, and diagnostic rendering through `CoverageExplanationService`.
+The `swift-debt explain coverage [path] --lcov PATH [options]` command runs source discovery, configuration and exclusion handling, Swift syntax parsing, LCOV parsing, entity matching, and diagnostic rendering through `CoverageExplanationService`.
 
 # Verification coverage
 
-`CoverageMatchingTests` covers LCOV parsing, source path and function matching, missing-file and unmatched-entity availability, rendered strategy explanations, unmatched LCOV records, and the rule that coverage dampeners cannot increase scores. `AnalyzerTests.coverageExplanationWorkflowReportsMatchingStrategies` covers the end-to-end explanation service path.
+`CoverageMatchingTests` covers LCOV parsing, source path and function matching, readable and mangled start-line fallback names, zero-hit functions, ambiguous same-line definitions, definitions without hit records, missing-file and unmatched-entity availability, rendered strategy explanations, unmatched LCOV records, and the rule that coverage dampeners cannot increase scores. `AnalyzerTests.coverageExplanationWorkflowReportsMatchingStrategies` covers the end-to-end explanation service path.
 
 # Citations
 
-[1] [CoverageModels.swift](../../Sources/SCMACore/CoverageModels.swift)
-[2] [LcovParser.swift](../../Sources/SCMACore/LcovParser.swift)
-[3] [CoverageMatcher.swift](../../Sources/SCMACore/CoverageMatcher.swift)
-[4] [DebtModels.swift](../../Sources/SCMACore/DebtModels.swift)
-[5] [DebtScoring.swift](../../Sources/SCMACore/DebtScoring.swift)
-[6] [CoverageExplanationService.swift](../../Sources/SCMAKit/CoverageExplanationService.swift)
-[7] [CLIOptions.swift](../../Sources/scma/CLIOptions.swift)
-[8] [CoverageMatchingTests.swift](../../Tests/SCMACoreTests/CoverageMatchingTests.swift)
-[9] [AnalyzerTests.swift](../../Tests/SCMAKitTests/AnalyzerTests.swift)
+[1] [CoverageModels.swift](../../Sources/SwiftDebtCore/CoverageModels.swift)
+[2] [LcovParser.swift](../../Sources/SwiftDebtCore/LcovParser.swift)
+[3] [CoverageMatcher.swift](../../Sources/SwiftDebtCore/CoverageMatcher.swift)
+[4] [DebtModels.swift](../../Sources/SwiftDebtCore/DebtModels.swift)
+[5] [DebtScoring.swift](../../Sources/SwiftDebtCore/DebtScoring.swift)
+[6] [CoverageExplanationService.swift](../../Sources/SwiftDebtKit/CoverageExplanationService.swift)
+[7] [CLIOptions.swift](../../Sources/swift-debt/CLIOptions.swift)
+[8] [CoverageMatchingTests.swift](../../Tests/SwiftDebtCoreTests/CoverageMatchingTests.swift)
+[9] [AnalyzerTests.swift](../../Tests/SwiftDebtKitTests/AnalyzerTests.swift)

@@ -1,8 +1,8 @@
 ---
 type: Core Capability
 title: Ranked debt analysis composition
-description: SCMACore and SCMAKit compose structural, functional, coverage, Git history, and dependency evidence into deterministic ranked debt analysis results.
-resource: Sources/SCMACore/RankedDebtAnalysis.swift
+description: SwiftDebtCore and SwiftDebtKit compose structural, functional, coverage, Git history, and dependency evidence into deterministic ranked debt analysis results.
+resource: Sources/SwiftDebtCore/RankedDebtAnalysis.swift
 tags: [swift, debt-analysis, ranking, evidence, scmakit]
 timestamp: 2026-09-13T00:00:00Z
 ---
@@ -31,8 +31,8 @@ Ranked output sorts scored items by descending score, then priority rank, then d
 
 # Citations
 
-[1] [RankedDebtAnalysis.swift](../../Sources/SCMACore/RankedDebtAnalysis.swift)
-[2] [DebtAnalysisBuilder.swift](../../Sources/SCMACore/DebtAnalysisBuilder.swift)
-[3] [MetricsCalculator.swift](../../Sources/SCMACore/MetricsCalculator.swift)
-[4] [AnalysisService.swift](../../Sources/SCMAKit/AnalysisService.swift)
-[5] [WorkspaceConfiguration.swift](../../Sources/SCMAKit/WorkspaceConfiguration.swift)
+[1] [RankedDebtAnalysis.swift](../../Sources/SwiftDebtCore/RankedDebtAnalysis.swift)
+[2] [DebtAnalysisBuilder.swift](../../Sources/SwiftDebtCore/DebtAnalysisBuilder.swift)
+[3] [MetricsCalculator.swift](../../Sources/SwiftDebtCore/MetricsCalculator.swift)
+[4] [AnalysisService.swift](../../Sources/SwiftDebtKit/AnalysisService.swift)
+[5] [WorkspaceConfiguration.swift](../../Sources/SwiftDebtKit/WorkspaceConfiguration.swift)

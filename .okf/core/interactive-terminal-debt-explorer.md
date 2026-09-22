@@ -1,15 +1,15 @@
 ---
 type: Core Capability
 title: Interactive terminal debt explorer
-description: SCMAInteractive renders ranked debt analysis as a terminal debt explorer with deterministic selection, filtering, detail context, and non-TTY fallback behavior.
-resource: Sources/SCMAInteractive/TerminalDebtExplorer.swift
+description: SwiftDebtInteractive renders ranked debt analysis as a terminal debt explorer with deterministic selection, filtering, detail context, and non-TTY fallback behavior.
+resource: Sources/SwiftDebtInteractive/TerminalDebtExplorer.swift
 tags: [swift, debt-analysis, terminal, interactive]
 timestamp: 2026-09-13T00:00:00Z
 ---
 
 # Overview
 
-`SCMAInteractive` is a SwiftPM target that depends on `SCMACore` and is linked into the `scma` executable. It adds an interactive terminal view for ranked debt analysis without changing the native debt report schemas.
+`SwiftDebtInteractive` is a SwiftPM target that depends on `SwiftDebtCore` and is linked into the `swift-debt` executable. It adds an interactive terminal view for ranked debt analysis without changing the native debt report schemas.
 
 `TerminalDebtExplorer.render` detects whether stdin and stdout are TTYs, rejects CI terminals, rejects missing `TERM`, and rejects `TERM=dumb`. When interactive output is unsafe, it returns the already-rendered fallback debt report text with `usedFallback: true` and a reason.
 
@@ -25,13 +25,13 @@ Search matching covers item ID, display name, file path, category, explanation, 
 
 The CLI adds `--interactive-debt` for `analyze`. The option is mutually exclusive with `--output`, requires a debt report format when `--format` is supplied, defaults to `debt-compact` output, and supplies debt analysis options so ranked debt analysis is produced.
 
-`SCMACommand` invokes the terminal explorer only when `--interactive-debt` was requested and the analysis result contains ranked debt analysis. Otherwise it writes the normal analysis standard output.
+`SwiftDebtCommand` invokes the terminal explorer only when `--interactive-debt` was requested and the analysis result contains ranked debt analysis. Otherwise it writes the normal analysis standard output.
 
 # Citations
 
 [1] [Package.swift](../../Package.swift)
-[2] [DebtExplorerDetail.swift](../../Sources/SCMAInteractive/DebtExplorerDetail.swift)
-[3] [DebtExplorerReducer.swift](../../Sources/SCMAInteractive/DebtExplorerReducer.swift)
-[4] [TerminalDebtExplorer.swift](../../Sources/SCMAInteractive/TerminalDebtExplorer.swift)
-[5] [CLIOptions.swift](../../Sources/scma/CLIOptions.swift)
-[6] [SCMACommand.swift](../../Sources/scma/SCMACommand.swift)
+[2] [DebtExplorerDetail.swift](../../Sources/SwiftDebtInteractive/DebtExplorerDetail.swift)
+[3] [DebtExplorerReducer.swift](../../Sources/SwiftDebtInteractive/DebtExplorerReducer.swift)
+[4] [TerminalDebtExplorer.swift](../../Sources/SwiftDebtInteractive/TerminalDebtExplorer.swift)
+[5] [CLIOptions.swift](../../Sources/swift-debt/CLIOptions.swift)
+[6] [SwiftDebtCommand.swift](../../Sources/swift-debt/SwiftDebtCommand.swift)

@@ -9,12 +9,11 @@ permissions:
 
 jobs:
   performance-budgets:
-    name: Equivalent SwiftSCMA workload budgets
+    name: Equivalent SwiftDebt workload budgets
     runs-on: macos-15
     timeout-minutes: 45
     env:
-      BASELINE_COMMIT: b0ae66be2065084b29b8b5da0a86d5cd049feced
-      FULL_EVIDENCE_COMMIT: 61adcc22a6d63ee7d6ec5d2e3b81e843d34a2a71
+      REFERENCE_COMMIT: 456cd14a722dcffea1996c5bbc8f4ec5a98fa2a8
 
     steps:
       - name: Check out candidate
@@ -28,11 +27,9 @@ jobs:
         run: |
           set -euo pipefail
 
-          git worktree add --detach "$RUNNER_TEMP/scma-baseline" "$BASELINE_COMMIT"
-          git worktree add --detach "$RUNNER_TEMP/scma-full-evidence" "$FULL_EVIDENCE_COMMIT"
+          git worktree add --detach "$RUNNER_TEMP/swift-debt-reference" "$REFERENCE_COMMIT"
           swift build -c release
-          swift build --package-path "$RUNNER_TEMP/scma-baseline" -c release
-          swift build --package-path "$RUNNER_TEMP/scma-full-evidence" -c release
+          swift build --package-path "$RUNNER_TEMP/swift-debt-reference" -c release
 
       - name: Measure baseline analysis
         shell: bash
@@ -42,31 +39,33 @@ jobs:
           mkdir -p artifacts/performance
           common=(
             --input Examples/Sources/Example.swift
-            --input .scma.example.json
-            --analyzer SwiftSCMA
-            --workload-family SwiftSCMA
-            --command-fingerprint "scma analyze frozen-examples --format json --jobs 1"
+            --input .swift-debt.example.json
+            --analyzer SwiftDebt
+            --workload-family SwiftDebt
+            --command-fingerprint "swift-debt analyze frozen-examples --format json --jobs 1"
             --analysis-mode baseline
             --optional-context none
           )
           python3 scripts/run_debtmap_benchmark.py \
             --output artifacts/performance/baseline-reference.json \
+            --runs 15 \
             "${common[@]}" -- \
-            "$RUNNER_TEMP/scma-baseline/.build/release/scma" analyze "$GITHUB_WORKSPACE/Examples/Sources" \
+            "$RUNNER_TEMP/swift-debt-reference/.build/release/scma" analyze "$GITHUB_WORKSPACE/Examples/Sources" \
             --format json --jobs 1 --output "$RUNNER_TEMP/baseline-reference-report.json"
           python3 scripts/run_debtmap_benchmark.py \
             --output artifacts/performance/baseline-candidate.json \
+            --runs 15 \
             "${common[@]}" -- \
-            .build/release/scma analyze Examples/Sources \
+            .build/release/swift-debt analyze Examples/Sources \
             --format json --jobs 1 --output "$RUNNER_TEMP/baseline-candidate-report.json"
-          .build/release/scma performance-gate \
+          .build/release/swift-debt performance-gate \
             artifacts/performance/baseline-reference.json \
             artifacts/performance/baseline-candidate.json \
             --name baseline-analysis \
             --max-wall-clock-regression 10 \
             --max-peak-memory-regression 15 \
             --output artifacts/performance/baseline-evaluation.json
-          .build/release/scma analyze Examples/Sources \
+          .build/release/swift-debt analyze Examples/Sources \
             --format json --jobs 1 \
             --output "$RUNNER_TEMP/baseline-profile-report.json" \
             --profile-output artifacts/performance/baseline-candidate-profile.json
@@ -76,39 +75,55 @@ jobs:
         run: |
           set -euo pipefail
 
+          workload="$RUNNER_TEMP/swift-debt-full-evidence-workload"
+          mkdir -p "$workload"
+          cp Examples/Sources/Example.swift "$workload/Example.swift"
+          git -C "$workload" init --quiet
+          git -C "$workload" config user.name "SwiftDebt benchmark"
+          git -C "$workload" config user.email "swiftdebt-benchmark@example.invalid"
+          git -C "$workload" add Example.swift
+          GIT_AUTHOR_DATE=2026-09-12T12:00:00Z GIT_COMMITTER_DATE=2026-09-12T12:00:00Z \
+            git -C "$workload" commit --quiet --message "Add frozen benchmark source"
+
           common=(
             --input Examples/Sources/Example.swift
-            --input .scma.example.json
-            --analyzer SwiftSCMA
-            --workload-family SwiftSCMA
-            --command-fingerprint "scma debt analyze frozen-examples --format debt-json --jobs 1 --lcov canonical.lcov"
+            --input .swift-debt.example.json
+            --input benchmarks/debtmap-baseline/fixtures/example.lcov
+            --analyzer SwiftDebt
+            --workload-family SwiftDebt
+            --command-fingerprint "swift-debt debt analyze frozen-examples --format debt-json --jobs 1 --lcov example.lcov --debt-reference-time 2026-09-22T00:00:00Z"
             --analysis-mode full-evidence
             --optional-context coverage-and-repository-history
           )
           python3 scripts/run_debtmap_benchmark.py \
             --output artifacts/performance/full-evidence-reference.json \
+            --runs 15 \
             "${common[@]}" -- \
-            "$RUNNER_TEMP/scma-full-evidence/.build/release/scma" debt analyze "$GITHUB_WORKSPACE/Examples/Sources" \
+            "$RUNNER_TEMP/swift-debt-reference/.build/release/scma" debt analyze "$workload" \
             --format debt-json --jobs 1 \
-            --lcov "$GITHUB_WORKSPACE/Tests/SCMACoreTests/Fixtures/CoverageMatching/canonical.lcov" \
+            --lcov "$GITHUB_WORKSPACE/benchmarks/debtmap-baseline/fixtures/example.lcov" \
+            --debt-reference-time 2026-09-22T00:00:00Z \
             --output "$RUNNER_TEMP/full-evidence-reference-report.json"
           python3 scripts/run_debtmap_benchmark.py \
             --output artifacts/performance/full-evidence-candidate.json \
+            --runs 15 \
             "${common[@]}" -- \
-            .build/release/scma debt analyze Examples/Sources \
+            .build/release/swift-debt debt analyze "$workload" \
             --format debt-json --jobs 1 \
-            --lcov Tests/SCMACoreTests/Fixtures/CoverageMatching/canonical.lcov \
+            --lcov "$GITHUB_WORKSPACE/benchmarks/debtmap-baseline/fixtures/example.lcov" \
+            --debt-reference-time 2026-09-22T00:00:00Z \
             --output "$RUNNER_TEMP/full-evidence-candidate-report.json"
-          .build/release/scma performance-gate \
+          .build/release/swift-debt performance-gate \
             artifacts/performance/full-evidence-reference.json \
             artifacts/performance/full-evidence-candidate.json \
             --name full-evidence-analysis \
             --max-wall-clock-regression 20 \
             --max-peak-memory-regression 15 \
             --output artifacts/performance/full-evidence-evaluation.json
-          .build/release/scma debt analyze Examples/Sources \
+          .build/release/swift-debt debt analyze "$workload" \
             --format debt-json --jobs 1 \
-            --lcov Tests/SCMACoreTests/Fixtures/CoverageMatching/canonical.lcov \
+            --lcov "$GITHUB_WORKSPACE/benchmarks/debtmap-baseline/fixtures/example.lcov" \
+            --debt-reference-time 2026-09-22T00:00:00Z \
             --output "$RUNNER_TEMP/full-evidence-profile-report.json" \
             --profile-output artifacts/performance/full-evidence-candidate-profile.json
 

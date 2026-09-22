@@ -1,8 +1,8 @@
 ---
 type: Static Analysis Component
 title: Swift call graph and coupling risk analysis
-description: SCMACore builds deterministic Swift dependency graphs with syntax-level type references, calls, module dependencies, coupling risks, and explicit confidence notes.
-resource: Sources/SCMACore/DependencyGraphBuilder.swift
+description: SwiftDebtCore builds deterministic Swift dependency graphs with syntax-level type references, calls, module dependencies, coupling risks, and explicit confidence notes.
+resource: Sources/SwiftDebtCore/DependencyGraphBuilder.swift
 tags: [swift, dependency-graph, call-graph, coupling, scmacore]
 timestamp: 2026-09-13T00:00:00Z
 ---
@@ -27,5 +27,5 @@ Resolved type references, calls, and module dependencies state that the result i
 
 # Citations
 
-[1] [DependencyGraphBuilder.swift](../../Sources/SCMACore/DependencyGraphBuilder.swift)
-[2] [AnalyzerTests.swift](../../Tests/SCMAKitTests/AnalyzerTests.swift)
+[1] [DependencyGraphBuilder.swift](../../Sources/SwiftDebtCore/DependencyGraphBuilder.swift)
+[2] [AnalyzerTests.swift](../../Tests/SwiftDebtKitTests/AnalyzerTests.swift)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measure an equivalent SwiftSCMA workload and emit gate-ready JSON."""
+"""Measure an equivalent SwiftDebt workload and emit gate-ready JSON."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ from pathlib import Path
 
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(
-        description="Run warmup and measured samples for one frozen SwiftSCMA workload."
+        description="Run warmup and measured samples for one frozen SwiftDebt workload."
     )
     result.add_argument("--output", required=True, type=Path)
     result.add_argument("--input", action="append", required=True, type=Path)

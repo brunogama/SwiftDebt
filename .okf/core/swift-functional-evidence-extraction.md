@@ -1,8 +1,8 @@
 ---
 type: Static Analysis Component
 title: Swift functional evidence extraction
-description: SCMASyntax extracts syntax-level side-effect, functional-composition, Swift concurrency, and API-risk facts, and SCMACore converts them into deterministic debt evidence.
-resource: Sources/SCMASyntax/EffectVisitor.swift
+description: SwiftDebtSyntax extracts syntax-level side-effect, functional-composition, Swift concurrency, and API-risk facts, and SwiftDebtCore converts them into deterministic debt evidence.
+resource: Sources/SwiftDebtSyntax/EffectVisitor.swift
 tags: [swift, debt-analysis, syntax, side-effects, functional-composition, concurrency-risk, api-risk]
 timestamp: 2026-09-13T00:00:00Z
 ---
@@ -33,8 +33,8 @@ The generated notes state that syntax findings, Swift-specific risk, and heurist
 
 # Citations
 
-[1] [EffectVisitor.swift](../../Sources/SCMASyntax/EffectVisitor.swift)
-[2] [SwiftSyntaxParser.swift](../../Sources/SCMASyntax/SwiftSyntaxParser.swift)
-[3] [Models.swift](../../Sources/SCMACore/Models.swift)
-[4] [DebtFunctionalEvidence.swift](../../Sources/SCMACore/DebtFunctionalEvidence.swift)
-[5] [FunctionalEvidenceTests.swift](../../Tests/SCMASyntaxTests/FunctionalEvidenceTests.swift)
+[1] [EffectVisitor.swift](../../Sources/SwiftDebtSyntax/EffectVisitor.swift)
+[2] [SwiftSyntaxParser.swift](../../Sources/SwiftDebtSyntax/SwiftSyntaxParser.swift)
+[3] [Models.swift](../../Sources/SwiftDebtCore/Models.swift)
+[4] [DebtFunctionalEvidence.swift](../../Sources/SwiftDebtCore/DebtFunctionalEvidence.swift)
+[5] [FunctionalEvidenceTests.swift](../../Tests/SwiftDebtSyntaxTests/FunctionalEvidenceTests.swift)

@@ -1,8 +1,8 @@
 ---
 type: Core Capability
 title: Debt improvement comparison and validation workflows
-description: SCMACore, SCMAKit, and the scma CLI compare two native debt reports and validate whether total debt score improved by a configured threshold.
-resource: Sources/SCMACore/DebtReportComparator.swift
+description: SwiftDebtCore, SwiftDebtKit, and the swift-debt CLI compare two native debt reports and validate whether total debt score improved by a configured threshold.
+resource: Sources/SwiftDebtCore/DebtReportComparator.swift
 tags: [swift, debt-analysis, reporting, automation]
 timestamp: 2026-09-13T00:00:00Z
 ---
@@ -29,14 +29,14 @@ Both service workflows refuse to overwrite an input report or a Swift source fil
 
 # Command-line surface
 
-The `scma` executable supports `compare BEFORE_JSON AFTER_JSON [--output PATH]` and `validate-improvement BEFORE_JSON AFTER_JSON [--threshold SCORE] [--output PATH]`. The CLI parser validates arity, duplicate valued options, unknown options, and nonnegative numeric thresholds.
+The `swift-debt` executable supports `compare BEFORE_JSON AFTER_JSON [--output PATH]` and `validate-improvement BEFORE_JSON AFTER_JSON [--threshold SCORE] [--output PATH]`. The CLI parser validates arity, duplicate valued options, unknown options, and nonnegative numeric thresholds.
 
 The command dispatcher exits with the service-provided status for compare and validation workflows. CLI help documents the new commands and notes that exit status `1` can represent an opted-in improvement gate failure.
 
 # Citations
 
-[1] [DebtReportComparator.swift](../../Sources/SCMACore/DebtReportComparator.swift)
-[2] [DebtReportComparisonModels.swift](../../Sources/SCMACore/DebtReportComparisonModels.swift)
-[3] [DebtImprovementService.swift](../../Sources/SCMAKit/DebtImprovementService.swift)
-[4] [CLIOptions.swift](../../Sources/scma/CLIOptions.swift)
-[5] [SCMACommand.swift](../../Sources/scma/SCMACommand.swift)
+[1] [DebtReportComparator.swift](../../Sources/SwiftDebtCore/DebtReportComparator.swift)
+[2] [DebtReportComparisonModels.swift](../../Sources/SwiftDebtCore/DebtReportComparisonModels.swift)
+[3] [DebtImprovementService.swift](../../Sources/SwiftDebtKit/DebtImprovementService.swift)
+[4] [CLIOptions.swift](../../Sources/swift-debt/CLIOptions.swift)
+[5] [SwiftDebtCommand.swift](../../Sources/swift-debt/SwiftDebtCommand.swift)

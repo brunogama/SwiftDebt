@@ -1,0 +1,9 @@
+{
+  "comparable" : true,
+  "passed" : true,
+  "peakMemoryRegressionPercent" : -0.5617977528089888,
+  "reasons" : [
+
+  ],
+  "wallClockRegressionPercent" : -96.45211044404739
+}

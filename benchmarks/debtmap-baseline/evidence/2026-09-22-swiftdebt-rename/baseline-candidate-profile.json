@@ -1,0 +1,56 @@
+{
+  "disabledOverhead" : {
+    "clockReads" : 0,
+    "note" : "Disabled profiling allocates no profiler and performs at most 24 optional phase-boundary checks.",
+    "peakMemoryReads" : 0,
+    "perSourceWork" : 0,
+    "phaseBoundaryChecks" : 24
+  },
+  "measurements" : [
+    "wall-clock-nanoseconds",
+    "peak-resident-memory-bytes"
+  ],
+  "phases" : [
+    {
+      "elapsedNanoseconds" : 952625,
+      "peakResidentMemoryBytes" : 14024704,
+      "phase" : "discovery"
+    },
+    {
+      "elapsedNanoseconds" : 910125,
+      "peakResidentMemoryBytes" : 14024704,
+      "phase" : "parsing"
+    },
+    {
+      "elapsedNanoseconds" : 244542,
+      "peakResidentMemoryBytes" : 14024704,
+      "phase" : "structuralEvidence"
+    },
+    {
+      "elapsedNanoseconds" : 103042,
+      "peakResidentMemoryBytes" : 14024704,
+      "phase" : "graph"
+    },
+    {
+      "elapsedNanoseconds" : 57541,
+      "peakResidentMemoryBytes" : 14024704,
+      "phase" : "functionalEvidence"
+    },
+    {
+      "elapsedNanoseconds" : 5917,
+      "peakResidentMemoryBytes" : 14024704,
+      "phase" : "scoring"
+    },
+    {
+      "elapsedNanoseconds" : 22084,
+      "peakResidentMemoryBytes" : 14024704,
+      "phase" : "aggregation"
+    },
+    {
+      "elapsedNanoseconds" : 949167,
+      "peakResidentMemoryBytes" : 14024704,
+      "phase" : "rendering"
+    }
+  ],
+  "schemaVersion" : 1
+}

@@ -1,8 +1,8 @@
 ---
 type: Core Capability
 title: Debt report output formats
-description: SwiftSCMA renders ranked debt analysis as native debt JSON, Markdown, DOT, text, compact text, a Debtmap compatibility JSON projection, and a browser dashboard.
-resource: Sources/SCMACore/DebtReport.swift
+description: SwiftDebt renders ranked debt analysis as native debt JSON, Markdown, DOT, text, compact text, a Debtmap compatibility JSON projection, and a browser dashboard.
+resource: Sources/SwiftDebtCore/DebtReport.swift
 tags: [swift, debt-analysis, reporting, debtmap]
 timestamp: 2026-09-13T00:00:00Z
 ---
@@ -15,13 +15,13 @@ timestamp: 2026-09-13T00:00:00Z
 
 # Native debt schema
 
-`DebtReport` is the native SwiftSCMA debt-report schema. It records schema version, report kind, generator, debt analysis options, summary, ranked items, aggregations, compact items, and missing evidence.
+`DebtReport` is the native SwiftDebt debt-report schema. It records schema version, report kind, generator, debt analysis options, summary, ranked items, aggregations, compact items, and missing evidence.
 
 `DebtReportItem` carries ranked item identity, display name, aggregation level, location, category, score, priority, explanation, recommendation, evidence, and score breakdown. `DebtReportAggregation` records deterministic aggregate membership and score facts. `DebtReportMissingEvidence` preserves unavailable evidence identity, requirement, configured weight, and reason.
 
 # Debtmap compatibility projection
 
-`DebtmapCompatibilityProjection` is a deterministic projection for Debtmap-oriented automation, not the native SwiftSCMA debt model. It contains projection metadata, ranked compatibility items, and missing evidence.
+`DebtmapCompatibilityProjection` is a deterministic projection for Debtmap-oriented automation, not the native SwiftDebt debt model. It contains projection metadata, ranked compatibility items, and missing evidence.
 
 Each compatibility item preserves the ranked item ID, entity, level, location, priority, score, sorted evidence kinds, and recommended action.
 
@@ -45,10 +45,10 @@ The CLI help lists the debt formats alongside the existing report formats. The R
 
 # Citations
 
-[1] [Configuration.swift](../../Sources/SCMACore/Configuration.swift)
-[2] [DebtReport.swift](../../Sources/SCMACore/DebtReport.swift)
-[3] [DebtReportProjectionBuilder.swift](../../Sources/SCMAReporting/DebtReportProjectionBuilder.swift)
-[4] [DebtReportRenderer.swift](../../Sources/SCMAReporting/DebtReportRenderer.swift)
-[5] [AnalysisService.swift](../../Sources/SCMAKit/AnalysisService.swift)
-[6] [CLIOptions.swift](../../Sources/scma/CLIOptions.swift)
+[1] [Configuration.swift](../../Sources/SwiftDebtCore/Configuration.swift)
+[2] [DebtReport.swift](../../Sources/SwiftDebtCore/DebtReport.swift)
+[3] [DebtReportProjectionBuilder.swift](../../Sources/SwiftDebtReporting/DebtReportProjectionBuilder.swift)
+[4] [DebtReportRenderer.swift](../../Sources/SwiftDebtReporting/DebtReportRenderer.swift)
+[5] [AnalysisService.swift](../../Sources/SwiftDebtKit/AnalysisService.swift)
+[6] [CLIOptions.swift](../../Sources/swift-debt/CLIOptions.swift)
 [7] [README.md](../../README.md)

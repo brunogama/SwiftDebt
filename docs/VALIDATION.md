@@ -45,10 +45,10 @@ Use a Swift 6.2.x toolchain with access to resolve the pinned package:
 swift package dump-package
 swift build
 swift test
-python3 scripts/smoke-test.py --binary .build/debug/scma --plugins
+python3 scripts/smoke-test.py --binary .build/debug/swift-debt --plugins
 ```
 
-Or run `./scripts/verify.sh`, which performs the manifest/build/tests/integration checks and validates that SCMACore has no imports. Python 3.10+ is only needed for the optional subprocess verification scripts. The smoke suite allows 900 seconds per subprocess by default; override with `--timeout SECONDS` for a slower cold SwiftSyntax build. This normal route never calls the offline helper.
+Or run `./scripts/verify.sh`, which performs the manifest/build/tests/integration checks and validates that SwiftDebtCore has no imports. Python 3.10+ is only needed for the optional subprocess verification scripts. The smoke suite allows 900 seconds per subprocess by default; override with `--timeout SECONDS` for a slower cold SwiftSyntax build. This normal route never calls the offline helper.
 
 For style validation, run the toolchain's formatter separately:
 
@@ -61,10 +61,10 @@ swift format lint --strict --recursive Sources Tests Plugins Package.swift Examp
 This is an explicit development fallback, **not an installation method or distributable build configuration**:
 
 ```sh
-python3 scripts/prepare-offline-validation.py /tmp/swiftscma-validation
-cd /tmp/swiftscma-validation
+python3 scripts/prepare-offline-validation.py /tmp/swiftdebt-validation
+cd /tmp/swiftdebt-validation
 swift test -j 2
-python3 scripts/smoke-test.py --binary .build/debug/scma --plugins
+python3 scripts/smoke-test.py --binary .build/debug/swift-debt --plugins
 ```
 
 The destination must not already exist. The helper checks for a Swift 6.2.x toolchain with bundled host modules, copies the package while excluding build/checkouts, removes only the remote SwiftSyntax product/dependency declarations **in the copy**, and adds host include/link paths there. The original manifest and sources are not modified. The resulting copy is unsuitable for publishing or distributing as a SwiftPM dependency.

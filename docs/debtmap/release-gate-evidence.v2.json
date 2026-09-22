@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-22T15:10:49Z",
+  "gates": [
+    {
+      "id": "swift-build-tests-and-test-suite",
+      "command": "swift build --build-tests && swift test",
+      "observedAt": "2026-09-22T15:10:49Z",
+      "status": "passed",
+      "exitStatus": 0,
+      "stdoutSummary": "Build complete; Swift Testing reported 184 tests in 28 suites passed."
+    },
+    {
+      "id": "swift-debt-plugin-smoke-test",
+      "command": "python3 scripts/smoke-test.py --binary .build/debug/swift-debt --plugins",
+      "observedAt": "2026-09-22T15:10:49Z",
+      "status": "passed",
+      "exitStatus": 0,
+      "stdoutSummary": "PASS: 28 subprocess checks; CLI formats, deterministic output, failures, safety, and both plugins/incrementality"
+    },
+    {
+      "id": "swiftdebt-core-domain-coverage",
+      "command": "python3 scripts/check_domain_coverage.py",
+      "observedAt": "2026-09-22T15:10:49Z",
+      "status": "passed",
+      "exitStatus": 0,
+      "stdoutSummary": "PASS: 100.00% executable domain line coverage, 3624 of 3624 lines"
+    },
+    {
+      "id": "swiftdebt-kit-ios-simulator-build",
+      "command": "xcodebuild -scheme SwiftDebtKit -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build",
+      "observedAt": "2026-09-22T15:10:49Z",
+      "status": "passed",
+      "exitStatus": 0,
+      "stdoutSummary": "BUILD SUCCEEDED for SwiftDebtKit with the iOS 16 simulator deployment target"
+    },
+    {
+      "id": "baseline-analysis-performance-budget",
+      "command": ".github/workflows/debtmap-performance.yml#baseline-analysis",
+      "observedAt": "2026-09-22T14:59:47Z",
+      "status": "passed",
+      "exitStatus": 0,
+      "evidencePath": "benchmarks/debtmap-baseline/evidence/2026-09-22-swiftdebt-rename/baseline-evaluation.json",
+      "stdoutSummary": "PASS: equivalent workload; wall-clock regression -12.472651%; peak-memory regression -0.117096%; limits 10% and 15%"
+    },
+    {
+      "id": "full-evidence-analysis-performance-budget",
+      "command": ".github/workflows/debtmap-performance.yml#full-evidence-analysis",
+      "observedAt": "2026-09-22T15:00:53Z",
+      "status": "passed",
+      "exitStatus": 0,
+      "evidencePath": "benchmarks/debtmap-baseline/evidence/2026-09-22-swiftdebt-rename/full-evidence-evaluation.json",
+      "stdoutSummary": "PASS: equivalent workload with measured coverage and available Git history; wall-clock regression -96.452110%; peak-memory regression -0.561798%; limits 20% and 15%"
+    }
+  ]
+}
