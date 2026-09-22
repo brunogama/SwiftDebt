@@ -40,7 +40,7 @@ extension CLIOptions {
         let valuedOptions: Set<String> = [
             "--config", "--format", "--output", "--profile-output", "--jobs", "--manifest", "--stamp", "--exclude",
             "--lcov", "--coverage", "--preset", "--aggregation", "--top", "--head", "--tail", "--min-score",
-            "--min-priority", "--category", "--level", "--max-score",
+            "--min-priority", "--category", "--level", "--max-score", "--debt-reference-time",
         ]
         while index < arguments.count {
             let argument = arguments[index]
@@ -145,6 +145,7 @@ extension CLIOptions {
             debtAnalysisOptions: options,
             enableDebtAnalysis: true,
             lcovPath: values["--lcov"],
+            debtReferenceTime: try parseDebtReferenceTime(values["--debt-reference-time"]),
             profileOutputPath: values["--profile-output"],
             pluginEvidenceLimitations: pluginEvidenceLimitations
         )

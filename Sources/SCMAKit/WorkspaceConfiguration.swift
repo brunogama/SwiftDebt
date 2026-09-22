@@ -1,6 +1,23 @@
 import Foundation
 import SCMACore
 
+package enum DebtReferenceTimeParser {
+    package static let example = "2026-09-12T00:00:00Z"
+
+    package static func parse(_ value: String) -> Date? {
+        let formats: [ISO8601DateFormatter.Options] = [
+            [.withInternetDateTime, .withFractionalSeconds],
+            [.withInternetDateTime],
+        ]
+        for format in formats {
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = format
+            if let date = formatter.date(from: value) { return date }
+        }
+        return nil
+    }
+}
+
 struct WorkspaceConfiguration: Decodable {
     var typeScope: TypeScope = .classes
     var scoring: ScoringMode = .none
@@ -16,6 +33,7 @@ struct WorkspaceConfiguration: Decodable {
     var debtAnalysis: DebtAnalysisOptions?
     var debtValidation: WorkspaceDebtValidation?
     var lcovPath: String?
+    var debtReferenceTime: Date?
 
     /// Parsing is embarrassingly parallel; bounded to keep memory predictable.
     static var defaultJobs: Int { min(8, max(1, ProcessInfo.processInfo.activeProcessorCount)) }
@@ -23,6 +41,7 @@ struct WorkspaceConfiguration: Decodable {
     private enum CodingKeys: String, CodingKey, CaseIterable {
         case typeScope, scoring, format, thresholds, exclude, jobs, failOnViolation, strictSyntax
         case minimumDuplicateLines, maximumDuplicateComparisons, maximumFileBytes, debtAnalysis, debtValidation, lcovPath
+        case debtReferenceTime
     }
     init() {}
     init(from decoder: any Decoder) throws {
@@ -49,6 +68,14 @@ struct WorkspaceConfiguration: Decodable {
         debtAnalysis = try values.decodeIfPresent(DebtAnalysisOptions.self, forKey: .debtAnalysis)
         debtValidation = try values.decodeIfPresent(WorkspaceDebtValidation.self, forKey: .debtValidation)
         lcovPath = try values.decodeIfPresent(String.self, forKey: .lcovPath)
+        if let value = try values.decodeIfPresent(String.self, forKey: .debtReferenceTime) {
+            guard let date = DebtReferenceTimeParser.parse(value) else {
+                throw AnalysisFailure.invalidConfiguration(
+                    "debtReferenceTime must be an ISO-8601 timestamp such as \(DebtReferenceTimeParser.example)"
+                )
+            }
+            debtReferenceTime = date
+        }
     }
 
     func analysisOptions(overrides: AnalysisRequest) throws -> AnalysisOptions {

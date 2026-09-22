@@ -45,7 +45,7 @@ public struct AnalysisService: Sendable {
             root: root,
             options: debtOptions,
             lcovPath: request.lcovPath ?? configuration.lcovPath,
-            referenceTime: request.debtReferenceTime,
+            referenceTime: request.debtReferenceTime ?? configuration.debtReferenceTime,
             profiler: profiler,
             pluginEvidenceLimitations: request.pluginEvidenceLimitations
         )
@@ -152,15 +152,23 @@ public struct AnalysisService: Sendable {
             )
         }
         profiler?.begin(.repositoryHistory)
-        let history = GitHistoryEvidenceProvider().evidence(
-            for: GitHistoryEvidenceRequest(
-                repositoryRoot: root.path,
-                referenceTime: referenceTime ?? Date(timeIntervalSince1970: 0),
-                entities: entities
+        if let referenceTime {
+            let history = GitHistoryEvidenceProvider().evidence(
+                for: GitHistoryEvidenceRequest(
+                    repositoryRoot: root.path,
+                    referenceTime: referenceTime,
+                    entities: entities
+                )
             )
-        )
+            evidence += history.evidence
+        } else {
+            let reason =
+                pluginEvidenceLimitations
+                ? "Git history evidence is unavailable in SwiftPM plugin context without an explicit reference time; configure debtReferenceTime in .scma.json or pass --debt-reference-time to the command plugin"
+                : "Git history evidence requires an explicit reference time; pass --debt-reference-time or configure debtReferenceTime in .scma.json"
+            evidence += entities.flatMap { unavailableEvidence(for: $0, reason: reason) }
+        }
         profiler?.end(.repositoryHistory)
-        evidence += history.evidence
         let merged = {
             profiler?.begin(.aggregation)
             defer { profiler?.end(.aggregation) }

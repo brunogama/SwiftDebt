@@ -33,14 +33,18 @@ struct PluginWorkflowTests {
             evidence.kind == "coverage.lcov" && evidence.reason?.contains("SwiftPM plugin context") == true
         })
         #expect(reportedItem.scoreBreakdown.unavailableEvidence.contains { evidence in
-            evidence.kind.hasPrefix("git-history.") && evidence.reason?.contains("not a git repository") == true
+            evidence.kind.hasPrefix("git-history.")
+                && evidence.reason?.contains("SwiftPM plugin context") == true
+                && evidence.reason?.contains("reference time") == true
         })
         #expect(!reportedItem.scoreBreakdown.contributions.contains { $0.kind == "coverage.lcov" })
         #expect(report.missingEvidence.contains { evidence in
             evidence.kind == "coverage.lcov" && evidence.reason.contains("SwiftPM plugin context")
         })
         #expect(report.missingEvidence.contains { evidence in
-            evidence.kind.hasPrefix("git-history.") && evidence.reason.contains("not a git repository")
+            evidence.kind.hasPrefix("git-history.")
+                && evidence.reason.contains("SwiftPM plugin context")
+                && evidence.reason.contains("reference time")
         })
 
         let markdown = try runSwiftPackage(
@@ -61,7 +65,9 @@ struct PluginWorkflowTests {
         #expect(projectedItem.score == reportedItem.score)
         #expect(projection.missingEvidence.contains { $0.kind == "coverage.lcov" })
         #expect(projection.missingEvidence.contains { evidence in
-            evidence.kind.hasPrefix("git-history.") && evidence.reason.contains("not a git repository")
+            evidence.kind.hasPrefix("git-history.")
+                && evidence.reason.contains("SwiftPM plugin context")
+                && evidence.reason.contains("reference time")
         })
 
         let successfulBuild = try runSwiftPackage(["build", "-j", "2"], in: consumer)

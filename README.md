@@ -47,6 +47,16 @@ An explicit input directory becomes the configuration/discovery root. For exampl
 
 Supported SCMA-paper formats are `text`, `json`, `csv`, `html`, and `diagnostics`. HTML is standalone and script-free. JSON is the full machine-readable SCMA report; CSV is a flat observation export, not an equivalent serialization of the report. Ranked debt analysis can additionally render `debt-json`, `debt-markdown`, `debt-dot`, `debt-text`, `debt-compact`, `debtmap-json`, and `debt-dashboard` when `debtAnalysis` is configured. `debtmap-json` is a deterministic compatibility projection for Debtmap-oriented automation, not the native SwiftSCMA debt model. `debt-dashboard` is a self-contained browser dashboard over the native debt-report schema. The closed conformance record supports `Debtmap 0.23.0 workflow/capability parity for Swift` for the frozen Swift workflow matrix. Sample outputs are in [Examples/Reports](Examples/Reports), and release evidence is in [the Debtmap acceptance record](docs/debtmap/release-quality-acceptance.md).
 
+Git-history recency in ranked debt analysis requires an explicit ISO-8601 reference time so repeated runs remain deterministic:
+
+```sh
+swift run scma debt analyze /path/to/project \
+  --format json \
+  --debt-reference-time 2026-09-12T00:00:00Z
+```
+
+Without the CLI option or the `debtReferenceTime` configuration key, Git-history evidence is reported as unavailable. SwiftSCMA does not substitute the Unix epoch or the ambient clock. Direct library callers can continue to inject `AnalysisRequest(debtReferenceTime:)` as a `Date`.
+
 Enforce an explicit CI threshold policy:
 
 ```sh
@@ -183,6 +193,7 @@ The CLI and command plugin automatically load `.scma.json` at the analysis root 
   "typeScope": "classes",
   "scoring": "none",
   "format": "text",
+  "debtReferenceTime": "2026-09-12T00:00:00Z",
   "thresholds": {
     "LOCC": 500,
     "WMCC": 200,
@@ -203,6 +214,8 @@ The CLI and command plugin automatically load `.scma.json` at the analysis root 
 These five thresholds reproduce the thresholds actually specified by Table I. The other five metrics remain informational unless explicitly configured. `NOAV` has an unresolved desirability direction in the paper; any custom NOAV upper-bound gate is your own policy, not its recommendation.
 
 CLI scalar options override file settings. CLI thresholds merge by metric, and exclusions append to file exclusions. `--fail-on-violation` can enable a gate; it does not disable a gate already enabled in the configuration. `--strict` likewise enables `strictSyntax` but cannot disable it. JSON metric keys are case-sensitive uppercase IDs; CLI threshold IDs are normalized to uppercase.
+
+`debtReferenceTime` must be an ISO-8601 internet timestamp with a time zone, such as `2026-09-12T00:00:00Z`. `--debt-reference-time` overrides the configured value.
 
 Exclusions are literal root-relative path prefixes such as `Generated` or `Sources/Legacy`, not globs. Directory scanning always omits `.git`, `.build`, `.swiftpm`, `.scma`, `Pods`, `Carthage`, `node_modules`, symbolic links, and discovered `Package.swift` files. An explicitly selected `Package.swift` can still be analyzed. A filesystem scan treats all input as one virtual `Workspace` module; prefer the command plugin for a multi-module Swift package.
 

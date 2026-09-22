@@ -88,7 +88,8 @@ struct RankedDebtAnalysisTests {
             path: root.path,
             typeScope: .nominals,
             debtAnalysisOptions: DebtAnalysisOptions(aggregationStrategy: .none),
-            lcovPath: "missing.lcov"
+            lcovPath: "missing.lcov",
+            debtReferenceTime: ISO8601DateFormatter().date(from: "2026-09-12T00:00:00Z")
         ))
         let analysis = try #require(result.rankedDebtAnalysis)
         let unavailable = analysis.items.flatMap { $0.score.breakdown.unavailableEvidence }

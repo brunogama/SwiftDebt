@@ -39,12 +39,15 @@ Create `YourPackage/.scma.json` before invoking the build:
 {
   "typeScope": "nominals",
   "scoring": "none",
+  "debtReferenceTime": "2026-09-12T00:00:00Z",
   "thresholds": { "CCF": 15 },
   "failOnViolation": false
 }
 ```
 
 The CCF value above is an example repository policy, not the paper's original limit of 20. An empty JSON object also works and uses defaults. Turn `failOnViolation` on only when you intend findings to fail builds. Configuration and input errors fail regardless of this setting. A file the pinned parser cannot parse is skipped with a warning rather than failing the build, unless `"strictSyntax": true` is set.
+
+Ranked-debt Git-history evidence requires an explicit deterministic reference time. The build plugin reads `debtReferenceTime` from `.scma.json`. The command plugin also forwards `--debt-reference-time 2026-09-12T00:00:00Z`. When neither input is present, plugin reports mark Git-history evidence unavailable with a plugin-context diagnostic; they do not use the Unix epoch or the ambient clock.
 
 ```sh
 cd YourPackage

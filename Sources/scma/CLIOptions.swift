@@ -1,3 +1,4 @@
+import Foundation
 import SCMACore
 import SCMAKit
 
@@ -57,6 +58,7 @@ struct CLIOptions {
           --manifest PATH                Explicit JSON source manifest (used by plugins).
           --lcov PATH                    LCOV input for explain coverage or debt evidence.
           --coverage PATH                Alias for --lcov in debt workflows.
+          --debt-reference-time TIME     ISO-8601 reference time for Git-history evidence.
           --preset PRESET                Debt preset: strict, balanced, lenient.
           --aggregation MODE             Debt aggregation: none, file, aggregateOnly.
           --top N | --head N | --tail N  Limit ranked debt output deterministically.
@@ -105,7 +107,7 @@ struct CLIOptions {
         var index = 0
         let valuedOptions: Set<String> = [
             "--config", "--format", "--output", "--profile-output", "--type-scope", "--scoring", "--jobs",
-            "--manifest", "--stamp", "--exclude", "--threshold", "--lcov",
+            "--manifest", "--stamp", "--exclude", "--threshold", "--lcov", "--debt-reference-time",
         ]
         while index < arguments.count {
             let argument = arguments[index]
@@ -202,6 +204,7 @@ struct CLIOptions {
                 failOnViolation: fail, strictSyntax: strict, exclude: exclusions, thresholds: thresholds,
                 debtAnalysisOptions: interactiveDebt ? DebtAnalysisOptions() : nil,
                 lcovPath: values["--lcov"],
+                debtReferenceTime: try parseDebtReferenceTime(values["--debt-reference-time"]),
                 profileOutputPath: values["--profile-output"],
                 pluginEvidenceLimitations: pluginEvidenceLimitations
             ),
@@ -356,5 +359,15 @@ struct CLIOptions {
         guard let value else { return nil }
         guard let result = T(rawValue: value) else { throw CLIError("Invalid \(name): \(value)") }
         return result
+    }
+
+    func parseDebtReferenceTime(_ value: String?) throws -> Date? {
+        guard let value else { return nil }
+        guard let date = DebtReferenceTimeParser.parse(value) else {
+            throw CLIError(
+                "Invalid ISO-8601 timestamp for --debt-reference-time: \(value); expected \(DebtReferenceTimeParser.example)"
+            )
+        }
+        return date
     }
 }
