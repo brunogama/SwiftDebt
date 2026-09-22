@@ -10,6 +10,7 @@ from pathlib import Path
 
 REPOSITORY = Path(__file__).resolve().parents[2]
 SCRIPT = REPOSITORY / "scripts" / "release_version.py"
+sys.path.insert(0, str(SCRIPT.parent))
 SPEC = importlib.util.spec_from_file_location("release_version", SCRIPT)
 assert SPEC is not None and SPEC.loader is not None
 release_version = importlib.util.module_from_spec(SPEC)
@@ -54,6 +55,21 @@ class ReleaseVersionTests(unittest.TestCase):
             self.assertIn("SwiftDebt 2.4.6", after)
             for unrelated in ("Swift 6.2", "SwiftSyntax 602.0.0", "Debtmap 0.23.0"):
                 self.assertEqual(before.count(unrelated), after.count(unrelated))
+            self.assertEqual(run_script(root, "check").returncode, 0)
+
+    def test_set_preserves_file_permissions(self) -> None:
+        with temporary_repository() as root:
+            document = root / "Guide.md"
+            document.chmod(0o755)
+            result = run_script(root, "set", "2.4.6")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(document.stat().st_mode & 0o777, 0o755)
+
+    def test_check_ignores_generated_agent_evidence(self) -> None:
+        with temporary_repository() as root:
+            evidence = root / ".agents" / "evidence" / "run.json"
+            evidence.parent.mkdir(parents=True)
+            evidence.write_text('{"summary":"SwiftDebt 9.9.9"}\n', encoding="utf-8")
             self.assertEqual(run_script(root, "check").returncode, 0)
 
     def test_check_detects_marker_drift_and_unmarked_release_literal(self) -> None:
@@ -103,6 +119,13 @@ class ReleaseVersionTests(unittest.TestCase):
             self.assertEqual(result.stdout.strip(), "0.1.0")
             self.assertEqual((root / "VERSION").read_text().strip(), "0.1.0")
             self.assertEqual(git(root, "tag", "--list", "v0.0.1"), "v0.0.1")
+
+    def test_first_release_rejects_version_ahead_of_bootstrap(self) -> None:
+        with temporary_repository(initial_version="0.2.0") as root:
+            commit_all(root, "feat: unreleased implementation")
+            result = run_script(root, "prepare")
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("ahead of first release", result.stderr)
 
     def test_patch_minor_and_major_release_plans(self) -> None:
         cases = (

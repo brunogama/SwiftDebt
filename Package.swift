@@ -34,7 +34,12 @@ let package = Package(
         ),
         .target(name: "SwiftDebtReporting", dependencies: ["SwiftDebtCore"]),
         .target(name: "SwiftDebtInteractive", dependencies: ["SwiftDebtCore"]),
-        .target(name: "SwiftDebtKit", dependencies: ["SwiftDebtCore", "SwiftDebtSyntax", "SwiftDebtReporting"]),
+        .target(
+            name: "SwiftDebtKit",
+            dependencies: ["SwiftDebtCore", "SwiftDebtSyntax", "SwiftDebtReporting"],
+            // SwiftPM skips the catalog during compilation; the DocC plugin discovers it independently.
+            exclude: ["SwiftDebtKit.docc"]
+        ),
         .executableTarget(name: "swift-debt", dependencies: ["SwiftDebtCore", "SwiftDebtInteractive", "SwiftDebtKit"]),
         .plugin(
             name: "SwiftDebtCommandPlugin",
