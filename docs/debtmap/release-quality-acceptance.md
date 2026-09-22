@@ -20,7 +20,7 @@ Required gates are represented by these release proofs:
 - `benchmarks/debtmap-baseline/evidence/2026-09-22-swiftdebt-rename/` for the retained raw samples, platform metadata, profiles, and passing baseline/full-evidence evaluations against a capability-equivalent historical reference.
 - `PluginWorkflowTests.commandAndBuildPluginsRunDebtWorkflows` for command and build plugin debt workflow regression coverage.
 - `python3 scripts/check_domain_coverage.py` for 100 percent executable domain line coverage.
-- The generic iOS simulator `SwiftDebtKit` build for the declared iOS and iPadOS library boundary.
+- The generic iOS, tvOS, watchOS, and visionOS simulator `SwiftDebtKit` builds with Xcode 27 beta. The iOS build covers the declared iPhone and iPadOS library boundary.
 
 The observed baseline gate passed at -12.472651 percent wall clock and -0.117096 percent peak memory. The observed full-evidence gate exercised measured LCOV coverage and available Git history, then passed at -96.452110 percent wall clock and -0.561798 percent peak memory. No approved exceptions were recorded for required gates.
 

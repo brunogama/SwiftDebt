@@ -4,6 +4,8 @@ A Swift CLI, reusable analysis library, SwiftPM command plugin, and incremental 
 
 **Version:** 0.0.1. **Toolchain baseline:** Swift 6.2.x, Swift 6 language mode. The shipping manifest pins SwiftSyntax **602.0.0** and declares macOS 13, iOS and iPadOS 16, tvOS 16, watchOS 9, and visionOS 1 as its minimum Apple deployment targets. Linux validation used Swift 6.2.1. Newer Swift syntax is not implicitly supported by the pinned parser.
 
+`SwiftDebtKit` also builds with Xcode 27.0 beta (27A5228h) against the iOS, tvOS, watchOS, and visionOS 27.0 simulator SDKs. The iOS simulator build covers both iPhone and iPadOS destinations.
+
 This is an independent, paper-inspired implementation, **not a reproduction of the authors' tool**. All ten metric families are implemented, with documented measurement policies. Coupling and field access are syntactic estimates; duplicate detection is native Swift, not Lizard. The paper's inconsistent scoring formulas are opt-in rather than treated as a validated quality grade.
 
 ## Contents

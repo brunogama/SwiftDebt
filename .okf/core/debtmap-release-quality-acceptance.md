@@ -15,14 +15,14 @@ The closed matrix records every in-scope capability as implemented and replaces 
 
 # Release gates
 
-`docs/debtmap/release-gate-evidence.v2.json` records schema version `2` evidence for six passing gates:
+`docs/debtmap/release-gate-evidence.v2.json` records schema version `2` evidence for nine passing gates:
 
 * `swift build --build-tests && swift test`
 * `python3 scripts/smoke-test.py --binary .build/debug/swift-debt --plugins`
 * baseline-analysis wall-clock and peak-memory budgets
 * full-evidence wall-clock and peak-memory budgets
 * complete executable domain line coverage
-* the SwiftDebtKit iOS simulator build
+* the SwiftDebtKit iOS, tvOS, watchOS, and visionOS simulator builds with Xcode 27 beta
 
 The parity fixture harness verifies that the gate evidence is wired into the matrix, has zero exit statuses, includes observed timestamps, and records pass summaries. No approved exceptions were recorded for required gates.
 

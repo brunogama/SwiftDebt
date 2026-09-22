@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-22T15:10:49Z",
+  "generatedAt": "2026-09-22T15:42:46Z",
   "gates": [
     {
       "id": "swift-build-tests-and-test-suite",
@@ -28,11 +28,35 @@
     },
     {
       "id": "swiftdebt-kit-ios-simulator-build",
-      "command": "xcodebuild -scheme SwiftDebtKit -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build",
-      "observedAt": "2026-09-22T15:10:49Z",
+      "command": "DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer xcodebuild -scheme SwiftDebtKit -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/swiftdebt-xcode27-ios-simulator-derived CODE_SIGNING_ALLOWED=NO build",
+      "observedAt": "2026-09-22T15:38:35Z",
       "status": "passed",
       "exitStatus": 0,
-      "stdoutSummary": "BUILD SUCCEEDED for SwiftDebtKit with the iOS 16 simulator deployment target"
+      "stdoutSummary": "BUILD SUCCEEDED for SwiftDebtKit with Xcode 27.0 beta (27A5228h) and the iOS Simulator 27.0 SDK; this covers iPhone and iPadOS destinations"
+    },
+    {
+      "id": "swiftdebt-kit-tvos-simulator-build",
+      "command": "DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer xcodebuild -scheme SwiftDebtKit -destination 'generic/platform=tvOS Simulator' -derivedDataPath /tmp/swiftdebt-xcode27-tvos-simulator-derived CODE_SIGNING_ALLOWED=NO build",
+      "observedAt": "2026-09-22T15:39:06Z",
+      "status": "passed",
+      "exitStatus": 0,
+      "stdoutSummary": "BUILD SUCCEEDED for SwiftDebtKit with Xcode 27.0 beta (27A5228h) and the tvOS Simulator 27.0 SDK"
+    },
+    {
+      "id": "swiftdebt-kit-watchos-simulator-build",
+      "command": "DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer xcodebuild -scheme SwiftDebtKit -destination 'generic/platform=watchOS Simulator' -derivedDataPath /tmp/swiftdebt-xcode27-watchos-simulator-derived CODE_SIGNING_ALLOWED=NO build",
+      "observedAt": "2026-09-22T15:39:42Z",
+      "status": "passed",
+      "exitStatus": 0,
+      "stdoutSummary": "BUILD SUCCEEDED for SwiftDebtKit with Xcode 27.0 beta (27A5228h) and the watchOS Simulator 27.0 SDK"
+    },
+    {
+      "id": "swiftdebt-kit-visionos-simulator-build",
+      "command": "DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer xcodebuild -scheme SwiftDebtKit -destination 'generic/platform=visionOS Simulator' -derivedDataPath /tmp/swiftdebt-xcode27-visionos-simulator-derived CODE_SIGNING_ALLOWED=NO build",
+      "observedAt": "2026-09-22T15:40:15Z",
+      "status": "passed",
+      "exitStatus": 0,
+      "stdoutSummary": "BUILD SUCCEEDED for SwiftDebtKit with Xcode 27.0 beta (27A5228h) and the visionOS Simulator 27.0 SDK"
     },
     {
       "id": "baseline-analysis-performance-budget",

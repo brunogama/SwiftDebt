@@ -96,7 +96,10 @@ struct DebtmapParityFixtureTests {
             "swift build --build-tests && swift test",
             "python3 scripts/smoke-test.py --binary .build/debug/swift-debt --plugins",
             "python3 scripts/check_domain_coverage.py",
-            "xcodebuild -scheme SwiftDebtKit -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build",
+            "DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer xcodebuild -scheme SwiftDebtKit -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/swiftdebt-xcode27-ios-simulator-derived CODE_SIGNING_ALLOWED=NO build",
+            "DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer xcodebuild -scheme SwiftDebtKit -destination 'generic/platform=tvOS Simulator' -derivedDataPath /tmp/swiftdebt-xcode27-tvos-simulator-derived CODE_SIGNING_ALLOWED=NO build",
+            "DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer xcodebuild -scheme SwiftDebtKit -destination 'generic/platform=watchOS Simulator' -derivedDataPath /tmp/swiftdebt-xcode27-watchos-simulator-derived CODE_SIGNING_ALLOWED=NO build",
+            "DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer xcodebuild -scheme SwiftDebtKit -destination 'generic/platform=visionOS Simulator' -derivedDataPath /tmp/swiftdebt-xcode27-visionos-simulator-derived CODE_SIGNING_ALLOWED=NO build",
         ]
 
         #expect(evidence.schemaVersion == 2)
@@ -113,6 +116,9 @@ struct DebtmapParityFixtureTests {
                     "swift-debt-plugin-smoke-test",
                     "swiftdebt-core-domain-coverage",
                     "swiftdebt-kit-ios-simulator-build",
+                    "swiftdebt-kit-tvos-simulator-build",
+                    "swiftdebt-kit-watchos-simulator-build",
+                    "swiftdebt-kit-visionos-simulator-build",
                     "baseline-analysis-performance-budget",
                     "full-evidence-analysis-performance-budget",
                 ])
