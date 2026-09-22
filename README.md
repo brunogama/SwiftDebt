@@ -2,7 +2,11 @@
 
 A Swift CLI, reusable analysis library, SwiftPM command plugin, and incremental build-tool plugin based on **SCMA: A Lightweight Tool to Analyze Swift Projects**, by Fazle Rabbi, Syeda Sumbul Hossain, and Mir Mohammad Samsul Arefin.
 
-**Version:** 0.0.1. **Toolchain baseline:** Swift 6.2.x, Swift 6 language mode. The shipping manifest pins SwiftSyntax **602.0.0** and declares macOS 13, iOS and iPadOS 16, tvOS 16, watchOS 9, and visionOS 1 as its minimum Apple deployment targets. Linux validation used Swift 6.2.1. Newer Swift syntax is not implicitly supported by the pinned parser.
+<!-- swiftdebt-release-version:start -->
+**Version:** 0.1.0.
+<!-- swiftdebt-release-version:end -->
+
+**Toolchain baseline:** Swift 6.2.x, Swift 6 language mode. The shipping manifest pins SwiftSyntax **602.0.0** and declares macOS 13, iOS and iPadOS 16, tvOS 16, watchOS 9, and visionOS 1 as its minimum Apple deployment targets. Linux validation used Swift 6.2.1. Newer Swift syntax is not implicitly supported by the pinned parser.
 
 `SwiftDebtKit` also builds with Xcode 27.0 beta (27A5228h) against the iOS, tvOS, watchOS, and visionOS 27.0 simulator SDKs. The iOS simulator build covers both iPhone and iPadOS destinations.
 
@@ -10,6 +14,8 @@ This is an independent, paper-inspired implementation, **not a reproduction of t
 
 ## Contents
 
+- [Installation](#installation)
+- [Tutorials and documentation](#tutorials-and-documentation)
 - [Quick start](#quick-start)
 - [Command plugin](#command-plugin)
 - [Build plugin](#build-plugin)
@@ -20,6 +26,62 @@ This is an independent, paper-inspired implementation, **not a reproduction of t
 - [Validation and limitations](#validation-and-limitations)
 
 Detailed references: [paper mapping](docs/PAPER_MAPPING.md), [measurement definitions](docs/METRICS.md), [plugin integration](docs/PLUGINS.md), [validation record](docs/VALIDATION.md).
+
+## Installation
+
+Add the released package and the products you need to your package manifest:
+
+```swift
+// swift-tools-version: 6.2
+import PackageDescription
+
+let package = Package(
+    name: "MyTools",
+    dependencies: [
+        // swiftdebt-release-version:start
+        .package(url: "https://github.com/brunogama/SwiftDebt.git", from: "0.1.0")
+        // swiftdebt-release-version:end
+    ],
+    targets: [
+        .executableTarget(
+            name: "DebtTool",
+            dependencies: [
+                .product(name: "SwiftDebtKit", package: "SwiftDebt")
+            ]
+        ),
+        .target(
+            name: "AppCore",
+            plugins: [
+                .plugin(name: "SwiftDebtBuildPlugin", package: "SwiftDebt")
+            ]
+        ),
+    ]
+)
+```
+
+Depending on the package also exposes the `swift-debt` command plugin. The build plugin requires a `.swift-debt.json` file in the consuming package root; an empty `{}` is valid.
+
+To install the standalone CLI from a tagged release:
+
+```sh
+# swiftdebt-release-version:start
+git clone --branch v0.1.0 --depth 1 https://github.com/brunogama/SwiftDebt.git
+# swiftdebt-release-version:end
+cd SwiftDebt
+swift build -c release
+.build/release/swift-debt --version
+.build/release/swift-debt analyze /path/to/project
+```
+
+## Tutorials and documentation
+
+The [published Swift-DocC site](https://brunogama.github.io/SwiftDebt/documentation/swiftdebtkit/) includes these practical tutorials:
+
+- [Use the standalone CLI](Sources/SwiftDebtKit/SwiftDebtKit.docc/Tutorials/StandaloneCLI.md)
+- [Analyze source with the library API](Sources/SwiftDebtKit/SwiftDebtKit.docc/Tutorials/LibraryAPI.md)
+- [Run the command plugin](Sources/SwiftDebtKit/SwiftDebtKit.docc/Tutorials/CommandPlugin.md)
+- [Attach the build plugin](Sources/SwiftDebtKit/SwiftDebtKit.docc/Tutorials/BuildPlugin.md)
+- [Enforce debt policy in CI](Sources/SwiftDebtKit/SwiftDebtKit.docc/Tutorials/CIEnforcement.md)
 
 ## Quick start
 
@@ -87,19 +149,7 @@ swift run swift-debt analyze Examples/Sources --scoring corrected  # bounded, pl
 
 ## Command plugin
 
-The existing `v0.0.1` tag predates the SwiftDebt rename and does not contain the products documented here. Until the first SwiftDebt release is tagged, use a local checkout:
-
-```swift
-.package(name: "SwiftDebt", path: "../SwiftDebt")
-```
-
-After the repository is renamed and a SwiftDebt release is published, replace the local dependency with the released version:
-
-```swift
-.package(url: "git@github.com:brunogama/SwiftDebt.git", from: "0.1.0")
-```
-
-Then, from that consumer package:
+After adding the released dependency shown in [Installation](#installation), run the command from the consumer package:
 
 ```sh
 swift package swift-debt --format json

@@ -160,7 +160,7 @@ package struct MetricsCalculator {
             return lhs.message < rhs.message
         }
         return AnalysisReport(
-            schemaVersion: 2, engineVersion: "0.1.0", typeScope: options.typeScope,
+            schemaVersion: 2, engineVersion: SwiftDebtRelease.version, typeScope: options.typeScope,
             scoringMode: options.scoring, complete: complete,
             inputFileCount: parsed.count, inputFiles: parsed.map(\.path).sorted(),
             minimumDuplicateLines: options.minimumDuplicateLines, analyzedFileCount: files.count,

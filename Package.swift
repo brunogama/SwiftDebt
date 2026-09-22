@@ -17,7 +17,9 @@ let package = Package(
         .plugin(name: "SwiftDebtBuildPlugin", targets: ["SwiftDebtBuildPlugin"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/swiftlang/swift-syntax.git", exact: "602.0.0")
+        .package(url: "https://github.com/swiftlang/swift-syntax.git", exact: "602.0.0"),
+        // Build-time tooling for the checked-in SwiftDebtKit DocC catalog and Pages site.
+        .package(url: "https://github.com/swiftlang/swift-docc-plugin.git", exact: "1.5.0"),
     ],
     targets: [
         .target(name: "SwiftDebtCore"),

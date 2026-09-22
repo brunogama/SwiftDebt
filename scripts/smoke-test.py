@@ -19,6 +19,7 @@ if not binary.is_file():
     parser.error(f"CLI binary does not exist: {binary}")
 package = pathlib.Path(__file__).resolve().parents[1]
 checks = 0
+expected_version = (package / "VERSION").read_text(encoding="utf-8").strip()
 
 def run(command: list[str], *, cwd: pathlib.Path | None = None, expected: int = 0) -> subprocess.CompletedProcess[str]:
     global checks
@@ -38,7 +39,8 @@ with tempfile.TemporaryDirectory(prefix="swift-debt-smoke-") as directory:
     source = sources / "Source File.swift"
     source.write_text("class C { var value = 0; func f(_ n: Int) { if n > 0 { value = n } } }\n")
     cli("--help")
-    cli("--version")
+    version = cli("--version")
+    assert version.stdout == f"SwiftDebt {expected_version}\n"
     cli("analyze", str(sources), "--unknown", expected=2)
     cli("analyze", str(sources), "--format", expected=2)
     cli("analyze", str(sources), "--format", "json", "--format", "text", expected=2)

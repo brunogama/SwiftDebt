@@ -1,4 +1,5 @@
 import Foundation
+import SwiftDebtCore
 import SwiftDebtInteractive
 import SwiftDebtKit
 
@@ -16,7 +17,7 @@ struct SwiftDebtCommand {
             case .help:
                 print(CLIOptions.help)
             case .version:
-                print("SwiftDebt 0.1.0")
+                print("SwiftDebt \(SwiftDebtRelease.version)")
             case .analyze(let request, let interactiveDebt):
                 let result = try await AnalysisService().run(request)
                 if interactiveDebt, let rankedDebtAnalysis = result.rankedDebtAnalysis {
