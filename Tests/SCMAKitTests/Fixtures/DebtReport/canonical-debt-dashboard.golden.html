@@ -33,10 +33,13 @@
 <section aria-labelledby="summary-heading"><h2 id="summary-heading">Ranked overview</h2><div id="summary" class="cards"></div></section>
 <div class="layout">
 <section id="items" aria-labelledby="items-heading"><h2 id="items-heading">Debt items</h2><div id="item-table" class="scroll"></div><div id="drilldown"></div></section>
-<aside aria-labelledby="graph-heading"><h2 id="graph-heading">Graph visualization</h2><div id="graph" class="panel graph"></div><h2>Comparison</h2><div id="comparison" class="panel"></div></aside>
+<aside>
+<section aria-labelledby="graph-heading"><h2 id="graph-heading">Dependency and call graph</h2><div id="graph" class="panel graph"></div></section>
+<section aria-labelledby="comparison-heading"><h2 id="comparison-heading">Comparison</h2><div id="comparison" class="panel"></div></section>
+</aside>
 </div>
 </main>
-<footer>Self-contained dashboard; no hosted service, telemetry, or network assets. Scores, priorities, evidence, and source locations are read from the debt-report schema.</footer>
+<footer>Self-contained dashboard; no hosted service, telemetry, or network assets. Scores, priorities, evidence, source locations, and graph facts are read from the versioned report artifacts.</footer>
 <script id="swiftscma-initial-report" type="application/json">
 {
   "aggregations" : [
@@ -84,6 +87,60 @@
       "score" : 72.5
     }
   ],
+  "dependencyGraph" : {
+    "edges" : [
+      {
+        "confidence" : "resolvedSyntax",
+        "isTestCaller" : false,
+        "kind" : "call",
+        "location" : {
+          "column" : 15,
+          "file" : "Sources/Beta.swift",
+          "line" : 12
+        },
+        "note" : "Beta.run calls Alpha.help",
+        "source" : "App.Beta.run()",
+        "target" : "App.Alpha.help()",
+        "targetCandidates" : [
+
+        ]
+      }
+    ],
+    "nodes" : [
+      {
+        "displayName" : "Alpha.help()",
+        "id" : "App.Alpha.help()",
+        "isTest" : false,
+        "kind" : "callable",
+        "location" : {
+          "column" : 1,
+          "file" : "Sources/Alpha.swift",
+          "line" : 3
+        },
+        "module" : "App"
+      },
+      {
+        "displayName" : "Beta.run()",
+        "id" : "App.Beta.run()",
+        "isTest" : false,
+        "kind" : "callable",
+        "location" : {
+          "column" : 5,
+          "file" : "Sources/Beta.swift",
+          "line" : 12
+        },
+        "module" : "App"
+      }
+    ],
+    "statistics" : {
+      "ambiguousEdgeCount" : 0,
+      "edgeCount" : 1,
+      "nodeCount" : 2,
+      "resolvedEdgeCount" : 1,
+      "syntaxOnlyNote" : "Syntax-only graph.",
+      "unresolvedEdgeCount" : 0
+    }
+  },
   "generator" : "SwiftSCMA",
   "items" : [
     {
@@ -265,7 +322,420 @@
 }
 </script>
 <script>
-(()=>{"use strict";const q=id=>document.getElementById(id),el=(n,t,c)=>{const e=document.createElement(n);if(c)e.className=c;if(t!==undefined)e.textContent=t;return e},state={priority:"all",category:"all",level:"all",query:""};let report=null,comparison=null;function loc(l){if(!l)return"unknown";const p=[l.file||"unknown"];if(l.line)p.push(l.line);if(l.column)p.push(l.column);return p.join(":")}function score(v){return v===null||v===undefined?"N/A":String(v)}function text(v){return v===null||v===undefined?"":String(v)}function validate(r){if(!r||r.reportKind!=="swiftscma-debt-report"||r.schemaVersion!==1||!Array.isArray(r.items))throw new Error("Expected SwiftSCMA debt report schema version 1");return r}function status(m){q("status").textContent=m}function priorities(r){return ["critical","high","medium","low","unscored"].filter(p=>p==="unscored"?r.items.some(i=>!i.priority):r.items.some(i=>i.priority===p))}function cats(r){return [...new Set(r.items.map(i=>i.category).filter(Boolean))].sort()}function levels(r){return [...new Set(r.items.map(i=>i.level).filter(Boolean))].sort()}function fillSelect(id,values,label){const s=q(id),keep=s.value;s.replaceChildren(el("option",label));s.firstChild.value="all";values.forEach(v=>{const o=el("option",v);o.value=v;s.append(o)});s.value=["all",...values].includes(keep)?keep:"all"}function filtered(){const needle=state.query.trim().toLowerCase();return report.items.filter(i=>(state.priority==="all"||(state.priority==="unscored"?!i.priority:i.priority===state.priority))&&(state.category==="all"||i.category===state.category)&&(state.level==="all"||i.level===state.level)&&(!needle||[i.id,i.displayName,i.category,i.level,loc(i.location),...(i.evidence||[]).flatMap(e=>[e.id,e.kind,e.rawValue,e.note])].some(v=>text(v).toLowerCase().includes(needle))))}function renderSummary(){const s=report.summary||{},box=q("summary");box.replaceChildren();[["Ranked items",s.rankedItemCount],["Unavailable evidence",s.unavailableEvidenceCount],["Aggregations",s.aggregationCount],["Total items",s.totalItemCount]].forEach(([a,b])=>{const c=el("article",undefined,"card");c.append(el("strong",score(b)),el("div",a));box.append(c)});Object.entries(s.priorityCounts||{}).sort().forEach(([a,b])=>{const c=el("article",undefined,"card");c.append(el("strong",score(b),a),el("div",a+" priority"));box.append(c)})}function renderTable(items){const wrap=q("item-table"),table=el("table");table.innerHTML="<thead><tr><th>Priority</th><th>Score</th><th>Entity</th><th>Level</th><th>Location</th><th>Category</th><th>Recommendation</th></tr></thead>";const body=el("tbody");items.forEach(i=>{const tr=el("tr");tr.id=i.id;[i.priority||"unscored",score(i.score),i.displayName,i.level,loc(i.location),i.category,i.recommendation].forEach((v,n)=>{const cell=el(n===0?"th":"td",v,n===0?i.priority||"":"");if(n===0)cell.scope="row";tr.append(cell)});body.append(tr)});table.append(body);wrap.replaceChildren(table)}function renderDrilldown(items){const box=q("drilldown");box.replaceChildren();if(!items.length){box.append(el("p","No items match the current filters.","empty"));return}items.forEach(i=>{const d=el("details");const summary=el("summary",`${i.displayName} - ${i.priority||"unscored"} - ${score(i.score)}`);const body=el("div");body.append(el("p",i.explanation),el("p","Source: "+loc(i.location)),el("p","Action: "+i.recommendation));const ev=el("ul");(i.evidence||[]).forEach(e=>ev.append(el("li",`${e.kind}: ${e.rawValue} (${e.availability?.state||"unknown"}) ${e.availability?.reason||""}`)));body.append(el("h3","Evidence"),ev);const br=el("ul");((i.scoreBreakdown&&i.scoreBreakdown.contributions)||[]).forEach(c=>br.append(el("li",`${c.kind}: ${score(c.normalizedScore)} weight ${score(c.effectiveWeight)} - ${c.rawValue}`)));((i.scoreBreakdown&&i.scoreBreakdown.unavailableEvidence)||[]).forEach(u=>br.append(el("li",`${u.kind}: unavailable - ${u.reason||"unspecified"}`)));body.append(el("h3","Score breakdown"),br);d.append(summary,body);box.append(d)})}function renderGraph(){const box=q("graph");box.replaceChildren();const aggs=report.aggregations||[];if(!aggs.length){box.append(el("p","No aggregation graph is present in this report.","empty"));return}aggs.forEach(a=>{const h=el("strong",`${a.displayName} (${a.level})`),list=el("div");(a.memberItemIDs||[]).forEach(id=>{const item=report.items.find(i=>i.id===id);list.append(el("div",`${a.id} -> ${item?item.displayName:id}`,"edge"))});box.append(h,list)})}function renderComparison(){const box=q("comparison");box.replaceChildren();if(!comparison){box.append(el("p","Load a comparison report JSON to visualize priority and score changes.","empty"));return}const table=el("table");table.innerHTML="<thead><tr><th>Item</th><th>Base</th><th>Comparison</th><th>Delta</th></tr></thead>";const body=el("tbody"),base=new Map(report.items.map(i=>[i.id,i]));comparison.items.forEach(next=>{const old=base.get(next.id),delta=old&&typeof old.score==="number"&&typeof next.score==="number"?String(next.score-old.score):"N/A",tr=el("tr");[next.displayName,old?score(old.score)+" / "+(old.priority||"unscored"):"new",score(next.score)+" / "+(next.priority||"unscored"),delta].forEach(v=>tr.append(el("td",v)));body.append(tr)});table.append(body);box.append(table)}function render(){fillSelect("priority-filter",priorities(report),"All priorities");fillSelect("category-filter",cats(report),"All categories");fillSelect("level-filter",levels(report),"All levels");q("report-title").textContent=`${report.generator||"SwiftSCMA"} schema ${report.schemaVersion} - ${report.items.length} ranked items`;const items=filtered();renderSummary();renderTable(items);renderDrilldown(items);renderGraph();renderComparison();status(`Showing ${items.length} of ${report.items.length} ranked items.`)}function loadFile(input,done){const file=input.files&&input.files[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{try{done(validate(JSON.parse(String(reader.result))));status(`Loaded ${file.name}.`)}catch(error){status(error.message)}};reader.onerror=()=>status(`Could not read ${file.name}.`);reader.readAsText(file)}q("report-input").addEventListener("change",e=>loadFile(e.target,r=>{report=r;comparison=null;render()}));q("comparison-input").addEventListener("change",e=>loadFile(e.target,r=>{comparison=r;renderComparison()}));q("priority-filter").addEventListener("change",e=>{state.priority=e.target.value;render()});q("category-filter").addEventListener("change",e=>{state.category=e.target.value;render()});q("level-filter").addEventListener("change",e=>{state.level=e.target.value;render()});q("query-filter").addEventListener("input",e=>{state.query=e.target.value;render()});document.addEventListener("keydown",e=>{if(e.key==="/"&&document.activeElement!==q("query-filter")){e.preventDefault();q("query-filter").focus()}if(e.key==="Escape"){q("query-filter").value="";state.query="";render()}});try{report=validate(JSON.parse(q("swiftscma-initial-report").textContent));render()}catch(error){status(error.message)}})();
+(() => {
+  "use strict";
+  const reportSchemaVersion = 1;
+  const comparisonSchemaVersion = 1;
+  const q = id => document.getElementById(id);
+  const el = (name, value, className) => {
+    const element = document.createElement(name);
+    if (className) element.className = className;
+    if (value !== undefined) element.textContent = value;
+    return element;
+  };
+  const state = { priority: "all", category: "all", level: "all", query: "" };
+  let report = null;
+  let comparison = null;
+
+  function location(value) {
+    if (!value) return "unknown";
+    const parts = [value.file || "unknown"];
+    if (value.line) parts.push(value.line);
+    if (value.column) parts.push(value.column);
+    return parts.join(":");
+  }
+
+  function score(value) {
+    return value === null || value === undefined ? "N/A" : String(value);
+  }
+
+  function text(value) {
+    return value === null || value === undefined ? "" : String(value);
+  }
+
+  function signed(value) {
+    if (value === null || value === undefined) return "N/A";
+    return value > 0 ? `+${value}` : String(value);
+  }
+
+  function validateReport(value) {
+    if (!value || value.reportKind !== "swiftscma-debt-report"
+        || value.schemaVersion !== reportSchemaVersion || !Array.isArray(value.items)) {
+      throw new Error(`Expected SwiftSCMA debt report schema version ${reportSchemaVersion}`);
+    }
+    return value;
+  }
+
+  function validateComparison(value) {
+    const validItems = value && value.itemChanges
+      && Array.isArray(value.itemChanges.added)
+      && Array.isArray(value.itemChanges.removed)
+      && Array.isArray(value.itemChanges.changed)
+      && Array.isArray(value.itemChanges.unchangedIDs);
+    const validAggregations = value && value.aggregationChanges
+      && Array.isArray(value.aggregationChanges.added)
+      && Array.isArray(value.aggregationChanges.removed)
+      && Array.isArray(value.aggregationChanges.changed)
+      && Array.isArray(value.aggregationChanges.unchangedIDs);
+    if (!value || value.schemaVersion !== comparisonSchemaVersion
+        || value.beforeReportSchemaVersion !== reportSchemaVersion
+        || value.afterReportSchemaVersion !== reportSchemaVersion
+        || !value.summary || !validItems || !validAggregations || !value.missingEvidence) {
+      throw new Error(`Expected SwiftSCMA debt report comparison schema version ${comparisonSchemaVersion}`);
+    }
+    return value;
+  }
+
+  function setStatus(message) {
+    q("status").textContent = message;
+  }
+
+  function priorities(value) {
+    return ["critical", "high", "medium", "low", "unscored"].filter(priority =>
+      priority === "unscored"
+        ? value.items.some(item => !item.priority)
+        : value.items.some(item => item.priority === priority)
+    );
+  }
+
+  function categories(value) {
+    return [...new Set(value.items.map(item => item.category).filter(Boolean))].sort();
+  }
+
+  function levels(value) {
+    return [...new Set(value.items.map(item => item.level).filter(Boolean))].sort();
+  }
+
+  function fillSelect(id, values, label) {
+    const select = q(id);
+    const selected = select.value;
+    select.replaceChildren(el("option", label));
+    select.firstChild.value = "all";
+    values.forEach(value => {
+      const option = el("option", value);
+      option.value = value;
+      select.append(option);
+    });
+    select.value = ["all", ...values].includes(selected) ? selected : "all";
+  }
+
+  function filteredItems() {
+    const needle = state.query.trim().toLowerCase();
+    return report.items.filter(item =>
+      (state.priority === "all"
+        || (state.priority === "unscored" ? !item.priority : item.priority === state.priority))
+      && (state.category === "all" || item.category === state.category)
+      && (state.level === "all" || item.level === state.level)
+      && (!needle || [
+        item.id,
+        item.displayName,
+        item.category,
+        item.level,
+        location(item.location),
+        ...(item.evidence || []).flatMap(evidence => [
+          evidence.id, evidence.kind, evidence.rawValue, evidence.note,
+        ]),
+      ].some(value => text(value).toLowerCase().includes(needle)))
+    );
+  }
+
+  function appendCard(container, label, value, className) {
+    const card = el("article", undefined, "card");
+    card.append(el("strong", score(value), className), el("div", label));
+    container.append(card);
+  }
+
+  function renderSummary() {
+    const summary = report.summary || {};
+    const box = q("summary");
+    box.replaceChildren();
+    [
+      ["Ranked items", summary.rankedItemCount],
+      ["Unavailable evidence", summary.unavailableEvidenceCount],
+      ["Aggregations", summary.aggregationCount],
+      ["Total items", summary.totalItemCount],
+    ].forEach(([label, value]) => appendCard(box, label, value));
+    Object.entries(summary.priorityCounts || {}).sort().forEach(([priority, count]) =>
+      appendCard(box, `${priority} priority`, count, priority)
+    );
+  }
+
+  function appendRow(body, values, rowHeaderClass) {
+    const row = el("tr");
+    values.forEach((value, index) => {
+      const cell = el(index === 0 ? "th" : "td", value, index === 0 ? rowHeaderClass : undefined);
+      if (index === 0) cell.scope = "row";
+      row.append(cell);
+    });
+    body.append(row);
+  }
+
+  function renderTable(items) {
+    const wrap = q("item-table");
+    const table = el("table");
+    table.innerHTML = "<thead><tr><th>Priority</th><th>Score</th><th>Entity</th><th>Level</th><th>Location</th><th>Category</th><th>Recommendation</th></tr></thead>";
+    const body = el("tbody");
+    items.forEach(item => {
+      appendRow(body, [
+        item.priority || "unscored",
+        score(item.score),
+        item.displayName,
+        item.level,
+        location(item.location),
+        item.category,
+        item.recommendation,
+      ], item.priority || "");
+      body.children[body.children.length - 1].id = item.id;
+    });
+    table.append(body);
+    wrap.replaceChildren(table);
+  }
+
+  function renderDrilldown(items) {
+    const box = q("drilldown");
+    box.replaceChildren();
+    if (!items.length) {
+      box.append(el("p", "No items match the current filters.", "empty"));
+      return;
+    }
+    items.forEach(item => {
+      const details = el("details");
+      const summary = el(
+        "summary",
+        `${item.displayName} - ${item.priority || "unscored"} - ${score(item.score)}`
+      );
+      const body = el("div");
+      body.append(
+        el("p", item.explanation),
+        el("p", `Source: ${location(item.location)}`),
+        el("p", `Action: ${item.recommendation}`)
+      );
+      const evidence = el("ul");
+      (item.evidence || []).forEach(value => evidence.append(el(
+        "li",
+        `${value.kind}: ${value.rawValue} (${value.availability?.state || "unknown"}) ${value.availability?.reason || ""}`
+      )));
+      body.append(el("h3", "Evidence"), evidence);
+      const breakdown = el("ul");
+      ((item.scoreBreakdown && item.scoreBreakdown.contributions) || []).forEach(value =>
+        breakdown.append(el(
+          "li",
+          `${value.kind}: ${score(value.normalizedScore)} weight ${score(value.effectiveWeight)} - ${value.rawValue}`
+        ))
+      );
+      ((item.scoreBreakdown && item.scoreBreakdown.unavailableEvidence) || []).forEach(value =>
+        breakdown.append(el("li", `${value.kind}: unavailable - ${value.reason || "unspecified"}`))
+      );
+      body.append(el("h3", "Score breakdown"), breakdown);
+      details.append(summary, body);
+      box.append(details);
+    });
+  }
+  function renderGraph() {
+    const box = q("graph");
+    box.replaceChildren();
+    const graph = report.dependencyGraph;
+    if (!graph || !Array.isArray(graph.nodes) || !Array.isArray(graph.edges)) {
+      box.append(el("p", "No dependency or call graph is present in this report.", "empty"));
+      return;
+    }
+    const statistics = graph.statistics || {};
+    box.append(el(
+      "p",
+      `${score(statistics.nodeCount)} nodes; ${score(statistics.edgeCount)} edges; ${score(statistics.resolvedEdgeCount)} resolved; ${score(statistics.ambiguousEdgeCount)} ambiguous; ${score(statistics.unresolvedEdgeCount)} unresolved.`
+    ));
+    if (statistics.syntaxOnlyNote) box.append(el("p", statistics.syntaxOnlyNote, "meta"));
+    if (!graph.edges.length) {
+      box.append(el("p", "The dependency graph has no edges.", "empty"));
+      return;
+    }
+    const nodes = new Map(graph.nodes.map(node => [node.id, node]));
+    const list = el("ul");
+    list.ariaLabel = "Dependency and call graph edges";
+    graph.edges.forEach(edge => {
+      const source = nodes.get(edge.source)?.displayName || edge.source;
+      const resolvedTarget = edge.target && nodes.get(edge.target);
+      let target = resolvedTarget?.displayName || edge.target || edge.unresolvedName || "unresolved";
+      if (!edge.target && edge.targetCandidates && edge.targetCandidates.length) {
+        const candidates = edge.targetCandidates.map(id => nodes.get(id)?.displayName || id);
+        target += ` [candidates: ${candidates.join(", ")}]`;
+      }
+      const value = `${source} -> ${target} (${edge.kind}, ${edge.confidence}) at ${location(edge.location)}`;
+      list.append(el("li", value, "edge"));
+    });
+    box.append(list);
+  }
+  function snapshotState(item) {
+    return `${score(item.score)} / ${item.priority || "unscored"} at ${location(item.location)}`;
+  }
+
+  function deltaState(change) {
+    const parts = [signed(change.score && change.score.delta)];
+    if (change.moved) parts.push("moved");
+    const evidence = change.evidence || { added: [], removed: [] };
+    if (evidence.added.length || evidence.removed.length) {
+      parts.push(`evidence +${evidence.added.length}/-${evidence.removed.length}`);
+    }
+    return parts.join("; ");
+  }
+
+  function renderItemChanges(box) {
+    const changes = comparison.itemChanges;
+    const table = el("table");
+    table.innerHTML = "<thead><tr><th>Change</th><th>Item</th><th>Before</th><th>After</th><th>Delta</th></tr></thead>";
+    const body = el("tbody");
+    changes.added.forEach(item => appendRow(
+      body,
+      ["added", item.displayName, "not present", snapshotState(item), "added"]
+    ));
+    changes.removed.forEach(item => appendRow(
+      body,
+      ["removed", item.displayName, snapshotState(item), "not present", "removed"]
+    ));
+    changes.changed.forEach(item => appendRow(body, [
+      "changed",
+      item.displayName,
+      `${score(item.score.before)} / ${item.priority.before || "unscored"} at ${location(item.beforeLocation)}`,
+      `${score(item.score.after)} / ${item.priority.after || "unscored"} at ${location(item.afterLocation)}`,
+      deltaState(item),
+    ]));
+    table.append(body);
+    box.append(el("h3", "Item changes"), table);
+  }
+
+  function renderAggregationChanges(box) {
+    const changes = comparison.aggregationChanges;
+    if (!changes.added.length && !changes.removed.length && !changes.changed.length) return;
+    const table = el("table");
+    table.innerHTML = "<thead><tr><th>Change</th><th>Aggregation</th><th>Before</th><th>After</th><th>Delta</th></tr></thead>";
+    const body = el("tbody");
+    changes.added.forEach(value => appendRow(
+      body,
+      ["added", value.displayName, "not present", snapshotState(value), "added"]
+    ));
+    changes.removed.forEach(value => appendRow(
+      body,
+      ["removed", value.displayName, snapshotState(value), "not present", "removed"]
+    ));
+    changes.changed.forEach(value => appendRow(body, [
+      "changed",
+      value.displayName,
+      `${score(value.score.before)} / ${value.priority.before || "unscored"} at ${location(value.beforeLocation)}`,
+      `${score(value.score.after)} / ${value.priority.after || "unscored"} at ${location(value.afterLocation)}`,
+      `${signed(value.score.delta)}; members +${value.memberItemIDs.added.length}/-${value.memberItemIDs.removed.length}${value.moved ? "; moved" : ""}`,
+    ]));
+    table.append(body);
+    box.append(el("h3", "Aggregation changes"), table);
+  }
+
+  function renderComparison() {
+    const box = q("comparison");
+    box.replaceChildren();
+    if (!comparison) {
+      box.append(el(
+        "p",
+        "Load a comparison report JSON to visualize priority, score, evidence, and aggregation changes.",
+        "empty"
+      ));
+      return;
+    }
+    const summary = el("div", undefined, "cards");
+    appendCard(summary, "Added items", comparison.summary.addedItemCount);
+    appendCard(summary, "Removed items", comparison.summary.removedItemCount);
+    appendCard(summary, "Changed items", comparison.summary.changedItemCount);
+    appendCard(summary, "Total score delta", signed(comparison.summary.totalScoreDelta));
+    appendCard(summary, "Unavailable evidence delta", signed(comparison.summary.unavailableEvidenceDelta));
+    box.append(summary);
+    renderItemChanges(box);
+    renderAggregationChanges(box);
+    box.append(el(
+      "p",
+      `Missing evidence IDs: +${comparison.missingEvidence.added.length}/-${comparison.missingEvidence.removed.length}`
+    ));
+  }
+
+  function render() {
+    fillSelect("priority-filter", priorities(report), "All priorities");
+    fillSelect("category-filter", categories(report), "All categories");
+    fillSelect("level-filter", levels(report), "All levels");
+    q("report-title").textContent = `${report.generator || "SwiftSCMA"} schema ${report.schemaVersion} - ${report.items.length} ranked items`;
+    const items = filteredItems();
+    renderSummary();
+    renderTable(items);
+    renderDrilldown(items);
+    renderGraph();
+    renderComparison();
+    setStatus(`Showing ${items.length} of ${report.items.length} ranked items.`);
+  }
+
+  function loadFile(input, validator, onLoad) {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        onLoad(validator(JSON.parse(String(reader.result))));
+        setStatus(`Loaded ${file.name}.`);
+      } catch (error) {
+        setStatus(error.message);
+      }
+    };
+    reader.onerror = () => setStatus(`Could not read ${file.name}.`);
+    reader.readAsText(file);
+  }
+
+  q("report-input").addEventListener("change", event => loadFile(
+    event.target,
+    validateReport,
+    value => {
+      report = value;
+      comparison = null;
+      render();
+    }
+  ));
+  q("comparison-input").addEventListener("change", event => loadFile(
+    event.target,
+    validateComparison,
+    value => {
+      comparison = value;
+      renderComparison();
+    }
+  ));
+  q("priority-filter").addEventListener("change", event => {
+    state.priority = event.target.value;
+    render();
+  });
+  q("category-filter").addEventListener("change", event => {
+    state.category = event.target.value;
+    render();
+  });
+  q("level-filter").addEventListener("change", event => {
+    state.level = event.target.value;
+    render();
+  });
+  q("query-filter").addEventListener("input", event => {
+    state.query = event.target.value;
+    render();
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "/" && document.activeElement !== q("query-filter")) {
+      event.preventDefault();
+      q("query-filter").focus();
+    }
+    if (event.key === "Escape") {
+      q("query-filter").value = "";
+      state.query = "";
+      render();
+    }
+  });
+
+  try {
+    report = validateReport(JSON.parse(q("swiftscma-initial-report").textContent));
+    render();
+  } catch (error) {
+    setStatus(error.message);
+  }
+})();
 </script>
 </body>
 </html>

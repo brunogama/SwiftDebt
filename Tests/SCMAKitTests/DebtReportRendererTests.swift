@@ -30,6 +30,11 @@ struct DebtReportRendererTests {
         #expect(decoded.reportKind == "swiftscma-debt-report")
         #expect(decoded.missingEvidence.map(\.evidenceID) == ["callable:Beta.run:coverage"])
         #expect(decoded.items.map(\.id) == ["callable:Beta.run", "callable:Alpha.help"])
+        let dependencyGraph = try #require(decoded.dependencyGraph)
+        #expect(dependencyGraph.nodes.map(\.id) == ["App.Alpha.help()", "App.Beta.run()"])
+        #expect(dependencyGraph.edges.count == 1)
+        #expect(dependencyGraph.edges[0].source == "App.Beta.run()")
+        #expect(dependencyGraph.edges[0].target == "App.Alpha.help()")
         #expect(projection.schemaVersion == 1)
         #expect(projection.projection == "debtmap-compatibility")
         #expect(projection.projectionNote.contains("projection"))
@@ -40,7 +45,8 @@ struct DebtReportRendererTests {
         let expectedDOT = try read("Tests/SCMAKitTests/Fixtures/DebtReport/canonical-debt-graph.golden.dot")
         let expectedPlain = try read("Tests/SCMAKitTests/Fixtures/DebtReport/canonical-debt-plain.golden.txt")
         let expectedCompact = try read("Tests/SCMAKitTests/Fixtures/DebtReport/canonical-debt-compact.golden.txt")
-        let expectedDebtmap = try read("Tests/SCMAKitTests/Fixtures/DebtReport/canonical-debtmap-projection.golden.json")
+        let expectedDebtmap = try read(
+            "Tests/SCMAKitTests/Fixtures/DebtReport/canonical-debtmap-projection.golden.json")
         #expect(json == expectedJSON)
         #expect(markdown == expectedMarkdown)
         #expect(dot == expectedDOT)
@@ -65,7 +71,8 @@ struct DebtReportRendererTests {
         let expectedDOT = try read("Tests/SCMAKitTests/Fixtures/DebtReport/canonical-debt-graph.golden.dot")
         let expectedPlain = try read("Tests/SCMAKitTests/Fixtures/DebtReport/canonical-debt-plain.golden.txt")
         let expectedCompact = try read("Tests/SCMAKitTests/Fixtures/DebtReport/canonical-debt-compact.golden.txt")
-        let expectedDebtmap = try read("Tests/SCMAKitTests/Fixtures/DebtReport/canonical-debtmap-projection.golden.json")
+        let expectedDebtmap = try read(
+            "Tests/SCMAKitTests/Fixtures/DebtReport/canonical-debtmap-projection.golden.json")
         #expect(json == expectedJSON)
         #expect(markdown == expectedMarkdown)
         #expect(dot == expectedDOT)
@@ -84,18 +91,20 @@ struct DebtReportRendererTests {
             encoding: .utf8
         )
 
-        let result = try await AnalysisService().run(.init(
-            path: directory.path,
-            format: .debtJSON,
-            debtAnalysisOptions: DebtAnalysisOptions(aggregationStrategy: .none, top: 1),
-            lcovPath: "missing.lcov"
-        ))
+        let result = try await AnalysisService().run(
+            .init(
+                path: directory.path,
+                format: .debtJSON,
+                debtAnalysisOptions: DebtAnalysisOptions(aggregationStrategy: .none, top: 1),
+                lcovPath: "missing.lcov"
+            ))
         let decoded = try JSONDecoder().decode(DebtReport.self, from: Data(result.standardOutput.utf8))
 
         #expect(decoded.schemaVersion == DebtReportSchema.currentVersion)
         #expect(decoded.reportKind == "swiftscma-debt-report")
         #expect(decoded.items.count <= 1)
         #expect(!decoded.missingEvidence.isEmpty)
+        #expect(decoded.dependencyGraph != nil)
     }
 
     private func read(_ path: String) throws -> String {
@@ -153,11 +162,13 @@ struct DebtReportRendererTests {
             level: .file,
             displayName: "Sources",
             location: DebtLocation(module: "App", file: "Sources", line: nil, column: nil),
-            memberItemIDs: shuffled ? ["callable:Alpha.help", "callable:Beta.run"] : ["callable:Beta.run", "callable:Alpha.help"],
+            memberItemIDs: shuffled
+                ? ["callable:Alpha.help", "callable:Beta.run"] : ["callable:Beta.run", "callable:Alpha.help"],
             score: DebtScore(
                 value: 81.875,
                 priority: .high,
-                breakdown: DebtScoreBreakdown(totalConfiguredWeight: 2, totalAvailableWeight: 2, contributions: [], unavailableEvidence: [])
+                breakdown: DebtScoreBreakdown(
+                    totalConfiguredWeight: 2, totalAvailableWeight: 2, contributions: [], unavailableEvidence: [])
             )
         )
         let analysis = RankedDebtAnalysis(
@@ -182,23 +193,24 @@ struct DebtReportRendererTests {
                 priorityCounts: ["critical": 1, "high": 1]
             )
         )
+        let graphNodes = [
+            SwiftGraphNode(
+                id: "App.Beta.run()",
+                kind: .callable,
+                module: "App",
+                displayName: "Beta.run()",
+                location: SourceLocation(file: "Sources/Beta.swift", line: 12, column: 5)
+            ),
+            SwiftGraphNode(
+                id: "App.Alpha.help()",
+                kind: .callable,
+                module: "App",
+                displayName: "Alpha.help()",
+                location: SourceLocation(file: "Sources/Alpha.swift", line: 3, column: 1)
+            ),
+        ]
         let graph = SwiftDependencyGraph(
-            nodes: [
-                SwiftGraphNode(
-                    id: "App.Beta.run()",
-                    kind: .callable,
-                    module: "App",
-                    displayName: "Beta.run()",
-                    location: SourceLocation(file: "Sources/Beta.swift", line: 12, column: 5)
-                ),
-                SwiftGraphNode(
-                    id: "App.Alpha.help()",
-                    kind: .callable,
-                    module: "App",
-                    displayName: "Alpha.help()",
-                    location: SourceLocation(file: "Sources/Alpha.swift", line: 3, column: 1)
-                ),
-            ],
+            nodes: shuffled ? Array(graphNodes.reversed()) : graphNodes,
             edges: [
                 SwiftGraphEdge(
                     source: "App.Beta.run()",

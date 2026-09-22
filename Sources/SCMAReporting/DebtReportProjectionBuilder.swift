@@ -3,7 +3,10 @@ import SCMACore
 package struct DebtReportProjectionBuilder {
     package init() {}
 
-    package func nativeReport(from analysis: RankedDebtAnalysis) -> DebtReport {
+    package func nativeReport(
+        from analysis: RankedDebtAnalysis,
+        dependencyGraph: SwiftDependencyGraph? = nil
+    ) -> DebtReport {
         let items = sorted(analysis.items).map { ranked in
             DebtReportItem(
                 id: ranked.item.id,
@@ -25,7 +28,8 @@ package struct DebtReportProjectionBuilder {
             items: items,
             aggregations: aggregations(from: analysis),
             compactItems: compactItems(from: analysis),
-            missingEvidence: missingEvidence(from: analysis)
+            missingEvidence: missingEvidence(from: analysis),
+            dependencyGraph: dependencyGraph.map { DebtReportGraphProjection().make(from: $0) }
         )
     }
 
@@ -118,7 +122,7 @@ package struct DebtReportProjectionBuilder {
         rhsPriority: Priority?
     ) -> Bool {
         switch (lhsScore, rhsScore) {
-        case let (lhs?, rhs?) where lhs != rhs:
+        case (let lhs?, let rhs?) where lhs != rhs:
             return lhs > rhs
         case (nil, _?):
             return false

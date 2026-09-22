@@ -12,6 +12,7 @@ public struct DebtReport: Codable, Equatable, Sendable {
     public let aggregations: [DebtReportAggregation]
     public let compactItems: [CompactDebtItem]
     public let missingEvidence: [DebtReportMissingEvidence]
+    public let dependencyGraph: DebtReportDependencyGraph?
 
     public init(
         schemaVersion: Int = DebtReportSchema.currentVersion,
@@ -22,7 +23,8 @@ public struct DebtReport: Codable, Equatable, Sendable {
         items: [DebtReportItem],
         aggregations: [DebtReportAggregation],
         compactItems: [CompactDebtItem],
-        missingEvidence: [DebtReportMissingEvidence]
+        missingEvidence: [DebtReportMissingEvidence],
+        dependencyGraph: DebtReportDependencyGraph? = nil
     ) {
         self.schemaVersion = schemaVersion
         self.reportKind = reportKind
@@ -33,6 +35,29 @@ public struct DebtReport: Codable, Equatable, Sendable {
         self.aggregations = aggregations
         self.compactItems = compactItems
         self.missingEvidence = missingEvidence
+        self.dependencyGraph = dependencyGraph
+    }
+}
+
+/// The deterministic dependency and call graph facts carried by a debt report.
+///
+/// This is a presentation projection of `SwiftDependencyGraph`. Coupling and
+/// scoring evidence remain in the report items, while nodes, edges, and graph
+/// statistics let report consumers visualize the graph without rerunning
+/// analysis or parsing DOT.
+public struct DebtReportDependencyGraph: Codable, Equatable, Sendable {
+    public let nodes: [SwiftGraphNode]
+    public let edges: [SwiftGraphEdge]
+    public let statistics: CallGraphStatistics
+
+    public init(
+        nodes: [SwiftGraphNode],
+        edges: [SwiftGraphEdge],
+        statistics: CallGraphStatistics
+    ) {
+        self.nodes = nodes
+        self.edges = edges
+        self.statistics = statistics
     }
 }
 
@@ -145,7 +170,8 @@ public struct DebtmapCompatibilityProjection: Codable, Equatable, Sendable {
     public init(
         schemaVersion: Int = 1,
         projection: String = "debtmap-compatibility",
-        projectionNote: String = "Deterministic SwiftSCMA projection for Debtmap-oriented automation; not the native SwiftSCMA debt model.",
+        projectionNote: String =
+            "Deterministic SwiftSCMA projection for Debtmap-oriented automation; not the native SwiftSCMA debt model.",
         items: [DebtmapCompatibilityItem],
         missingEvidence: [DebtReportMissingEvidence]
     ) {

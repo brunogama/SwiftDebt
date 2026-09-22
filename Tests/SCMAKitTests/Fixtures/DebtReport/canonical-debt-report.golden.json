@@ -44,6 +44,60 @@
       "score" : 72.5
     }
   ],
+  "dependencyGraph" : {
+    "edges" : [
+      {
+        "confidence" : "resolvedSyntax",
+        "isTestCaller" : false,
+        "kind" : "call",
+        "location" : {
+          "column" : 15,
+          "file" : "Sources/Beta.swift",
+          "line" : 12
+        },
+        "note" : "Beta.run calls Alpha.help",
+        "source" : "App.Beta.run()",
+        "target" : "App.Alpha.help()",
+        "targetCandidates" : [
+
+        ]
+      }
+    ],
+    "nodes" : [
+      {
+        "displayName" : "Alpha.help()",
+        "id" : "App.Alpha.help()",
+        "isTest" : false,
+        "kind" : "callable",
+        "location" : {
+          "column" : 1,
+          "file" : "Sources/Alpha.swift",
+          "line" : 3
+        },
+        "module" : "App"
+      },
+      {
+        "displayName" : "Beta.run()",
+        "id" : "App.Beta.run()",
+        "isTest" : false,
+        "kind" : "callable",
+        "location" : {
+          "column" : 5,
+          "file" : "Sources/Beta.swift",
+          "line" : 12
+        },
+        "module" : "App"
+      }
+    ],
+    "statistics" : {
+      "ambiguousEdgeCount" : 0,
+      "edgeCount" : 1,
+      "nodeCount" : 2,
+      "resolvedEdgeCount" : 1,
+      "syntaxOnlyNote" : "Syntax-only graph.",
+      "unresolvedEdgeCount" : 0
+    }
+  },
   "generator" : "SwiftSCMA",
   "items" : [
     {

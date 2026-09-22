@@ -10,7 +10,7 @@ extension ReportRenderer {
         let builder = DebtReportProjectionBuilder()
         switch format {
         case .debtJSON:
-            return try encode(builder.nativeReport(from: analysis))
+            return try encode(builder.nativeReport(from: analysis, dependencyGraph: graph))
         case .debtMarkdown:
             return markdown(builder.nativeReport(from: analysis))
         case .debtDot:
@@ -22,7 +22,7 @@ extension ReportRenderer {
         case .debtmapJSON:
             return try encode(builder.projection(from: analysis))
         case .debtDashboard:
-            return try renderDebtDashboard(builder.nativeReport(from: analysis))
+            return try renderDebtDashboard(builder.nativeReport(from: analysis, dependencyGraph: graph))
         case .text, .json, .csv, .html, .diagnostics:
             throw AnalysisFailure.invalidConfiguration("Use a debt report format for ranked debt output")
         }
@@ -44,7 +44,7 @@ extension ReportRenderer {
             "",
             "Schema version: \(report.schemaVersion)",
             "Ranked items: \(report.summary.rankedItemCount)",
-            "Unavailable evidence: " + String(report.summary.unavailableEvidenceCount)
+            "Unavailable evidence: " + String(report.summary.unavailableEvidenceCount),
         ]
         for priority in [Priority.critical, .high, .medium, .low] {
             let items = report.items.filter { $0.priority == priority }
@@ -78,7 +78,7 @@ extension ReportRenderer {
             "- Category: \(item.category)",
             "- Evidence: \(available) available, \(unavailable) unavailable",
             "- Why: \(item.explanation)",
-            "- Action: " + item.recommendation
+            "- Action: " + item.recommendation,
         ]
         if !item.scoreBreakdown.unavailableEvidence.isEmpty {
             lines.append("- Missing evidence:")
@@ -100,7 +100,7 @@ extension ReportRenderer {
                 item.displayName,
                 location(item.location),
                 item.category,
-                item.recommendation
+                item.recommendation,
             ]
             lines.append(fields.joined(separator: " | "))
         }
