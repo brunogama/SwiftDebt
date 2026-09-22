@@ -20,12 +20,12 @@ struct SCMACommand {
             case .analyze(let request, let interactiveDebt):
                 let result = try await AnalysisService().run(request)
                 if interactiveDebt, let rankedDebtAnalysis = result.rankedDebtAnalysis {
-                    let explorer = TerminalDebtExplorer.render(
+                    try TerminalDebtExplorer.run(
                         rankedDebtAnalysis,
                         environment: .current(),
-                        fallbackOutput: result.standardOutput
+                        fallbackOutput: result.standardOutput,
+                        dependencies: .live(sourceRoot: interactiveSourceRoot(for: request))
                     )
-                    FileHandle.standardOutput.write(Data(explorer.text.utf8))
                 } else {
                     FileHandle.standardOutput.write(Data(result.standardOutput.utf8))
                 }
@@ -60,4 +60,22 @@ struct SCMACommand {
             exit(2)
         }
     }
+
+    private static func interactiveSourceRoot(for request: AnalysisRequest) -> URL? {
+        if let manifestPath = request.manifestPath,
+            let data = try? Data(contentsOf: URL(fileURLWithPath: manifestPath)),
+            let manifest = try? JSONDecoder().decode(InteractiveSourceManifest.self, from: data)
+        {
+            return URL(fileURLWithPath: manifest.root).standardizedFileURL.resolvingSymlinksInPath()
+        }
+
+        let input = URL(fileURLWithPath: request.path).standardizedFileURL.resolvingSymlinksInPath()
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: input.path, isDirectory: &isDirectory) else { return nil }
+        return isDirectory.boolValue ? input : input.deletingLastPathComponent()
+    }
+}
+
+private struct InteractiveSourceManifest: Decodable {
+    let root: String
 }

@@ -71,7 +71,7 @@ public struct DebtExplorerDetail: Equatable, Sendable {
     private static func editorCommand(for location: DebtLocation, editor: String?) -> String? {
         guard let editor, !editor.isEmpty, let file = location.file else { return nil }
         let line = location.line ?? 1
-        return "\(editor) +\(line) \(shellQuote(file))"
+        return "\(shellQuote(editor)) +\(line) \(shellQuote(file))"
     }
 }
 

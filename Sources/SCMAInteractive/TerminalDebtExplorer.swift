@@ -20,7 +20,9 @@ public struct TerminalEnvironment: Equatable, Sendable {
         self.ci = ci
     }
 
-    public static func current(_ environment: [String: String] = ProcessInfo.processInfo.environment) -> TerminalEnvironment {
+    public static func current(_ environment: [String: String] = ProcessInfo.processInfo.environment)
+        -> TerminalEnvironment
+    {
         TerminalEnvironment(
             standardInputIsTTY: isTTY(STDIN_FILENO),
             standardOutputIsTTY: isTTY(STDOUT_FILENO),
@@ -89,7 +91,8 @@ public enum TerminalDebtExplorer {
         state: DebtExplorerState,
         analysis: RankedDebtAnalysis,
         editor: String? = nil,
-        listLimit: Int = 20
+        listLimit: Int = 20,
+        status: String? = nil
     ) -> String {
         var lines: [String] = [
             "SwiftSCMA debt explorer",
@@ -99,18 +102,22 @@ public enum TerminalDebtExplorer {
             "",
             "Ranked debt",
         ]
+        if let status {
+            lines.insert("Status: \(status)", at: 4)
+        }
         let visible = visibleItems(for: state, limit: listLimit)
         if visible.isEmpty {
             lines.append("  No debt items match the current filters.")
         } else {
-            for (offset, item) in visible.enumerated() {
-                let absoluteIndex = offset
-                let marker = state.visibleItemIDs.indices.contains(absoluteIndex)
-                    && state.visibleItemIDs[absoluteIndex] == state.selectedItemID ? ">" : " "
-                lines.append("\(marker) \(listLine(for: item))")
+            if let first = visible.first, first.index > 0 {
+                lines.append("  ... \(first.index) earlier items")
             }
-            if state.visibleItemIDs.count > visible.count {
-                lines.append("  ... \(state.visibleItemIDs.count - visible.count) more items")
+            for entry in visible {
+                let marker = entry.item.item.id == state.selectedItemID ? ">" : " "
+                lines.append("\(marker) \(listLine(for: entry.item))")
+            }
+            if let last = visible.last, last.index + 1 < state.visibleItemIDs.count {
+                lines.append("  ... \(state.visibleItemIDs.count - last.index - 1) more items")
             }
         }
         if let detail = state.selectedDetail(editor: editor) {
@@ -134,27 +141,31 @@ public enum TerminalDebtExplorer {
         return lines.joined(separator: "\n") + "\n"
     }
 
-    private static func visibleItems(for state: DebtExplorerState, limit: Int) -> [RankedDebtItem] {
-        guard limit > 0 else { return [] }
-        var matches: [RankedDebtItem] = []
-        matches.reserveCapacity(min(limit, state.visibleItemIDs.count))
-        var remainingIDs = Set(state.visibleItemIDs.prefix(limit))
-        for item in state.items where remainingIDs.contains(item.item.id) {
-            matches.append(item)
-            remainingIDs.remove(item.item.id)
-            if matches.count == limit { break }
+    private static func visibleItems(
+        for state: DebtExplorerState,
+        limit: Int
+    ) -> [(index: Int, item: RankedDebtItem)] {
+        guard limit > 0, !state.visibleItemIDs.isEmpty else { return [] }
+        let pageSize = min(limit, state.visibleItemIDs.count)
+        let maximumStart = state.visibleItemIDs.count - pageSize
+        let selectedStart = max(0, state.selectedVisibleIndex - pageSize + 1)
+        let start = min(selectedStart, maximumStart)
+        let end = start + pageSize
+
+        var itemsByID: [String: RankedDebtItem] = [:]
+        itemsByID.reserveCapacity(state.items.count)
+        for item in state.items where itemsByID[item.item.id] == nil {
+            itemsByID[item.item.id] = item
         }
-        return matches.sorted { lhs, rhs in
-            guard let lhsIndex = state.visibleItemIDs.firstIndex(of: lhs.item.id),
-                let rhsIndex = state.visibleItemIDs.firstIndex(of: rhs.item.id)
-            else { return lhs.item.id < rhs.item.id }
-            return lhsIndex < rhsIndex
+        return state.visibleItemIDs[start..<end].enumerated().compactMap { offset, id in
+            itemsByID[id].map { (index: start + offset, item: $0) }
         }
     }
 
     private static func listLine(for item: RankedDebtItem) -> String {
         let priority = item.score.priority?.rawValue ?? "unscored"
-        let score = item.score.value.map { String(format: "%.1f", locale: Locale(identifier: "en_US_POSIX"), $0) } ?? "N/A"
+        let score =
+            item.score.value.map { String(format: "%.1f", locale: Locale(identifier: "en_US_POSIX"), $0) } ?? "N/A"
         let file = item.item.entity.location.file ?? "unknown"
         let line = item.item.entity.location.line.map(String.init) ?? "?"
         return "[\(priority) \(score)] \(item.item.entity.displayName) - \(file):\(line)"
