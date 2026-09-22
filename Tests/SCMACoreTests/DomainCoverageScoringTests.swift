@@ -88,6 +88,116 @@ struct DomainCoverageScoringTests {
         )
     }
 
+    @Test("Every public evidence tie breaker is permutation invariant")
+    func everyPublicEvidenceTieBreakerIsPermutationInvariant() {
+        let sameLocation = DebtLocation(module: "App", file: "File.swift", line: 1, column: 1)
+        let scenarios: [(String, [DebtEvidence])] = [
+            (
+                "requirement",
+                [
+                    evidence("same", requirement: .required, weight: 1, score: 50, rawValue: "same", note: "same"),
+                    evidence("same", requirement: .optional, weight: 1, score: 50, rawValue: "same", note: "same"),
+                ]
+            ),
+            (
+                "availability state",
+                [
+                    evidence("same", availability: .available, weight: 1, score: 50, rawValue: "same", note: "same"),
+                    evidence(
+                        "same",
+                        availability: DebtEvidenceAvailability(state: .zeroCoverage),
+                        weight: 1,
+                        score: 50,
+                        rawValue: "same",
+                        note: "same"
+                    ),
+                ]
+            ),
+            (
+                "availability reason",
+                [
+                    evidence(
+                        "same",
+                        availability: .unavailable(reason: "b"),
+                        weight: 1,
+                        score: nil,
+                        rawValue: "same",
+                        note: "same"
+                    ),
+                    evidence(
+                        "same",
+                        availability: .unavailable(reason: "a"),
+                        weight: 1,
+                        score: nil,
+                        rawValue: "same",
+                        note: "same"
+                    ),
+                ]
+            ),
+            (
+                "weight",
+                [
+                    evidence("same", weight: 2, score: 50, rawValue: "same", note: "same"),
+                    evidence("same", weight: 1, score: 50, rawValue: "same", note: "same"),
+                ]
+            ),
+            (
+                "column",
+                [
+                    evidence(
+                        "same",
+                        weight: 1,
+                        score: 50,
+                        rawValue: "same",
+                        location: DebtLocation(module: "App", file: "File.swift", line: 1, column: 2),
+                        note: "same"
+                    ),
+                    evidence("same", weight: 1, score: 50, rawValue: "same", location: sameLocation, note: "same"),
+                ]
+            ),
+            (
+                "one non-finite weight",
+                [
+                    evidence("same", weight: .nan, score: 50, rawValue: "same", note: "same"),
+                    evidence("same", weight: 1, score: 50, rawValue: "same", note: "same"),
+                ]
+            ),
+            (
+                "two non-finite weights",
+                [
+                    evidence("same", weight: .nan, score: 20, rawValue: "same", note: "same"),
+                    evidence("same", weight: .nan, score: 10, rawValue: "same", note: "same"),
+                ]
+            ),
+        ]
+
+        for (name, evidence) in scenarios {
+            let forward = DebtScoring().score(evidence: evidence)
+            let reversed = DebtScoring().score(evidence: Array(evidence.reversed()))
+            #expect(forward == reversed, "Scenario: \(name)")
+        }
+
+        let reasonScore = DebtScoring().score(evidence: scenarios[2].1)
+        let weightScore = DebtScoring().score(evidence: scenarios[3].1)
+        #expect(reasonScore.breakdown.unavailableEvidence.map(\.reason) == ["a", "b"])
+        #expect(weightScore.breakdown.contributions.map(\.configuredWeight) == [1, 2])
+    }
+
+    @Test("Equal scores use stable item identity order")
+    func equalScoresUseStableItemIdentityOrder() {
+        let items = [
+            debtItem(id: "b", score: 50),
+            debtItem(id: "a", score: 50),
+        ]
+
+        let analysis = DebtAnalysisBuilder(
+            options: DebtAnalysisOptions(aggregationStrategy: .none)
+        ).analyze(items: items)
+
+        #expect(analysis.items.map(\.item.id) == ["a", "b"])
+        #expect(analysis.items.map(\.score.priority) == [.medium, .medium])
+    }
+
     @Test("Clamping preserves an evidence note and explains the adjustment")
     func clampingPreservesEvidenceNote() throws {
         let score = DebtScoring().score(evidence: [
@@ -266,7 +376,9 @@ struct DomainCoverageScoringTests {
 
     private func evidence(
         _ id: String,
+        kind: String = "metric",
         requirement: DebtEvidenceRequirement = .optional,
+        availability: DebtEvidenceAvailability = .available,
         weight: Double,
         score: Double?,
         rawValue: String = "value",
@@ -275,13 +387,23 @@ struct DomainCoverageScoringTests {
     ) -> DebtEvidence {
         DebtEvidence(
             id: id,
-            kind: "metric",
+            kind: kind,
             requirement: requirement,
+            availability: availability,
             weight: weight,
             normalizedScore: score,
             rawValue: rawValue,
             location: location,
             note: note
+        )
+    }
+
+    private func debtItem(id: String, score: Double) -> DebtItem {
+        let location = DebtLocation(module: "App", file: "File.swift", line: 1, column: 1)
+        return DebtItem(
+            id: id,
+            entity: DebtEntity(id: id, displayName: id, level: .callable, location: location),
+            evidence: [evidence("\(id):metric", weight: 1, score: score, location: location)]
         )
     }
 

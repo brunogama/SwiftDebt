@@ -66,7 +66,9 @@ public struct DebtAnalysisBuilder: Sendable {
             guard let score = ranked.score.value, score >= minScore else { return false }
         }
         if let minPriority = options.minPriority {
-            guard let priority = ranked.score.priority, priorityRank(priority) >= priorityRank(minPriority) else { return false }
+            guard let priority = ranked.score.priority, priorityRank(priority) >= priorityRank(minPriority) else {
+                return false
+            }
         }
         return true
     }
@@ -88,7 +90,9 @@ public struct DebtAnalysisBuilder: Sendable {
         }
         let grouped = Dictionary(grouping: problematic, by: { $0.item.entity.location.file ?? "" })
         return grouped.keys.sorted().compactMap { file in
-            guard !file.isEmpty, let members = grouped[file]?.sorted(by: rankedOrder), !members.isEmpty else { return nil }
+            guard !file.isEmpty, let members = grouped[file]?.sorted(by: rankedOrder), !members.isEmpty else {
+                return nil
+            }
             let evidence = members.flatMap { $0.item.evidence }.sorted(by: evidenceOrder)
             let anchor = members[0].item.entity.location
             return DebtAggregation(
@@ -105,16 +109,15 @@ public struct DebtAnalysisBuilder: Sendable {
 
 private func rankedOrder(_ lhs: RankedDebtItem, _ rhs: RankedDebtItem) -> Bool {
     switch (lhs.score.value, rhs.score.value) {
-    case let (.some(left), .some(right)) where left != right:
+    case (.some(let left), .some(let right)) where left != right:
         return left > right
     case (.some, .none):
         return true
     case (.none, .some):
         return false
     default:
-        if priorityRank(lhs.score.priority) != priorityRank(rhs.score.priority) {
-            return priorityRank(lhs.score.priority) > priorityRank(rhs.score.priority)
-        }
+        // A single scoring policy derives priority from score, so equal or nil scores
+        // cannot have different priorities.
         return lhs.item.id < rhs.item.id
     }
 }
@@ -123,11 +126,6 @@ private func evidenceOrder(_ lhs: DebtEvidence, _ rhs: DebtEvidence) -> Bool {
     if lhs.id != rhs.id { return lhs.id < rhs.id }
     if lhs.kind != rhs.kind { return lhs.kind < rhs.kind }
     return lhs.rawValue < rhs.rawValue
-}
-
-private func priorityRank(_ priority: Priority?) -> Int {
-    guard let priority else { return -1 }
-    return priorityRank(priority)
 }
 
 private func priorityRank(_ priority: Priority) -> Int {
@@ -146,12 +144,14 @@ private func category(for item: DebtItem) -> String {
 }
 
 private func explanation(for item: DebtItem) -> String {
-    guard let strongest = item.evidence.max(by: { lhs, rhs in
-        if (lhs.normalizedScore ?? -1) != (rhs.normalizedScore ?? -1) {
-            return (lhs.normalizedScore ?? -1) < (rhs.normalizedScore ?? -1)
-        }
-        return lhs.id > rhs.id
-    }) else {
+    guard
+        let strongest = item.evidence.max(by: { lhs, rhs in
+            if (lhs.normalizedScore ?? -1) != (rhs.normalizedScore ?? -1) {
+                return (lhs.normalizedScore ?? -1) < (rhs.normalizedScore ?? -1)
+            }
+            return lhs.id > rhs.id
+        })
+    else {
         return "No evidence was available for this debt item."
     }
     return "Highest evidence is \(strongest.kind) with raw value \(strongest.rawValue). \(strongest.note ?? "")"
@@ -159,10 +159,12 @@ private func explanation(for item: DebtItem) -> String {
 
 private func recommendation(for item: DebtItem) -> String {
     if item.evidence.contains(where: { !$0.availability.isAvailable }) {
-        return "Review unavailable evidence before treating the score as complete; no unavailable provider was converted to zero risk."
+        return
+            "Review unavailable evidence before treating the score as complete; no unavailable provider was converted to zero risk."
     }
     if item.evidence.contains(where: { $0.kind.hasPrefix("coverage.") }) {
-        return "Prioritize tests around this context before structural refactoring; coverage evidence can only dampen risk."
+        return
+            "Prioritize tests around this context before structural refactoring; coverage evidence can only dampen risk."
     }
     switch item.entity.level {
     case .callable:
