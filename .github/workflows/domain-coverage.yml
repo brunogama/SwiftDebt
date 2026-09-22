@@ -1,0 +1,23 @@
+name: Domain coverage
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scma-core:
+    name: SCMACore 100% line coverage
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+
+      - name: Test and verify domain coverage
+        run: python3 scripts/check_domain_coverage.py

@@ -83,6 +83,17 @@ struct CoverageEvidenceBoundaryTests {
                 message: "a-message"
             ),
             CoverageDiagnostic(
+                entityID: "same",
+                entityDisplayName: nil,
+                sourcePath: nil,
+                matchedSourcePath: nil,
+                matchedFunction: nil,
+                availability: .missingFile,
+                confidence: .unmatched,
+                attemptedStrategies: [],
+                message: "missing-source"
+            ),
+            CoverageDiagnostic(
                 entityID: nil,
                 entityDisplayName: nil,
                 sourcePath: nil,
@@ -118,7 +129,9 @@ struct CoverageEvidenceBoundaryTests {
         ]
 
         let output = CoverageMatcher().renderDiagnostics(diagnostics)
+        let reversedOutput = CoverageMatcher().renderDiagnostics(Array(diagnostics.reversed()))
 
+        #expect(output == reversedOutput)
         #expect(output.contains("coverage: <unknown>"))
         #expect(output.contains("source=<none>"))
         #expect(output.firstRange(of: "a-message")!.lowerBound < output.firstRange(of: "b-message")!.lowerBound)
