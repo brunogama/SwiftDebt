@@ -15,6 +15,12 @@ struct RuleAnalysisCLIWorkflowTests {
                 }
                 actor Cache {
                     nonisolated(unsafe) static var sharedCount = 0
+                    var version = 0
+                    func refresh() async {
+                        let previous = self.version
+                        await fetch()
+                        self.version = previous + 1
+                    }
                 }
                 func inspect(_ value: Any) {
                     _ = try! read()
@@ -22,6 +28,7 @@ struct RuleAnalysisCLIWorkflowTests {
                     do { throw SampleError.failed } catch {}
                 }
                 func read() throws -> Int { 1 }
+                func fetch() async {}
                 enum SampleError: Error { case failed }
                 """
         )
@@ -65,7 +72,7 @@ struct RuleAnalysisCLIWorkflowTests {
         #expect(result.stderr.isEmpty)
         #expect(
             result.stdout.contains(
-                "Status: complete | selected rules: 5 | selected sources: 1 | committed executions: 5/5"
+                "Status: complete | selected rules: 6 | selected sources: 1 | committed executions: 6/6"
             )
         )
         #expect(result.stdout.contains("No detections in committed rule executions."))
@@ -83,7 +90,7 @@ struct RuleAnalysisCLIWorkflowTests {
         #expect(result.stdout.split(separator: "\n").first?.hasSuffix(" - INCOMPLETE") == true)
         #expect(
             result.stdout.contains(
-                "Status: INCOMPLETE | selected rules: 5 | selected sources: 1 | committed executions: 0/5"
+                "Status: INCOMPLETE | selected rules: 6 | selected sources: 1 | committed executions: 0/6"
             )
         )
         #expect(result.stdout.contains("Invalid.swift:1:"))
@@ -126,6 +133,7 @@ struct RuleAnalysisCLIWorkflowTests {
                 "swiftdebt.force-try",
                 "swiftdebt.concurrency.unchecked-sendable",
                 "swiftdebt.concurrency.actor-nonisolated-unsafe",
+                "swiftdebt.concurrency.actor-state-across-await",
                 "swiftdebt.code-smell.force-cast",
                 "swiftdebt.code-smell.empty-catch",
             ]

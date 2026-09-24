@@ -4,6 +4,7 @@ public enum BuiltInRuleCatalog {
             ForceTryRule(),
             UncheckedSendableRule(),
             NonisolatedUnsafeActorMemberRule(),
+            ActorStateAcrossAwaitRule(),
             ForceCastRule(),
             EmptyCatchRule(),
         ]

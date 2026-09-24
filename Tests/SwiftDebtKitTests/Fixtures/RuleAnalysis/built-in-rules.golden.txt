@@ -1,12 +1,14 @@
 RULE OBSERVATIONS
-Status: complete | selected rules: 5 | selected sources: 1 | committed executions: 5/5 | detections: 5
+Status: complete | selected rules: 6 | selected sources: 1 | committed executions: 6/6 | detections: 6
 Rule: swiftdebt.force-try@1 | Force try | default severity: warning
-Sources/App/Example.swift:8:12: warning: [swiftdebt.force-try@1] This try! traps if the expression throws; handle or propagate the error.
+Sources/App/Example.swift:14:12: warning: [swiftdebt.force-try@1] This try! traps if the expression throws; handle or propagate the error.
 Rule: swiftdebt.concurrency.unchecked-sendable@1 | Unchecked Sendable conformance | default severity: information
 Sources/App/Example.swift:1:24: information: [swiftdebt.concurrency.unchecked-sendable@1] This @unchecked Sendable conformance disables compiler enforcement; review the type's thread-safety assumptions.
 Rule: swiftdebt.concurrency.actor-nonisolated-unsafe@1 | Nonisolated unsafe actor member | default severity: information
 Sources/App/Example.swift:5:17: information: [swiftdebt.concurrency.actor-nonisolated-unsafe@1] This nonisolated(unsafe) actor member opts out of static isolation checking; review its synchronization assumptions.
+Rule: swiftdebt.concurrency.actor-state-across-await@1 | Actor state across await | default severity: information
+Sources/App/Example.swift:9:9: information: [swiftdebt.concurrency.actor-state-across-await@1] This actor method accesses mutable state on both sides of await; review assumptions that interleaving could change.
 Rule: swiftdebt.code-smell.force-cast@1 | Force cast | default severity: warning
-Sources/App/Example.swift:9:17: warning: [swiftdebt.code-smell.force-cast@1] This forced cast traps if the value has a different runtime type; use a checked cast or explicit invariant.
+Sources/App/Example.swift:15:17: warning: [swiftdebt.code-smell.force-cast@1] This forced cast traps if the value has a different runtime type; use a checked cast or explicit invariant.
 Rule: swiftdebt.code-smell.empty-catch@1 | Empty catch | default severity: warning
-Sources/App/Example.swift:10:37: warning: [swiftdebt.code-smell.empty-catch@1] This catch clause has an empty body and discards the error; handle or propagate it.
+Sources/App/Example.swift:16:37: warning: [swiftdebt.code-smell.empty-catch@1] This catch clause has an empty body and discards the error; handle or propagate it.

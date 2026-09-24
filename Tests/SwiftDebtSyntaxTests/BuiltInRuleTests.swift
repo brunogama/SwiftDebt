@@ -79,6 +79,85 @@ struct BuiltInRuleTests {
         #expect(NonisolatedUnsafeActorMemberRule.contract.semantics.contains("every #if branch"))
     }
 
+    @Test("Actor state spanning await reports only direct mutable state in sequential statements")
+    func actorStateAcrossAwaitBoundaries() throws {
+        let source = SourceUnit(
+            path: "Sources/Reentrancy.swift",
+            content: """
+                actor Cache {
+                  var version = 0
+                  var other = 0
+                  let name = "cache"
+                  var fixed: Int { 42 }
+                  var writable: Int {
+                    get { version }
+                    set { version = newValue }
+                  }
+                  func refresh() async {
+                    let previous = self.version
+                    await fetch()
+                    self.version = previous + 1
+                  }
+                  func refreshComputed() async {
+                    let previous = self.writable
+                    await fetch()
+                    self.writable = previous + 1
+                  }
+                  func immutable() async {
+                    print(self.name)
+                    await fetch()
+                    print(self.name)
+                  }
+                  func computedGetter() async {
+                    print(self.fixed)
+                    await fetch()
+                    print(self.fixed)
+                  }
+                  func differentState() async {
+                    print(self.version)
+                    await fetch()
+                    print(self.other)
+                  }
+                  func nested() async {
+                    let task = { print(self.version) }
+                    await fetch()
+                    task()
+                  }
+                  func branch() async {
+                    if self.version > 0 { await fetch() }
+                    print(self.version)
+                  }
+                  nonisolated func escaped() async {
+                    print(self.version)
+                    await fetch()
+                    print(self.version)
+                  }
+                }
+                extension Cache {
+                  func extended() async {
+                    print(self.version)
+                    await fetch()
+                    print(self.version)
+                  }
+                }
+                """
+        )
+
+        let result = try RuleEngine().analyze(source, using: ActorStateAcrossAwaitRule())
+        let detections = try committedDetections(result)
+
+        #expect(detections.map(\.location.line) == [12, 17])
+        #expect(detections.map(\.location.column) == [5, 5])
+        #expect(detections.allSatisfy { $0.ruleIdentity == ActorStateAcrossAwaitRule.identity })
+        #expect(detections.allSatisfy { $0.severity == .information })
+        #expect(
+            detections.allSatisfy {
+                $0.message
+                    == "This actor method accesses mutable state on both sides of await; review assumptions that interleaving could change."
+            }
+        )
+    }
+
     @Test("Force cast reports only as! at the exclamation mark")
     func forceCastBoundaries() throws {
         let source = SourceUnit(
@@ -155,6 +234,7 @@ struct BuiltInRuleTests {
                 "swiftdebt.force-try",
                 "swiftdebt.concurrency.unchecked-sendable",
                 "swiftdebt.concurrency.actor-nonisolated-unsafe",
+                "swiftdebt.concurrency.actor-state-across-await",
                 "swiftdebt.code-smell.force-cast",
                 "swiftdebt.code-smell.empty-catch",
             ]

@@ -48,12 +48,13 @@ The catalog reports these deterministic source observations:
 | `swiftdebt.force-try` | Warning | A `try!` expression, located at `!`. |
 | `swiftdebt.concurrency.unchecked-sendable` | Information | An `@unchecked Sendable` conformance spelling, located at `@`. |
 | `swiftdebt.concurrency.actor-nonisolated-unsafe` | Information | A direct actor member declared `nonisolated(unsafe)`, located at `unsafe`. |
+| `swiftdebt.concurrency.actor-state-across-await` | Information | A direct actor method accesses the same direct mutable actor property through `self` in sequential statements before and after `await`, located at `await`. |
 | `swiftdebt.code-smell.force-cast` | Warning | An `as!` expression, located at `!`. |
 | `swiftdebt.code-smell.empty-catch` | Warning | A catch clause with no code block items, located at `catch`. |
 
-The concurrency observations identify assumptions that deserve review. They do not prove a data race or a defect. [`@unchecked Sendable`](https://developer.apple.com/documentation/swift/sendable) disables compiler enforcement for that conformance, while [`nonisolated(unsafe)`](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0412-strict-concurrency-for-global-variables.md) opts a declaration out of static isolation checking. The actor rule examines direct members in actor declarations and makes no ownership claim for actor extensions.
+The concurrency observations identify assumptions that deserve review. They do not prove a data race, an interleaving, or a defect. [`@unchecked Sendable`](https://developer.apple.com/documentation/swift/sendable) disables compiler enforcement for that conformance, while [`nonisolated(unsafe)`](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0412-strict-concurrency-for-global-variables.md) opts a declaration out of static isolation checking. [Swift Evolution SE-0306](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0306-actors.md#actor-reentrancy) explains why mutable actor state may change while a method is suspended. The state-across-await rule inspects only explicit `self.property` accesses in sequential statements of direct actor methods. It includes stored and writable computed properties, excludes getter-only computed properties, and does not bind actor extensions or inspect nested closures and control-flow branches.
 
-All conditional-compilation branches are inspected because syntax-only analysis does not evaluate `#if` conditions. JSON and the other non-text formats retain their existing schema and do not include rule observations.
+The other built-in rules inspect all conditional-compilation branches. The state-across-await rule inspects direct actor properties and methods in the parsed declaration; it does not evaluate `#if` conditions. JSON and the other non-text formats retain their existing schema and do not include rule observations.
 
 ---
 
