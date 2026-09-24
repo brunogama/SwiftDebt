@@ -3,6 +3,23 @@ import SwiftParser
 import SwiftParserDiagnostics
 import SwiftSyntax
 
+public enum RuleEngineError: Error, Equatable, Sendable, CustomStringConvertible {
+    case noRulesSelected
+    case duplicateRuleIdentity(RuleIdentity)
+    case duplicateSourcePath(SourcePath)
+
+    public var description: String {
+        switch self {
+        case .noRulesSelected:
+            "At least one debt rule must be selected."
+        case .duplicateRuleIdentity(let identity):
+            "Duplicate rule identity: \(identity)"
+        case .duplicateSourcePath(let sourcePath):
+            "Duplicate normalized source path: \(sourcePath)"
+        }
+    }
+}
+
 public struct RuleEngine {
     public init() {}
 
@@ -10,11 +27,59 @@ public struct RuleEngine {
         _ sources: [SourceUnit],
         using rule: Rule
     ) throws -> AnalysisSnapshot {
-        let results = try sources.map { try analyze($0, using: rule) }
+        try analyze(sources, using: [rule as any DebtRule])
+    }
+
+    public func analyze(
+        _ sources: [SourceUnit],
+        using rules: [any DebtRule]
+    ) throws -> AnalysisSnapshot {
+        let registeredRules = try register(rules)
+        let selectedSources = try select(sources)
+        var resultsByRule = registeredRules.map { _ in [RuleAnalysisResult]() }
+        for index in resultsByRule.indices {
+            resultsByRule[index].reserveCapacity(selectedSources.count)
+        }
+
+        for selectedSource in selectedSources {
+            let tree = Parser.parse(source: selectedSource.source.content)
+            let converter = SourceLocationConverter(fileName: selectedSource.path.rawValue, tree: tree)
+            let diagnostics = parseDiagnostics(
+                tree: tree,
+                converter: converter,
+                sourcePath: selectedSource.path
+            )
+
+            if diagnostics.contains(where: { $0.severity == .error }) {
+                for (index, registeredRule) in registeredRules.enumerated() {
+                    resultsByRule[index].append(
+                        RuleAnalysisResult(
+                            descriptor: registeredRule.descriptor,
+                            sourcePath: selectedSource.path,
+                            outcome: .parseFailed(diagnostics: diagnostics)
+                        )
+                    )
+                }
+                continue
+            }
+
+            let context = AnalysisContext(sourceFile: tree, sourcePath: selectedSource.path)
+            for (index, registeredRule) in registeredRules.enumerated() {
+                resultsByRule[index].append(
+                    execute(
+                        registeredRule,
+                        context: context,
+                        tree: tree,
+                        converter: converter
+                    )
+                )
+            }
+        }
+
         return AnalysisSnapshot(
-            ruleDescriptor: descriptor(for: Rule.self),
-            selectedSourcePaths: results.map(\.sourcePath),
-            ruleResults: results
+            ruleDescriptors: registeredRules.map(\.descriptor),
+            selectedSourcePaths: selectedSources.map(\.path),
+            ruleResults: resultsByRule.flatMap { $0 }
         )
     }
 
@@ -22,11 +87,45 @@ public struct RuleEngine {
         _ source: SourceUnit,
         using rule: Rule
     ) throws -> RuleAnalysisResult {
-        let sourcePath = try SourcePath(source.path)
-        let descriptor = descriptor(for: Rule.self)
-        let tree = Parser.parse(source: source.content)
-        let converter = SourceLocationConverter(fileName: sourcePath.rawValue, tree: tree)
-        let diagnostics = ParseDiagnosticsGenerator.diagnostics(for: tree).map { diagnostic in
+        let snapshot = try analyze([source], using: rule)
+        guard let result = snapshot.ruleResults.first else { throw RuleEngineError.noRulesSelected }
+        return result
+    }
+
+    private func register(_ rules: [any DebtRule]) throws -> [RegisteredRule] {
+        guard !rules.isEmpty else { throw RuleEngineError.noRulesSelected }
+        var identities = Set<RuleIdentity>()
+        return try rules.map { rule in
+            let ruleType = type(of: rule)
+            let descriptor = RuleDescriptor(
+                identity: ruleType.identity,
+                metadata: ruleType.metadata,
+                contract: ruleType.contract
+            )
+            guard identities.insert(descriptor.identity).inserted else {
+                throw RuleEngineError.duplicateRuleIdentity(descriptor.identity)
+            }
+            return RegisteredRule(rule: rule, descriptor: descriptor)
+        }
+    }
+
+    private func select(_ sources: [SourceUnit]) throws -> [SelectedSource] {
+        var sourcePaths = Set<SourcePath>()
+        return try sources.map { source in
+            let sourcePath = try SourcePath(source.path)
+            guard sourcePaths.insert(sourcePath).inserted else {
+                throw RuleEngineError.duplicateSourcePath(sourcePath)
+            }
+            return SelectedSource(source: source, path: sourcePath)
+        }
+    }
+
+    private func parseDiagnostics(
+        tree: SourceFileSyntax,
+        converter: SourceLocationConverter,
+        sourcePath: SourcePath
+    ) -> [AnalysisDiagnostic] {
+        ParseDiagnosticsGenerator.diagnostics(for: tree).map { diagnostic in
             let location = converter.location(for: diagnostic.position)
             return AnalysisDiagnostic(
                 severity: diagnostic.diagMessage.severity == .error ? .error : .warning,
@@ -38,14 +137,16 @@ public struct RuleEngine {
                 )
             )
         }
-        guard !diagnostics.contains(where: { $0.severity == .error }) else {
-            return RuleAnalysisResult(
-                descriptor: descriptor,
-                sourcePath: sourcePath,
-                outcome: .parseFailed(diagnostics: diagnostics)
-            )
-        }
+    }
 
+    private func execute(
+        _ registeredRule: RegisteredRule,
+        context: AnalysisContext,
+        tree: SourceFileSyntax,
+        converter: SourceLocationConverter
+    ) -> RuleAnalysisResult {
+        let descriptor = registeredRule.descriptor
+        let sourcePath = context.sourcePath
         let buffer = EmissionBuffer { proposal in
             try validate(
                 proposal,
@@ -58,10 +159,9 @@ public struct RuleEngine {
         let emitter = DetectionEmitter { node, message in
             buffer.record(node: node, message: message)
         }
-        let context = AnalysisContext(sourceFile: tree, sourcePath: sourcePath)
 
         do {
-            try rule.detect(in: context, emit: emitter)
+            try registeredRule.rule.detect(in: context, emit: emitter)
         } catch let unsupported as UnsupportedRuleAnalysis {
             if case .invalid(let reason) = buffer.takeAndClose() {
                 return failed(descriptor, sourcePath, reason: "invalid emission: \(reason)")
@@ -142,13 +242,16 @@ public struct RuleEngine {
         RuleAnalysisResult(descriptor: descriptor, sourcePath: sourcePath, outcome: .failed(reason: reason))
     }
 
-    private func descriptor<Rule: DebtRule>(for ruleType: Rule.Type) -> RuleDescriptor {
-        RuleDescriptor(
-            identity: ruleType.identity,
-            metadata: ruleType.metadata,
-            contract: ruleType.contract
-        )
-    }
+}
+
+private struct RegisteredRule {
+    let rule: any DebtRule
+    let descriptor: RuleDescriptor
+}
+
+private struct SelectedSource {
+    let source: SourceUnit
+    let path: SourcePath
 }
 
 private struct EmissionProposal {

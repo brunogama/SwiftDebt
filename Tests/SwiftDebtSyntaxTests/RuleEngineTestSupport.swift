@@ -34,6 +34,11 @@ struct RecordingRule: TestDebtRule {
 }
 
 struct UnsupportedAfterEmissionRule: TestDebtRule {
+    static let identity = RuleIdentity(
+        namespace: RuleNamespace(validated: "tests"),
+        id: RuleID(validated: "unsupported")
+    )
+
     func detect(in context: AnalysisContext, emit: DetectionEmitter) throws {
         emit(at: context.sourceFile, message: "Valid partial observation")
         throw UnsupportedRuleAnalysis(reason: "requires compiler facts")
@@ -41,6 +46,11 @@ struct UnsupportedAfterEmissionRule: TestDebtRule {
 }
 
 struct ThrowAfterEmissionRule: TestDebtRule {
+    static let identity = RuleIdentity(
+        namespace: RuleNamespace(validated: "tests"),
+        id: RuleID(validated: "throwing")
+    )
+
     struct DeliberateFailure: Error, CustomStringConvertible {
         var description: String { "deliberate" }
     }
@@ -52,6 +62,11 @@ struct ThrowAfterEmissionRule: TestDebtRule {
 }
 
 struct InvalidThenUnsupportedRule: TestDebtRule {
+    static let identity = RuleIdentity(
+        namespace: RuleNamespace(validated: "tests"),
+        id: RuleID(validated: "invalid")
+    )
+
     func detect(in context: AnalysisContext, emit: DetectionEmitter) throws {
         emit(at: context.sourceFile, message: "Valid partial observation")
         emit(at: context.sourceFile, message: "invalid\nmessage")

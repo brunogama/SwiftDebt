@@ -5,48 +5,53 @@ package struct RuleAnalysisRenderer {
     package init() {}
 
     package func render(_ snapshot: AnalysisSnapshot) -> String {
-        let descriptor = snapshot.ruleDescriptor
-        let results = snapshot.ruleResults.sorted { $0.sourcePath.rawValue < $1.sourcePath.rawValue }
-        let committedCount = results.count { $0.isCommitted }
+        let committedCount = snapshot.ruleResults.count { $0.isCommitted }
+        let expectedCount = snapshot.ruleDescriptors.count * snapshot.selectedSourcePaths.count
         var lines = [
             "RULE OBSERVATIONS",
-            "Rule: \(descriptor.identity)@\(descriptor.semanticRevision) | \(singleLine(descriptor.metadata.name))"
-                + " | default severity: \(descriptor.metadata.defaultSeverity.rawValue)",
             "Status: \(snapshot.isComplete ? "complete" : "INCOMPLETE")"
+                + " | selected rules: \(snapshot.ruleDescriptors.count)"
                 + " | selected sources: \(snapshot.selectedSourcePaths.count)"
-                + " | committed sources: \(committedCount)"
+                + " | committed executions: \(committedCount)/\(expectedCount)"
                 + " | detections: \(snapshot.detections.count)",
         ]
 
-        for result in results {
-            switch result.outcome {
-            case .committed(let detections):
-                lines += detections.sorted(by: detectionOrder).map {
-                    render($0, descriptor: result.descriptor)
+        for descriptor in snapshot.ruleDescriptors {
+            lines.append(
+                "Rule: \(descriptor.identity)@\(descriptor.semanticRevision) | \(singleLine(descriptor.metadata.name))"
+                    + " | default severity: \(descriptor.metadata.defaultSeverity.rawValue)"
+            )
+            let results = snapshot.ruleResults
+                .filter { $0.descriptor == descriptor }
+                .sorted { $0.sourcePath.rawValue < $1.sourcePath.rawValue }
+            for result in results {
+                switch result.outcome {
+                case .committed(let detections):
+                    lines += detections.sorted(by: detectionOrder).map(render)
+                case .parseFailed(let diagnostics):
+                    lines += diagnostics.sorted(by: diagnosticOrder).map { diagnostic in
+                        "\(result.sourcePath):\(diagnostic.location.line):\(diagnostic.location.column): parse-failed"
+                            + " \(diagnostic.severity.rawValue): \(singleLine(diagnostic.message))"
+                    }
+                case .unsupported(let reason):
+                    lines.append("\(result.sourcePath): unsupported: \(singleLine(reason))")
+                case .failed(let reason):
+                    lines.append("\(result.sourcePath): failed: \(singleLine(reason))")
                 }
-            case .parseFailed(let diagnostics):
-                lines += diagnostics.sorted(by: diagnosticOrder).map { diagnostic in
-                    "\(result.sourcePath):\(diagnostic.location.line):\(diagnostic.location.column): parse-failed"
-                        + " \(diagnostic.severity.rawValue): \(singleLine(diagnostic.message))"
-                }
-            case .unsupported(let reason):
-                lines.append("\(result.sourcePath): unsupported: \(singleLine(reason))")
-            case .failed(let reason):
-                lines.append("\(result.sourcePath): failed: \(singleLine(reason))")
             }
         }
 
         if snapshot.isComplete && snapshot.detections.isEmpty {
-            lines.append("No detections in committed sources.")
+            lines.append("No detections in committed rule executions.")
         } else if !snapshot.isComplete && snapshot.detections.isEmpty {
-            lines.append("Absence was not established for incomplete sources.")
+            lines.append("Absence was not established for incomplete rule executions.")
         }
         return lines.joined(separator: "\n") + "\n"
     }
 
-    private func render(_ detection: Detection, descriptor: RuleDescriptor) -> String {
+    private func render(_ detection: Detection) -> String {
         "\(detection.location.sourcePath):\(detection.location.line):\(detection.location.column): "
-            + "\(detection.severity.rawValue): [\(descriptor.identity)@\(descriptor.semanticRevision)] "
+            + "\(detection.severity.rawValue): [\(detection.ruleIdentity)@\(detection.semanticRevision)] "
             + singleLine(detection.message)
     }
 

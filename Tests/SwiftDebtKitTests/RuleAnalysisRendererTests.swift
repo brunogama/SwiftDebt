@@ -11,7 +11,7 @@ struct RuleAnalysisRendererTests {
         let unsupportedPath = try SourcePath("Sources/Unsupported.swift")
         let failedPath = try SourcePath("Sources/Failed.swift")
         let snapshot = AnalysisSnapshot(
-            ruleDescriptor: descriptor,
+            ruleDescriptors: [descriptor],
             selectedSourcePaths: [unsupportedPath, failedPath],
             ruleResults: [
                 RuleAnalysisResult(
@@ -33,8 +33,8 @@ struct RuleAnalysisRendererTests {
         #expect(output.contains("Sources/Failed.swift: failed: rule threw: boom forged line"))
         #expect(!output.contains("\nforged line"))
         #expect(output.contains("Status: INCOMPLETE"))
-        #expect(output.contains("Absence was not established for incomplete sources."))
-        #expect(!output.contains("No detections in committed sources."))
+        #expect(output.contains("Absence was not established for incomplete rule executions."))
+        #expect(!output.contains("No detections in committed rule executions."))
     }
 
     private func makeDescriptor() throws -> RuleDescriptor {

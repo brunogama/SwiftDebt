@@ -54,8 +54,12 @@ struct RuleAnalysisCLIWorkflowTests {
 
         #expect(result.status == 0)
         #expect(result.stderr.isEmpty)
-        #expect(result.stdout.contains("Status: complete | selected sources: 1 | committed sources: 1 | detections: 0"))
-        #expect(result.stdout.contains("No detections in committed sources."))
+        #expect(
+            result.stdout.contains(
+                "Status: complete | selected rules: 1 | selected sources: 1 | committed executions: 1/1"
+            )
+        )
+        #expect(result.stdout.contains("No detections in committed rule executions."))
     }
 
     @Test("A parse failure makes text rule analysis incomplete and exits two")
@@ -70,13 +74,13 @@ struct RuleAnalysisCLIWorkflowTests {
         #expect(result.stdout.split(separator: "\n").first?.hasSuffix(" - INCOMPLETE") == true)
         #expect(
             result.stdout.contains(
-                "Status: INCOMPLETE | selected sources: 1 | committed sources: 0 | detections: 0"
+                "Status: INCOMPLETE | selected rules: 1 | selected sources: 1 | committed executions: 0/1"
             )
         )
         #expect(result.stdout.contains("Invalid.swift:1:"))
         #expect(result.stdout.contains("parse-failed error:"))
-        #expect(result.stdout.contains("Absence was not established for incomplete sources."))
-        #expect(!result.stdout.contains("No detections in committed sources."))
+        #expect(result.stdout.contains("Absence was not established for incomplete rule executions."))
+        #expect(!result.stdout.contains("No detections in committed rule executions."))
     }
 
     @Test("JSON output keeps the schema 2 transport free of rule text")
@@ -107,7 +111,7 @@ struct RuleAnalysisCLIWorkflowTests {
 
         #expect(snapshot.isComplete)
         #expect(snapshot.detections.count == 1)
-        #expect(snapshot.ruleDescriptor.identity.description == "swiftdebt.force-try")
+        #expect(snapshot.ruleDescriptors.map(\.identity.description) == ["swiftdebt.force-try"])
     }
 
     private func makeProject(fileName: String, source: String) throws -> URL {
