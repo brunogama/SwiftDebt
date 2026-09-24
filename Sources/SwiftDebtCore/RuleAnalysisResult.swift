@@ -68,17 +68,27 @@ public struct RuleAnalysisResult: Equatable, Sendable {
     public var provesAbsence: Bool { isCommitted && detections.isEmpty }
 }
 
-/// Immutable provenance for the selected sources and rule executions in one analysis run.
 public struct AnalysisSnapshot: Equatable, Sendable {
+    public let ruleDescriptor: RuleDescriptor
     public let selectedSourcePaths: [SourcePath]
     public let ruleResults: [RuleAnalysisResult]
 
-    package init(selectedSourcePaths: [SourcePath], ruleResults: [RuleAnalysisResult]) {
+    package init(
+        ruleDescriptor: RuleDescriptor,
+        selectedSourcePaths: [SourcePath],
+        ruleResults: [RuleAnalysisResult]
+    ) {
+        self.ruleDescriptor = ruleDescriptor
         self.selectedSourcePaths = selectedSourcePaths
         self.ruleResults = ruleResults
     }
 
-    public var isComplete: Bool { ruleResults.allSatisfy(\.isCommitted) }
+    public var isComplete: Bool {
+        guard !selectedSourcePaths.isEmpty, selectedSourcePaths.count == ruleResults.count else { return false }
+        return zip(selectedSourcePaths, ruleResults).allSatisfy { sourcePath, result in
+            sourcePath == result.sourcePath && result.descriptor == ruleDescriptor && result.isCommitted
+        }
+    }
 
     public var detections: [Detection] { ruleResults.flatMap(\.detections) }
 }

@@ -16,9 +16,17 @@ struct RuleEngineTests {
         )
 
         #expect(snapshot.selectedSourcePaths.map(\.rawValue) == ["Sources/First.swift", "Sources/Second.swift"])
+        #expect(snapshot.ruleDescriptor.identity == ForceTryRule.identity)
         #expect(snapshot.ruleResults.count == 2)
         #expect(snapshot.isComplete)
         #expect(snapshot.detections.count == 1)
+
+        let missingResult = AnalysisSnapshot(
+            ruleDescriptor: snapshot.ruleDescriptor,
+            selectedSourcePaths: snapshot.selectedSourcePaths,
+            ruleResults: []
+        )
+        #expect(!missingResult.isComplete)
     }
 
     @Test("Force try reports only try! at the exclamation mark")

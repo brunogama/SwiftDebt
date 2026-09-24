@@ -58,7 +58,7 @@ public struct RuleIdentity: Hashable, Sendable, CustomStringConvertible {
     public var description: String { "\(namespace).\(id)" }
 }
 
-public struct SemanticRevision: Hashable, Comparable, Sendable, CustomStringConvertible {
+public struct SemanticRevision: Hashable, Sendable, CustomStringConvertible {
     public static let initial = SemanticRevision(validated: 1)
 
     public let rawValue: UInt
@@ -72,23 +72,10 @@ public struct SemanticRevision: Hashable, Comparable, Sendable, CustomStringConv
         self.rawValue = rawValue
     }
 
-    public func successor() -> SemanticRevision? {
-        guard rawValue < UInt.max else { return nil }
-        return SemanticRevision(validated: rawValue + 1)
-    }
-
-    public func immediatelySucceeds(_ predecessor: SemanticRevision) -> Bool {
-        predecessor.successor() == self
-    }
-
-    public static func < (lhs: SemanticRevision, rhs: SemanticRevision) -> Bool {
-        lhs.rawValue < rhs.rawValue
-    }
-
     public var description: String { String(rawValue) }
 }
 
-public enum RuleSeverity: String, CaseIterable, Equatable, Sendable {
+public enum RuleSeverity: String, Equatable, Sendable {
     case information
     case warning
     case error

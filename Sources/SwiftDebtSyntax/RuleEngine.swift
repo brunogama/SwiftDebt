@@ -12,6 +12,7 @@ public struct RuleEngine {
     ) throws -> AnalysisSnapshot {
         let results = try sources.map { try analyze($0, using: rule) }
         return AnalysisSnapshot(
+            ruleDescriptor: descriptor(for: Rule.self),
             selectedSourcePaths: results.map(\.sourcePath),
             ruleResults: results
         )
@@ -22,11 +23,7 @@ public struct RuleEngine {
         using rule: Rule
     ) throws -> RuleAnalysisResult {
         let sourcePath = try SourcePath(source.path)
-        let descriptor = RuleDescriptor(
-            identity: Rule.identity,
-            metadata: Rule.metadata,
-            contract: Rule.contract
-        )
+        let descriptor = descriptor(for: Rule.self)
         let tree = Parser.parse(source: source.content)
         let converter = SourceLocationConverter(fileName: sourcePath.rawValue, tree: tree)
         let diagnostics = ParseDiagnosticsGenerator.diagnostics(for: tree).map { diagnostic in
@@ -143,6 +140,14 @@ public struct RuleEngine {
         reason: String
     ) -> RuleAnalysisResult {
         RuleAnalysisResult(descriptor: descriptor, sourcePath: sourcePath, outcome: .failed(reason: reason))
+    }
+
+    private func descriptor<Rule: DebtRule>(for ruleType: Rule.Type) -> RuleDescriptor {
+        RuleDescriptor(
+            identity: ruleType.identity,
+            metadata: ruleType.metadata,
+            contract: ruleType.contract
+        )
     }
 }
 

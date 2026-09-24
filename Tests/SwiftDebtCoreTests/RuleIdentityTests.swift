@@ -7,12 +7,14 @@ struct RuleIdentityTests {
     @Test("Rule identity keeps namespace and ID distinct")
     func ruleIdentityComposition() throws {
         let namespace = try #require(RuleNamespace("com.example"))
+        let extendedNamespace = try #require(RuleNamespace("swift2.rules-beta"))
         let id = try #require(RuleID("force-try"))
         let identity = RuleIdentity(namespace: namespace, id: id)
 
         #expect(identity.namespace == namespace)
         #expect(identity.id == id)
         #expect(identity.description == "com.example.force-try")
+        #expect(extendedNamespace.rawValue == "swift2.rules-beta")
     }
 
     @Test("Invalid rule identifiers are recoverable")
@@ -25,21 +27,14 @@ struct RuleIdentityTests {
         #expect(RuleID("force_try") == nil)
     }
 
-    @Test("Semantic revisions are positive and advance successively")
-    func semanticRevisionSequence() throws {
-        let second = try #require(SemanticRevision.initial.successor())
-        let third = try #require(second.successor())
-        let fourth = try #require(SemanticRevision(4))
-        let maximum = try #require(SemanticRevision(UInt.max))
+    @Test("Semantic revisions are positive values")
+    func semanticRevisionValue() throws {
+        let second = try #require(SemanticRevision(2))
 
         #expect(SemanticRevision(0) == nil)
         #expect(SemanticRevision.initial.rawValue == 1)
         #expect(second.rawValue == 2)
-        #expect(third.immediatelySucceeds(second))
-        #expect(!third.immediatelySucceeds(.initial))
-        #expect(third < fourth)
-        #expect(third.description == "3")
-        #expect(maximum.successor() == nil)
+        #expect(second.description == "2")
     }
 
     @Test("Rule contract owns revision and semantics separately from metadata")
