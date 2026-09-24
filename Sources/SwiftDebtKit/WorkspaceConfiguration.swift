@@ -224,18 +224,21 @@ public struct AnalysisRunResult: Sendable {
     public let exitStatus: Int32
     public let rankedDebtAnalysis: RankedDebtAnalysis?
     public let profile: AnalysisProfile?
+    public let ruleAnalysisSnapshot: AnalysisSnapshot?
 
     public init(
         report: AnalysisReport,
         standardOutput: String,
         exitStatus: Int32,
         rankedDebtAnalysis: RankedDebtAnalysis? = nil,
-        profile: AnalysisProfile? = nil
+        profile: AnalysisProfile? = nil,
+        ruleAnalysisSnapshot: AnalysisSnapshot? = nil
     ) {
         self.report = report
         self.standardOutput = standardOutput
         self.exitStatus = exitStatus
         self.rankedDebtAnalysis = rankedDebtAnalysis
         self.profile = profile
+        self.ruleAnalysisSnapshot = ruleAnalysisSnapshot
     }
 }
