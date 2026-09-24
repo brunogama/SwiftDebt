@@ -24,6 +24,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
     def test_actions_are_sha_pinned(self) -> None:
         expected = (
             "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
+            "actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff",
             "actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d",
             "actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9",
             "actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346",
@@ -70,7 +71,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
         )
 
     def test_commit_and_quality_workflows_enforce_new_history(self) -> None:
-        cutover = "15fa039b0cfb9f7fe3ac9891c64199e038e7fe6b"
+        cutover = "0f724f4a69c3f0df5fe930a8c93205afbdf6ce8c"
         checker = (WORKFLOW.parent / "commit-history.yml").read_text(encoding="utf-8")
         pull_request = (WORKFLOW.parent / "pr-quality.yml").read_text(encoding="utf-8")
         policy_script = (REPOSITORY / "scripts" / "check_conventional_commits.py").read_text(

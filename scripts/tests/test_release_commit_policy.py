@@ -22,6 +22,7 @@ class CommitPolicyTests(unittest.TestCase):
         valid = (
             commit_value("feat: add analyzer"),
             commit_value("fix(parser): accept declarations"),
+            commit_value("docs: clarify examples", "Co-Authored-By: Human Reviewer <human@example.com>"),
             commit_value(
                 "feat(api)!: replace report schema",
                 "BREAKING CHANGE: Consumers must update report decoding.",
@@ -38,6 +39,7 @@ class CommitPolicyTests(unittest.TestCase):
             commit_value("feat!: omit required migration details"),
             commit_value("feat: omit breaking marker", "BREAKING CHANGE: Update callers."),
             commit_value("docs: " + "x" * 67),
+            commit_value("ci: reject agent trailers", "Co-Authored-By: Claude <bot@example.com>"),
         )
         for value in valid:
             with self.subTest(subject=value.subject):
@@ -112,6 +114,14 @@ class CommitPolicyTests(unittest.TestCase):
             failing = run_script(root, cutover)
             self.assertEqual(failing.returncode, 1)
             self.assertIn("missing a BREAKING CHANGE footer", failing.stderr)
+
+    def test_ai_coauthor_trailer_is_rejected_in_git_history(self) -> None:
+        with temporary_repository() as root:
+            cutover = commit(root, "chore: establish policy")
+            commit(root, "ci: check commit trailers", "Co-Authored-By: Claude <bot@example.com>")
+            result = run_script(root, cutover)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("AI co-author trailer", result.stderr)
 
 
 def run(command: list[str], root: Path) -> subprocess.CompletedProcess[str]:

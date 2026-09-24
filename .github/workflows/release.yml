@@ -84,6 +84,13 @@ jobs:
         if: steps.guard.outputs.proceed == 'true'
         run: python3 scripts/release_version.py check
 
+      - name: Install Go for actionlint
+        if: steps.guard.outputs.proceed == 'true'
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        with:
+          go-version: "1.24.0"
+          cache: false
+
       - name: Lint GitHub Actions workflows
         if: steps.guard.outputs.proceed == 'true'
         run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7
