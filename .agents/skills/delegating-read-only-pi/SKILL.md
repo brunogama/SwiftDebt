@@ -39,7 +39,7 @@ The runner performs the exact CSV lookup and launches the child with `read,grep,
 
 ## Required preparation
 
-1. Require a nonempty selector and a nonempty task. The local ticket loop passes only a selector for whole-skill runs such as `repo-tree`; treat that as a task derived from the target skill's own workflow rather than failing, but explicit callers must always provide both.
+1. Require a nonempty selector and a nonempty task. For a whole-skill run such as `repo-tree`, derive the task from the target skill's own workflow; explicit callers must always provide both.
 2. Resolve one trusted target `SKILL.md` through the CSV's exact first-column match. Never target this skill itself.
 3. Inspect the target's `references/` tree and read every task-relevant file plus required relative references named by its `SKILL.md`.
 4. Make `task` self-contained. The fresh child cannot infer the outer conversation.

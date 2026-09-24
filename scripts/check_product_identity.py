@@ -29,7 +29,6 @@ def is_historical(path: str) -> bool:
         path == "CHECKSUMS.sha256"
         or path == ".audit/swiftdebt-rename.tsv"
         or path == "scripts/check_product_identity.py"
-        or path.startswith(".scratch/tickets/")
         or path.startswith("docs/validation-logs/")
         or path.startswith("benchmarks/debtmap-baseline/evidence/2026-09-22-swiftdebt-rename/diagnostics/")
         or path

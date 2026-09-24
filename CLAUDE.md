@@ -21,7 +21,7 @@ Follow `AGENTS.md` as the shared policy source.
 
 ### Issue tracker
 
-Issues are tracked as local Markdown under `.scratch/tickets/`. See `docs/agents/issue-tracker.md`.
+Issues are tracked in GitHub Issues for `brunogama/SwiftDebt`. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 

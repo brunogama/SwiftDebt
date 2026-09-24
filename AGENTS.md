@@ -36,11 +36,9 @@
 
 ## Work tracking
 
-Implementation work is tracked as local Markdown tickets under
-`.scratch/tickets/`, described in `docs/agents/issue-tracker.md`.
-Tickets carry their own blocking edges; `scripts/local-ticket-loop/` executes
-them and owns their checkboxes. Do not edit a ticket's checkboxes by hand while
-a loop is running.
+Implementation work is tracked in GitHub Issues for `brunogama/SwiftDebt`,
+described in `docs/agents/issue-tracker.md`. Record blockers and acceptance
+criteria in the issue body. Use `gh issue` for tracker operations.
 
 ## Skill lifecycle
 
@@ -68,8 +66,7 @@ explicit human approval.
 This repository uses Git as its only repository VCS; there is no Jujutsu
 metadata and Jujutsu commands must not be used for repository operations. Use
 `main` for released history and `feature/*`, `release/*`, and `hotfix/*` for
-work. Branches under `local-ticket-loop/*` are created and owned by the ticket
-loop; leave them alone.
+work. Historical local ticket branches are not part of the active workflow.
 
 ## Rules modules
 
@@ -88,7 +85,6 @@ package has no UI layer, so they do not apply to work here.
 ## Conventions
 
 - Keep each module focused on one topic; split when a file exceeds ~200 lines.
-- Exception: `scripts/local-ticket-loop/*.sh` may exceed this line-count guideline when the entrypoint must remain a portable, self-contained Bash 3.2 harness. Keep shared logic in `scripts/local-ticket-loop/shared/` when it is used by multiple entrypoints.
 - Prefer executable commands over prose descriptions.
 - Establish positive defaults ("always add tests") rather than bans.
 - Treat stale rules as technical debt; update modules when conventions change.

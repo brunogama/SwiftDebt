@@ -48,27 +48,10 @@ swift test
 python3 scripts/smoke-test.py --binary .build/debug/swift-debt --plugins
 ```
 
-Or run `./scripts/verify.sh`, which performs the manifest/build/tests/integration checks and validates that SwiftDebtCore has no imports. Python 3.10+ is only needed for the optional subprocess verification scripts. The smoke suite allows 900 seconds per subprocess by default; override with `--timeout SECONDS` for a slower cold SwiftSyntax build. This normal route never calls the offline helper.
+Or run `./scripts/verify.sh`, which performs the manifest/build/tests/integration checks and validates that SwiftDebtCore has no imports. Python 3.10+ is only needed for the optional subprocess verification scripts. The smoke suite allows 900 seconds per subprocess by default; override with `--timeout SECONDS` for a slower cold SwiftSyntax build.
 
 For style validation, run the toolchain's formatter separately:
 
 ```sh
 swift format lint --strict --recursive Sources Tests Plugins Package.swift Examples
 ```
-
-## Reproduce the constrained offline validation
-
-This is an explicit development fallback, **not an installation method or distributable build configuration**:
-
-```sh
-python3 scripts/prepare-offline-validation.py /tmp/swiftdebt-validation
-cd /tmp/swiftdebt-validation
-swift test -j 2
-python3 scripts/smoke-test.py --binary .build/debug/swift-debt --plugins
-```
-
-The destination must not already exist. The helper checks for a Swift 6.2.x toolchain with bundled host modules, copies the package while excluding build/checkouts, removes only the remote SwiftSyntax product/dependency declarations **in the copy**, and adds host include/link paths there. The original manifest and sources are not modified. The resulting copy is unsuitable for publishing or distributing as a SwiftPM dependency.
-
-The plugin integration suite constructs its own temporary consumer depending on the package from which the script runs. This is why it exercises the offline copy, not an unbuilt network dependency. It cleans up its temporary fixture. The first follow-up build may relink a host/destination tool variant; the no-op assertion is checked after an additional warm-up so it measures a genuinely stable graph.
-
-The final submitted source was copied into the validation package before testing. No compiled artifact, host library, external dependency source, or original paper is included in the ZIP.

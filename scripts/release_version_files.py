@@ -20,7 +20,7 @@ def ignored(path: Path, root: Path) -> bool:
     relative = path.relative_to(root).as_posix()
     return (
         relative in {"CHECKSUMS.sha256", "scripts/release_version_model.py"}
-        or relative.startswith(("scripts/tests/", ".agents/evidence/", ".scratch/tickets/", "docs/validation-logs/"))
+        or relative.startswith(("scripts/tests/", ".agents/evidence/", "docs/validation-logs/"))
         or relative.startswith("benchmarks/debtmap-baseline/evidence/")
     )
 

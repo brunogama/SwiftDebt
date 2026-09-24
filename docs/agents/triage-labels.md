@@ -1,15 +1,13 @@
 # Triage labels
 
-Local Markdown tickets do not require remote tracker labels.
+Apply these labels to GitHub Issues in `brunogama/SwiftDebt` to make the next action visible.
 
-When a workflow asks for Matt Pocock-style canonical triage labels, use these names literally in local prose or ticket metadata:
-
-| Canonical label | Meaning |
+| Label | Meaning |
 | --- | --- |
-| `needs-triage` | The ticket has not been classified yet. |
-| `needs-info` | The ticket is blocked on missing information. |
-| `ready-for-agent` | The ticket is ready for an agent to implement. |
-| `ready-for-human` | The ticket needs human review or a human-only decision. |
-| `wontfix` | The ticket is intentionally not planned. |
+| `needs-triage` | The issue has not been classified yet. |
+| `needs-info` | The issue is blocked on missing information. |
+| `ready-for-agent` | An agent can implement and verify the issue. |
+| `ready-for-human` | The issue needs human review or a human-only decision. |
+| `wontfix` | The issue is intentionally not planned. |
 
-For this repository, these are vocabulary terms for local tickets. Do not create or mutate GitHub labels unless the user explicitly asks for GitHub tracker maintenance.
+Use `gh issue edit <number> --repo brunogama/SwiftDebt --add-label <label>` to apply a label. Remove an obsolete action label when the issue moves to another state.
