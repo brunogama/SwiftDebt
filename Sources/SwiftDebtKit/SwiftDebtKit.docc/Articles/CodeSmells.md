@@ -1,8 +1,10 @@
 # Code Smells from Refactoring
 
-SwiftDebt uses the 24 code-smell names in Chapter 3 of Martin Fowler's *Refactoring*, second edition. Each active rule reports an observable Swift syntax signal. A signal asks for review; it does not prove that a design needs refactoring. The book's catalog comes from the [publisher's table of contents](https://www.informit.com/store/refactoring-improving-the-design-of-existing-code-9780134757711); the guidance here is written for SwiftDebt.
+SwiftDebt uses the 24 code-smell names in Chapter 3 of Martin Fowler's *Refactoring*, second edition. Each active rule reports an observable Swift syntax signal. A signal asks for review; it does not prove that a design needs refactoring.
 
 ---
+
+The catalog comes from the [publisher's table of contents](https://www.informit.com/store/refactoring-improving-the-design-of-existing-code-9780134757711). The guidance here is written for SwiftDebt.
 
 ## Available rules
 
