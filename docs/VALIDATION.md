@@ -1,14 +1,24 @@
 # Validation record
 
-## Environment and scope
+## Current macOS release validation
+
+The [2026-09-24 release run](https://github.com/brunogama/SwiftDebt/actions/runs/35983890308) used a macOS 15 runner and Apple Swift 6.2. Its log records resolution of the shipping manifest's SwiftSyntax 602.0.0 and Swift-DocC plugin 1.5.0 dependencies. `./scripts/verify.sh` passed 186 Swift Testing tests in 29 suites and 28 subprocess checks. The subprocess suite ran the CLI and both SwiftPM plugins in a downstream Swift package, including invalidation and a warmed no-op build. The run also generated the DocC site and deployed it through GitHub Pages.
+
+This evidence closes the earlier normal-dependency-build and macOS SwiftPM plugin gaps. It does not exercise an Xcode project adapter. The [limitations plan](LIMITATIONS_PLAN.md) records the remaining evidence and implementation work.
+
+---
+
+## Historical Linux environment and scope
 
 Validation host: x86_64 Linux, `Swift version 6.2.1 (swift-6.2.1-RELEASE)`, target `x86_64-unknown-linux-gnu`.
 
 The container's build process could not resolve `github.com`. An ordinary dependency fetch/build of SwiftSyntax 602.0.0 was therefore **not completed**. The installed Swift 6.2.1 toolchain already included host `SwiftSyntax`, `SwiftParser`, and `SwiftParserDiagnostics` modules/libraries. Tests used them through a **disposable validation copy**, not by adding private search paths or unsafe flags to the shipping package.
 
-The distributed `Package.swift` uses the ordinary exact remote SwiftSyntax 602.0.0 dependency. `swift package dump-package` validated that manifest. The Xcode validation below resolved and compiled that external source through the shipping manifest without local changes.
+The distributed `Package.swift` uses the ordinary exact remote SwiftSyntax 602.0.0 dependency. At the time of the Linux validation, `swift package dump-package` validated only the manifest. The later macOS release run resolved and built that dependency, and the Xcode validation below resolved and compiled it through the shipping manifest without local changes.
 
-## Executed checks
+---
+
+## Historical Linux checks
 
 | Check | Result | Qualification |
 | --- | --- | --- |
@@ -16,12 +26,13 @@ The distributed `Package.swift` uses the ordinary exact remote SwiftSyntax 602.0
 | SwiftPM compilation of core/parser/reporting/kit/CLI | Passed | Swift 6 language mode, installed host parser libraries. |
 | Swift Testing | **51 tests in four suites passed** | Includes parameterized complexity cases and a finite exhaustive clone check. |
 | CLI and plugin subprocess suite | **27 checks passed** | Real executable and downstream SwiftPM consumer, using the offline dependency copy. |
-| Xcode downstream build and plugin sandbox | Passed | Xcode 27.0 (27A5228h), Apple Swift 6.4 (swiftlang-6.4.0.27.1), macOS 27.2 (26B5091g). |
-| Conditional Xcode project adapter | Passed | Standalone project target attached `SwiftDebtBuildPlugin` through `XcodeBuildToolPlugin`. |
+| macOS build and SwiftPM plugins | Not run on Linux | The later macOS run is linked above. |
+| Xcode downstream build and plugin sandbox | Not run on Linux | The separate validation below passed with Xcode 27.0 (27A5228h), Apple Swift 6.4 (swiftlang-6.4.0.27.1), and macOS 27.2 (26B5091g). |
+| Conditional Xcode project adapter | Not compiled/run on Linux | `XcodeProjectPlugin` is unavailable on this host; the standalone Xcode project validation below passed through `XcodeBuildToolPlugin`. |
 | Original SCMA/Lizard parity | Not established | Original implementation/data not supplied; measurement policies differ explicitly. |
 | Large-repository performance/recall study | Not performed | No latency, memory, accuracy, or scalability benchmark claim. |
 
-Raw final test output is in [validation-logs/swift-test.log](validation-logs/swift-test.log). The integration summary is in [validation-logs/smoke-test.log](validation-logs/smoke-test.log). The XCTest discovery wrapper can display zero XCTest cases before Swift Testing runs; the final Swift Testing line records the 51 actual tests.
+The historical Linux log files are no longer present in this repository. The counts above are retained from the original validation record and cannot be rechecked from local raw output. The later macOS run has public job logs. The XCTest discovery wrapper can display zero XCTest cases before Swift Testing runs; the final Swift Testing line records the actual tests.
 
 ---
 
@@ -52,7 +63,7 @@ The [Xcode build-plugin workflow](../.github/workflows/xcode-plugin.yml) runs th
 
 ---
 
-## What the tests cover
+## What the historical Linux tests covered
 
 The core suite checks Table I equations, unbounded/clamped behavior, missing/undefined scores, clone hashes verified against signatures, same-file nonoverlap, duplicate line unions, and work-budget failure. A finite exhaustive check compares the detector with a brute-force duplicated-line union for all binary line sequences of lengths 2 through 9 at floor 2. This caught a real overlapping-periodic-span bug during implementation; the delivered code uses only verified diagonal coverage to skip seed windows.
 
@@ -65,6 +76,8 @@ The filesystem suite covers exclusions, configuration validation, empty input, i
 The subprocess suite tests CLI help/version, strict bad arguments, job ranges, deterministic JSON, thresholds, all output formats, malformed source, output protection, the missing-build-config requirement, a downstream build-plugin invocation, warmed no-op behavior, source invalidation, configuration invalidation, gate failure/recovery, command-plugin target selection, and invalid plugin target arguments.
 
 These are focused automated checks, not a complete proof of parser accuracy, compiler semantics, security isolation, or equivalence on every Swift program.
+
+---
 
 ## Reproduce the normal build
 

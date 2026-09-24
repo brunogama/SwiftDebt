@@ -1,0 +1,6 @@
+ts	phase	decision	why	evidence	result
+2026-09-24T11:40:37Z	frame	Recorded the earlier decision to separate Linux and macOS validation	The later run used the shipping dependencies and both SwiftPM plugins	https://github.com/brunogama/SwiftDebt/actions/runs/35983890308	VERIFIED
+2026-09-24T11:40:37Z	design	Recorded the decision to keep compiler-backed evidence optional	Syntax estimates must retain their current meaning	docs/LIMITATIONS_PLAN.md	planned
+2026-09-24T11:40:37Z	tracking	Recorded the issue structure for each limitation	Each capability needs its own observable acceptance check	https://github.com/brunogama/SwiftDebt/issues/30	VERIFIED
+2026-09-24T11:45:37Z	validation	Removed links to missing historical Linux logs	The old counts cannot be checked from deleted local artifacts	docs/VALIDATION.md	VERIFIED
+2026-09-24T11:47:40Z	scope	Kept the non-Swift gap open after the first Python parser	One parser cannot establish coverage of every upstream language	https://github.com/brunogama/SwiftDebt/issues/30	planned
