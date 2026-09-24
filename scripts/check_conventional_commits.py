@@ -65,6 +65,14 @@ def resolve_commit(root: Path, revision: str, label: str) -> str:
         raise CommitPolicyError(f"{label} is not an available commit: {revision}") from error
 
 
+def is_available(root: Path, revision: str) -> bool:
+    try:
+        git(root, "rev-parse", "--verify", f"{revision}^{{commit}}")
+    except CommitPolicyError:
+        return False
+    return True
+
+
 def is_ancestor(root: Path, ancestor: str, descendant: str) -> bool:
     result = subprocess.run(
         ["git", "merge-base", "--is-ancestor", ancestor, descendant],
@@ -87,7 +95,11 @@ def merge_base(root: Path, left: str, right: str) -> str:
 def validation_base(root: Path, base: str | None, head: str, cutover: str) -> tuple[str, str]:
     resolved_head = resolve_commit(root, head, "head")
     resolved_cutover = resolve_commit(root, cutover, "cutover")
-    if base is None or ZERO_REVISION.fullmatch(base):
+    # A force-push reports the replaced commit as the base. That commit is no longer
+    # reachable from any ref, so the checkout does not contain it and it cannot bound
+    # the range. Treat it like an absent base and fall back to the cutover, which
+    # validates every commit the policy covers rather than skipping the push.
+    if base is None or ZERO_REVISION.fullmatch(base) or not is_available(root, base):
         if not is_ancestor(root, resolved_cutover, resolved_head):
             raise CommitPolicyError("a base commit is required when head predates the policy cutover")
         return resolved_cutover, resolved_head

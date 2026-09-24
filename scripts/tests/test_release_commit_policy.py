@@ -77,6 +77,15 @@ class CommitPolicyTests(unittest.TestCase):
             self.assertEqual(result.returncode, 1)
             self.assertIn("not conventional", result.stderr)
 
+    def test_unavailable_push_base_falls_back_to_cutover(self) -> None:
+        with temporary_repository() as root:
+            cutover = commit(root, "Merge legacy history")
+            commit(root, "not conventional")
+            missing = "0" * 39 + "1"
+            result = run_script(root, cutover, base=missing)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("not conventional", result.stderr)
+
     def test_branch_from_pre_cutover_history_uses_its_merge_base(self) -> None:
         with temporary_repository() as root:
             old_base = commit(root, "chore: establish repository")
