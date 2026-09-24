@@ -4,19 +4,19 @@
 
 The user-supplied `paper006.pdf` is **SCMA: A Lightweight Tool to Analyze Swift Projects**, Fazle Rabbi, Syeda Sumbul Hossain, and Mir Mohammad Samsul Arefin, four pages. The document does not supply a complete executable specification or source release for its tool. No publication year/DOI is invented here.
 
-References below are to that PDF's printed section/table/figure positions. The PDF itself and the original tool's code are not redistributed in this package. SwiftSCMA is an independent implementation. Names, measurement categories, and Table I equations are attributed to the paper; implementation decisions beyond it are explicitly identified.
+References below are to that PDF's printed section/table/figure positions. The PDF itself and the original tool's code are not redistributed in this package. SwiftDebt is an independent implementation. Names, measurement categories, and Table I equations are attributed to the paper; implementation decisions beyond it are explicitly identified.
 
 ## Source-derived pipeline
 
 Section III-A, page 2, describes selecting Swift files and constructing SwiftSyntax-based syntax trees. Section III-B describes collecting declarations and their relations before calculating metrics. Section III-C and Table I, page 3, describe violation counts, per-metric scores, and averaging. Section III-D describes HTML/CSV reports; the original HTML is served through Python.
 
-SwiftSCMA follows that broad sequence but uses an in-process SwiftParser frontend and standalone reporting. It does **not** recreate the paper's described call-graph matrix or Python report server.
+SwiftDebt follows that broad sequence but uses an in-process SwiftParser frontend and standalone reporting. It does **not** recreate the paper's described call-graph matrix or Python report server.
 
 ## All ten metrics
 
 The labels below preserve the paper's IDs, including its wording of NOAV and “Weighed.” The right-hand column is this implementation's explicitly chosen operational definition; it is not additional detail provided by the paper.
 
-| ID | Paper description, section III-B | SwiftSCMA policy |
+| ID | Paper description, section III-B | SwiftDebt policy |
 | --- | --- | --- |
 | LOCC | Line of Code by Classes; class lines excluding comments | Distinct nonblank token-bearing physical lines in the class plus its selected same-module extensions. |
 | WMCC | Weighed Method Count by Classes; sum of method cyclomatic complexities | Sum over directly owned implemented `func`, `init`, `deinit`, and property/subscript accessor bodies, using the CCF policy below. |
@@ -64,7 +64,7 @@ Section III-C says every score and their average lie in `[0, 5]`. The printed eq
 - The DC denominator is printed as `totalParams`, not total lines. This unusual dependence is preserved in `paper` and `bounded` modes, not silently changed to a common duplication percentage. In practice it drives the DC score to almost zero for any clone at all, which is why the explicit `corrected` mode exists.
 - NOAV's label, prose, and formula leave different possible interpretations. The formula does not actually consume the per-method access-count observations computed here; it consumes total methods and properties.
 
-The dashboard on page 4 is not a specification that resolves these discrepancies. SwiftSCMA does not infer new equations from a chart.
+The dashboard on page 4 is not a specification that resolves these discrepancies. SwiftDebt does not infer new equations from a chart.
 
 `--scoring none` is the default. `paper` implements the equations above literally, with finite results left unbounded. `bounded` explicitly clamps each otherwise-defined score to `[0, 5]`; it cannot repair undefined denominators or validate the model. Clamping is an implementation option, not part of the paper's printed calculation. `corrected` is `bounded` plus exactly one documented repair: the DC ratio becomes `duplicatedLines / totalLines`, the conventional duplication fraction. Every other equation, including the LOCC ceiling of two-thirds, is left as printed; the mode is labeled in the report's `scoringMode` and DC `scoreNote`.
 
@@ -74,7 +74,7 @@ No applicable entity or an undefined division produces no score (`null` in JSON)
 
 Only LOCC, WMCC, CCF, NOPF, and DC receive default violation limits because those are the five supplied by Table I. Other limits are optional repository policies. All custom limits in this implementation are upper bounds; a custom NOAV upper bound must not be described as reproducing the paper's stated cohesion preference.
 
-Section V, page 4, identifies company-derived metrics/thresholds, no evaluation on other open-source projects, and runs on 11 iOS projects. SwiftSCMA therefore does not present the formulas as universally calibrated defect predictors, architectural conformance rules, or evidence of maintainability. It offers measurements and explicit policy gates, not a scientific certificate of code quality.
+Section V, page 4, identifies company-derived metrics/thresholds, no evaluation on other open-source projects, and runs on 11 iOS projects. SwiftDebt therefore does not present the formulas as universally calibrated defect predictors, architectural conformance rules, or evidence of maintainability. It offers measurements and explicit policy gates, not a scientific certificate of code quality.
 
 ## Implementation references, separate from the paper
 

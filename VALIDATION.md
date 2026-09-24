@@ -45,10 +45,10 @@ Use a Swift 6.2.x toolchain with access to resolve the pinned package:
 swift package dump-package
 swift build
 swift test
-python3 scripts/smoke-test.py --binary .build/debug/scma --plugins
+python3 scripts/smoke-test.py --binary .build/debug/swift-debt --plugins
 ```
 
-Or run `./scripts/verify.sh`, which performs the manifest/build/tests/integration checks and validates that SCMACore has no imports. Python 3.10+ is only needed for the optional subprocess verification scripts. The smoke suite allows 900 seconds per subprocess by default; override with `--timeout SECONDS` for a slower cold SwiftSyntax build.
+Or run `./scripts/verify.sh`, which performs the manifest/build/tests/integration checks and validates that SwiftDebtCore has no imports. Python 3.10+ is only needed for the optional subprocess verification scripts. The smoke suite allows 900 seconds per subprocess by default; override with `--timeout SECONDS` for a slower cold SwiftSyntax build.
 
 For style validation, run the toolchain's formatter separately:
 

@@ -1,0 +1,117 @@
+{
+  "frozenInputProvenanceCommit": "b0ae66be2065084b29b8b5da0a86d5cd049feced",
+  "performanceReferenceCommit": "89119cfba01d85a06e084d879165271a26f33ba3",
+  "commands": [
+    {
+      "name": "build-release-analyzer",
+      "argv": ["swift", "build", "-c", "release"]
+    },
+    {
+      "name": "measure-macos",
+      "argv": ["/usr/bin/time", "-l", ".build/release/swift-debt", "analyze", "Examples/Sources", "--format", "json", "--jobs", "1", "--output", ".swift-debt/benchmarks/debtmap-baseline/examples-sources.json", "--profile-output", ".swift-debt/benchmarks/debtmap-baseline/examples-sources.profile.json"]
+    },
+    {
+      "name": "measure-linux",
+      "argv": ["/usr/bin/time", "-v", ".build/release/swift-debt", "analyze", "Examples/Sources", "--format", "json", "--jobs", "1", "--output", ".swift-debt/benchmarks/debtmap-baseline/examples-sources.json", "--profile-output", ".swift-debt/benchmarks/debtmap-baseline/examples-sources.profile.json"]
+    },
+    {
+      "name": "benchmark-harness",
+      "argv": ["python3", "scripts/run_debtmap_benchmark.py", "--output", "RESULT.json", "--input", "Examples/Sources/Example.swift", "--input", ".swift-debt.example.json", "--analyzer", "SwiftDebt", "--workload-family", "SwiftDebt", "--command-fingerprint", "WORKLOAD", "--analysis-mode", "MODE", "--optional-context", "CONTEXT", "--", "COMMAND"]
+    },
+    {
+      "name": "enforce-merge-budget",
+      "argv": [".build/release/swift-debt", "performance-gate", "BASELINE.json", "CANDIDATE.json", "--name", "BUDGET", "--max-wall-clock-regression", "PERCENT", "--max-peak-memory-regression", "PERCENT", "--output", "EVALUATION.json"]
+    }
+  ],
+  "inputs": [
+    {
+      "path": "Examples/Sources/Example.swift",
+      "sha256": "478cec226511f60e51516b49cae2a8952b2f3b9b21e3e30dbb6771ea410201e4",
+      "utf8ByteCount": 1245,
+      "lineCount": 63
+    },
+    {
+      "path": ".swift-debt.example.json",
+      "sha256": "2ab8f21e5a4b4433a2d4637de71f8cc05c6479c75991712e93aed9152f4f565c",
+      "utf8ByteCount": 381,
+      "lineCount": 20
+    },
+    {
+      "path": "benchmarks/debtmap-baseline/fixtures/example.lcov",
+      "sha256": "cefe1599680e1eb65d2cbaeced80e473cce2633bdda642723e666f2369054237",
+      "utf8ByteCount": 558,
+      "lineCount": 68
+    }
+  ],
+  "measuredRuns": 15,
+  "measurements": ["wall-clock-seconds", "peak-memory-bytes", "phase-wall-clock-nanoseconds"],
+  "methodology": [
+    "Use the latest clean committed predecessor that accepts the same command surface and implements the same always-on analysis capabilities, optional evidence, and report generation as the candidate.",
+    "Treat the frozen-input provenance commit as corpus provenance only; retain comparisons against capability-incomplete commits as diagnostics, not budget passes, failures, or approved exceptions.",
+    "Resolve dependencies before the first measured run.",
+    "Run the release build command once after dependency resolution.",
+    "Run the selected platform measure command for one warmup run and discard that sample.",
+    "Run the same command for fifteen measured runs without changing inputs.",
+    "Use benchmarks/debtmap-baseline/fixtures/example.lcov and the frozen 2026-09-22T00:00:00Z debt reference time for full-evidence measurements.",
+    "For full-evidence measurements, copy Example.swift to the root of a temporary Git repository and commit it with fixed author and committer metadata at 2026-09-12T12:00:00Z.",
+    "Record elapsed wall-clock seconds and peak resident memory from the platform time tool.",
+    "Record phase-wall-clock nanoseconds from the analyzer profile output for discovery, parsing, structural evidence, graph, coverage, repository history, functional evidence, scoring, aggregation and rendering when those phases run.",
+    "Report every raw sample, median, minimum and maximum with the Swift version, OS, CPU model and memory size.",
+    "Use medians for CI regression gates and include all raw samples when requesting an approved exception.",
+    "Run .github/workflows/debtmap-performance.yml on pull requests to enforce both regression budgets against equivalent frozen SwiftDebt workloads."
+  ],
+  "outputDirectory": ".swift-debt/benchmarks/debtmap-baseline",
+  "performanceGate": {
+    "comparisonUnit": "Equivalent SwiftDebt workload only",
+    "referenceRequirements": [
+      "same always-on dependency graph analysis",
+      "same always-on structural and functional debt evidence",
+      "same native debt-item report capability",
+      "same report schema generation"
+    ],
+    "disallowedComparisons": [
+      "Debtmap Rust workload",
+      "non-Swift parser workload",
+      "different input checksum",
+      "different optional context"
+    ],
+    "approvedExceptionEvidence": [
+      "all raw wall-clock and peak-memory samples",
+      "profile output for the candidate run",
+      "platform metadata",
+      "written justification for accepting the regression"
+    ]
+  },
+  "platformVariance": {
+    "ciUsage": "Compare medians from the same OS family and architecture where possible; otherwise require approved exception evidence.",
+    "noiseControls": [
+      "release build",
+      "one discarded warmup run",
+      "fifteen measured runs",
+      "fixed --jobs 1 parallelism",
+      "frozen input SHA-256 checksums",
+      "raw sample reporting"
+    ],
+    "requiredMetadata": ["swift-version", "os", "architecture", "cpu-model", "memory-bytes"]
+  },
+  "regressionBudgets": [
+    {
+      "name": "baseline-analysis",
+      "analysisMode": "baseline",
+      "optionalContext": "none",
+      "workloadFamily": "SwiftDebt",
+      "maximumWallClockRegressionPercent": 10,
+      "maximumPeakMemoryRegressionPercent": 15
+    },
+    {
+      "name": "full-evidence-analysis",
+      "analysisMode": "full-evidence",
+      "optionalContext": "coverage-and-repository-history",
+      "workloadFamily": "SwiftDebt",
+      "maximumWallClockRegressionPercent": 20,
+      "maximumPeakMemoryRegressionPercent": 15
+    }
+  ],
+  "schemaVersion": 2,
+  "warmupRuns": 1
+}

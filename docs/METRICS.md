@@ -1,4 +1,6 @@
+<!-- swiftdebt-release-version:start -->
 # Measurement specification - engine 0.1.0
+<!-- swiftdebt-release-version:end -->
 
 This document defines **implemented behavior**, not additional claims from the paper. The original categories and equations are mapped in PAPER_MAPPING.md.
 
@@ -38,7 +40,7 @@ Property and subscript accessor bodies (`get`, `set`, `willSet`, `didSet`, `_rea
 
 Initializers count as methods and carry their declared parameter count. Deinitializers count with zero parameters. Each parameter declaration counts once regardless of external/internal label, default value, variadic marker, or modifiers.
 
-Anonymous closures, protocol requirements, synthesized members, and macro-generated declarations have no separate callable observations. Decisions and field accesses inside nested local functions or closures do not inflate the enclosing callable's complexity/NOAV. Local named functions are measured separately; closures are not. The enclosing callable's **physical LOC still contains nested source text**.
+Anonymous closures, protocol requirements, synthesized members, and macro-generated declarations have no separate callable observations. Decisions and field accesses inside nested local functions or closures do not inflate the enclosing callable's complexity/NOAV. Local named functions are measured separately; closures are not. Closure complexity, cognitive complexity, and nesting are still extracted as deterministic syntax facts and covered by parser fixtures; closure effects participate in functional-composition evidence. They intentionally do not become independently ranked debt items because anonymous closures lack a stable source-level callable identity. The enclosing callable's **physical LOC still contains nested source text**.
 
 ### CCF decision policy
 

@@ -1,0 +1,9 @@
+{
+  "agent": "claude",
+  "run_id": "20260901T204159-51296",
+  "identity": {"name": "", "email": ""},
+  "started_at": "2026-08-30T19:06:25Z",
+  "ended_at": "2026-09-01T20:41:59Z",
+  "exit_code": 0,
+  "files_changed": [".agents/evidence/run-20260830T190612-46851.json","scripts/local-ticket-loop/proposed-loop.sh","scripts/local-ticket-loop/README.md","scripts/local-ticket-loop/test-proposed-loop.sh"]
+}

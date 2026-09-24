@@ -1,0 +1,223 @@
+{
+  "aggregations": [
+    {
+      "displayName": "Sources/App.swift",
+      "id": "file:Sources/App.swift",
+      "level": "file",
+      "location": {
+        "file": "Sources/App.swift",
+        "module": "App"
+      },
+      "memberItemIDs": [
+        "callable:Legacy.clean",
+        "callable:Service.run"
+      ],
+      "priority": "high",
+      "score": 70
+    }
+  ],
+  "compactItems": [
+    {
+      "displayName": "App.Service.run()",
+      "id": "callable:Service.run",
+      "level": "callable",
+      "location": {
+        "column": 1,
+        "file": "Sources/OldService.swift",
+        "line": 20,
+        "module": "App"
+      },
+      "priority": "critical",
+      "score": 90
+    },
+    {
+      "displayName": "App.Legacy.clean()",
+      "id": "callable:Legacy.clean",
+      "level": "callable",
+      "location": {
+        "column": 1,
+        "file": "Sources/Legacy.swift",
+        "line": 8,
+        "module": "App"
+      },
+      "priority": "medium",
+      "score": 50
+    }
+  ],
+  "generator": "SwiftDebt",
+  "items": [
+    {
+      "category": "swift",
+      "displayName": "App.Service.run()",
+      "evidence": [
+        {
+          "availability": {
+            "state": "available"
+          },
+          "id": "callable:Service.run:complexity",
+          "kind": "swift.cognitive-complexity",
+          "location": {
+            "column": 1,
+            "file": "Sources/OldService.swift",
+            "line": 20,
+            "module": "App"
+          },
+          "normalizedScore": 90,
+          "note": "measured",
+          "rawValue": "score=90",
+          "requirement": "optional",
+          "weight": 2
+        },
+        {
+          "availability": {
+            "reason": "LCOV unavailable",
+            "state": "unavailable"
+          },
+          "id": "callable:Service.run:coverage",
+          "kind": "coverage.lcov",
+          "location": {
+            "column": 1,
+            "file": "Sources/OldService.swift",
+            "line": 20,
+            "module": "App"
+          },
+          "note": "No zero-valued risk was fabricated.",
+          "rawValue": "unavailable",
+          "requirement": "required",
+          "weight": 1
+        }
+      ],
+      "explanation": "Debt risk is concentrated here.",
+      "id": "callable:Service.run",
+      "level": "callable",
+      "location": {
+        "column": 1,
+        "file": "Sources/OldService.swift",
+        "line": 20,
+        "module": "App"
+      },
+      "priority": "critical",
+      "recommendation": "Reduce risk before expanding this code.",
+      "score": 90,
+      "scoreBreakdown": {
+        "contributions": [
+          {
+            "configuredWeight": 2,
+            "contribution": 180,
+            "effectiveWeight": 2,
+            "evidenceID": "callable:Service.run:complexity",
+            "kind": "swift.cognitive-complexity",
+            "normalizedScore": 90,
+            "note": "measured",
+            "rawValue": "score=90"
+          }
+        ],
+        "totalAvailableWeight": 2,
+        "totalConfiguredWeight": 3,
+        "unavailableEvidence": [
+          {
+            "configuredWeight": 1,
+            "evidenceID": "callable:Service.run:coverage",
+            "kind": "coverage.lcov",
+            "reason": "LCOV unavailable",
+            "requirement": "required"
+          }
+        ]
+      }
+    },
+    {
+      "category": "swift",
+      "displayName": "App.Legacy.clean()",
+      "evidence": [
+        {
+          "availability": {
+            "state": "available"
+          },
+          "id": "callable:Legacy.clean:complexity",
+          "kind": "swift.cognitive-complexity",
+          "location": {
+            "column": 1,
+            "file": "Sources/Legacy.swift",
+            "line": 8,
+            "module": "App"
+          },
+          "normalizedScore": 50,
+          "note": "measured",
+          "rawValue": "score=50",
+          "requirement": "optional",
+          "weight": 2
+        }
+      ],
+      "explanation": "Debt risk is concentrated here.",
+      "id": "callable:Legacy.clean",
+      "level": "callable",
+      "location": {
+        "column": 1,
+        "file": "Sources/Legacy.swift",
+        "line": 8,
+        "module": "App"
+      },
+      "priority": "medium",
+      "recommendation": "Reduce risk before expanding this code.",
+      "score": 50,
+      "scoreBreakdown": {
+        "contributions": [
+          {
+            "configuredWeight": 2,
+            "contribution": 100,
+            "effectiveWeight": 2,
+            "evidenceID": "callable:Legacy.clean:complexity",
+            "kind": "swift.cognitive-complexity",
+            "normalizedScore": 50,
+            "note": "measured",
+            "rawValue": "score=50"
+          }
+        ],
+        "totalAvailableWeight": 2,
+        "totalConfiguredWeight": 2,
+        "unavailableEvidence": []
+      }
+    }
+  ],
+  "missingEvidence": [
+    {
+      "configuredWeight": 1,
+      "evidenceID": "callable:Service.run:coverage",
+      "itemID": "callable:Service.run",
+      "kind": "coverage.lcov",
+      "reason": "LCOV unavailable",
+      "requirement": "required"
+    }
+  ],
+  "options": {
+    "aggregationStrategy": "file",
+    "categories": [],
+    "head": null,
+    "levels": [],
+    "minPriority": null,
+    "minScore": null,
+    "preset": "balanced",
+    "problematicItemScoreThreshold": 70,
+    "scoringPolicy": {
+      "priorityThresholds": {
+        "critical": 85,
+        "high": 70,
+        "medium": 40
+      }
+    },
+    "tail": null,
+    "top": 10
+  },
+  "reportKind": "swiftdebt-report",
+  "schemaVersion": 2,
+  "summary": {
+    "aggregationCount": 1,
+    "priorityCounts": {
+      "critical": 1,
+      "medium": 1
+    },
+    "rankedItemCount": 2,
+    "totalItemCount": 2,
+    "unavailableEvidenceCount": 1
+  }
+}

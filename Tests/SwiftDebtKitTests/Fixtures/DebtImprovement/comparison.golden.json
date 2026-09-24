@@ -1,0 +1,166 @@
+{
+  "afterReportSchemaVersion" : 2,
+  "aggregationChanges" : {
+    "added" : [
+
+    ],
+    "changed" : [
+      {
+        "afterLocation" : {
+          "file" : "Sources/App.swift",
+          "module" : "App"
+        },
+        "beforeLocation" : {
+          "file" : "Sources/App.swift",
+          "module" : "App"
+        },
+        "displayName" : "Sources/App.swift",
+        "id" : "file:Sources/App.swift",
+        "level" : "file",
+        "memberItemIDs" : {
+          "added" : [
+            "callable:New.feature"
+          ],
+          "removed" : [
+            "callable:Legacy.clean"
+          ]
+        },
+        "moved" : false,
+        "priority" : {
+          "after" : "medium",
+          "before" : "high"
+        },
+        "score" : {
+          "after" : 65,
+          "before" : 70,
+          "delta" : -5
+        }
+      }
+    ],
+    "removed" : [
+
+    ],
+    "unchangedIDs" : [
+
+    ]
+  },
+  "beforeReportSchemaVersion" : 2,
+  "itemChanges" : {
+    "added" : [
+      {
+        "displayName" : "App.New.feature()",
+        "evidenceIDs" : [
+          "callable:New.feature:complexity",
+          "callable:New.feature:coverage"
+        ],
+        "id" : "callable:New.feature",
+        "level" : "callable",
+        "location" : {
+          "column" : 1,
+          "file" : "Sources/New.swift",
+          "line" : 15,
+          "module" : "App"
+        },
+        "priority" : "high",
+        "score" : 75,
+        "unavailableEvidenceIDs" : [
+          "callable:New.feature:coverage"
+        ]
+      }
+    ],
+    "changed" : [
+      {
+        "afterLocation" : {
+          "column" : 1,
+          "file" : "Sources/NewService.swift",
+          "line" : 40,
+          "module" : "App"
+        },
+        "beforeLocation" : {
+          "column" : 1,
+          "file" : "Sources/OldService.swift",
+          "line" : 20,
+          "module" : "App"
+        },
+        "displayName" : "App.Service.run()",
+        "evidence" : {
+          "added" : [
+
+          ],
+          "removed" : [
+            "callable:Service.run:coverage"
+          ]
+        },
+        "id" : "callable:Service.run",
+        "moved" : true,
+        "priority" : {
+          "after" : "medium",
+          "before" : "critical"
+        },
+        "score" : {
+          "after" : 60,
+          "before" : 90,
+          "delta" : -30
+        },
+        "unavailableEvidence" : {
+          "added" : [
+
+          ],
+          "removed" : [
+            "callable:Service.run:coverage"
+          ]
+        }
+      }
+    ],
+    "removed" : [
+      {
+        "displayName" : "App.Legacy.clean()",
+        "evidenceIDs" : [
+          "callable:Legacy.clean:complexity"
+        ],
+        "id" : "callable:Legacy.clean",
+        "level" : "callable",
+        "location" : {
+          "column" : 1,
+          "file" : "Sources/Legacy.swift",
+          "line" : 8,
+          "module" : "App"
+        },
+        "priority" : "medium",
+        "score" : 50,
+        "unavailableEvidenceIDs" : [
+
+        ]
+      }
+    ],
+    "unchangedIDs" : [
+
+    ]
+  },
+  "missingEvidence" : {
+    "added" : [
+      "callable:New.feature:callable:New.feature:coverage"
+    ],
+    "removed" : [
+      "callable:Service.run:callable:Service.run:coverage"
+    ]
+  },
+  "schemaVersion" : 1,
+  "summary" : {
+    "addedAggregationCount" : 0,
+    "addedItemCount" : 1,
+    "afterItemCount" : 2,
+    "afterTotalScore" : 135,
+    "afterUnavailableEvidenceCount" : 1,
+    "beforeItemCount" : 2,
+    "beforeTotalScore" : 140,
+    "beforeUnavailableEvidenceCount" : 1,
+    "changedAggregationCount" : 1,
+    "changedItemCount" : 1,
+    "removedAggregationCount" : 0,
+    "removedItemCount" : 1,
+    "totalScoreDelta" : -5,
+    "unavailableEvidenceDelta" : 0,
+    "unchangedItemCount" : 0
+  }
+}
