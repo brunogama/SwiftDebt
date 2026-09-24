@@ -9,7 +9,7 @@ Each row is closed only when its acceptance check runs on the shipping package, 
 | Gap | Current evidence | Required acceptance evidence |
 | --- | --- | --- |
 | Pinned dependency and macOS SwiftPM plugins | The [2026-09-24 release run](https://github.com/brunogama/SwiftDebt/actions/runs/35983890308) resolved SwiftSyntax 602.0.0, passed 186 tests and 28 subprocess checks, and ran both plugins in a downstream package. | Keep the real dependency build and downstream plugin checks in CI. Treat a failed or skipped check as an open validation gap. |
-| Xcode project adapter | No Xcode project test. | [Issue #31](https://github.com/brunogama/SwiftDebt/issues/31) checks the build plugin in a consumer Xcode project, including sandbox behavior, invalidation, and a failed gate. |
+| Xcode project adapter | The [hosted Xcode 27 job](https://github.com/brunogama/SwiftDebt/actions/runs/36006238964/job/107655000593) passed the standalone consumer smoke gate, including plugin sandbox behavior, source and configuration invalidation, an enforced gate failure, and recovery. | Keep the Xcode consumer smoke gate in CI. Treat a failed or skipped check as an open validation gap. |
 | Type checking, macros, and `#if` | The parser observes source text without a compiler invocation. | [Issue #32](https://github.com/brunogama/SwiftDebt/issues/32) defines compiler evidence. [Issue #33](https://github.com/brunogama/SwiftDebt/issues/33) checks active configurations and macro expansion. Unavailable evidence stays explicit. |
 | Name binding and dispatch | Type and call edges use documented syntax heuristics. | [Issue #34](https://github.com/brunogama/SwiftDebt/issues/34) compares compiler-resolved symbols with overload, alias, generic, import, inheritance, protocol, and dynamic-dispatch fixtures. |
 | Architecture compliance | Reports describe dependencies but do not evaluate architecture rules. | [Issue #35](https://github.com/brunogama/SwiftDebt/issues/35) defines versioned rules and tests proven, unknown, and condition-dependent edges in a downstream package. |
@@ -22,7 +22,7 @@ Each row is closed only when its acceptance check runs on the shipping package, 
 
 ## Delivery order
 
-1. Keep the real-package validation record current. Add the Xcode consumer test so release checks cover both plugin hosts.
+1. Keep the real-package validation record current and retain CI coverage for both SwiftPM and Xcode plugin hosts.
 2. Establish a compiler evidence contract before changing metric calculations. Compare syntax and compiler-backed results on fixed fixtures, then add configuration-aware parsing, macro expansion, binding, and dispatch as separate changes.
 3. Build architecture rules on the resolved dependency evidence. Reject only violations that the chosen mode can prove.
 4. Freeze the empirical inputs before making performance or score claims. Measure large repositories and outcome validity independently.
