@@ -48,6 +48,9 @@ struct RefactoringSmellRuleTests {
             content: """
                 let stable = 1
                 var mutable = 0
+                #if FEATURE
+                var conditional = 0
+                #endif
                 struct Store { var local = 0 }
                 func update() { var local = 1; local += 1 }
                 """

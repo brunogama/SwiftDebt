@@ -16,7 +16,8 @@ public struct GlobalDataRule: DebtRule {
     )
     public static let contract = RuleContract(
         semanticRevision: .initial,
-        semantics: "Reports mutable var declarations directly in the source file's top-level statement list.",
+        semantics:
+            "Reports mutable var declarations directly in the source file's top-level statement list. Declarations inside #if clauses are outside this rule.",
         rationale:
             "File-scope mutable state can be changed by distant code, obscuring ownership and increasing concurrency risk. This syntax check cannot prove reachability or unsafe access."
     )

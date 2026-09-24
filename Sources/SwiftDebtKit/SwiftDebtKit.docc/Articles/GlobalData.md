@@ -27,6 +27,6 @@ actor RequestCounter {
 
 ## Detection and limits
 
-Rule ID: `swiftdebt.refactoring.global-data`. The location points to the top-level `var` keyword. This rule does not prove a data race or inspect access paths. Declarations in inactive conditional-compilation branches may be present in the syntax tree.
+Rule ID: `swiftdebt.refactoring.global-data`. The location points to the top-level `var` keyword. This rule does not prove a data race or inspect access paths. It checks direct file-scope declarations; declarations inside `#if` clauses are outside its current contract.
 
 See [Refactoring, second edition](https://www.informit.com/store/refactoring-improving-the-design-of-existing-code-9780134757711) for the source catalog.
