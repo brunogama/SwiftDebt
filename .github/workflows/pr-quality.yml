@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   commits:
-    name: Conventional commits
+    name: PR conventional commits
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

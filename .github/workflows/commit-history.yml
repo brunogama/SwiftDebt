@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   commits:
-    name: Conventional commits
+    name: Push conventional commits
     if: github.event.deleted == false
     runs-on: ubuntu-latest
     timeout-minutes: 10

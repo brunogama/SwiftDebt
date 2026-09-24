@@ -17,8 +17,8 @@ push after cutover commit `15fa039b0cfb9f7fe3ac9891c64199e038e7fe6b`.
 History through that commit is intentionally grandfathered.
 
 GitHub Actions observes a push after GitHub has accepted it. A failing
-`Commit history / Conventional commits` run reports a direct-push violation but
+`Push conventional commits` run reports a direct-push violation but
 cannot reject that push. Configure a GitHub repository ruleset for protected
-branches that requires pull requests and the `PR quality / Conventional commits`
-and `PR quality / Strict build and lint` status checks when pre-receive
+branches that requires pull requests and the `PR conventional commits`
+and `Strict build and lint` status checks when pre-receive
 enforcement is required.
