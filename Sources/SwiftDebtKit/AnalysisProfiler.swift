@@ -37,6 +37,7 @@ public struct ProfiledAnalysisPhase: Codable, Sendable {
     public let peakResidentMemoryBytes: UInt64?
 }
 
+// Mutable phase state is accessed only through lock.withLock.
 final class AnalysisProfiler: AnalysisPhaseSink, @unchecked Sendable {
     private struct ActivePhase {
         let startedAtNanoseconds: UInt64
@@ -92,8 +93,8 @@ private func peakResidentMemoryBytes() -> UInt64? {
     #endif
 }
 
-private extension NSLock {
-    func withLock<T>(_ operation: () throws -> T) rethrows -> T {
+extension NSLock {
+    fileprivate func withLock<T>(_ operation: () throws -> T) rethrows -> T {
         lock()
         defer { unlock() }
         return try operation()

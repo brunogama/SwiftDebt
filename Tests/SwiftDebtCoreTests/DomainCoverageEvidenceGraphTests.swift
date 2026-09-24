@@ -361,6 +361,25 @@ struct FunctionalDebtEvidenceBoundaryTests {
 
 @Suite("Dependency graph resolution boundaries")
 struct DependencyGraphBoundaryTests {
+    @Test("Sources from different modules may share a path without losing test classification")
+    func sharedPathAcrossModules() {
+        let path = "Shared.swift"
+        let sources = [
+            makeSource(
+                path: path, module: "App",
+                types: [makeFragment(key: TypeKey(module: "App", name: "Widget"), file: path)]
+            ),
+            makeSource(
+                path: path, module: "AppTests",
+                types: [makeFragment(key: TypeKey(module: "AppTests", name: "Widget"), file: path)]
+            ),
+        ]
+
+        let graph = DependencyGraphBuilder().build(from: sources, typeScope: .nominals)
+        #expect(graph.nodes.first { $0.id == "type:App.Widget" }?.isTest == false)
+        #expect(graph.nodes.first { $0.id == "type:AppTests.Widget" }?.isTest == true)
+    }
+
     @Test("Nested, qualified, imported, ambiguous, and unresolved references remain distinct")
     func graphResolutionIsExplicitAndDeterministic() throws {
         let outer = TypeKey(module: "App", name: "Outer")

@@ -84,7 +84,7 @@ package struct DependencyGraphBuilder: Sendable {
     }
 
     private func aggregateTypes(_ sources: [ParsedSource], scope: TypeScope) -> [GraphTypeInfo] {
-        let sourceByPath = Dictionary(uniqueKeysWithValues: sources.map { ($0.path, $0) })
+        let sourcesByPath = Dictionary(grouping: sources, by: \.path)
         let fragments = sources.flatMap(\.types)
         var result: [GraphTypeInfo] = []
         for (key, group) in Dictionary(grouping: fragments, by: \.key) {
@@ -92,7 +92,9 @@ package struct DependencyGraphBuilder: Sendable {
             guard let base = bases.first, bases.count == 1 else { continue }
             guard scope == .nominals || base.kind == "class" else { continue }
             let isTest = group.contains { fragment in
-                sourceByPath[fragment.location.file].map { isTestSource(path: $0.path, module: $0.module) } ?? false
+                sourcesByPath[fragment.location.file]?.contains { source in
+                    source.module == key.module && isTestSource(path: source.path, module: source.module)
+                } ?? false
             }
             result.append(
                 GraphTypeInfo(
