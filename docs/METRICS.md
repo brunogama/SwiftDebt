@@ -113,6 +113,8 @@ Sort order is fixed by module/entity/path/location and metric order. Parsing con
 
 Threshold findings use strict upper bounds. Syntax errors and ambiguous declarations are separate diagnostics. With no gate, findings are warnings; `failOnViolation` makes them fail the CLI/build. Incomplete analysis fails independently of threshold policy. Never treat an empty or failed report as zero violations. The CLI writes a requested report even when a completed/incomplete result will return a nonzero status, so automation must check the process status and the JSON `complete` field.
 
+The `performance-gate` command fails its wall-clock budget only when the median regression exceeds both `--max-wall-clock-regression` and the optional absolute tolerance `--max-wall-clock-regression-seconds`. The absolute tolerance defaults to zero seconds, preserving percentage-only behavior when omitted. Peak-memory regression remains governed only by `--max-peak-memory-regression`.
+
 Report writes are atomic and refuse selected sources, the active configuration, input manifest, or any `.swift` destination. HTML escapes source-derived text and uses no script/network assets. CSV text cells guard common formula prefixes. JSON is preferred over text/diagnostic parsing for automation. Report paths and entity names can still reveal private project structure; do not publish reports without review.
 
 ## Scope not implemented

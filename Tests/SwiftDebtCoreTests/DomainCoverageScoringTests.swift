@@ -342,15 +342,70 @@ struct DomainCoverageScoringTests {
     @Test("Zero baselines distinguish a new cost from continued zero cost")
     func zeroBaselinesDistinguishNewCostFromContinuedZeroCost() throws {
         let identity = workload()
+        let defaultBudget = budget()
         let evaluation = PerformanceBudgetGate.evaluate(
             baseline: benchmark(workload: identity, wallClock: 0, memory: 0),
             candidate: benchmark(workload: identity, wallClock: 1, memory: 0),
-            budget: budget()
+            budget: defaultBudget
         )
 
+        #expect(defaultBudget.maximumWallClockRegressionSeconds == 0)
         #expect(try #require(evaluation.wallClockRegressionPercent).isInfinite)
         #expect(evaluation.peakMemoryRegressionPercent == 0)
         #expect(evaluation.reasons == ["wall-clock regression exceeds 10.0%"])
+    }
+
+    @Test("Absolute wall-clock tolerance absorbs the observed small-workload runner noise")
+    func absoluteWallClockToleranceAbsorbsObservedRunnerNoise() throws {
+        let identity = workload()
+        let evaluation = PerformanceBudgetGate.evaluate(
+            baseline: benchmark(workload: identity, wallClock: 0.021_137, memory: 10_829_824),
+            candidate: benchmark(workload: identity, wallClock: 0.027_381_166, memory: 11_173_888),
+            budget: budget(maximumWallClockRegressionSeconds: 0.010)
+        )
+
+        #expect(evaluation.comparable)
+        #expect(evaluation.passed)
+        #expect(abs(try #require(evaluation.wallClockRegressionPercent) - 29.541_401_334_153_377) < 0.000_001)
+        #expect(evaluation.reasons.isEmpty)
+    }
+
+    @Test("Wall-clock regression above both limits fails")
+    func wallClockRegressionAboveBothLimitsFails() {
+        let identity = workload()
+        let evaluation = PerformanceBudgetGate.evaluate(
+            baseline: benchmark(workload: identity, wallClock: 0.021_137),
+            candidate: benchmark(workload: identity, wallClock: 0.031_138),
+            budget: budget(maximumWallClockRegressionSeconds: 0.010)
+        )
+
+        #expect(!evaluation.passed)
+        #expect(evaluation.reasons == ["wall-clock regression exceeds 10.0% and 0.01 seconds"])
+    }
+
+    @Test("Absolute wall-clock tolerance does not relax the memory budget")
+    func absoluteWallClockToleranceDoesNotRelaxMemoryBudget() {
+        let identity = workload()
+        let evaluation = PerformanceBudgetGate.evaluate(
+            baseline: benchmark(workload: identity, wallClock: 0.021_137, memory: 10_000_000),
+            candidate: benchmark(workload: identity, wallClock: 0.027_381_166, memory: 12_000_000),
+            budget: budget(maximumWallClockRegressionSeconds: 0.010)
+        )
+
+        #expect(!evaluation.passed)
+        #expect(evaluation.reasons == ["peak-memory regression exceeds 15.0%"])
+    }
+
+    @Test("Legacy performance budgets decode with zero absolute tolerance")
+    func legacyPerformanceBudgetsDecodeWithZeroAbsoluteTolerance() throws {
+        let data = Data(
+            #"{"name":"legacy","maximumWallClockRegressionPercent":10,"maximumPeakMemoryRegressionPercent":15}"#
+                .utf8
+        )
+
+        let decoded = try JSONDecoder().decode(PerformanceRegressionBudget.self, from: data)
+
+        #expect(decoded.maximumWallClockRegressionSeconds == 0)
     }
 
     @Test("Regression exactly at each budget passes")
@@ -517,11 +572,12 @@ struct DomainCoverageScoringTests {
         )
     }
 
-    private func budget() -> PerformanceRegressionBudget {
+    private func budget(maximumWallClockRegressionSeconds: Double = 0) -> PerformanceRegressionBudget {
         PerformanceRegressionBudget(
             name: "test",
             maximumWallClockRegressionPercent: 10,
-            maximumPeakMemoryRegressionPercent: 15
+            maximumPeakMemoryRegressionPercent: 15,
+            maximumWallClockRegressionSeconds: maximumWallClockRegressionSeconds
         )
     }
 }

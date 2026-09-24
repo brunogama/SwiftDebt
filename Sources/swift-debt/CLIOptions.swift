@@ -44,6 +44,8 @@ struct CLIOptions {
           --name NAME                    Performance budget name.
           --max-wall-clock-regression PERCENT
                                          Maximum accepted wall-clock regression.
+          --max-wall-clock-regression-seconds SECONDS
+                                         Ignore wall-clock regressions within this absolute tolerance.
           --max-peak-memory-regression PERCENT
                                          Maximum accepted peak-memory regression.
           --threshold SCORE              Required improvement for validate-improvement.
