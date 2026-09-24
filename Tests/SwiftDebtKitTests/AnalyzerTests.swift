@@ -24,6 +24,47 @@ struct AnalyzerTests {
         #expect(metric(.noav, in: report).total == 1)
         #expect(report.overallScore == nil)
     }
+    @Test func syntaxOnlyJSONKeepsItsSchemaTwoShape() async throws {
+        let report = try await Analyzer().analyze([
+            source("Shape.swift", "final class Shape { func measure() {} }")
+        ])
+        let json = try ReportRenderer().render(report, format: .json, root: "/workspace")
+        let object = try #require(
+            JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any]
+        )
+
+        #expect(
+            Set(object.keys) == [
+                "analyzedFileCount",
+                "classScopeVariableCount",
+                "codeLineCount",
+                "complete",
+                "couplings",
+                "debtItems",
+                "dependencyGraph",
+                "diagnostics",
+                "duplicateBlocks",
+                "engineVersion",
+                "findings",
+                "functionCount",
+                "inputFileCount",
+                "inputFiles",
+                "methodCount",
+                "metrics",
+                "minimumDuplicateLines",
+                "modules",
+                "overallScore",
+                "overallScoreNote",
+                "schemaVersion",
+                "scoringMode",
+                "topLevelVariableCount",
+                "typeScope",
+                "uniqueDuplicatedLineCount",
+            ]
+        )
+        #expect(object["schemaVersion"] as? Int == 2)
+        #expect(object["compilerEvidence"] == nil)
+    }
     @Test func defaultIsClassesWithExplicitNominalExtension() async throws {
         let inputs = [source("Types.swift", "class C {}\nstruct S {}\nenum E {}\nactor A {}")]
         let classic = try await Analyzer().analyze(inputs)

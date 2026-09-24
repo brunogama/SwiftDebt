@@ -1,0 +1,68 @@
+{
+  "availability" : {
+    "conditionalCompilation" : {
+      "state" : "available"
+    },
+    "dispatchTargets" : {
+      "issue" : {
+        "code" : "not-implemented",
+        "message" : "Dispatch evidence is outside schema 1's implemented providers."
+      },
+      "state" : "unavailable"
+    },
+    "macroExpansion" : {
+      "issue" : {
+        "code" : "unstable-compiler-output",
+        "message" : "The compiler output format is not a supported semantic boundary."
+      },
+      "state" : "unavailable"
+    },
+    "nameBinding" : {
+      "issue" : {
+        "code" : "multiple-candidates",
+        "message" : "More than one declaration remains possible; no target was selected."
+      },
+      "state" : "ambiguous"
+    },
+    "typeChecking" : {
+      "state" : "available"
+    }
+  },
+  "generator" : "SwiftDebt",
+  "provenance" : {
+    "analysisMode" : "compiler-backed",
+    "buildConfiguration" : {
+      "compilationConditions" : [
+        "DEBUG",
+        "FEATURE_A"
+      ],
+      "configurationName" : "debug-feature-a",
+      "fingerprint" : {
+        "algorithm" : "sha256",
+        "value" : "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "moduleName" : "main",
+      "sdkIdentifier" : "macosx27.2",
+      "swiftLanguageVersion" : "6",
+      "targetTriple" : "arm64-apple-macosx27.2.0"
+    },
+    "compilerToolchain" : {
+      "compilerBuildIdentifier" : "swiftlang-6.4.0.27.1",
+      "compilerName" : "Apple Swift",
+      "compilerVersion" : "6.4",
+      "toolchainIdentifier" : "com.apple.dt.toolchain.XcodeDefault"
+    },
+    "generatorVersion" : "0.1.0",
+    "sourceRevision" : {
+      "contentDigest" : {
+        "algorithm" : "sha256",
+        "value" : "2222222222222222222222222222222222222222222222222222222222222222"
+      },
+      "revision" : "0123456789abcdef0123456789abcdef01234567",
+      "state" : "version-control",
+      "workingTreeState" : "modified"
+    }
+  },
+  "reportKind" : "swiftdebt-compiler-evidence",
+  "schemaVersion" : 1
+}

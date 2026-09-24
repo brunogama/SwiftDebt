@@ -92,4 +92,4 @@ Report writes are atomic and refuse selected sources, the active configuration, 
 
 ## Scope not implemented
 
-There is no compiler-index integration, architecture rule DSL, import-cycle checker, dependency-injection policy, security/concurrency lint suite, baseline suppression, automatic refactoring, persistent parse cache, SARIF output, daemon, or IDE source extension. These are distinct features, not implied by the paper or the delivered CLI/plugins.
+There is no compiler-index integration, architecture rule DSL, import-cycle checker, dependency-injection policy, security/concurrency lint suite, baseline suppression, automatic refactoring, persistent parse cache, SARIF output, daemon, or IDE source extension. These are distinct features, not implied by the paper or the delivered CLI/plugins. The versioned compiler-evidence sidecar and the boundary for future providers are defined in [ADR 0001](adr/0001-compiler-evidence-sidecar-boundary.md); the contract does not add compiler-backed metrics or change syntax-only reports.
