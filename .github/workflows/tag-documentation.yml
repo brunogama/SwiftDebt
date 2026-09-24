@@ -1,0 +1,39 @@
+name: Tag documentation
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+
+jobs:
+  documentation:
+    name: Verify release versions
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+
+      - name: Replace and audit every release marker
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${TAG_NAME#v}"
+          python3 scripts/release_version.py set "$version"
+          python3 scripts/release_version.py check
+          changed="$(git diff --name-only --)"
+          if [ -n "$changed" ]; then
+            while IFS= read -r path; do
+              echo "::error file=$path::Release version does not match $TAG_NAME"
+            done <<< "$changed"
+            echo "The tag is immutable. Prepare synchronized source before creating it."
+            exit 1
+          fi

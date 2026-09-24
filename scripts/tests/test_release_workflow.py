@@ -11,6 +11,7 @@ SWIFT_WORKFLOWS = (
     "debtmap-performance.yml",
     "domain-coverage.yml",
     "genesis-code-reviewer.yml",
+    "pr-quality.yml",
     "release.yml",
 )
 
@@ -46,6 +47,15 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertIn("git push --atomic origin HEAD:refs/heads/main", self.workflow)
         self.assertNotIn("--force", self.workflow)
 
+    def test_release_generates_changelog_and_versions_before_tagging(self) -> None:
+        prepare = self.workflow.index("scripts/release_version.py prepare")
+        changelog = self.workflow.index("scripts/generate_changelog.py")
+        commit = self.workflow.index("git add CHANGELOG.md")
+        tag = self.workflow.index("git tag --annotate")
+        self.assertLess(prepare, changelog)
+        self.assertLess(changelog, commit)
+        self.assertLess(commit, tag)
+
     def test_documentation_uses_dynamic_hosting_path_and_repair_route(self) -> None:
         self.assertIn("REPOSITORY_NAME: ${{ github.event.repository.name }}", self.workflow)
         self.assertIn('--hosting-base-path "$REPOSITORY_NAME"', self.workflow)
@@ -58,6 +68,31 @@ class ReleaseWorkflowTests(unittest.TestCase):
             "permissions:\n      contents: read\n      pages: write\n      id-token: write",
             self.workflow,
         )
+
+    def test_commit_and_quality_workflows_enforce_new_history(self) -> None:
+        cutover = "15fa039b0cfb9f7fe3ac9891c64199e038e7fe6b"
+        checker = (WORKFLOW.parent / "commit-history.yml").read_text(encoding="utf-8")
+        pull_request = (WORKFLOW.parent / "pr-quality.yml").read_text(encoding="utf-8")
+        policy_script = (REPOSITORY / "scripts" / "check_conventional_commits.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(cutover, policy_script)
+        self.assertIn("github.event.before", checker)
+        self.assertIn("github.event.repository.default_branch", checker)
+        self.assertIn("git merge-base", checker)
+        self.assertIn("github.event.pull_request.base.sha", pull_request)
+        self.assertIn("fetch-depth: 0", checker)
+        self.assertIn("fetch-depth: 0", pull_request)
+        self.assertIn("swift format lint --strict --recursive", pull_request)
+        self.assertIn("swift build --build-tests -Xswiftc -warnings-as-errors", pull_request)
+
+    def test_tag_workflow_fails_instead_of_rewriting_an_immutable_tag(self) -> None:
+        tag_workflow = (WORKFLOW.parent / "tag-documentation.yml").read_text(encoding="utf-8")
+        self.assertIn('python3 scripts/release_version.py set "$version"', tag_workflow)
+        self.assertIn("python3 scripts/release_version.py check", tag_workflow)
+        self.assertIn("git diff --name-only", tag_workflow)
+        self.assertIn("The tag is immutable", tag_workflow)
+        self.assertNotIn("git push", tag_workflow)
 
 
 if __name__ == "__main__":

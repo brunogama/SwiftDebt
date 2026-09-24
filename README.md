@@ -25,7 +25,7 @@ This is an independent, paper-inspired implementation, **not a reproduction of t
 - [Architecture](#architecture)
 - [Validation and limitations](#validation-and-limitations)
 
-Detailed references: [paper mapping](docs/PAPER_MAPPING.md), [measurement definitions](docs/METRICS.md), [plugin integration](docs/PLUGINS.md), [validation record](docs/VALIDATION.md).
+Detailed references: [paper mapping](docs/PAPER_MAPPING.md), [measurement definitions](docs/METRICS.md), [plugin integration](docs/PLUGINS.md), [release process](docs/RELEASE_PROCESS.md), [validation record](docs/VALIDATION.md).
 
 ## Installation
 
