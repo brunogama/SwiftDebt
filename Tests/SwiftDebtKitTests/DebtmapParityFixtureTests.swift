@@ -218,7 +218,7 @@ struct DebtmapParityFixtureTests {
         let workflow = try read(".github/workflows/debtmap-performance.yml")
 
         #expect(methodology.frozenInputProvenanceCommit == "b0ae66be2065084b29b8b5da0a86d5cd049feced")
-        #expect(methodology.performanceReferenceCommit == "456cd14a722dcffea1996c5bbc8f4ec5a98fa2a8")
+        #expect(methodology.performanceReferenceCommit == "89119cfba01d85a06e084d879165271a26f33ba3")
         #expect(methodology.schemaVersion == 2)
         #expect(methodology.outputDirectory == ".swift-debt/benchmarks/debtmap-baseline")
         #expect(

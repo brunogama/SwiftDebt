@@ -2,13 +2,14 @@
 
 Observed through `2026-09-22T15:00:53Z` on an Apple M4 Max with 36 GiB memory,
 macOS 27.2 arm64, and Apple Swift 6.3.3. The candidate was the SwiftDebt
-rename working tree based on `456cd14a722dcffea1996c5bbc8f4ec5a98fa2a8`.
+rename working tree based on `89119cfba01d85a06e084d879165271a26f33ba3`.
 
 The equivalent historical reference is
-`456cd14a722dcffea1996c5bbc8f4ec5a98fa2a8`. It contains the same always-on
+`89119cfba01d85a06e084d879165271a26f33ba3`. It contains the same always-on
 dependency graph, structural evidence, functional evidence, debt-item, and
 report-schema capabilities as the candidate. The frozen inputs retain their
 provenance from `b0ae66be2065084b29b8b5da0a86d5cd049feced`.
+The `performance-reference-v1` tag keeps the rewritten reference available to CI.
 
 ## Method
 

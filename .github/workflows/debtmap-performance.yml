@@ -13,7 +13,8 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 45
     env:
-      REFERENCE_COMMIT: 456cd14a722dcffea1996c5bbc8f4ec5a98fa2a8
+      # The performance-reference-v1 tag keeps this rewritten commit fetchable.
+      REFERENCE_COMMIT: 89119cfba01d85a06e084d879165271a26f33ba3
 
     steps:
       - name: Check out candidate

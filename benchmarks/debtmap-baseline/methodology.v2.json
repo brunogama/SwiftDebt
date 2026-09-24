@@ -1,6 +1,6 @@
 {
   "frozenInputProvenanceCommit": "b0ae66be2065084b29b8b5da0a86d5cd049feced",
-  "performanceReferenceCommit": "456cd14a722dcffea1996c5bbc8f4ec5a98fa2a8",
+  "performanceReferenceCommit": "89119cfba01d85a06e084d879165271a26f33ba3",
   "commands": [
     {
       "name": "build-release-analyzer",
