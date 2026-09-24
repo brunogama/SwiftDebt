@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-DEFAULT_CUTOVER = "15fa039b0cfb9f7fe3ac9891c64199e038e7fe6b"
+DEFAULT_CUTOVER = "0f724f4a69c3f0df5fe930a8c93205afbdf6ce8c"
 ZERO_REVISION = re.compile(r"^0+$")
 ALLOWED_TYPES = (
     "build",
@@ -31,6 +31,9 @@ CONVENTIONAL_SUBJECT = re.compile(
     r"(?P<breaking>!)?: (?P<description>[^\s\r\n].*)$"
 )
 BREAKING_FOOTER = re.compile(r"(?m)^BREAKING CHANGE: \S.*$")
+AI_COAUTHOR = re.compile(
+    r"(?im)^Co-Authored-By:.*(?:claude|anthropic|copilot|github-actions\[bot\]|gemini|chatgpt|openai)"
+)
 
 
 class CommitPolicyError(RuntimeError):
@@ -148,6 +151,8 @@ def violation(commit: Commit) -> str | None:
         return "breaking subject is missing a BREAKING CHANGE footer"
     if has_footer and not has_bang:
         return "BREAKING CHANGE footer requires ! in the subject"
+    if AI_COAUTHOR.search(commit.body):
+        return "commit contains an AI co-author trailer"
     return None
 
 

@@ -1,0 +1,80 @@
+# SwiftDebt Git hooks, adapted from InvariantSwift's prek configuration.
+#:schema https://www.schemastore.org/prek.json
+
+default_install_hook_types = ["pre-commit", "commit-msg"]
+default_stages = ["pre-commit"]
+fail_fast = true
+
+[[repos]]
+repo = "local"
+
+[[repos.hooks]]
+id = "swift-format-check"
+name = "Check Swift formatting"
+entry = "swift format lint --strict"
+language = "system"
+files = "\\.swift$"
+pass_filenames = true
+
+[[repos.hooks]]
+id = "strip-ai-coauthors"
+name = "Strip AI co-author trailers"
+entry = "bash scripts/strip_ai_coauthors.sh"
+language = "system"
+stages = ["commit-msg"]
+pass_filenames = true
+
+[[repos.hooks]]
+id = "branch-guardian"
+name = "Require pull requests for main and dev"
+entry = '''bash -c 'branch=$(git symbolic-ref --quiet --short HEAD || true); case "$branch" in main|dev) echo "Commit on a feature branch and open a pull request"; exit 1;; esac' '''
+language = "system"
+pass_filenames = false
+always_run = true
+
+[[repos.hooks]]
+id = "prevent-swift-disabled-files"
+name = "Reject disabled Swift sources"
+entry = '''bash -c 'git diff --cached --name-only | grep -E "\\.swift\\.disabled$" && exit 1 || exit 0' '''
+language = "system"
+pass_filenames = false
+always_run = true
+
+[[repos.hooks]]
+id = "shellcheck-scripts"
+name = "Check shell scripts"
+entry = "shellcheck"
+language = "system"
+files = "\\.(sh|bash)$"
+exclude = "^\\.(agents|claude|codex|pi)/"
+pass_filenames = true
+
+[[repos]]
+repo = "https://github.com/pre-commit/pre-commit-hooks"
+rev = "v6.0.0"
+
+[[repos.hooks]]
+id = "trailing-whitespace"
+exclude = "\\.md$|\\.golden\\.html$|^benchmarks/debtmap-baseline/evidence/|^\\.(agents|claude|codex|pi)/"
+
+[[repos.hooks]]
+id = "end-of-file-fixer"
+exclude = "\\.golden\\.html$|^benchmarks/debtmap-baseline/evidence/|^\\.(agents|claude|codex|pi)/"
+
+[[repos.hooks]]
+id = "check-yaml"
+
+[[repos.hooks]]
+id = "check-added-large-files"
+args = ["--maxkb=1000"]
+
+[[repos.hooks]]
+id = "check-merge-conflict"
+
+[[repos.hooks]]
+id = "check-case-conflict"
+
+[[repos.hooks]]
+id = "mixed-line-ending"
+args = ["--fix=lf"]
+exclude = "^benchmarks/debtmap-baseline/evidence/|^\\.(agents|claude|codex|pi)/"

@@ -22,6 +22,7 @@ class CommitPolicyTests(unittest.TestCase):
         valid = (
             commit_value("feat: add analyzer"),
             commit_value("fix(parser): accept declarations"),
+            commit_value("docs: clarify examples", "Co-Authored-By: Human Reviewer <human@example.com>"),
             commit_value(
                 "feat(api)!: replace report schema",
                 "BREAKING CHANGE: Consumers must update report decoding.",
@@ -38,6 +39,7 @@ class CommitPolicyTests(unittest.TestCase):
             commit_value("feat!: omit required migration details"),
             commit_value("feat: omit breaking marker", "BREAKING CHANGE: Update callers."),
             commit_value("docs: " + "x" * 67),
+            commit_value("ci: reject agent trailers", "Co-Authored-By: Claude <bot@example.com>"),
         )
         for value in valid:
             with self.subTest(subject=value.subject):
