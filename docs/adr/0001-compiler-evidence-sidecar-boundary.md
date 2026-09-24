@@ -30,7 +30,7 @@ The report records:
 - a validated source-content digest plus a version-control revision when one exists; and
 - explicit availability for type checking, conditional compilation, macro expansion, name binding, and dispatch targets.
 
-Availability is a tagged state. `available` has no issue. `unavailable` and `ambiguous` require a machine-readable issue code and message. Neither state has a numeric value or selected target. Future fact schemas may represent a proven empty result only under `available`; they must not derive it from `unavailable` or `ambiguous`.
+Availability is a tagged state. `available` has no issue. `unavailable` and `ambiguous` require a nonblank machine-readable issue code and message. Neither state has a numeric value or selected target. Future fact schemas may represent a proven empty result only under `available`; they must not derive it from `unavailable` or `ambiguous`.
 
 Source identity is also tagged. A Git checkout records revision, working-tree state, and content digest. A source archive records only its content digest. If neither is known, the report records an unavailable source identity. SHA-256 values are validated on construction and decode.
 

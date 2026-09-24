@@ -1,11 +1,56 @@
 /// A stable reason that compiler evidence cannot be consumed as a semantic fact.
-public struct CompilerEvidenceIssue: Codable, Equatable, Sendable {
+public struct CompilerEvidenceIssue: Equatable, Sendable {
     public let code: String
     public let message: String
 
-    public init(code: String, message: String) {
+    public init(code: String, message: String) throws {
+        guard Self.hasContent(code) else {
+            throw CompilerEvidenceContractError.emptyEvidenceIssueCode
+        }
+        guard Self.hasContent(message) else {
+            throw CompilerEvidenceContractError.emptyEvidenceIssueMessage
+        }
         self.code = code
         self.message = message
+    }
+
+    private static func hasContent(_ value: String) -> Bool {
+        value.contains { !$0.isWhitespace }
+    }
+}
+
+extension CompilerEvidenceIssue: Codable {
+    private enum CodingKeys: String, CodingKey {
+        case code
+        case message
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        let code = try values.decode(String.self, forKey: .code)
+        let message = try values.decode(String.self, forKey: .message)
+        guard Self.hasContent(code) else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .code,
+                in: values,
+                debugDescription: "A compiler-evidence issue code cannot be blank."
+            )
+        }
+        guard Self.hasContent(message) else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .message,
+                in: values,
+                debugDescription: "A compiler-evidence issue message cannot be blank."
+            )
+        }
+        self.code = code
+        self.message = message
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var values = encoder.container(keyedBy: CodingKeys.self)
+        try values.encode(code, forKey: .code)
+        try values.encode(message, forKey: .message)
     }
 }
 

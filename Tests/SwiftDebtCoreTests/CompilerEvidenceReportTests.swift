@@ -77,7 +77,7 @@ struct CompilerEvidenceReportTests {
             ),
             .contentDigest(digest),
             .unavailable(
-                CompilerEvidenceIssue(
+                try CompilerEvidenceIssue(
                     code: "source-identity-unavailable",
                     message: "No revision or source digest was supplied."
                 )
@@ -102,6 +102,29 @@ struct CompilerEvidenceReportTests {
         let malformed = Data(#"{"algorithm":"sha256","value":"ABC123"}"#.utf8)
         #expect(throws: DecodingError.self) {
             try JSONDecoder().decode(CompilerEvidenceDigest.self, from: malformed)
+        }
+        let emptyRevision = Data("\"\"".utf8)
+        #expect(throws: DecodingError.self) {
+            try JSONDecoder().decode(CompilerRevisionIdentifier.self, from: emptyRevision)
+        }
+    }
+
+    @Test("Evidence issues require usable codes and messages")
+    func evidenceIssuesRejectEmptyReasons() {
+        #expect(throws: CompilerEvidenceContractError.emptyEvidenceIssueCode) {
+            try CompilerEvidenceIssue(code: " \t", message: "Compiler output was unavailable.")
+        }
+        #expect(throws: CompilerEvidenceContractError.emptyEvidenceIssueMessage) {
+            try CompilerEvidenceIssue(code: "compiler-output-unavailable", message: "\n")
+        }
+
+        let emptyCode = Data(#"{"code":"","message":"Compiler output was unavailable."}"#.utf8)
+        let emptyMessage = Data(#"{"code":"compiler-output-unavailable","message":" "}"#.utf8)
+        #expect(throws: DecodingError.self) {
+            try JSONDecoder().decode(CompilerEvidenceIssue.self, from: emptyCode)
+        }
+        #expect(throws: DecodingError.self) {
+            try JSONDecoder().decode(CompilerEvidenceIssue.self, from: emptyMessage)
         }
     }
 
@@ -130,11 +153,11 @@ struct CompilerEvidenceReportTests {
     }
 
     private func makeReport() throws -> CompilerEvidenceReport {
-        let unavailable = CompilerEvidenceIssue(
+        let unavailable = try CompilerEvidenceIssue(
             code: "unstable-compiler-output",
             message: "The compiler output format is not a supported semantic boundary."
         )
-        let ambiguous = CompilerEvidenceIssue(
+        let ambiguous = try CompilerEvidenceIssue(
             code: "multiple-candidates",
             message: "More than one declaration remains possible; no target was selected."
         )
@@ -172,7 +195,7 @@ struct CompilerEvidenceReportTests {
                 macroExpansion: .unavailable(unavailable),
                 nameBinding: .ambiguous(ambiguous),
                 dispatchTargets: .unavailable(
-                    CompilerEvidenceIssue(
+                    try CompilerEvidenceIssue(
                         code: "not-implemented",
                         message: "Dispatch evidence is outside schema 1's implemented providers."
                     )

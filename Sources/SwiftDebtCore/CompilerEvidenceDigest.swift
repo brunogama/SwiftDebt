@@ -1,5 +1,7 @@
 /// Validation failures at the public compiler-evidence contract boundary.
 public enum CompilerEvidenceContractError: Error, Equatable, Sendable {
+    case emptyEvidenceIssueCode
+    case emptyEvidenceIssueMessage
     case emptySourceRevision
     case invalidSHA256Digest(String)
 }
