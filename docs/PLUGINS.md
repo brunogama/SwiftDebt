@@ -2,13 +2,13 @@
 
 ## Distinct responsibilities
 
-`SCMACommandPlugin` runs an on-demand report across selected Swift targets in the root package. `SCMABuildPlugin` attaches diagnostics to an individual target's build graph. Both call the same `scma` executable and metric engine; neither implements a second set of metrics.
+`SwiftDebtCommandPlugin` runs an on-demand report across selected Swift targets in the root package. `SwiftDebtBuildPlugin` attaches diagnostics to an individual target's SwiftPM build graph. Both call the same `swift-debt` executable and metric engine; neither implements a second set of metrics.
 
-The command plugin is not a Source Editor Extension or a compiler macro. The build plugin is an opt-in SwiftPM build tool, with a conditional Xcode project adapter. There is no dynamically loaded third-party rule/plugin API.
+The command plugin is not a Source Editor Extension or a compiler macro. The build plugin is an opt-in SwiftPM build tool. It does not expose an `XcodeBuildToolPlugin` adapter, and there is no dynamically loaded third-party rule/plugin API.
 
 ## Complete local SwiftPM example
 
-Given sibling directories `YourPackage/` and `SwiftSCMA/`:
+Given sibling directories `YourPackage/` and `SwiftDebt/`:
 
 ```swift
 // swift-tools-version: 6.2
@@ -20,25 +20,26 @@ let package = Package(
         .library(name: "Feature", targets: ["Feature"])
     ],
     dependencies: [
-        .package(name: "SwiftSCMA", path: "../SwiftSCMA")
+        .package(name: "SwiftDebt", path: "../SwiftDebt")
     ],
     targets: [
         .target(
             name: "Feature",
             plugins: [
-                .plugin(name: "SCMABuildPlugin", package: "SwiftSCMA")
+                .plugin(name: "SwiftDebtBuildPlugin", package: "SwiftDebt")
             ]
         )
     ]
 )
 ```
 
-Create `YourPackage/.scma.json` before invoking the build:
+Create `YourPackage/.swift-debt.json` before invoking the build:
 
 ```json
 {
   "typeScope": "nominals",
   "scoring": "none",
+  "debtReferenceTime": "2026-09-12T00:00:00Z",
   "thresholds": { "CCF": 15 },
   "failOnViolation": false
 }
@@ -46,13 +47,15 @@ Create `YourPackage/.scma.json` before invoking the build:
 
 The CCF value above is an example repository policy, not the paper's original limit of 20. An empty JSON object also works and uses defaults. Turn `failOnViolation` on only when you intend findings to fail builds. Configuration and input errors fail regardless of this setting. A file the pinned parser cannot parse is skipped with a warning rather than failing the build, unless `"strictSyntax": true` is set.
 
+Ranked-debt Git-history evidence requires an explicit deterministic reference time. The build plugin reads `debtReferenceTime` from `.swift-debt.json`. The command plugin also forwards `--debt-reference-time 2026-09-12T00:00:00Z`. When neither input is present, plugin reports mark Git-history evidence unavailable with a plugin-context diagnostic; they do not use the Unix epoch or the ambient clock.
+
 ```sh
 cd YourPackage
 swift build
-swift package scma --target Feature --type-scope nominals --format json
+swift package swift-debt --target Feature --type-scope nominals --format json
 ```
 
-The command plugin does not need a `.plugin(...)` entry on a consumer target. Depending on the package exposes its custom `scma` command. The target attachment is only for build-time checks.
+The command plugin does not need a `.plugin(...)` entry on a consumer target. Depending on the package exposes its custom `swift-debt` command. The target attachment is only for build-time checks.
 
 ## Command selection and permissions
 
@@ -66,15 +69,15 @@ For report files in the consumer package, explicitly grant the narrow directory:
 
 ```sh
 mkdir -p reports
-swift package --allow-writing-to-directory ./reports scma \
-  --format html --output ./reports/scma.html
+swift package --allow-writing-to-directory ./reports swift-debt \
+  --format html --output ./reports/swift-debt.html
 ```
 
 The broader `--allow-writing-to-package-directory` flag is not required by this design. The macOS sandbox behavior of these invocations was not tested here; the integration test ran on Linux. A user's own shell can redirect stdout without requiring the plugin to write that destination.
 
 ## Build graph and configuration
 
-Each invocation's manifest contains only the target's Swift sources. A build command declares those sources, the manifest, and the root `.scma.json` as inputs. Parsing uses the configured `jobs` value, which defaults to the active processor count capped at 8. Its output is the plugin-work-directory `SCMA.analysis.swift`, containing only a generated comment and no declarations.
+Each invocation's manifest contains only the target's Swift sources. A build command declares those sources, the manifest, and the root `.swift-debt.json` as inputs. Parsing uses the configured `jobs` value, which defaults to the active processor count capped at 8. Its output is the plugin-work-directory `SwiftDebt.analysis.swift`, containing only a generated comment and no declarations.
 
 The configuration file is mandatory for the build plugin because a file that did not exist when the build graph was created would otherwise not be a reliable declared input. Creating optional configuration later was tested and shown to leave the prior analysis cached in the validation environment. Requiring an initial `{}` avoids that silent configuration-change failure mode. Deleting it is a configuration error.
 
@@ -92,13 +95,9 @@ Build checks are target-local. For example, a class in target A referencing a cl
 
 Neither route obtains type-checker bindings or guarantees that all generated sources are available at plugin planning time. The build plugin's source set is whatever SwiftPM/Xcode supplies to that plugin invocation. Do not assume it includes macro expansions or outputs of every other plugin.
 
-## Xcode project adapter - unverified
+## Xcode project integration
 
-`SCMABuildPlugin/plugin.swift` contains `#if canImport(XcodeProjectPlugin)` conformance to `XcodeBuildToolPlugin`. It translates Xcode's project root, target source inputs, plugin work directory, target display name, and resolved tool into the shared command builder. The adapter retains Path-based Xcode host APIs while the SwiftPM path uses URL APIs.
-
-This branch cannot be compiled in the Linux environment used for delivery. Treat it as an implementation requiring verification on your exact Xcode version, not as tested IDE support. Its configuration is expected at the Xcode project directory, rather than a nested package's root, and source entries must remain within that root. Projects referencing source files outside their root will be rejected by the manifest containment check.
-
-For a release on macOS, verify the adapter compiles, source locations appear correctly in the issue navigator, `.scma.json` changes rerun the tool, failure gates stop a build, a warmed no-op skips analysis, and no report resources appear in the product. This package's Linux results do not establish those properties for Xcode.
+`SwiftDebtBuildPlugin` supports Swift package targets, including packages opened in Xcode. It does not conform to `XcodeBuildToolPlugin`, so it cannot be attached directly to a standalone Xcode project target. Use a Swift package target or invoke the standalone CLI from an Xcode run-script build phase when project-only integration is required.
 
 ## Explicit source manifests for the standalone CLI
 
@@ -115,7 +114,7 @@ Advanced integrations can avoid directory inference:
 ```
 
 ```sh
-scma analyze --manifest /path/to/inputs.json --format json
+swift-debt analyze --manifest /path/to/inputs.json --format json
 ```
 
 Paths may be absolute or relative to manifest `root`. They must resolve to regular UTF-8 Swift files inside root; duplicate source paths, invalid/missing modules, escaping symlinks, and unreadable entries fail. The manifest is an input, not an output destination. Directory-only automatic exclusions do not override an explicit manifest; configured relative exclusions still apply.

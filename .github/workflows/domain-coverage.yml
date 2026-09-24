@@ -1,0 +1,35 @@
+name: Domain coverage
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  swift-debt-core:
+    name: SwiftDebtCore 100% line coverage
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Select Swift 6.2 toolchain
+        uses: swift-actions/setup-swift@7ca6abe6b3b0e8b5421b88be48feee39cbf52c6a
+        with:
+          swift-version: "6.2.0"
+
+      - name: Verify Swift toolchain
+        run: swift --version | grep 'Swift version 6.2'
+
+      - name: Verify product identity
+        run: python3 scripts/check_product_identity.py
+
+      - name: Test and verify domain coverage
+        run: python3 scripts/check_domain_coverage.py

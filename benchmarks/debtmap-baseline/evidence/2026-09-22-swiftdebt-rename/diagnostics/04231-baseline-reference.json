@@ -1,0 +1,88 @@
+{
+  "metadata": {
+    "architecture": "arm64",
+    "cpuModel": "Apple M4 Max",
+    "measuredRuns": 15,
+    "memoryBytes": 38654705664,
+    "os": "macOS-27.2-arm64-arm-64bit-Mach-O",
+    "swiftVersion": "Apple Swift version 6.3.3 (swiftlang-6.3.3.1.3 clang-2100.1.1.101)\nTarget: arm64-apple-macosx28.0",
+    "warmupRuns": 1
+  },
+  "peakMemoryBytesMaximum": 13991936,
+  "peakMemoryBytesMedian": 13942784,
+  "peakMemoryBytesMinimum": 13893632,
+  "samples": [
+    {
+      "peakMemoryBytes": 13959168,
+      "wallClockSeconds": 0.019611917
+    },
+    {
+      "peakMemoryBytes": 13975552,
+      "wallClockSeconds": 0.015968834
+    },
+    {
+      "peakMemoryBytes": 13991936,
+      "wallClockSeconds": 0.013457125
+    },
+    {
+      "peakMemoryBytes": 13959168,
+      "wallClockSeconds": 0.011238667
+    },
+    {
+      "peakMemoryBytes": 13959168,
+      "wallClockSeconds": 0.011122292
+    },
+    {
+      "peakMemoryBytes": 13942784,
+      "wallClockSeconds": 0.01120225
+    },
+    {
+      "peakMemoryBytes": 13975552,
+      "wallClockSeconds": 0.010204916
+    },
+    {
+      "peakMemoryBytes": 13942784,
+      "wallClockSeconds": 0.009825125
+    },
+    {
+      "peakMemoryBytes": 13926400,
+      "wallClockSeconds": 0.010818125
+    },
+    {
+      "peakMemoryBytes": 13975552,
+      "wallClockSeconds": 0.010299666
+    },
+    {
+      "peakMemoryBytes": 13893632,
+      "wallClockSeconds": 0.010491167
+    },
+    {
+      "peakMemoryBytes": 13926400,
+      "wallClockSeconds": 0.01121875
+    },
+    {
+      "peakMemoryBytes": 13942784,
+      "wallClockSeconds": 0.010815167
+    },
+    {
+      "peakMemoryBytes": 13942784,
+      "wallClockSeconds": 0.010467833
+    },
+    {
+      "peakMemoryBytes": 13942784,
+      "wallClockSeconds": 0.010245958
+    }
+  ],
+  "schemaVersion": 1,
+  "wallClockSecondsMaximum": 0.019611917,
+  "wallClockSecondsMedian": 0.010818125,
+  "wallClockSecondsMinimum": 0.009825125,
+  "workload": {
+    "analysisMode": "baseline",
+    "analyzer": "SwiftDebt",
+    "commandFingerprint": "swift-debt analyze frozen-examples --format json --jobs 1",
+    "inputSHA256": "f66291244618b5937427f3652bba4fb328c2e9620eab0980a7fcaa378591eb64",
+    "optionalContext": "none",
+    "workloadFamily": "SwiftDebt"
+  }
+}

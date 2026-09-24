@@ -1,0 +1,5 @@
+{
+  "enableSkillCommands": true,
+  "skills": [".pi/skills"],
+  "prompts": [".pi/prompts"]
+}

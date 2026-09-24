@@ -1,0 +1,181 @@
+name: Release SwiftDebt
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: swiftdebt-release-main
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Prepare release and documentation
+    runs-on: macos-15
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    outputs:
+      deploy: ${{ steps.publish.outputs.deploy }}
+      version: ${{ steps.plan.outputs.version }}
+      sha: ${{ steps.publish.outputs.sha }}
+
+    steps:
+      - name: Check out pushed main revision
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+
+      - name: Select Swift 6.2 toolchain
+        uses: swift-actions/setup-swift@7ca6abe6b3b0e8b5421b88be48feee39cbf52c6a
+        with:
+          swift-version: "6.2.0"
+
+      - name: Verify Swift toolchain
+        run: swift --version | grep 'Swift version 6.2'
+
+      - name: Verify current main event
+        id: guard
+        env:
+          EVENT_SHA: ${{ github.sha }}
+          REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$REPOSITORY" = "brunogama/SwiftDebt"
+          git fetch --prune origin \
+            '+refs/heads/main:refs/remotes/origin/main' \
+            '+refs/tags/*:refs/tags/*'
+          if [ "$(git rev-parse origin/main)" != "$EVENT_SHA" ]; then
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+            echo "A newer main revision superseded this run."
+          else
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Prepare release version and synchronize documentation
+        if: steps.guard.outputs.proceed == 'true'
+        id: plan
+        shell: bash
+        run: |
+          set -uo pipefail
+          set +e
+          version="$(python3 scripts/release_version.py prepare)"
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ] && [ "$status" -ne 3 ]; then
+            exit "$status"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [ "$status" -eq 0 ]; then
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Generate changelog
+        if: steps.guard.outputs.proceed == 'true' && steps.plan.outputs.release == 'true'
+        run: python3 scripts/generate_changelog.py
+
+      - name: Verify synchronized release state
+        if: steps.guard.outputs.proceed == 'true'
+        run: python3 scripts/release_version.py check
+
+      - name: Lint GitHub Actions workflows
+        if: steps.guard.outputs.proceed == 'true'
+        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7
+
+      - name: Run complete package verification
+        if: steps.guard.outputs.proceed == 'true'
+        run: ./scripts/verify.sh
+
+      - name: Commit release state
+        if: steps.guard.outputs.proceed == 'true' && steps.plan.outputs.release == 'true'
+        env:
+          VERSION: ${{ steps.plan.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add --update
+          git add CHANGELOG.md
+          git commit --allow-empty \
+            -m "chore(release): v$VERSION" \
+            -m "SwiftDebt-Release: v$VERSION"
+
+      - name: Generate static Swift-DocC site
+        if: steps.guard.outputs.proceed == 'true'
+        env:
+          REPOSITORY_NAME: ${{ github.event.repository.name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          site="$RUNNER_TEMP/site"
+          mkdir -p "$site"
+          swift package \
+            --allow-writing-to-directory "$site" \
+            generate-documentation \
+            --target SwiftDebtKit \
+            --output-path "$site" \
+            --transform-for-static-hosting \
+            --hosting-base-path "$REPOSITORY_NAME" \
+            --disable-indexing \
+            --warnings-as-errors
+          test -f "$site/index.html"
+          test -z "$(git status --porcelain --untracked-files=no)"
+
+      - name: Recheck main, tag, and publish refs
+        if: steps.guard.outputs.proceed == 'true'
+        id: publish
+        env:
+          EVENT_SHA: ${{ github.sha }}
+          RELEASE_REQUIRED: ${{ steps.plan.outputs.release }}
+          VERSION: ${{ steps.plan.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin '+refs/heads/main:refs/remotes/origin/main'
+          if [ "$(git rev-parse origin/main)" != "$EVENT_SHA" ]; then
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+            echo "A newer main revision superseded this release before push."
+            exit 0
+          fi
+          if [ "$RELEASE_REQUIRED" = "true" ]; then
+            git tag --annotate "v$VERSION" --message "SwiftDebt v$VERSION"
+            git push --atomic origin HEAD:refs/heads/main "refs/tags/v$VERSION"
+          fi
+          echo "deploy=true" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload GitHub Pages artifact
+        if: steps.publish.outputs.deploy == 'true'
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9
+        with:
+          path: ${{ runner.temp }}/site
+
+  deploy:
+    name: Deploy documentation
+    needs: release
+    if: needs.release.outputs.deploy == 'true'
+    runs-on: macos-15
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d
+
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346

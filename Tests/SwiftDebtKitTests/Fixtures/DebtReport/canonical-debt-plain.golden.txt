@@ -1,0 +1,3 @@
+PRIORITY | SCORE | ENTITY | LOCATION | CATEGORY | ACTION
+critical | 91.2 | App.Beta.run() | Sources/Beta.swift:12:5 | swift | Extract smaller operations and add coverage.
+high | 72.5 | App.Alpha.help() | Sources/Alpha.swift:3:1 | swift | Reduce fan-in before adding features.

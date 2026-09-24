@@ -1,0 +1,145 @@
+name: Debtmap performance budgets
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  performance-budgets:
+    name: Equivalent SwiftDebt workload budgets
+    runs-on: macos-15
+    timeout-minutes: 45
+    env:
+      # The performance-reference-v1 tag keeps this rewritten commit fetchable.
+      REFERENCE_COMMIT: 89119cfba01d85a06e084d879165271a26f33ba3
+
+    steps:
+      - name: Check out candidate
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Select Swift 6.2 toolchain
+        uses: swift-actions/setup-swift@7ca6abe6b3b0e8b5421b88be48feee39cbf52c6a
+        with:
+          swift-version: "6.2.0"
+
+      - name: Verify Swift toolchain
+        run: swift --version | grep 'Swift version 6.2'
+
+      - name: Build candidate and reference analyzers
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git worktree add --detach "$RUNNER_TEMP/swift-debt-reference" "$REFERENCE_COMMIT"
+          swift build -c release
+          swift build --package-path "$RUNNER_TEMP/swift-debt-reference" -c release
+
+      - name: Measure baseline analysis
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p artifacts/performance
+          common=(
+            --input Examples/Sources/Example.swift
+            --input .swift-debt.example.json
+            --analyzer SwiftDebt
+            --workload-family SwiftDebt
+            --command-fingerprint "swift-debt analyze frozen-examples --format json --jobs 1"
+            --analysis-mode baseline
+            --optional-context none
+          )
+          python3 scripts/run_debtmap_benchmark.py \
+            --output artifacts/performance/baseline-reference.json \
+            --runs 15 \
+            "${common[@]}" -- \
+            "$RUNNER_TEMP/swift-debt-reference/.build/release/scma" analyze "$GITHUB_WORKSPACE/Examples/Sources" \
+            --format json --jobs 1 --output "$RUNNER_TEMP/baseline-reference-report.json"
+          python3 scripts/run_debtmap_benchmark.py \
+            --output artifacts/performance/baseline-candidate.json \
+            --runs 15 \
+            "${common[@]}" -- \
+            .build/release/swift-debt analyze Examples/Sources \
+            --format json --jobs 1 --output "$RUNNER_TEMP/baseline-candidate-report.json"
+          .build/release/swift-debt performance-gate \
+            artifacts/performance/baseline-reference.json \
+            artifacts/performance/baseline-candidate.json \
+            --name baseline-analysis \
+            --max-wall-clock-regression 10 \
+            --max-peak-memory-regression 15 \
+            --output artifacts/performance/baseline-evaluation.json
+          .build/release/swift-debt analyze Examples/Sources \
+            --format json --jobs 1 \
+            --output "$RUNNER_TEMP/baseline-profile-report.json" \
+            --profile-output artifacts/performance/baseline-candidate-profile.json
+
+      - name: Measure full-evidence analysis
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          workload="$RUNNER_TEMP/swift-debt-full-evidence-workload"
+          mkdir -p "$workload"
+          cp Examples/Sources/Example.swift "$workload/Example.swift"
+          git -C "$workload" init --quiet
+          git -C "$workload" config user.name "SwiftDebt benchmark"
+          git -C "$workload" config user.email "swiftdebt-benchmark@example.invalid"
+          git -C "$workload" add Example.swift
+          GIT_AUTHOR_DATE=2026-09-12T12:00:00Z GIT_COMMITTER_DATE=2026-09-12T12:00:00Z \
+            git -C "$workload" commit --quiet --message "Add frozen benchmark source"
+
+          common=(
+            --input Examples/Sources/Example.swift
+            --input .swift-debt.example.json
+            --input benchmarks/debtmap-baseline/fixtures/example.lcov
+            --analyzer SwiftDebt
+            --workload-family SwiftDebt
+            --command-fingerprint "swift-debt debt analyze frozen-examples --format debt-json --jobs 1 --lcov example.lcov --debt-reference-time 2026-09-22T00:00:00Z"
+            --analysis-mode full-evidence
+            --optional-context coverage-and-repository-history
+          )
+          python3 scripts/run_debtmap_benchmark.py \
+            --output artifacts/performance/full-evidence-reference.json \
+            --runs 15 \
+            "${common[@]}" -- \
+            "$RUNNER_TEMP/swift-debt-reference/.build/release/scma" debt analyze "$workload" \
+            --format debt-json --jobs 1 \
+            --lcov "$GITHUB_WORKSPACE/benchmarks/debtmap-baseline/fixtures/example.lcov" \
+            --debt-reference-time 2026-09-22T00:00:00Z \
+            --output "$RUNNER_TEMP/full-evidence-reference-report.json"
+          python3 scripts/run_debtmap_benchmark.py \
+            --output artifacts/performance/full-evidence-candidate.json \
+            --runs 15 \
+            "${common[@]}" -- \
+            .build/release/swift-debt debt analyze "$workload" \
+            --format debt-json --jobs 1 \
+            --lcov "$GITHUB_WORKSPACE/benchmarks/debtmap-baseline/fixtures/example.lcov" \
+            --debt-reference-time 2026-09-22T00:00:00Z \
+            --output "$RUNNER_TEMP/full-evidence-candidate-report.json"
+          .build/release/swift-debt performance-gate \
+            artifacts/performance/full-evidence-reference.json \
+            artifacts/performance/full-evidence-candidate.json \
+            --name full-evidence-analysis \
+            --max-wall-clock-regression 20 \
+            --max-peak-memory-regression 15 \
+            --output artifacts/performance/full-evidence-evaluation.json
+          .build/release/swift-debt debt analyze "$workload" \
+            --format debt-json --jobs 1 \
+            --lcov "$GITHUB_WORKSPACE/benchmarks/debtmap-baseline/fixtures/example.lcov" \
+            --debt-reference-time 2026-09-22T00:00:00Z \
+            --output "$RUNNER_TEMP/full-evidence-profile-report.json" \
+            --profile-output artifacts/performance/full-evidence-candidate-profile.json
+
+      - name: Upload benchmark evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: debtmap-performance-evidence
+          path: artifacts/performance
+          if-no-files-found: error

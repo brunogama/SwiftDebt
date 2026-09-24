@@ -1,0 +1,48 @@
+{
+  "metadata": {
+    "architecture": "arm64",
+    "cpuModel": "Apple M4 Max",
+    "measuredRuns": 5,
+    "memoryBytes": 38654705664,
+    "os": "macOS-27.2-arm64-arm-64bit-Mach-O",
+    "swiftVersion": "Apple Swift version 6.3.3 (swiftlang-6.3.3.1.3 clang-2100.1.1.101)\nTarget: arm64-apple-macosx28.0",
+    "warmupRuns": 1
+  },
+  "peakMemoryBytesMaximum": 17793024,
+  "peakMemoryBytesMedian": 17776640,
+  "peakMemoryBytesMinimum": 17743872,
+  "samples": [
+    {
+      "peakMemoryBytes": 17776640,
+      "wallClockSeconds": 0.770703584
+    },
+    {
+      "peakMemoryBytes": 17793024,
+      "wallClockSeconds": 0.775079083
+    },
+    {
+      "peakMemoryBytes": 17776640,
+      "wallClockSeconds": 0.7845965
+    },
+    {
+      "peakMemoryBytes": 17743872,
+      "wallClockSeconds": 0.776743875
+    },
+    {
+      "peakMemoryBytes": 17793024,
+      "wallClockSeconds": 0.773245334
+    }
+  ],
+  "schemaVersion": 1,
+  "wallClockSecondsMaximum": 0.7845965,
+  "wallClockSecondsMedian": 0.775079083,
+  "wallClockSecondsMinimum": 0.770703584,
+  "workload": {
+    "analysisMode": "full-evidence",
+    "analyzer": "SwiftDebt",
+    "commandFingerprint": "swift-debt debt analyze frozen-examples --format debt-json --jobs 1 --lcov canonical.lcov",
+    "inputSHA256": "f66291244618b5937427f3652bba4fb328c2e9620eab0980a7fcaa378591eb64",
+    "optionalContext": "coverage-and-repository-history",
+    "workloadFamily": "SwiftDebt"
+  }
+}

@@ -1,0 +1,3783 @@
+{
+  "aggregations" : [
+
+  ],
+  "compactItems" : [
+    {
+      "displayName" : "Workspace.Processor.process(_:enabled:)",
+      "id" : "callable:Workspace.Processor.process(_:enabled:)",
+      "level" : "callable",
+      "location" : {
+        "column" : 5,
+        "file" : "Example.swift",
+        "line" : 13,
+        "module" : "Workspace"
+      },
+      "priority" : "low",
+      "score" : 39.96958855098391
+    },
+    {
+      "displayName" : "Example.swift",
+      "id" : "file:Example.swift",
+      "level" : "file",
+      "location" : {
+        "column" : 1,
+        "file" : "Example.swift",
+        "line" : 2,
+        "module" : "Workspace"
+      },
+      "priority" : "low",
+      "score" : 38.62419871794872
+    },
+    {
+      "displayName" : "Workspace.Processor.copiedA(_:)",
+      "id" : "callable:Workspace.Processor.copiedA(_:)",
+      "level" : "callable",
+      "location" : {
+        "column" : 5,
+        "file" : "Example.swift",
+        "line" : 25,
+        "module" : "Workspace"
+      },
+      "priority" : "low",
+      "score" : 32.597495527728086
+    },
+    {
+      "displayName" : "Workspace.Processor.copiedB(_:)",
+      "id" : "callable:Workspace.Processor.copiedB(_:)",
+      "level" : "callable",
+      "location" : {
+        "column" : 5,
+        "file" : "Example.swift",
+        "line" : 42,
+        "module" : "Workspace"
+      },
+      "priority" : "low",
+      "score" : 32.597495527728086
+    },
+    {
+      "displayName" : "Workspace",
+      "id" : "module:Workspace",
+      "level" : "module",
+      "location" : {
+        "column" : 1,
+        "file" : "Example.swift",
+        "line" : 2,
+        "module" : "Workspace"
+      },
+      "priority" : "low",
+      "score" : 30.792011834319528
+    },
+    {
+      "displayName" : "Workspace.Processor",
+      "id" : "type:Workspace.Processor",
+      "level" : "type",
+      "location" : {
+        "column" : 1,
+        "file" : "Example.swift",
+        "line" : 10,
+        "module" : "Workspace"
+      },
+      "priority" : "low",
+      "score" : 24.462307692307697
+    },
+    {
+      "displayName" : "Workspace.Store.save(_:)",
+      "id" : "callable:Workspace.Store.save(_:)",
+      "level" : "callable",
+      "location" : {
+        "column" : 5,
+        "file" : "Example.swift",
+        "line" : 5,
+        "module" : "Workspace"
+      },
+      "priority" : "low",
+      "score" : 22.252223966509682
+    },
+    {
+      "displayName" : "Workspace.Store",
+      "id" : "type:Workspace.Store",
+      "level" : "type",
+      "location" : {
+        "column" : 1,
+        "file" : "Example.swift",
+        "line" : 2,
+        "module" : "Workspace"
+      },
+      "priority" : "low",
+      "score" : 22.195641025641027
+    },
+    {
+      "displayName" : "Workspace.Worker.work(_:)",
+      "id" : "callable:Workspace.Worker.work(_:)",
+      "level" : "callable",
+      "location" : {
+        "column" : 5,
+        "file" : "Example.swift",
+        "line" : 61,
+        "module" : "Workspace"
+      },
+      "priority" : "low",
+      "score" : 20.33392963625522
+    }
+  ],
+  "dependencyGraph" : {
+    "edges" : [
+      {
+        "confidence" : "unresolvedSyntax",
+        "isTestCaller" : false,
+        "kind" : "call",
+        "location" : {
+          "column" : 9,
+          "file" : "Example.swift",
+          "line" : 21
+        },
+        "note" : "SwiftSyntax-only call was not resolved inside selected inputs; no compiler binding is claimed.",
+        "source" : "callable:Workspace.Processor.process(_:enabled:)@Example.swift:13:5",
+        "targetCandidates" : [
+
+        ],
+        "unresolvedName" : "save(_:)"
+      },
+      {
+        "confidence" : "unresolvedSyntax",
+        "isTestCaller" : false,
+        "kind" : "typeReference",
+        "location" : {
+          "column" : 1,
+          "file" : "Example.swift",
+          "line" : 10
+        },
+        "note" : "SwiftSyntax-only type reference was not resolved inside selected inputs; no compiler binding is claimed.",
+        "source" : "type:Workspace.Processor",
+        "targetCandidates" : [
+
+        ],
+        "unresolvedName" : "Bool"
+      },
+      {
+        "confidence" : "unresolvedSyntax",
+        "isTestCaller" : false,
+        "kind" : "typeReference",
+        "location" : {
+          "column" : 1,
+          "file" : "Example.swift",
+          "line" : 10
+        },
+        "note" : "SwiftSyntax-only type reference was not resolved inside selected inputs; no compiler binding is claimed.",
+        "source" : "type:Workspace.Processor",
+        "targetCandidates" : [
+
+        ],
+        "unresolvedName" : "Int"
+      },
+      {
+        "confidence" : "unresolvedSyntax",
+        "isTestCaller" : false,
+        "kind" : "typeReference",
+        "location" : {
+          "column" : 1,
+          "file" : "Example.swift",
+          "line" : 10
+        },
+        "note" : "SwiftSyntax-only type reference was not resolved inside selected inputs; no compiler binding is claimed.",
+        "source" : "type:Workspace.Processor",
+        "targetCandidates" : [
+
+        ],
+        "unresolvedName" : "store"
+      },
+      {
+        "confidence" : "unresolvedSyntax",
+        "isTestCaller" : false,
+        "kind" : "typeReference",
+        "location" : {
+          "column" : 1,
+          "file" : "Example.swift",
+          "line" : 10
+        },
+        "note" : "SwiftSyntax-only type reference was not resolved inside selected inputs; no compiler binding is claimed.",
+        "source" : "type:Workspace.Processor",
+        "targetCandidates" : [
+
+        ],
+        "unresolvedName" : "store.save"
+      },
+      {
+        "confidence" : "resolvedSyntax",
+        "isTestCaller" : false,
+        "kind" : "typeReference",
+        "location" : {
+          "column" : 1,
+          "file" : "Example.swift",
+          "line" : 10
+        },
+        "note" : "SwiftSyntax-only type reference matched to one in-input declaration; not compiler semantic proof.",
+        "source" : "type:Workspace.Processor",
+        "target" : "type:Workspace.Store",
+        "targetCandidates" : [
+
+        ]
+      },
+      {
+        "confidence" : "unresolvedSyntax",
+        "isTestCaller" : false,
+        "kind" : "typeReference",
+        "location" : {
+          "column" : 1,
+          "file" : "Example.swift",
+          "line" : 2
+        },
+        "note" : "SwiftSyntax-only type reference was not resolved inside selected inputs; no compiler binding is claimed.",
+        "source" : "type:Workspace.Store",
+        "targetCandidates" : [
+
+        ],
+        "unresolvedName" : "Int"
+      }
+    ],
+    "nodes" : [
+      {
+        "displayName" : "Workspace.Processor.copiedA(_:)",
+        "id" : "callable:Workspace.Processor.copiedA(_:)@Example.swift:25:5",
+        "isTest" : false,
+        "kind" : "callable",
+        "location" : {
+          "column" : 5,
+          "file" : "Example.swift",
+          "line" : 25
+        },
+        "module" : "Workspace"
+      },
+      {
+        "displayName" : "Workspace.Processor.copiedB(_:)",
+        "id" : "callable:Workspace.Processor.copiedB(_:)@Example.swift:42:5",
+        "isTest" : false,
+        "kind" : "callable",
+        "location" : {
+          "column" : 5,
+          "file" : "Example.swift",
+          "line" : 42
+        },
+        "module" : "Workspace"
+      },
+      {
+        "displayName" : "Workspace.Processor.process(_:enabled:)",
+        "id" : "callable:Workspace.Processor.process(_:enabled:)@Example.swift:13:5",
+        "isTest" : false,
+        "kind" : "callable",
+        "location" : {
+          "column" : 5,
+          "file" : "Example.swift",
+          "line" : 13
+        },
+        "module" : "Workspace"
+      },
+      {
+        "displayName" : "Workspace.Store.save(_:)",
+        "id" : "callable:Workspace.Store.save(_:)@Example.swift:5:5",
+        "isTest" : false,
+        "kind" : "callable",
+        "location" : {
+          "column" : 5,
+          "file" : "Example.swift",
+          "line" : 5
+        },
+        "module" : "Workspace"
+      },
+      {
+        "displayName" : "Workspace.Worker.work(_:)",
+        "id" : "callable:Workspace.Worker.work(_:)@Example.swift:61:5",
+        "isTest" : false,
+        "kind" : "callable",
+        "location" : {
+          "column" : 5,
+          "file" : "Example.swift",
+          "line" : 61
+        },
+        "module" : "Workspace"
+      },
+      {
+        "displayName" : "Workspace",
+        "id" : "module:Workspace",
+        "isTest" : false,
+        "kind" : "module",
+        "module" : "Workspace"
+      },
+      {
+        "displayName" : "Workspace.Processor",
+        "id" : "type:Workspace.Processor",
+        "isTest" : false,
+        "kind" : "type",
+        "location" : {
+          "column" : 1,
+          "file" : "Example.swift",
+          "line" : 10
+        },
+        "module" : "Workspace"
+      },
+      {
+        "displayName" : "Workspace.Store",
+        "id" : "type:Workspace.Store",
+        "isTest" : false,
+        "kind" : "type",
+        "location" : {
+          "column" : 1,
+          "file" : "Example.swift",
+          "line" : 2
+        },
+        "module" : "Workspace"
+      }
+    ],
+    "statistics" : {
+      "ambiguousEdgeCount" : 0,
+      "edgeCount" : 7,
+      "nodeCount" : 8,
+      "resolvedEdgeCount" : 1,
+      "syntaxOnlyNote" : "SwiftSyntax-only graph evidence; unresolved and ambiguous edges are explicit and not compiler semantic proof.",
+      "unresolvedEdgeCount" : 6
+    }
+  },
+  "generator" : "SwiftDebt",
+  "items" : [
+    {
+      "category" : "coverage",
+      "displayName" : "Workspace.Processor.process(_:enabled:)",
+      "evidence" : [
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "Workspace.Processor.process(_:enabled:):effect:mutation",
+          "kind" : "swift.side-effect.mutation",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 13,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 12,
+          "note" : "Measured SwiftSyntax facts with measuredSyntax confidence; not compiler semantic proof.",
+          "rawValue" : "count=1;details=total +=",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "Workspace.Processor.process(_:enabled:):pattern-consistency",
+          "kind" : "swift.pattern-consistency.heuristic",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 13,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 51,
+          "note" : "Heuristic pattern-consistency score from deterministic syntax counts; not compiler semantic proof.",
+          "rawValue" : "locf=9;ccf=5;parameters=2;effectKinds=1;composition=0",
+          "requirement" : "optional",
+          "weight" : 0.75
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Processor.process(_:enabled:):cognitive-complexity",
+          "kind" : "swift.cognitive-complexity",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 13,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 46.666666666666664,
+          "note" : "Cognitive complexity adds current nesting to Swift flow breaks and ignores async, throws and await keywords.",
+          "rawValue" : "value=7",
+          "requirement" : "optional",
+          "weight" : 2
+        },
+        {
+          "availability" : {
+            "state" : "measuredCoverage"
+          },
+          "id" : "callable:Workspace.Processor.process(_:enabled:):coverage:lcov",
+          "kind" : "coverage.lcov",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 13,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 100,
+          "note" : "Coverage dampener matched with strategies sourcePathExact>functionNameExact>functionNameSuffix>functionStartLine>executableLine; Matched executable line with executed hits",
+          "rawValue" : "covered=1/1;coverage=100%;confidence=fallback",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Processor.process(_:enabled:):cyclomatic-complexity",
+          "kind" : "swift.cyclomatic-complexity",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 13,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 25,
+          "note" : "Cyclomatic complexity follows the existing CCF decision policy, preserving SCMA metric behavior.",
+          "rawValue" : "value=5",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Processor.process(_:enabled:):function-lines",
+          "kind" : "swift.function-lines",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 13,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 15,
+          "note" : "Physical token-bearing lines inside the callable body, excluding the outer signature and braces.",
+          "rawValue" : "value=9",
+          "requirement" : "optional",
+          "weight" : 0.5
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Processor.process(_:enabled:):git-history:change-frequency",
+          "kind" : "git-history.change-frequency",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 13,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 20,
+          "note" : "Counted a bounded, rename-aware Git history for the entity file; truncation is reported explicitly.",
+          "rawValue" : "commits=1;window=last-500-file-commits;truncated=false",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Processor.process(_:enabled:):git-history:contributor-concentration",
+          "kind" : "git-history.contributor-concentration",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 13,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 100,
+          "note" : "Contributor identities are counted internally and omitted from evidence output.",
+          "rawValue" : "uniqueContributors=1;topShare=1.000",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Processor.process(_:enabled:):git-history:fix-orientation",
+          "kind" : "git-history.fix-orientation",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 13,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 0,
+          "note" : "Fix-oriented commits are classified by subject tokens only.",
+          "rawValue" : "fixCommits=0;commits=1;rules=fix,bug,crash,defect,regression,hotfix,repair",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Processor.process(_:enabled:):git-history:recency",
+          "kind" : "git-history.recency",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 13,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 76.92307692307692,
+          "note" : "Computed against the injected reference time, not an ambient clock.",
+          "rawValue" : "lastChangeDaysAgo=9;lastChangedAt=2026-09-12T12:00:00Z;referenceTime=2026-09-22T00:00:00Z",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Processor.process(_:enabled:):nesting-depth",
+          "kind" : "swift.nesting-depth",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 13,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 40,
+          "note" : "Maximum nested Swift control-flow depth observed in this callable body.",
+          "rawValue" : "value=2",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Processor.process(_:enabled:):parameter-count",
+          "kind" : "swift.parameter-count",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 13,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 33.333333333333336,
+          "note" : "Declared callable parameters counted with the same parser facts as NOPF.",
+          "rawValue" : "value=2",
+          "requirement" : "optional",
+          "weight" : 0.5
+        }
+      ],
+      "explanation" : "Highest evidence is coverage.lcov with raw value covered=1/1;coverage=100%;confidence=fallback. Coverage dampener matched with strategies sourcePathExact>functionNameExact>functionNameSuffix>functionStartLine>executableLine; Matched executable line with executed hits",
+      "id" : "callable:Workspace.Processor.process(_:enabled:)",
+      "level" : "callable",
+      "location" : {
+        "column" : 5,
+        "file" : "Example.swift",
+        "line" : 13,
+        "module" : "Workspace"
+      },
+      "priority" : "low",
+      "recommendation" : "Prioritize tests around this context before structural refactoring; coverage evidence can only dampen risk.",
+      "score" : 39.96958855098391,
+      "scoreBreakdown" : {
+        "contributions" : [
+          {
+            "configuredWeight" : 1,
+            "contribution" : 1.1162790697674418,
+            "effectiveWeight" : 0.09302325581395349,
+            "evidenceID" : "Workspace.Processor.process(_:enabled:):effect:mutation",
+            "kind" : "swift.side-effect.mutation",
+            "normalizedScore" : 12,
+            "note" : "Measured SwiftSyntax facts with measuredSyntax confidence; not compiler semantic proof.",
+            "rawValue" : "count=1;details=total +="
+          },
+          {
+            "configuredWeight" : 0.75,
+            "contribution" : 3.558139534883721,
+            "effectiveWeight" : 0.06976744186046512,
+            "evidenceID" : "Workspace.Processor.process(_:enabled:):pattern-consistency",
+            "kind" : "swift.pattern-consistency.heuristic",
+            "normalizedScore" : 51,
+            "note" : "Heuristic pattern-consistency score from deterministic syntax counts; not compiler semantic proof.",
+            "rawValue" : "locf=9;ccf=5;parameters=2;effectKinds=1;composition=0"
+          },
+          {
+            "configuredWeight" : 2,
+            "contribution" : 8.682170542635658,
+            "effectiveWeight" : 0.18604651162790697,
+            "evidenceID" : "callable:Workspace.Processor.process(_:enabled:):cognitive-complexity",
+            "kind" : "swift.cognitive-complexity",
+            "normalizedScore" : 46.666666666666664,
+            "note" : "Cognitive complexity adds current nesting to Swift flow breaks and ignores async, throws and await keywords.",
+            "rawValue" : "value=7"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0,
+            "effectiveWeight" : 0,
+            "evidenceID" : "callable:Workspace.Processor.process(_:enabled:):coverage:lcov",
+            "kind" : "coverage.lcov",
+            "normalizedScore" : 100,
+            "note" : "Coverage dampener matched with strategies sourcePathExact>functionNameExact>functionNameSuffix>functionStartLine>executableLine; Matched executable line with executed hits; coverage dampener; cannot increase score",
+            "rawValue" : "covered=1/1;coverage=100%;confidence=fallback"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 2.3255813953488373,
+            "effectiveWeight" : 0.09302325581395349,
+            "evidenceID" : "callable:Workspace.Processor.process(_:enabled:):cyclomatic-complexity",
+            "kind" : "swift.cyclomatic-complexity",
+            "normalizedScore" : 25,
+            "note" : "Cyclomatic complexity follows the existing CCF decision policy, preserving SCMA metric behavior.",
+            "rawValue" : "value=5"
+          },
+          {
+            "configuredWeight" : 0.5,
+            "contribution" : 0.6976744186046512,
+            "effectiveWeight" : 0.046511627906976744,
+            "evidenceID" : "callable:Workspace.Processor.process(_:enabled:):function-lines",
+            "kind" : "swift.function-lines",
+            "normalizedScore" : 15,
+            "note" : "Physical token-bearing lines inside the callable body, excluding the outer signature and braces.",
+            "rawValue" : "value=9"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 1.8604651162790697,
+            "effectiveWeight" : 0.09302325581395349,
+            "evidenceID" : "callable:Workspace.Processor.process(_:enabled:):git-history:change-frequency",
+            "kind" : "git-history.change-frequency",
+            "normalizedScore" : 20,
+            "note" : "Counted a bounded, rename-aware Git history for the entity file; truncation is reported explicitly.",
+            "rawValue" : "commits=1;window=last-500-file-commits;truncated=false"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 9.30232558139535,
+            "effectiveWeight" : 0.09302325581395349,
+            "evidenceID" : "callable:Workspace.Processor.process(_:enabled:):git-history:contributor-concentration",
+            "kind" : "git-history.contributor-concentration",
+            "normalizedScore" : 100,
+            "note" : "Contributor identities are counted internally and omitted from evidence output.",
+            "rawValue" : "uniqueContributors=1;topShare=1.000"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0,
+            "effectiveWeight" : 0.09302325581395349,
+            "evidenceID" : "callable:Workspace.Processor.process(_:enabled:):git-history:fix-orientation",
+            "kind" : "git-history.fix-orientation",
+            "normalizedScore" : 0,
+            "note" : "Fix-oriented commits are classified by subject tokens only.",
+            "rawValue" : "fixCommits=0;commits=1;rules=fix,bug,crash,defect,regression,hotfix,repair"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 7.155635062611807,
+            "effectiveWeight" : 0.09302325581395349,
+            "evidenceID" : "callable:Workspace.Processor.process(_:enabled:):git-history:recency",
+            "kind" : "git-history.recency",
+            "normalizedScore" : 76.92307692307692,
+            "note" : "Computed against the injected reference time, not an ambient clock.",
+            "rawValue" : "lastChangeDaysAgo=9;lastChangedAt=2026-09-12T12:00:00Z;referenceTime=2026-09-22T00:00:00Z"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 3.7209302325581395,
+            "effectiveWeight" : 0.09302325581395349,
+            "evidenceID" : "callable:Workspace.Processor.process(_:enabled:):nesting-depth",
+            "kind" : "swift.nesting-depth",
+            "normalizedScore" : 40,
+            "note" : "Maximum nested Swift control-flow depth observed in this callable body.",
+            "rawValue" : "value=2"
+          },
+          {
+            "configuredWeight" : 0.5,
+            "contribution" : 1.550387596899225,
+            "effectiveWeight" : 0.046511627906976744,
+            "evidenceID" : "callable:Workspace.Processor.process(_:enabled:):parameter-count",
+            "kind" : "swift.parameter-count",
+            "normalizedScore" : 33.333333333333336,
+            "note" : "Declared callable parameters counted with the same parser facts as NOPF.",
+            "rawValue" : "value=2"
+          }
+        ],
+        "totalAvailableWeight" : 10.75,
+        "totalConfiguredWeight" : 11.75,
+        "unavailableEvidence" : [
+
+        ]
+      }
+    },
+    {
+      "category" : "coverage",
+      "displayName" : "Example.swift",
+      "evidence" : [
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "Workspace.Example.swift:swift-risk:actorIsolation",
+          "kind" : "swift.concurrency-risk.actorIsolation",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 60,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 11.25,
+          "note" : "Heuristic SwiftSyntax risk evidence with measuredSyntax confidence; not compiler semantic proof.",
+          "rawValue" : "count=1;details=actor declaration Worker",
+          "requirement" : "optional",
+          "weight" : 0.75
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "Workspace.Processor.copiedA(_:):effect:mutation",
+          "kind" : "swift.side-effect.mutation",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 25,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 100,
+          "note" : "Measured SwiftSyntax facts with measuredSyntax confidence; not compiler semantic proof.",
+          "rawValue" : "count=12;details=value +=,value *=,value -=,value +=,value *=,value -=,value +=,value *=,value -=,value +=,value *=,value -=",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "Workspace.Processor.copiedA(_:):pattern-consistency",
+          "kind" : "swift.pattern-consistency.heuristic",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 25,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 38,
+          "note" : "Heuristic pattern-consistency score from deterministic syntax counts; not compiler semantic proof.",
+          "rawValue" : "locf=14;ccf=1;parameters=1;effectKinds=1;composition=0",
+          "requirement" : "optional",
+          "weight" : 0.75
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "Workspace.Processor.copiedB(_:):effect:mutation",
+          "kind" : "swift.side-effect.mutation",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 42,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 100,
+          "note" : "Measured SwiftSyntax facts with measuredSyntax confidence; not compiler semantic proof.",
+          "rawValue" : "count=12;details=value +=,value *=,value -=,value +=,value *=,value -=,value +=,value *=,value -=,value +=,value *=,value -=",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "Workspace.Processor.copiedB(_:):pattern-consistency",
+          "kind" : "swift.pattern-consistency.heuristic",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 42,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 38,
+          "note" : "Heuristic pattern-consistency score from deterministic syntax counts; not compiler semantic proof.",
+          "rawValue" : "locf=14;ccf=1;parameters=1;effectKinds=1;composition=0",
+          "requirement" : "optional",
+          "weight" : 0.75
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "Workspace.Processor.process(_:enabled:):effect:mutation",
+          "kind" : "swift.side-effect.mutation",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 13,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 12,
+          "note" : "Measured SwiftSyntax facts with measuredSyntax confidence; not compiler semantic proof.",
+          "rawValue" : "count=1;details=total +=",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "Workspace.Processor.process(_:enabled:):pattern-consistency",
+          "kind" : "swift.pattern-consistency.heuristic",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 13,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 51,
+          "note" : "Heuristic pattern-consistency score from deterministic syntax counts; not compiler semantic proof.",
+          "rawValue" : "locf=9;ccf=5;parameters=2;effectKinds=1;composition=0",
+          "requirement" : "optional",
+          "weight" : 0.75
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "Workspace.Store.save(_:):effect:mutation",
+          "kind" : "swift.side-effect.mutation",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 5,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 12,
+          "note" : "Measured SwiftSyntax facts with measuredSyntax confidence; not compiler semantic proof.",
+          "rawValue" : "count=1;details=value =",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "Workspace.Store.save(_:):effect:propertyWrite",
+          "kind" : "swift.side-effect.propertyWrite",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 5,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 18,
+          "note" : "Measured SwiftSyntax facts with measuredSyntax confidence; not compiler semantic proof.",
+          "rawValue" : "count=1;details=value =",
+          "requirement" : "optional",
+          "weight" : 1.5
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "Workspace.Store.save(_:):pattern-consistency",
+          "kind" : "swift.pattern-consistency.heuristic",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 5,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 30,
+          "note" : "Heuristic pattern-consistency score from deterministic syntax counts; not compiler semantic proof.",
+          "rawValue" : "locf=1;ccf=1;parameters=1;effectKinds=2;composition=0",
+          "requirement" : "optional",
+          "weight" : 0.75
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "Workspace.Worker.work(_:):pattern-consistency",
+          "kind" : "swift.pattern-consistency.heuristic",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 61,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 10,
+          "note" : "Heuristic pattern-consistency score from deterministic syntax counts; not compiler semantic proof.",
+          "rawValue" : "locf=1;ccf=1;parameters=1;effectKinds=0;composition=0",
+          "requirement" : "optional",
+          "weight" : 0.75
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "Workspace.Worker.work(_:):purity:heuristic",
+          "kind" : "swift.purity.heuristic",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 61,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 0,
+          "note" : "Heuristic inference from absence of recognized SwiftSyntax effect markers; not compiler semantic proof.",
+          "rawValue" : "measuredSyntaxEffects=0",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "measuredCoverage"
+          },
+          "id" : "file:Example.swift:coverage:lcov",
+          "kind" : "coverage.lcov",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 2,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 100,
+          "note" : "Coverage dampener matched with strategies sourcePathExact>executableLine; Matched 62 covered executable lines out of 62",
+          "rawValue" : "covered=62/62;coverage=100%;confidence=exact",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "file:Example.swift:duplicate-lines",
+          "kind" : "swift.duplicate-lines",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 2,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 100,
+          "note" : "Unique physical lines in this file that participate in exact token-normalized clone blocks.",
+          "rawValue" : "value=30",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "file:Example.swift:file-callable-count",
+          "kind" : "swift.file-callable-count",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 2,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 6.25,
+          "note" : "Implemented functions and accessors located in this file.",
+          "rawValue" : "value=5",
+          "requirement" : "optional",
+          "weight" : 0.5
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "file:Example.swift:file-lines",
+          "kind" : "swift.file-lines",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 2,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 5.5,
+          "note" : "Token-bearing Swift lines in this parsed source file.",
+          "rawValue" : "value=55",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "file:Example.swift:file-type-count",
+          "kind" : "swift.file-type-count",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 2,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 10,
+          "note" : "Selected nominal declarations and extensions located in this file.",
+          "rawValue" : "value=2",
+          "requirement" : "optional",
+          "weight" : 0.5
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "file:Example.swift:git-history:change-frequency",
+          "kind" : "git-history.change-frequency",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 2,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 20,
+          "note" : "Counted a bounded, rename-aware Git history for the entity file; truncation is reported explicitly.",
+          "rawValue" : "commits=1;window=last-500-file-commits;truncated=false",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "file:Example.swift:git-history:contributor-concentration",
+          "kind" : "git-history.contributor-concentration",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 2,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 100,
+          "note" : "Contributor identities are counted internally and omitted from evidence output.",
+          "rawValue" : "uniqueContributors=1;topShare=1.000",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "file:Example.swift:git-history:fix-orientation",
+          "kind" : "git-history.fix-orientation",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 2,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 0,
+          "note" : "Fix-oriented commits are classified by subject tokens only.",
+          "rawValue" : "fixCommits=0;commits=1;rules=fix,bug,crash,defect,regression,hotfix,repair",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "file:Example.swift:git-history:recency",
+          "kind" : "git-history.recency",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 2,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 76.92307692307692,
+          "note" : "Computed against the injected reference time, not an ambient clock.",
+          "rawValue" : "lastChangeDaysAgo=9;lastChangedAt=2026-09-12T12:00:00Z;referenceTime=2026-09-22T00:00:00Z",
+          "requirement" : "optional",
+          "weight" : 1
+        }
+      ],
+      "explanation" : "Highest evidence is swift.side-effect.mutation with raw value count=12;details=value +=,value *=,value -=,value +=,value *=,value -=,value +=,value *=,value -=,value +=,value *=,value -=. Measured SwiftSyntax facts with measuredSyntax confidence; not compiler semantic proof.",
+      "id" : "file:Example.swift",
+      "level" : "file",
+      "location" : {
+        "column" : 1,
+        "file" : "Example.swift",
+        "line" : 2,
+        "module" : "Workspace"
+      },
+      "priority" : "low",
+      "recommendation" : "Prioritize tests around this context before structural refactoring; coverage evidence can only dampen risk.",
+      "score" : 38.62419871794872,
+      "scoreBreakdown" : {
+        "contributions" : [
+          {
+            "configuredWeight" : 0.75,
+            "contribution" : 0.46875,
+            "effectiveWeight" : 0.041666666666666664,
+            "evidenceID" : "Workspace.Example.swift:swift-risk:actorIsolation",
+            "kind" : "swift.concurrency-risk.actorIsolation",
+            "normalizedScore" : 11.25,
+            "note" : "Heuristic SwiftSyntax risk evidence with measuredSyntax confidence; not compiler semantic proof.",
+            "rawValue" : "count=1;details=actor declaration Worker"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 5.555555555555555,
+            "effectiveWeight" : 0.05555555555555555,
+            "evidenceID" : "Workspace.Processor.copiedA(_:):effect:mutation",
+            "kind" : "swift.side-effect.mutation",
+            "normalizedScore" : 100,
+            "note" : "Measured SwiftSyntax facts with measuredSyntax confidence; not compiler semantic proof.",
+            "rawValue" : "count=12;details=value +=,value *=,value -=,value +=,value *=,value -=,value +=,value *=,value -=,value +=,value *=,value -="
+          },
+          {
+            "configuredWeight" : 0.75,
+            "contribution" : 1.5833333333333333,
+            "effectiveWeight" : 0.041666666666666664,
+            "evidenceID" : "Workspace.Processor.copiedA(_:):pattern-consistency",
+            "kind" : "swift.pattern-consistency.heuristic",
+            "normalizedScore" : 38,
+            "note" : "Heuristic pattern-consistency score from deterministic syntax counts; not compiler semantic proof.",
+            "rawValue" : "locf=14;ccf=1;parameters=1;effectKinds=1;composition=0"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 5.555555555555555,
+            "effectiveWeight" : 0.05555555555555555,
+            "evidenceID" : "Workspace.Processor.copiedB(_:):effect:mutation",
+            "kind" : "swift.side-effect.mutation",
+            "normalizedScore" : 100,
+            "note" : "Measured SwiftSyntax facts with measuredSyntax confidence; not compiler semantic proof.",
+            "rawValue" : "count=12;details=value +=,value *=,value -=,value +=,value *=,value -=,value +=,value *=,value -=,value +=,value *=,value -="
+          },
+          {
+            "configuredWeight" : 0.75,
+            "contribution" : 1.5833333333333333,
+            "effectiveWeight" : 0.041666666666666664,
+            "evidenceID" : "Workspace.Processor.copiedB(_:):pattern-consistency",
+            "kind" : "swift.pattern-consistency.heuristic",
+            "normalizedScore" : 38,
+            "note" : "Heuristic pattern-consistency score from deterministic syntax counts; not compiler semantic proof.",
+            "rawValue" : "locf=14;ccf=1;parameters=1;effectKinds=1;composition=0"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0.6666666666666666,
+            "effectiveWeight" : 0.05555555555555555,
+            "evidenceID" : "Workspace.Processor.process(_:enabled:):effect:mutation",
+            "kind" : "swift.side-effect.mutation",
+            "normalizedScore" : 12,
+            "note" : "Measured SwiftSyntax facts with measuredSyntax confidence; not compiler semantic proof.",
+            "rawValue" : "count=1;details=total +="
+          },
+          {
+            "configuredWeight" : 0.75,
+            "contribution" : 2.125,
+            "effectiveWeight" : 0.041666666666666664,
+            "evidenceID" : "Workspace.Processor.process(_:enabled:):pattern-consistency",
+            "kind" : "swift.pattern-consistency.heuristic",
+            "normalizedScore" : 51,
+            "note" : "Heuristic pattern-consistency score from deterministic syntax counts; not compiler semantic proof.",
+            "rawValue" : "locf=9;ccf=5;parameters=2;effectKinds=1;composition=0"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0.6666666666666666,
+            "effectiveWeight" : 0.05555555555555555,
+            "evidenceID" : "Workspace.Store.save(_:):effect:mutation",
+            "kind" : "swift.side-effect.mutation",
+            "normalizedScore" : 12,
+            "note" : "Measured SwiftSyntax facts with measuredSyntax confidence; not compiler semantic proof.",
+            "rawValue" : "count=1;details=value ="
+          },
+          {
+            "configuredWeight" : 1.5,
+            "contribution" : 1.5,
+            "effectiveWeight" : 0.08333333333333333,
+            "evidenceID" : "Workspace.Store.save(_:):effect:propertyWrite",
+            "kind" : "swift.side-effect.propertyWrite",
+            "normalizedScore" : 18,
+            "note" : "Measured SwiftSyntax facts with measuredSyntax confidence; not compiler semantic proof.",
+            "rawValue" : "count=1;details=value ="
+          },
+          {
+            "configuredWeight" : 0.75,
+            "contribution" : 1.25,
+            "effectiveWeight" : 0.041666666666666664,
+            "evidenceID" : "Workspace.Store.save(_:):pattern-consistency",
+            "kind" : "swift.pattern-consistency.heuristic",
+            "normalizedScore" : 30,
+            "note" : "Heuristic pattern-consistency score from deterministic syntax counts; not compiler semantic proof.",
+            "rawValue" : "locf=1;ccf=1;parameters=1;effectKinds=2;composition=0"
+          },
+          {
+            "configuredWeight" : 0.75,
+            "contribution" : 0.41666666666666663,
+            "effectiveWeight" : 0.041666666666666664,
+            "evidenceID" : "Workspace.Worker.work(_:):pattern-consistency",
+            "kind" : "swift.pattern-consistency.heuristic",
+            "normalizedScore" : 10,
+            "note" : "Heuristic pattern-consistency score from deterministic syntax counts; not compiler semantic proof.",
+            "rawValue" : "locf=1;ccf=1;parameters=1;effectKinds=0;composition=0"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0,
+            "effectiveWeight" : 0.05555555555555555,
+            "evidenceID" : "Workspace.Worker.work(_:):purity:heuristic",
+            "kind" : "swift.purity.heuristic",
+            "normalizedScore" : 0,
+            "note" : "Heuristic inference from absence of recognized SwiftSyntax effect markers; not compiler semantic proof.",
+            "rawValue" : "measuredSyntaxEffects=0"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0,
+            "effectiveWeight" : 0,
+            "evidenceID" : "file:Example.swift:coverage:lcov",
+            "kind" : "coverage.lcov",
+            "normalizedScore" : 100,
+            "note" : "Coverage dampener matched with strategies sourcePathExact>executableLine; Matched 62 covered executable lines out of 62; coverage dampener; cannot increase score",
+            "rawValue" : "covered=62/62;coverage=100%;confidence=exact"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 5.555555555555555,
+            "effectiveWeight" : 0.05555555555555555,
+            "evidenceID" : "file:Example.swift:duplicate-lines",
+            "kind" : "swift.duplicate-lines",
+            "normalizedScore" : 100,
+            "note" : "Unique physical lines in this file that participate in exact token-normalized clone blocks.",
+            "rawValue" : "value=30"
+          },
+          {
+            "configuredWeight" : 0.5,
+            "contribution" : 0.1736111111111111,
+            "effectiveWeight" : 0.027777777777777776,
+            "evidenceID" : "file:Example.swift:file-callable-count",
+            "kind" : "swift.file-callable-count",
+            "normalizedScore" : 6.25,
+            "note" : "Implemented functions and accessors located in this file.",
+            "rawValue" : "value=5"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0.3055555555555555,
+            "effectiveWeight" : 0.05555555555555555,
+            "evidenceID" : "file:Example.swift:file-lines",
+            "kind" : "swift.file-lines",
+            "normalizedScore" : 5.5,
+            "note" : "Token-bearing Swift lines in this parsed source file.",
+            "rawValue" : "value=55"
+          },
+          {
+            "configuredWeight" : 0.5,
+            "contribution" : 0.2777777777777778,
+            "effectiveWeight" : 0.027777777777777776,
+            "evidenceID" : "file:Example.swift:file-type-count",
+            "kind" : "swift.file-type-count",
+            "normalizedScore" : 10,
+            "note" : "Selected nominal declarations and extensions located in this file.",
+            "rawValue" : "value=2"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 1.1111111111111112,
+            "effectiveWeight" : 0.05555555555555555,
+            "evidenceID" : "file:Example.swift:git-history:change-frequency",
+            "kind" : "git-history.change-frequency",
+            "normalizedScore" : 20,
+            "note" : "Counted a bounded, rename-aware Git history for the entity file; truncation is reported explicitly.",
+            "rawValue" : "commits=1;window=last-500-file-commits;truncated=false"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 5.555555555555555,
+            "effectiveWeight" : 0.05555555555555555,
+            "evidenceID" : "file:Example.swift:git-history:contributor-concentration",
+            "kind" : "git-history.contributor-concentration",
+            "normalizedScore" : 100,
+            "note" : "Contributor identities are counted internally and omitted from evidence output.",
+            "rawValue" : "uniqueContributors=1;topShare=1.000"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0,
+            "effectiveWeight" : 0.05555555555555555,
+            "evidenceID" : "file:Example.swift:git-history:fix-orientation",
+            "kind" : "git-history.fix-orientation",
+            "normalizedScore" : 0,
+            "note" : "Fix-oriented commits are classified by subject tokens only.",
+            "rawValue" : "fixCommits=0;commits=1;rules=fix,bug,crash,defect,regression,hotfix,repair"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 4.273504273504273,
+            "effectiveWeight" : 0.05555555555555555,
+            "evidenceID" : "file:Example.swift:git-history:recency",
+            "kind" : "git-history.recency",
+            "normalizedScore" : 76.92307692307692,
+            "note" : "Computed against the injected reference time, not an ambient clock.",
+            "rawValue" : "lastChangeDaysAgo=9;lastChangedAt=2026-09-12T12:00:00Z;referenceTime=2026-09-22T00:00:00Z"
+          }
+        ],
+        "totalAvailableWeight" : 18,
+        "totalConfiguredWeight" : 19,
+        "unavailableEvidence" : [
+
+        ]
+      }
+    },
+    {
+      "category" : "coverage",
+      "displayName" : "Workspace.Processor.copiedA(_:)",
+      "evidence" : [
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "Workspace.Processor.copiedA(_:):effect:mutation",
+          "kind" : "swift.side-effect.mutation",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 25,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 100,
+          "note" : "Measured SwiftSyntax facts with measuredSyntax confidence; not compiler semantic proof.",
+          "rawValue" : "count=12;details=value +=,value *=,value -=,value +=,value *=,value -=,value +=,value *=,value -=,value +=,value *=,value -=",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "Workspace.Processor.copiedA(_:):pattern-consistency",
+          "kind" : "swift.pattern-consistency.heuristic",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 25,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 38,
+          "note" : "Heuristic pattern-consistency score from deterministic syntax counts; not compiler semantic proof.",
+          "rawValue" : "locf=14;ccf=1;parameters=1;effectKinds=1;composition=0",
+          "requirement" : "optional",
+          "weight" : 0.75
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Processor.copiedA(_:):cognitive-complexity",
+          "kind" : "swift.cognitive-complexity",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 25,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 0,
+          "note" : "Cognitive complexity adds current nesting to Swift flow breaks and ignores async, throws and await keywords.",
+          "rawValue" : "value=0",
+          "requirement" : "optional",
+          "weight" : 2
+        },
+        {
+          "availability" : {
+            "state" : "measuredCoverage"
+          },
+          "id" : "callable:Workspace.Processor.copiedA(_:):coverage:lcov",
+          "kind" : "coverage.lcov",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 25,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 100,
+          "note" : "Coverage dampener matched with strategies sourcePathExact>functionNameExact>functionNameSuffix>functionStartLine>executableLine; Matched executable line with executed hits",
+          "rawValue" : "covered=1/1;coverage=100%;confidence=fallback",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Processor.copiedA(_:):cyclomatic-complexity",
+          "kind" : "swift.cyclomatic-complexity",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 25,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 5,
+          "note" : "Cyclomatic complexity follows the existing CCF decision policy, preserving SCMA metric behavior.",
+          "rawValue" : "value=1",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Processor.copiedA(_:):function-lines",
+          "kind" : "swift.function-lines",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 25,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 23.333333333333332,
+          "note" : "Physical token-bearing lines inside the callable body, excluding the outer signature and braces.",
+          "rawValue" : "value=14",
+          "requirement" : "optional",
+          "weight" : 0.5
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Processor.copiedA(_:):git-history:change-frequency",
+          "kind" : "git-history.change-frequency",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 25,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 20,
+          "note" : "Counted a bounded, rename-aware Git history for the entity file; truncation is reported explicitly.",
+          "rawValue" : "commits=1;window=last-500-file-commits;truncated=false",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Processor.copiedA(_:):git-history:contributor-concentration",
+          "kind" : "git-history.contributor-concentration",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 25,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 100,
+          "note" : "Contributor identities are counted internally and omitted from evidence output.",
+          "rawValue" : "uniqueContributors=1;topShare=1.000",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Processor.copiedA(_:):git-history:fix-orientation",
+          "kind" : "git-history.fix-orientation",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 25,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 0,
+          "note" : "Fix-oriented commits are classified by subject tokens only.",
+          "rawValue" : "fixCommits=0;commits=1;rules=fix,bug,crash,defect,regression,hotfix,repair",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Processor.copiedA(_:):git-history:recency",
+          "kind" : "git-history.recency",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 25,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 76.92307692307692,
+          "note" : "Computed against the injected reference time, not an ambient clock.",
+          "rawValue" : "lastChangeDaysAgo=9;lastChangedAt=2026-09-12T12:00:00Z;referenceTime=2026-09-22T00:00:00Z",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Processor.copiedA(_:):nesting-depth",
+          "kind" : "swift.nesting-depth",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 25,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 0,
+          "note" : "Maximum nested Swift control-flow depth observed in this callable body.",
+          "rawValue" : "value=0",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Processor.copiedA(_:):parameter-count",
+          "kind" : "swift.parameter-count",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 25,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 16.666666666666668,
+          "note" : "Declared callable parameters counted with the same parser facts as NOPF.",
+          "rawValue" : "value=1",
+          "requirement" : "optional",
+          "weight" : 0.5
+        }
+      ],
+      "explanation" : "Highest evidence is swift.side-effect.mutation with raw value count=12;details=value +=,value *=,value -=,value +=,value *=,value -=,value +=,value *=,value -=,value +=,value *=,value -=. Measured SwiftSyntax facts with measuredSyntax confidence; not compiler semantic proof.",
+      "id" : "callable:Workspace.Processor.copiedA(_:)",
+      "level" : "callable",
+      "location" : {
+        "column" : 5,
+        "file" : "Example.swift",
+        "line" : 25,
+        "module" : "Workspace"
+      },
+      "priority" : "low",
+      "recommendation" : "Prioritize tests around this context before structural refactoring; coverage evidence can only dampen risk.",
+      "score" : 32.597495527728086,
+      "scoreBreakdown" : {
+        "contributions" : [
+          {
+            "configuredWeight" : 1,
+            "contribution" : 9.30232558139535,
+            "effectiveWeight" : 0.09302325581395349,
+            "evidenceID" : "Workspace.Processor.copiedA(_:):effect:mutation",
+            "kind" : "swift.side-effect.mutation",
+            "normalizedScore" : 100,
+            "note" : "Measured SwiftSyntax facts with measuredSyntax confidence; not compiler semantic proof.",
+            "rawValue" : "count=12;details=value +=,value *=,value -=,value +=,value *=,value -=,value +=,value *=,value -=,value +=,value *=,value -="
+          },
+          {
+            "configuredWeight" : 0.75,
+            "contribution" : 2.6511627906976742,
+            "effectiveWeight" : 0.06976744186046512,
+            "evidenceID" : "Workspace.Processor.copiedA(_:):pattern-consistency",
+            "kind" : "swift.pattern-consistency.heuristic",
+            "normalizedScore" : 38,
+            "note" : "Heuristic pattern-consistency score from deterministic syntax counts; not compiler semantic proof.",
+            "rawValue" : "locf=14;ccf=1;parameters=1;effectKinds=1;composition=0"
+          },
+          {
+            "configuredWeight" : 2,
+            "contribution" : 0,
+            "effectiveWeight" : 0.18604651162790697,
+            "evidenceID" : "callable:Workspace.Processor.copiedA(_:):cognitive-complexity",
+            "kind" : "swift.cognitive-complexity",
+            "normalizedScore" : 0,
+            "note" : "Cognitive complexity adds current nesting to Swift flow breaks and ignores async, throws and await keywords.",
+            "rawValue" : "value=0"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0,
+            "effectiveWeight" : 0,
+            "evidenceID" : "callable:Workspace.Processor.copiedA(_:):coverage:lcov",
+            "kind" : "coverage.lcov",
+            "normalizedScore" : 100,
+            "note" : "Coverage dampener matched with strategies sourcePathExact>functionNameExact>functionNameSuffix>functionStartLine>executableLine; Matched executable line with executed hits; coverage dampener; cannot increase score",
+            "rawValue" : "covered=1/1;coverage=100%;confidence=fallback"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0.46511627906976744,
+            "effectiveWeight" : 0.09302325581395349,
+            "evidenceID" : "callable:Workspace.Processor.copiedA(_:):cyclomatic-complexity",
+            "kind" : "swift.cyclomatic-complexity",
+            "normalizedScore" : 5,
+            "note" : "Cyclomatic complexity follows the existing CCF decision policy, preserving SCMA metric behavior.",
+            "rawValue" : "value=1"
+          },
+          {
+            "configuredWeight" : 0.5,
+            "contribution" : 1.0852713178294573,
+            "effectiveWeight" : 0.046511627906976744,
+            "evidenceID" : "callable:Workspace.Processor.copiedA(_:):function-lines",
+            "kind" : "swift.function-lines",
+            "normalizedScore" : 23.333333333333332,
+            "note" : "Physical token-bearing lines inside the callable body, excluding the outer signature and braces.",
+            "rawValue" : "value=14"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 1.8604651162790697,
+            "effectiveWeight" : 0.09302325581395349,
+            "evidenceID" : "callable:Workspace.Processor.copiedA(_:):git-history:change-frequency",
+            "kind" : "git-history.change-frequency",
+            "normalizedScore" : 20,
+            "note" : "Counted a bounded, rename-aware Git history for the entity file; truncation is reported explicitly.",
+            "rawValue" : "commits=1;window=last-500-file-commits;truncated=false"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 9.30232558139535,
+            "effectiveWeight" : 0.09302325581395349,
+            "evidenceID" : "callable:Workspace.Processor.copiedA(_:):git-history:contributor-concentration",
+            "kind" : "git-history.contributor-concentration",
+            "normalizedScore" : 100,
+            "note" : "Contributor identities are counted internally and omitted from evidence output.",
+            "rawValue" : "uniqueContributors=1;topShare=1.000"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0,
+            "effectiveWeight" : 0.09302325581395349,
+            "evidenceID" : "callable:Workspace.Processor.copiedA(_:):git-history:fix-orientation",
+            "kind" : "git-history.fix-orientation",
+            "normalizedScore" : 0,
+            "note" : "Fix-oriented commits are classified by subject tokens only.",
+            "rawValue" : "fixCommits=0;commits=1;rules=fix,bug,crash,defect,regression,hotfix,repair"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 7.155635062611807,
+            "effectiveWeight" : 0.09302325581395349,
+            "evidenceID" : "callable:Workspace.Processor.copiedA(_:):git-history:recency",
+            "kind" : "git-history.recency",
+            "normalizedScore" : 76.92307692307692,
+            "note" : "Computed against the injected reference time, not an ambient clock.",
+            "rawValue" : "lastChangeDaysAgo=9;lastChangedAt=2026-09-12T12:00:00Z;referenceTime=2026-09-22T00:00:00Z"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0,
+            "effectiveWeight" : 0.09302325581395349,
+            "evidenceID" : "callable:Workspace.Processor.copiedA(_:):nesting-depth",
+            "kind" : "swift.nesting-depth",
+            "normalizedScore" : 0,
+            "note" : "Maximum nested Swift control-flow depth observed in this callable body.",
+            "rawValue" : "value=0"
+          },
+          {
+            "configuredWeight" : 0.5,
+            "contribution" : 0.7751937984496124,
+            "effectiveWeight" : 0.046511627906976744,
+            "evidenceID" : "callable:Workspace.Processor.copiedA(_:):parameter-count",
+            "kind" : "swift.parameter-count",
+            "normalizedScore" : 16.666666666666668,
+            "note" : "Declared callable parameters counted with the same parser facts as NOPF.",
+            "rawValue" : "value=1"
+          }
+        ],
+        "totalAvailableWeight" : 10.75,
+        "totalConfiguredWeight" : 11.75,
+        "unavailableEvidence" : [
+
+        ]
+      }
+    },
+    {
+      "category" : "coverage",
+      "displayName" : "Workspace.Processor.copiedB(_:)",
+      "evidence" : [
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "Workspace.Processor.copiedB(_:):effect:mutation",
+          "kind" : "swift.side-effect.mutation",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 42,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 100,
+          "note" : "Measured SwiftSyntax facts with measuredSyntax confidence; not compiler semantic proof.",
+          "rawValue" : "count=12;details=value +=,value *=,value -=,value +=,value *=,value -=,value +=,value *=,value -=,value +=,value *=,value -=",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "Workspace.Processor.copiedB(_:):pattern-consistency",
+          "kind" : "swift.pattern-consistency.heuristic",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 42,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 38,
+          "note" : "Heuristic pattern-consistency score from deterministic syntax counts; not compiler semantic proof.",
+          "rawValue" : "locf=14;ccf=1;parameters=1;effectKinds=1;composition=0",
+          "requirement" : "optional",
+          "weight" : 0.75
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Processor.copiedB(_:):cognitive-complexity",
+          "kind" : "swift.cognitive-complexity",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 42,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 0,
+          "note" : "Cognitive complexity adds current nesting to Swift flow breaks and ignores async, throws and await keywords.",
+          "rawValue" : "value=0",
+          "requirement" : "optional",
+          "weight" : 2
+        },
+        {
+          "availability" : {
+            "state" : "measuredCoverage"
+          },
+          "id" : "callable:Workspace.Processor.copiedB(_:):coverage:lcov",
+          "kind" : "coverage.lcov",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 42,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 100,
+          "note" : "Coverage dampener matched with strategies sourcePathExact>functionNameExact>functionNameSuffix>functionStartLine>executableLine; Matched executable line with executed hits",
+          "rawValue" : "covered=1/1;coverage=100%;confidence=fallback",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Processor.copiedB(_:):cyclomatic-complexity",
+          "kind" : "swift.cyclomatic-complexity",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 42,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 5,
+          "note" : "Cyclomatic complexity follows the existing CCF decision policy, preserving SCMA metric behavior.",
+          "rawValue" : "value=1",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Processor.copiedB(_:):function-lines",
+          "kind" : "swift.function-lines",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 42,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 23.333333333333332,
+          "note" : "Physical token-bearing lines inside the callable body, excluding the outer signature and braces.",
+          "rawValue" : "value=14",
+          "requirement" : "optional",
+          "weight" : 0.5
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Processor.copiedB(_:):git-history:change-frequency",
+          "kind" : "git-history.change-frequency",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 42,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 20,
+          "note" : "Counted a bounded, rename-aware Git history for the entity file; truncation is reported explicitly.",
+          "rawValue" : "commits=1;window=last-500-file-commits;truncated=false",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Processor.copiedB(_:):git-history:contributor-concentration",
+          "kind" : "git-history.contributor-concentration",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 42,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 100,
+          "note" : "Contributor identities are counted internally and omitted from evidence output.",
+          "rawValue" : "uniqueContributors=1;topShare=1.000",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Processor.copiedB(_:):git-history:fix-orientation",
+          "kind" : "git-history.fix-orientation",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 42,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 0,
+          "note" : "Fix-oriented commits are classified by subject tokens only.",
+          "rawValue" : "fixCommits=0;commits=1;rules=fix,bug,crash,defect,regression,hotfix,repair",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Processor.copiedB(_:):git-history:recency",
+          "kind" : "git-history.recency",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 42,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 76.92307692307692,
+          "note" : "Computed against the injected reference time, not an ambient clock.",
+          "rawValue" : "lastChangeDaysAgo=9;lastChangedAt=2026-09-12T12:00:00Z;referenceTime=2026-09-22T00:00:00Z",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Processor.copiedB(_:):nesting-depth",
+          "kind" : "swift.nesting-depth",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 42,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 0,
+          "note" : "Maximum nested Swift control-flow depth observed in this callable body.",
+          "rawValue" : "value=0",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Processor.copiedB(_:):parameter-count",
+          "kind" : "swift.parameter-count",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 42,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 16.666666666666668,
+          "note" : "Declared callable parameters counted with the same parser facts as NOPF.",
+          "rawValue" : "value=1",
+          "requirement" : "optional",
+          "weight" : 0.5
+        }
+      ],
+      "explanation" : "Highest evidence is swift.side-effect.mutation with raw value count=12;details=value +=,value *=,value -=,value +=,value *=,value -=,value +=,value *=,value -=,value +=,value *=,value -=. Measured SwiftSyntax facts with measuredSyntax confidence; not compiler semantic proof.",
+      "id" : "callable:Workspace.Processor.copiedB(_:)",
+      "level" : "callable",
+      "location" : {
+        "column" : 5,
+        "file" : "Example.swift",
+        "line" : 42,
+        "module" : "Workspace"
+      },
+      "priority" : "low",
+      "recommendation" : "Prioritize tests around this context before structural refactoring; coverage evidence can only dampen risk.",
+      "score" : 32.597495527728086,
+      "scoreBreakdown" : {
+        "contributions" : [
+          {
+            "configuredWeight" : 1,
+            "contribution" : 9.30232558139535,
+            "effectiveWeight" : 0.09302325581395349,
+            "evidenceID" : "Workspace.Processor.copiedB(_:):effect:mutation",
+            "kind" : "swift.side-effect.mutation",
+            "normalizedScore" : 100,
+            "note" : "Measured SwiftSyntax facts with measuredSyntax confidence; not compiler semantic proof.",
+            "rawValue" : "count=12;details=value +=,value *=,value -=,value +=,value *=,value -=,value +=,value *=,value -=,value +=,value *=,value -="
+          },
+          {
+            "configuredWeight" : 0.75,
+            "contribution" : 2.6511627906976742,
+            "effectiveWeight" : 0.06976744186046512,
+            "evidenceID" : "Workspace.Processor.copiedB(_:):pattern-consistency",
+            "kind" : "swift.pattern-consistency.heuristic",
+            "normalizedScore" : 38,
+            "note" : "Heuristic pattern-consistency score from deterministic syntax counts; not compiler semantic proof.",
+            "rawValue" : "locf=14;ccf=1;parameters=1;effectKinds=1;composition=0"
+          },
+          {
+            "configuredWeight" : 2,
+            "contribution" : 0,
+            "effectiveWeight" : 0.18604651162790697,
+            "evidenceID" : "callable:Workspace.Processor.copiedB(_:):cognitive-complexity",
+            "kind" : "swift.cognitive-complexity",
+            "normalizedScore" : 0,
+            "note" : "Cognitive complexity adds current nesting to Swift flow breaks and ignores async, throws and await keywords.",
+            "rawValue" : "value=0"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0,
+            "effectiveWeight" : 0,
+            "evidenceID" : "callable:Workspace.Processor.copiedB(_:):coverage:lcov",
+            "kind" : "coverage.lcov",
+            "normalizedScore" : 100,
+            "note" : "Coverage dampener matched with strategies sourcePathExact>functionNameExact>functionNameSuffix>functionStartLine>executableLine; Matched executable line with executed hits; coverage dampener; cannot increase score",
+            "rawValue" : "covered=1/1;coverage=100%;confidence=fallback"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0.46511627906976744,
+            "effectiveWeight" : 0.09302325581395349,
+            "evidenceID" : "callable:Workspace.Processor.copiedB(_:):cyclomatic-complexity",
+            "kind" : "swift.cyclomatic-complexity",
+            "normalizedScore" : 5,
+            "note" : "Cyclomatic complexity follows the existing CCF decision policy, preserving SCMA metric behavior.",
+            "rawValue" : "value=1"
+          },
+          {
+            "configuredWeight" : 0.5,
+            "contribution" : 1.0852713178294573,
+            "effectiveWeight" : 0.046511627906976744,
+            "evidenceID" : "callable:Workspace.Processor.copiedB(_:):function-lines",
+            "kind" : "swift.function-lines",
+            "normalizedScore" : 23.333333333333332,
+            "note" : "Physical token-bearing lines inside the callable body, excluding the outer signature and braces.",
+            "rawValue" : "value=14"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 1.8604651162790697,
+            "effectiveWeight" : 0.09302325581395349,
+            "evidenceID" : "callable:Workspace.Processor.copiedB(_:):git-history:change-frequency",
+            "kind" : "git-history.change-frequency",
+            "normalizedScore" : 20,
+            "note" : "Counted a bounded, rename-aware Git history for the entity file; truncation is reported explicitly.",
+            "rawValue" : "commits=1;window=last-500-file-commits;truncated=false"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 9.30232558139535,
+            "effectiveWeight" : 0.09302325581395349,
+            "evidenceID" : "callable:Workspace.Processor.copiedB(_:):git-history:contributor-concentration",
+            "kind" : "git-history.contributor-concentration",
+            "normalizedScore" : 100,
+            "note" : "Contributor identities are counted internally and omitted from evidence output.",
+            "rawValue" : "uniqueContributors=1;topShare=1.000"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0,
+            "effectiveWeight" : 0.09302325581395349,
+            "evidenceID" : "callable:Workspace.Processor.copiedB(_:):git-history:fix-orientation",
+            "kind" : "git-history.fix-orientation",
+            "normalizedScore" : 0,
+            "note" : "Fix-oriented commits are classified by subject tokens only.",
+            "rawValue" : "fixCommits=0;commits=1;rules=fix,bug,crash,defect,regression,hotfix,repair"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 7.155635062611807,
+            "effectiveWeight" : 0.09302325581395349,
+            "evidenceID" : "callable:Workspace.Processor.copiedB(_:):git-history:recency",
+            "kind" : "git-history.recency",
+            "normalizedScore" : 76.92307692307692,
+            "note" : "Computed against the injected reference time, not an ambient clock.",
+            "rawValue" : "lastChangeDaysAgo=9;lastChangedAt=2026-09-12T12:00:00Z;referenceTime=2026-09-22T00:00:00Z"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0,
+            "effectiveWeight" : 0.09302325581395349,
+            "evidenceID" : "callable:Workspace.Processor.copiedB(_:):nesting-depth",
+            "kind" : "swift.nesting-depth",
+            "normalizedScore" : 0,
+            "note" : "Maximum nested Swift control-flow depth observed in this callable body.",
+            "rawValue" : "value=0"
+          },
+          {
+            "configuredWeight" : 0.5,
+            "contribution" : 0.7751937984496124,
+            "effectiveWeight" : 0.046511627906976744,
+            "evidenceID" : "callable:Workspace.Processor.copiedB(_:):parameter-count",
+            "kind" : "swift.parameter-count",
+            "normalizedScore" : 16.666666666666668,
+            "note" : "Declared callable parameters counted with the same parser facts as NOPF.",
+            "rawValue" : "value=1"
+          }
+        ],
+        "totalAvailableWeight" : 10.75,
+        "totalConfiguredWeight" : 11.75,
+        "unavailableEvidence" : [
+
+        ]
+      }
+    },
+    {
+      "category" : "coverage",
+      "displayName" : "Workspace",
+      "evidence" : [
+        {
+          "availability" : {
+            "state" : "measuredCoverage"
+          },
+          "id" : "module:Workspace:coverage:lcov",
+          "kind" : "coverage.lcov",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 2,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 100,
+          "note" : "Coverage dampener matched with strategies sourcePathExact>executableLine; Matched 62 covered executable lines out of 62",
+          "rawValue" : "covered=62/62;coverage=100%;confidence=exact",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "module:Workspace:git-history:change-frequency",
+          "kind" : "git-history.change-frequency",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 2,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 20,
+          "note" : "Counted a bounded, rename-aware Git history for the entity file; truncation is reported explicitly.",
+          "rawValue" : "commits=1;window=last-500-file-commits;truncated=false",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "module:Workspace:git-history:contributor-concentration",
+          "kind" : "git-history.contributor-concentration",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 2,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 100,
+          "note" : "Contributor identities are counted internally and omitted from evidence output.",
+          "rawValue" : "uniqueContributors=1;topShare=1.000",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "module:Workspace:git-history:fix-orientation",
+          "kind" : "git-history.fix-orientation",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 2,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 0,
+          "note" : "Fix-oriented commits are classified by subject tokens only.",
+          "rawValue" : "fixCommits=0;commits=1;rules=fix,bug,crash,defect,regression,hotfix,repair",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "module:Workspace:git-history:recency",
+          "kind" : "git-history.recency",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 2,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 76.92307692307692,
+          "note" : "Computed against the injected reference time, not an ambient clock.",
+          "rawValue" : "lastChangeDaysAgo=9;lastChangedAt=2026-09-12T12:00:00Z;referenceTime=2026-09-22T00:00:00Z",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "module:Workspace:module-callable-count",
+          "kind" : "swift.module-callable-count",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 2,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 1.25,
+          "note" : "Implemented callables aggregated for this module.",
+          "rawValue" : "value=5",
+          "requirement" : "optional",
+          "weight" : 0.5
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "module:Workspace:module-file-count",
+          "kind" : "swift.module-file-count",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 2,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 1,
+          "note" : "Parsed Swift source files in this module.",
+          "rawValue" : "value=1",
+          "requirement" : "optional",
+          "weight" : 0.5
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "module:Workspace:module-lines",
+          "kind" : "swift.module-lines",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 2,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 1.1,
+          "note" : "Token-bearing Swift lines summed across parsed files in this module.",
+          "rawValue" : "value=55",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "module:Workspace:module-type-count",
+          "kind" : "swift.module-type-count",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 2,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 2,
+          "note" : "Selected types aggregated for this module.",
+          "rawValue" : "value=2",
+          "requirement" : "optional",
+          "weight" : 0.5
+        }
+      ],
+      "explanation" : "Highest evidence is coverage.lcov with raw value covered=62/62;coverage=100%;confidence=exact. Coverage dampener matched with strategies sourcePathExact>executableLine; Matched 62 covered executable lines out of 62",
+      "id" : "module:Workspace",
+      "level" : "module",
+      "location" : {
+        "column" : 1,
+        "file" : "Example.swift",
+        "line" : 2,
+        "module" : "Workspace"
+      },
+      "priority" : "low",
+      "recommendation" : "Prioritize tests around this context before structural refactoring; coverage evidence can only dampen risk.",
+      "score" : 30.792011834319528,
+      "scoreBreakdown" : {
+        "contributions" : [
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0,
+            "effectiveWeight" : 0,
+            "evidenceID" : "module:Workspace:coverage:lcov",
+            "kind" : "coverage.lcov",
+            "normalizedScore" : 100,
+            "note" : "Coverage dampener matched with strategies sourcePathExact>executableLine; Matched 62 covered executable lines out of 62; coverage dampener; cannot increase score",
+            "rawValue" : "covered=62/62;coverage=100%;confidence=exact"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 3.076923076923077,
+            "effectiveWeight" : 0.15384615384615385,
+            "evidenceID" : "module:Workspace:git-history:change-frequency",
+            "kind" : "git-history.change-frequency",
+            "normalizedScore" : 20,
+            "note" : "Counted a bounded, rename-aware Git history for the entity file; truncation is reported explicitly.",
+            "rawValue" : "commits=1;window=last-500-file-commits;truncated=false"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 15.384615384615385,
+            "effectiveWeight" : 0.15384615384615385,
+            "evidenceID" : "module:Workspace:git-history:contributor-concentration",
+            "kind" : "git-history.contributor-concentration",
+            "normalizedScore" : 100,
+            "note" : "Contributor identities are counted internally and omitted from evidence output.",
+            "rawValue" : "uniqueContributors=1;topShare=1.000"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0,
+            "effectiveWeight" : 0.15384615384615385,
+            "evidenceID" : "module:Workspace:git-history:fix-orientation",
+            "kind" : "git-history.fix-orientation",
+            "normalizedScore" : 0,
+            "note" : "Fix-oriented commits are classified by subject tokens only.",
+            "rawValue" : "fixCommits=0;commits=1;rules=fix,bug,crash,defect,regression,hotfix,repair"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 11.834319526627219,
+            "effectiveWeight" : 0.15384615384615385,
+            "evidenceID" : "module:Workspace:git-history:recency",
+            "kind" : "git-history.recency",
+            "normalizedScore" : 76.92307692307692,
+            "note" : "Computed against the injected reference time, not an ambient clock.",
+            "rawValue" : "lastChangeDaysAgo=9;lastChangedAt=2026-09-12T12:00:00Z;referenceTime=2026-09-22T00:00:00Z"
+          },
+          {
+            "configuredWeight" : 0.5,
+            "contribution" : 0.09615384615384616,
+            "effectiveWeight" : 0.07692307692307693,
+            "evidenceID" : "module:Workspace:module-callable-count",
+            "kind" : "swift.module-callable-count",
+            "normalizedScore" : 1.25,
+            "note" : "Implemented callables aggregated for this module.",
+            "rawValue" : "value=5"
+          },
+          {
+            "configuredWeight" : 0.5,
+            "contribution" : 0.07692307692307693,
+            "effectiveWeight" : 0.07692307692307693,
+            "evidenceID" : "module:Workspace:module-file-count",
+            "kind" : "swift.module-file-count",
+            "normalizedScore" : 1,
+            "note" : "Parsed Swift source files in this module.",
+            "rawValue" : "value=1"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0.16923076923076924,
+            "effectiveWeight" : 0.15384615384615385,
+            "evidenceID" : "module:Workspace:module-lines",
+            "kind" : "swift.module-lines",
+            "normalizedScore" : 1.1,
+            "note" : "Token-bearing Swift lines summed across parsed files in this module.",
+            "rawValue" : "value=55"
+          },
+          {
+            "configuredWeight" : 0.5,
+            "contribution" : 0.15384615384615385,
+            "effectiveWeight" : 0.07692307692307693,
+            "evidenceID" : "module:Workspace:module-type-count",
+            "kind" : "swift.module-type-count",
+            "normalizedScore" : 2,
+            "note" : "Selected types aggregated for this module.",
+            "rawValue" : "value=2"
+          }
+        ],
+        "totalAvailableWeight" : 6.5,
+        "totalConfiguredWeight" : 7.5,
+        "unavailableEvidence" : [
+
+        ]
+      }
+    },
+    {
+      "category" : "coverage",
+      "displayName" : "Workspace.Processor",
+      "evidence" : [
+        {
+          "availability" : {
+            "state" : "measuredCoverage"
+          },
+          "id" : "type:Workspace.Processor:coverage:lcov",
+          "kind" : "coverage.lcov",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 10,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 100,
+          "note" : "Coverage dampener matched with strategies sourcePathExact>executableLine; Matched 62 covered executable lines out of 62",
+          "rawValue" : "covered=62/62;coverage=100%;confidence=exact",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "type:Workspace.Processor:dependency-context",
+          "kind" : "swift.dependency-context",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 10,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 10,
+          "note" : "One-hop dependency context from deterministic SwiftSyntax edges; not compiler semantic proof.",
+          "rawValue" : "afferent=0;efferent=1;callers=0;productionCallers=0;testCallers=0;fanIn=0;fanOut=1;instability=1.0",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "type:Workspace.Processor:git-history:change-frequency",
+          "kind" : "git-history.change-frequency",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 10,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 20,
+          "note" : "Counted a bounded, rename-aware Git history for the entity file; truncation is reported explicitly.",
+          "rawValue" : "commits=1;window=last-500-file-commits;truncated=false",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "type:Workspace.Processor:git-history:contributor-concentration",
+          "kind" : "git-history.contributor-concentration",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 10,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 100,
+          "note" : "Contributor identities are counted internally and omitted from evidence output.",
+          "rawValue" : "uniqueContributors=1;topShare=1.000",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "type:Workspace.Processor:git-history:fix-orientation",
+          "kind" : "git-history.fix-orientation",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 10,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 0,
+          "note" : "Fix-oriented commits are classified by subject tokens only.",
+          "rawValue" : "fixCommits=0;commits=1;rules=fix,bug,crash,defect,regression,hotfix,repair",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "type:Workspace.Processor:git-history:recency",
+          "kind" : "git-history.recency",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 10,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 76.92307692307692,
+          "note" : "Computed against the injected reference time, not an ambient clock.",
+          "rawValue" : "lastChangeDaysAgo=9;lastChangedAt=2026-09-12T12:00:00Z;referenceTime=2026-09-22T00:00:00Z",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "type:Workspace.Processor:method-count",
+          "kind" : "swift.method-count",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 10,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 10,
+          "note" : "Direct func, init and deinit bodies only; accessors remain excluded from NOMC.",
+          "rawValue" : "value=3",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "type:Workspace.Processor:oversized-type",
+          "kind" : "swift.oversized-type",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 10,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 10,
+          "note" : "Direct callables provide deterministic decomposition seeds: Workspace.Processor.copiedA(_:), Workspace.Processor.copiedB(_:), Workspace.Processor.process(_:enabled:).",
+          "rawValue" : "lines=46;methods=3;properties=1;wmcc=7",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "type:Workspace.Processor:property-count",
+          "kind" : "swift.property-count",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 10,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 5,
+          "note" : "Direct type-scope property bindings used by the existing NOGC calculation.",
+          "rawValue" : "value=1",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "type:Workspace.Processor:type-lines",
+          "kind" : "swift.type-lines",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 10,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 9.2,
+          "note" : "Token-bearing lines across the selected type declaration and same-module extensions.",
+          "rawValue" : "value=46",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "type:Workspace.Processor:weighted-method-complexity",
+          "kind" : "swift.weighted-method-complexity",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 10,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 3.5,
+          "note" : "Sum of existing CCF over direct methods and accessor bodies for this type.",
+          "rawValue" : "value=7",
+          "requirement" : "optional",
+          "weight" : 1
+        }
+      ],
+      "explanation" : "Highest evidence is coverage.lcov with raw value covered=62/62;coverage=100%;confidence=exact. Coverage dampener matched with strategies sourcePathExact>executableLine; Matched 62 covered executable lines out of 62",
+      "id" : "type:Workspace.Processor",
+      "level" : "type",
+      "location" : {
+        "column" : 1,
+        "file" : "Example.swift",
+        "line" : 10,
+        "module" : "Workspace"
+      },
+      "priority" : "low",
+      "recommendation" : "Prioritize tests around this context before structural refactoring; coverage evidence can only dampen risk.",
+      "score" : 24.462307692307697,
+      "scoreBreakdown" : {
+        "contributions" : [
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0,
+            "effectiveWeight" : 0,
+            "evidenceID" : "type:Workspace.Processor:coverage:lcov",
+            "kind" : "coverage.lcov",
+            "normalizedScore" : 100,
+            "note" : "Coverage dampener matched with strategies sourcePathExact>executableLine; Matched 62 covered executable lines out of 62; coverage dampener; cannot increase score",
+            "rawValue" : "covered=62/62;coverage=100%;confidence=exact"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 1,
+            "effectiveWeight" : 0.1,
+            "evidenceID" : "type:Workspace.Processor:dependency-context",
+            "kind" : "swift.dependency-context",
+            "normalizedScore" : 10,
+            "note" : "One-hop dependency context from deterministic SwiftSyntax edges; not compiler semantic proof.",
+            "rawValue" : "afferent=0;efferent=1;callers=0;productionCallers=0;testCallers=0;fanIn=0;fanOut=1;instability=1.0"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 2,
+            "effectiveWeight" : 0.1,
+            "evidenceID" : "type:Workspace.Processor:git-history:change-frequency",
+            "kind" : "git-history.change-frequency",
+            "normalizedScore" : 20,
+            "note" : "Counted a bounded, rename-aware Git history for the entity file; truncation is reported explicitly.",
+            "rawValue" : "commits=1;window=last-500-file-commits;truncated=false"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 10,
+            "effectiveWeight" : 0.1,
+            "evidenceID" : "type:Workspace.Processor:git-history:contributor-concentration",
+            "kind" : "git-history.contributor-concentration",
+            "normalizedScore" : 100,
+            "note" : "Contributor identities are counted internally and omitted from evidence output.",
+            "rawValue" : "uniqueContributors=1;topShare=1.000"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0,
+            "effectiveWeight" : 0.1,
+            "evidenceID" : "type:Workspace.Processor:git-history:fix-orientation",
+            "kind" : "git-history.fix-orientation",
+            "normalizedScore" : 0,
+            "note" : "Fix-oriented commits are classified by subject tokens only.",
+            "rawValue" : "fixCommits=0;commits=1;rules=fix,bug,crash,defect,regression,hotfix,repair"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 7.6923076923076925,
+            "effectiveWeight" : 0.1,
+            "evidenceID" : "type:Workspace.Processor:git-history:recency",
+            "kind" : "git-history.recency",
+            "normalizedScore" : 76.92307692307692,
+            "note" : "Computed against the injected reference time, not an ambient clock.",
+            "rawValue" : "lastChangeDaysAgo=9;lastChangedAt=2026-09-12T12:00:00Z;referenceTime=2026-09-22T00:00:00Z"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 1,
+            "effectiveWeight" : 0.1,
+            "evidenceID" : "type:Workspace.Processor:method-count",
+            "kind" : "swift.method-count",
+            "normalizedScore" : 10,
+            "note" : "Direct func, init and deinit bodies only; accessors remain excluded from NOMC.",
+            "rawValue" : "value=3"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 1,
+            "effectiveWeight" : 0.1,
+            "evidenceID" : "type:Workspace.Processor:oversized-type",
+            "kind" : "swift.oversized-type",
+            "normalizedScore" : 10,
+            "note" : "Direct callables provide deterministic decomposition seeds: Workspace.Processor.copiedA(_:), Workspace.Processor.copiedB(_:), Workspace.Processor.process(_:enabled:).",
+            "rawValue" : "lines=46;methods=3;properties=1;wmcc=7"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0.5,
+            "effectiveWeight" : 0.1,
+            "evidenceID" : "type:Workspace.Processor:property-count",
+            "kind" : "swift.property-count",
+            "normalizedScore" : 5,
+            "note" : "Direct type-scope property bindings used by the existing NOGC calculation.",
+            "rawValue" : "value=1"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0.9199999999999999,
+            "effectiveWeight" : 0.1,
+            "evidenceID" : "type:Workspace.Processor:type-lines",
+            "kind" : "swift.type-lines",
+            "normalizedScore" : 9.2,
+            "note" : "Token-bearing lines across the selected type declaration and same-module extensions.",
+            "rawValue" : "value=46"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0.35000000000000003,
+            "effectiveWeight" : 0.1,
+            "evidenceID" : "type:Workspace.Processor:weighted-method-complexity",
+            "kind" : "swift.weighted-method-complexity",
+            "normalizedScore" : 3.5,
+            "note" : "Sum of existing CCF over direct methods and accessor bodies for this type.",
+            "rawValue" : "value=7"
+          }
+        ],
+        "totalAvailableWeight" : 10,
+        "totalConfiguredWeight" : 11,
+        "unavailableEvidence" : [
+
+        ]
+      }
+    },
+    {
+      "category" : "coverage",
+      "displayName" : "Workspace.Store.save(_:)",
+      "evidence" : [
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "Workspace.Store.save(_:):effect:mutation",
+          "kind" : "swift.side-effect.mutation",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 5,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 12,
+          "note" : "Measured SwiftSyntax facts with measuredSyntax confidence; not compiler semantic proof.",
+          "rawValue" : "count=1;details=value =",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "Workspace.Store.save(_:):effect:propertyWrite",
+          "kind" : "swift.side-effect.propertyWrite",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 5,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 18,
+          "note" : "Measured SwiftSyntax facts with measuredSyntax confidence; not compiler semantic proof.",
+          "rawValue" : "count=1;details=value =",
+          "requirement" : "optional",
+          "weight" : 1.5
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "Workspace.Store.save(_:):pattern-consistency",
+          "kind" : "swift.pattern-consistency.heuristic",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 5,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 30,
+          "note" : "Heuristic pattern-consistency score from deterministic syntax counts; not compiler semantic proof.",
+          "rawValue" : "locf=1;ccf=1;parameters=1;effectKinds=2;composition=0",
+          "requirement" : "optional",
+          "weight" : 0.75
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Store.save(_:):cognitive-complexity",
+          "kind" : "swift.cognitive-complexity",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 5,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 0,
+          "note" : "Cognitive complexity adds current nesting to Swift flow breaks and ignores async, throws and await keywords.",
+          "rawValue" : "value=0",
+          "requirement" : "optional",
+          "weight" : 2
+        },
+        {
+          "availability" : {
+            "state" : "measuredCoverage"
+          },
+          "id" : "callable:Workspace.Store.save(_:):coverage:lcov",
+          "kind" : "coverage.lcov",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 5,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 100,
+          "note" : "Coverage dampener matched with strategies sourcePathExact>functionNameExact>functionNameSuffix>functionStartLine>executableLine; Matched executable line with executed hits",
+          "rawValue" : "covered=1/1;coverage=100%;confidence=fallback",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Store.save(_:):cyclomatic-complexity",
+          "kind" : "swift.cyclomatic-complexity",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 5,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 5,
+          "note" : "Cyclomatic complexity follows the existing CCF decision policy, preserving SCMA metric behavior.",
+          "rawValue" : "value=1",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Store.save(_:):function-lines",
+          "kind" : "swift.function-lines",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 5,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 1.6666666666666667,
+          "note" : "Physical token-bearing lines inside the callable body, excluding the outer signature and braces.",
+          "rawValue" : "value=1",
+          "requirement" : "optional",
+          "weight" : 0.5
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Store.save(_:):git-history:change-frequency",
+          "kind" : "git-history.change-frequency",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 5,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 20,
+          "note" : "Counted a bounded, rename-aware Git history for the entity file; truncation is reported explicitly.",
+          "rawValue" : "commits=1;window=last-500-file-commits;truncated=false",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Store.save(_:):git-history:contributor-concentration",
+          "kind" : "git-history.contributor-concentration",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 5,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 100,
+          "note" : "Contributor identities are counted internally and omitted from evidence output.",
+          "rawValue" : "uniqueContributors=1;topShare=1.000",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Store.save(_:):git-history:fix-orientation",
+          "kind" : "git-history.fix-orientation",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 5,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 0,
+          "note" : "Fix-oriented commits are classified by subject tokens only.",
+          "rawValue" : "fixCommits=0;commits=1;rules=fix,bug,crash,defect,regression,hotfix,repair",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Store.save(_:):git-history:recency",
+          "kind" : "git-history.recency",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 5,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 76.92307692307692,
+          "note" : "Computed against the injected reference time, not an ambient clock.",
+          "rawValue" : "lastChangeDaysAgo=9;lastChangedAt=2026-09-12T12:00:00Z;referenceTime=2026-09-22T00:00:00Z",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Store.save(_:):nesting-depth",
+          "kind" : "swift.nesting-depth",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 5,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 0,
+          "note" : "Maximum nested Swift control-flow depth observed in this callable body.",
+          "rawValue" : "value=0",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Store.save(_:):parameter-count",
+          "kind" : "swift.parameter-count",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 5,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 16.666666666666668,
+          "note" : "Declared callable parameters counted with the same parser facts as NOPF.",
+          "rawValue" : "value=1",
+          "requirement" : "optional",
+          "weight" : 0.5
+        }
+      ],
+      "explanation" : "Highest evidence is coverage.lcov with raw value covered=1/1;coverage=100%;confidence=fallback. Coverage dampener matched with strategies sourcePathExact>functionNameExact>functionNameSuffix>functionStartLine>executableLine; Matched executable line with executed hits",
+      "id" : "callable:Workspace.Store.save(_:)",
+      "level" : "callable",
+      "location" : {
+        "column" : 5,
+        "file" : "Example.swift",
+        "line" : 5,
+        "module" : "Workspace"
+      },
+      "priority" : "low",
+      "recommendation" : "Prioritize tests around this context before structural refactoring; coverage evidence can only dampen risk.",
+      "score" : 22.252223966509682,
+      "scoreBreakdown" : {
+        "contributions" : [
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0.9795918367346939,
+            "effectiveWeight" : 0.08163265306122448,
+            "evidenceID" : "Workspace.Store.save(_:):effect:mutation",
+            "kind" : "swift.side-effect.mutation",
+            "normalizedScore" : 12,
+            "note" : "Measured SwiftSyntax facts with measuredSyntax confidence; not compiler semantic proof.",
+            "rawValue" : "count=1;details=value ="
+          },
+          {
+            "configuredWeight" : 1.5,
+            "contribution" : 2.204081632653061,
+            "effectiveWeight" : 0.12244897959183673,
+            "evidenceID" : "Workspace.Store.save(_:):effect:propertyWrite",
+            "kind" : "swift.side-effect.propertyWrite",
+            "normalizedScore" : 18,
+            "note" : "Measured SwiftSyntax facts with measuredSyntax confidence; not compiler semantic proof.",
+            "rawValue" : "count=1;details=value ="
+          },
+          {
+            "configuredWeight" : 0.75,
+            "contribution" : 1.836734693877551,
+            "effectiveWeight" : 0.061224489795918366,
+            "evidenceID" : "Workspace.Store.save(_:):pattern-consistency",
+            "kind" : "swift.pattern-consistency.heuristic",
+            "normalizedScore" : 30,
+            "note" : "Heuristic pattern-consistency score from deterministic syntax counts; not compiler semantic proof.",
+            "rawValue" : "locf=1;ccf=1;parameters=1;effectKinds=2;composition=0"
+          },
+          {
+            "configuredWeight" : 2,
+            "contribution" : 0,
+            "effectiveWeight" : 0.16326530612244897,
+            "evidenceID" : "callable:Workspace.Store.save(_:):cognitive-complexity",
+            "kind" : "swift.cognitive-complexity",
+            "normalizedScore" : 0,
+            "note" : "Cognitive complexity adds current nesting to Swift flow breaks and ignores async, throws and await keywords.",
+            "rawValue" : "value=0"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0,
+            "effectiveWeight" : 0,
+            "evidenceID" : "callable:Workspace.Store.save(_:):coverage:lcov",
+            "kind" : "coverage.lcov",
+            "normalizedScore" : 100,
+            "note" : "Coverage dampener matched with strategies sourcePathExact>functionNameExact>functionNameSuffix>functionStartLine>executableLine; Matched executable line with executed hits; coverage dampener; cannot increase score",
+            "rawValue" : "covered=1/1;coverage=100%;confidence=fallback"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0.4081632653061224,
+            "effectiveWeight" : 0.08163265306122448,
+            "evidenceID" : "callable:Workspace.Store.save(_:):cyclomatic-complexity",
+            "kind" : "swift.cyclomatic-complexity",
+            "normalizedScore" : 5,
+            "note" : "Cyclomatic complexity follows the existing CCF decision policy, preserving SCMA metric behavior.",
+            "rawValue" : "value=1"
+          },
+          {
+            "configuredWeight" : 0.5,
+            "contribution" : 0.06802721088435373,
+            "effectiveWeight" : 0.04081632653061224,
+            "evidenceID" : "callable:Workspace.Store.save(_:):function-lines",
+            "kind" : "swift.function-lines",
+            "normalizedScore" : 1.6666666666666667,
+            "note" : "Physical token-bearing lines inside the callable body, excluding the outer signature and braces.",
+            "rawValue" : "value=1"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 1.6326530612244896,
+            "effectiveWeight" : 0.08163265306122448,
+            "evidenceID" : "callable:Workspace.Store.save(_:):git-history:change-frequency",
+            "kind" : "git-history.change-frequency",
+            "normalizedScore" : 20,
+            "note" : "Counted a bounded, rename-aware Git history for the entity file; truncation is reported explicitly.",
+            "rawValue" : "commits=1;window=last-500-file-commits;truncated=false"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 8.16326530612245,
+            "effectiveWeight" : 0.08163265306122448,
+            "evidenceID" : "callable:Workspace.Store.save(_:):git-history:contributor-concentration",
+            "kind" : "git-history.contributor-concentration",
+            "normalizedScore" : 100,
+            "note" : "Contributor identities are counted internally and omitted from evidence output.",
+            "rawValue" : "uniqueContributors=1;topShare=1.000"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0,
+            "effectiveWeight" : 0.08163265306122448,
+            "evidenceID" : "callable:Workspace.Store.save(_:):git-history:fix-orientation",
+            "kind" : "git-history.fix-orientation",
+            "normalizedScore" : 0,
+            "note" : "Fix-oriented commits are classified by subject tokens only.",
+            "rawValue" : "fixCommits=0;commits=1;rules=fix,bug,crash,defect,regression,hotfix,repair"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 6.279434850863422,
+            "effectiveWeight" : 0.08163265306122448,
+            "evidenceID" : "callable:Workspace.Store.save(_:):git-history:recency",
+            "kind" : "git-history.recency",
+            "normalizedScore" : 76.92307692307692,
+            "note" : "Computed against the injected reference time, not an ambient clock.",
+            "rawValue" : "lastChangeDaysAgo=9;lastChangedAt=2026-09-12T12:00:00Z;referenceTime=2026-09-22T00:00:00Z"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0,
+            "effectiveWeight" : 0.08163265306122448,
+            "evidenceID" : "callable:Workspace.Store.save(_:):nesting-depth",
+            "kind" : "swift.nesting-depth",
+            "normalizedScore" : 0,
+            "note" : "Maximum nested Swift control-flow depth observed in this callable body.",
+            "rawValue" : "value=0"
+          },
+          {
+            "configuredWeight" : 0.5,
+            "contribution" : 0.6802721088435374,
+            "effectiveWeight" : 0.04081632653061224,
+            "evidenceID" : "callable:Workspace.Store.save(_:):parameter-count",
+            "kind" : "swift.parameter-count",
+            "normalizedScore" : 16.666666666666668,
+            "note" : "Declared callable parameters counted with the same parser facts as NOPF.",
+            "rawValue" : "value=1"
+          }
+        ],
+        "totalAvailableWeight" : 12.25,
+        "totalConfiguredWeight" : 13.25,
+        "unavailableEvidence" : [
+
+        ]
+      }
+    },
+    {
+      "category" : "coverage",
+      "displayName" : "Workspace.Store",
+      "evidence" : [
+        {
+          "availability" : {
+            "state" : "measuredCoverage"
+          },
+          "id" : "type:Workspace.Store:coverage:lcov",
+          "kind" : "coverage.lcov",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 2,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 100,
+          "note" : "Coverage dampener matched with strategies sourcePathExact>executableLine; Matched 62 covered executable lines out of 62",
+          "rawValue" : "covered=62/62;coverage=100%;confidence=exact",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "type:Workspace.Store:dependency-context",
+          "kind" : "swift.dependency-context",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 2,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 10,
+          "note" : "One-hop dependency context from deterministic SwiftSyntax edges; not compiler semantic proof.",
+          "rawValue" : "afferent=1;efferent=0;callers=0;productionCallers=0;testCallers=0;fanIn=1;fanOut=0;instability=0.0",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "type:Workspace.Store:git-history:change-frequency",
+          "kind" : "git-history.change-frequency",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 2,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 20,
+          "note" : "Counted a bounded, rename-aware Git history for the entity file; truncation is reported explicitly.",
+          "rawValue" : "commits=1;window=last-500-file-commits;truncated=false",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "type:Workspace.Store:git-history:contributor-concentration",
+          "kind" : "git-history.contributor-concentration",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 2,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 100,
+          "note" : "Contributor identities are counted internally and omitted from evidence output.",
+          "rawValue" : "uniqueContributors=1;topShare=1.000",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "type:Workspace.Store:git-history:fix-orientation",
+          "kind" : "git-history.fix-orientation",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 2,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 0,
+          "note" : "Fix-oriented commits are classified by subject tokens only.",
+          "rawValue" : "fixCommits=0;commits=1;rules=fix,bug,crash,defect,regression,hotfix,repair",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "type:Workspace.Store:git-history:recency",
+          "kind" : "git-history.recency",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 2,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 76.92307692307692,
+          "note" : "Computed against the injected reference time, not an ambient clock.",
+          "rawValue" : "lastChangeDaysAgo=9;lastChangedAt=2026-09-12T12:00:00Z;referenceTime=2026-09-22T00:00:00Z",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "type:Workspace.Store:method-count",
+          "kind" : "swift.method-count",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 2,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 3.3333333333333335,
+          "note" : "Direct func, init and deinit bodies only; accessors remain excluded from NOMC.",
+          "rawValue" : "value=1",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "type:Workspace.Store:oversized-type",
+          "kind" : "swift.oversized-type",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 2,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 5,
+          "note" : "Direct callables provide deterministic decomposition seeds: Workspace.Store.save(_:).",
+          "rawValue" : "lines=6;methods=1;properties=1;wmcc=1",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "type:Workspace.Store:property-count",
+          "kind" : "swift.property-count",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 2,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 5,
+          "note" : "Direct type-scope property bindings used by the existing NOGC calculation.",
+          "rawValue" : "value=1",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "type:Workspace.Store:type-lines",
+          "kind" : "swift.type-lines",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 2,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 1.2,
+          "note" : "Token-bearing lines across the selected type declaration and same-module extensions.",
+          "rawValue" : "value=6",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "type:Workspace.Store:weighted-method-complexity",
+          "kind" : "swift.weighted-method-complexity",
+          "location" : {
+            "column" : 1,
+            "file" : "Example.swift",
+            "line" : 2,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 0.5,
+          "note" : "Sum of existing CCF over direct methods and accessor bodies for this type.",
+          "rawValue" : "value=1",
+          "requirement" : "optional",
+          "weight" : 1
+        }
+      ],
+      "explanation" : "Highest evidence is coverage.lcov with raw value covered=62/62;coverage=100%;confidence=exact. Coverage dampener matched with strategies sourcePathExact>executableLine; Matched 62 covered executable lines out of 62",
+      "id" : "type:Workspace.Store",
+      "level" : "type",
+      "location" : {
+        "column" : 1,
+        "file" : "Example.swift",
+        "line" : 2,
+        "module" : "Workspace"
+      },
+      "priority" : "low",
+      "recommendation" : "Prioritize tests around this context before structural refactoring; coverage evidence can only dampen risk.",
+      "score" : 22.195641025641027,
+      "scoreBreakdown" : {
+        "contributions" : [
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0,
+            "effectiveWeight" : 0,
+            "evidenceID" : "type:Workspace.Store:coverage:lcov",
+            "kind" : "coverage.lcov",
+            "normalizedScore" : 100,
+            "note" : "Coverage dampener matched with strategies sourcePathExact>executableLine; Matched 62 covered executable lines out of 62; coverage dampener; cannot increase score",
+            "rawValue" : "covered=62/62;coverage=100%;confidence=exact"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 1,
+            "effectiveWeight" : 0.1,
+            "evidenceID" : "type:Workspace.Store:dependency-context",
+            "kind" : "swift.dependency-context",
+            "normalizedScore" : 10,
+            "note" : "One-hop dependency context from deterministic SwiftSyntax edges; not compiler semantic proof.",
+            "rawValue" : "afferent=1;efferent=0;callers=0;productionCallers=0;testCallers=0;fanIn=1;fanOut=0;instability=0.0"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 2,
+            "effectiveWeight" : 0.1,
+            "evidenceID" : "type:Workspace.Store:git-history:change-frequency",
+            "kind" : "git-history.change-frequency",
+            "normalizedScore" : 20,
+            "note" : "Counted a bounded, rename-aware Git history for the entity file; truncation is reported explicitly.",
+            "rawValue" : "commits=1;window=last-500-file-commits;truncated=false"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 10,
+            "effectiveWeight" : 0.1,
+            "evidenceID" : "type:Workspace.Store:git-history:contributor-concentration",
+            "kind" : "git-history.contributor-concentration",
+            "normalizedScore" : 100,
+            "note" : "Contributor identities are counted internally and omitted from evidence output.",
+            "rawValue" : "uniqueContributors=1;topShare=1.000"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0,
+            "effectiveWeight" : 0.1,
+            "evidenceID" : "type:Workspace.Store:git-history:fix-orientation",
+            "kind" : "git-history.fix-orientation",
+            "normalizedScore" : 0,
+            "note" : "Fix-oriented commits are classified by subject tokens only.",
+            "rawValue" : "fixCommits=0;commits=1;rules=fix,bug,crash,defect,regression,hotfix,repair"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 7.6923076923076925,
+            "effectiveWeight" : 0.1,
+            "evidenceID" : "type:Workspace.Store:git-history:recency",
+            "kind" : "git-history.recency",
+            "normalizedScore" : 76.92307692307692,
+            "note" : "Computed against the injected reference time, not an ambient clock.",
+            "rawValue" : "lastChangeDaysAgo=9;lastChangedAt=2026-09-12T12:00:00Z;referenceTime=2026-09-22T00:00:00Z"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0.33333333333333337,
+            "effectiveWeight" : 0.1,
+            "evidenceID" : "type:Workspace.Store:method-count",
+            "kind" : "swift.method-count",
+            "normalizedScore" : 3.3333333333333335,
+            "note" : "Direct func, init and deinit bodies only; accessors remain excluded from NOMC.",
+            "rawValue" : "value=1"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0.5,
+            "effectiveWeight" : 0.1,
+            "evidenceID" : "type:Workspace.Store:oversized-type",
+            "kind" : "swift.oversized-type",
+            "normalizedScore" : 5,
+            "note" : "Direct callables provide deterministic decomposition seeds: Workspace.Store.save(_:).",
+            "rawValue" : "lines=6;methods=1;properties=1;wmcc=1"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0.5,
+            "effectiveWeight" : 0.1,
+            "evidenceID" : "type:Workspace.Store:property-count",
+            "kind" : "swift.property-count",
+            "normalizedScore" : 5,
+            "note" : "Direct type-scope property bindings used by the existing NOGC calculation.",
+            "rawValue" : "value=1"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0.12,
+            "effectiveWeight" : 0.1,
+            "evidenceID" : "type:Workspace.Store:type-lines",
+            "kind" : "swift.type-lines",
+            "normalizedScore" : 1.2,
+            "note" : "Token-bearing lines across the selected type declaration and same-module extensions.",
+            "rawValue" : "value=6"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0.05,
+            "effectiveWeight" : 0.1,
+            "evidenceID" : "type:Workspace.Store:weighted-method-complexity",
+            "kind" : "swift.weighted-method-complexity",
+            "normalizedScore" : 0.5,
+            "note" : "Sum of existing CCF over direct methods and accessor bodies for this type.",
+            "rawValue" : "value=1"
+          }
+        ],
+        "totalAvailableWeight" : 10,
+        "totalConfiguredWeight" : 11,
+        "unavailableEvidence" : [
+
+        ]
+      }
+    },
+    {
+      "category" : "coverage",
+      "displayName" : "Workspace.Worker.work(_:)",
+      "evidence" : [
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "Workspace.Worker.work(_:):pattern-consistency",
+          "kind" : "swift.pattern-consistency.heuristic",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 61,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 10,
+          "note" : "Heuristic pattern-consistency score from deterministic syntax counts; not compiler semantic proof.",
+          "rawValue" : "locf=1;ccf=1;parameters=1;effectKinds=0;composition=0",
+          "requirement" : "optional",
+          "weight" : 0.75
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "Workspace.Worker.work(_:):purity:heuristic",
+          "kind" : "swift.purity.heuristic",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 61,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 0,
+          "note" : "Heuristic inference from absence of recognized SwiftSyntax effect markers; not compiler semantic proof.",
+          "rawValue" : "measuredSyntaxEffects=0",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Worker.work(_:):cognitive-complexity",
+          "kind" : "swift.cognitive-complexity",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 61,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 0,
+          "note" : "Cognitive complexity adds current nesting to Swift flow breaks and ignores async, throws and await keywords.",
+          "rawValue" : "value=0",
+          "requirement" : "optional",
+          "weight" : 2
+        },
+        {
+          "availability" : {
+            "state" : "measuredCoverage"
+          },
+          "id" : "callable:Workspace.Worker.work(_:):coverage:lcov",
+          "kind" : "coverage.lcov",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 61,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 100,
+          "note" : "Coverage dampener matched with strategies sourcePathExact>functionNameExact>functionNameSuffix>functionStartLine>executableLine; Matched executable line with executed hits",
+          "rawValue" : "covered=1/1;coverage=100%;confidence=fallback",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Worker.work(_:):cyclomatic-complexity",
+          "kind" : "swift.cyclomatic-complexity",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 61,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 5,
+          "note" : "Cyclomatic complexity follows the existing CCF decision policy, preserving SCMA metric behavior.",
+          "rawValue" : "value=1",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Worker.work(_:):function-lines",
+          "kind" : "swift.function-lines",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 61,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 1.6666666666666667,
+          "note" : "Physical token-bearing lines inside the callable body, excluding the outer signature and braces.",
+          "rawValue" : "value=1",
+          "requirement" : "optional",
+          "weight" : 0.5
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Worker.work(_:):git-history:change-frequency",
+          "kind" : "git-history.change-frequency",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 61,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 20,
+          "note" : "Counted a bounded, rename-aware Git history for the entity file; truncation is reported explicitly.",
+          "rawValue" : "commits=1;window=last-500-file-commits;truncated=false",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Worker.work(_:):git-history:contributor-concentration",
+          "kind" : "git-history.contributor-concentration",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 61,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 100,
+          "note" : "Contributor identities are counted internally and omitted from evidence output.",
+          "rawValue" : "uniqueContributors=1;topShare=1.000",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Worker.work(_:):git-history:fix-orientation",
+          "kind" : "git-history.fix-orientation",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 61,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 0,
+          "note" : "Fix-oriented commits are classified by subject tokens only.",
+          "rawValue" : "fixCommits=0;commits=1;rules=fix,bug,crash,defect,regression,hotfix,repair",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Worker.work(_:):git-history:recency",
+          "kind" : "git-history.recency",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 61,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 76.92307692307692,
+          "note" : "Computed against the injected reference time, not an ambient clock.",
+          "rawValue" : "lastChangeDaysAgo=9;lastChangedAt=2026-09-12T12:00:00Z;referenceTime=2026-09-22T00:00:00Z",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Worker.work(_:):nesting-depth",
+          "kind" : "swift.nesting-depth",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 61,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 0,
+          "note" : "Maximum nested Swift control-flow depth observed in this callable body.",
+          "rawValue" : "value=0",
+          "requirement" : "optional",
+          "weight" : 1
+        },
+        {
+          "availability" : {
+            "state" : "available"
+          },
+          "id" : "callable:Workspace.Worker.work(_:):parameter-count",
+          "kind" : "swift.parameter-count",
+          "location" : {
+            "column" : 5,
+            "file" : "Example.swift",
+            "line" : 61,
+            "module" : "Workspace"
+          },
+          "normalizedScore" : 16.666666666666668,
+          "note" : "Declared callable parameters counted with the same parser facts as NOPF.",
+          "rawValue" : "value=1",
+          "requirement" : "optional",
+          "weight" : 0.5
+        }
+      ],
+      "explanation" : "Highest evidence is coverage.lcov with raw value covered=1/1;coverage=100%;confidence=fallback. Coverage dampener matched with strategies sourcePathExact>functionNameExact>functionNameSuffix>functionStartLine>executableLine; Matched executable line with executed hits",
+      "id" : "callable:Workspace.Worker.work(_:)",
+      "level" : "callable",
+      "location" : {
+        "column" : 5,
+        "file" : "Example.swift",
+        "line" : 61,
+        "module" : "Workspace"
+      },
+      "priority" : "low",
+      "recommendation" : "Prioritize tests around this context before structural refactoring; coverage evidence can only dampen risk.",
+      "score" : 20.33392963625522,
+      "scoreBreakdown" : {
+        "contributions" : [
+          {
+            "configuredWeight" : 0.75,
+            "contribution" : 0.6976744186046512,
+            "effectiveWeight" : 0.06976744186046512,
+            "evidenceID" : "Workspace.Worker.work(_:):pattern-consistency",
+            "kind" : "swift.pattern-consistency.heuristic",
+            "normalizedScore" : 10,
+            "note" : "Heuristic pattern-consistency score from deterministic syntax counts; not compiler semantic proof.",
+            "rawValue" : "locf=1;ccf=1;parameters=1;effectKinds=0;composition=0"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0,
+            "effectiveWeight" : 0.09302325581395349,
+            "evidenceID" : "Workspace.Worker.work(_:):purity:heuristic",
+            "kind" : "swift.purity.heuristic",
+            "normalizedScore" : 0,
+            "note" : "Heuristic inference from absence of recognized SwiftSyntax effect markers; not compiler semantic proof.",
+            "rawValue" : "measuredSyntaxEffects=0"
+          },
+          {
+            "configuredWeight" : 2,
+            "contribution" : 0,
+            "effectiveWeight" : 0.18604651162790697,
+            "evidenceID" : "callable:Workspace.Worker.work(_:):cognitive-complexity",
+            "kind" : "swift.cognitive-complexity",
+            "normalizedScore" : 0,
+            "note" : "Cognitive complexity adds current nesting to Swift flow breaks and ignores async, throws and await keywords.",
+            "rawValue" : "value=0"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0,
+            "effectiveWeight" : 0,
+            "evidenceID" : "callable:Workspace.Worker.work(_:):coverage:lcov",
+            "kind" : "coverage.lcov",
+            "normalizedScore" : 100,
+            "note" : "Coverage dampener matched with strategies sourcePathExact>functionNameExact>functionNameSuffix>functionStartLine>executableLine; Matched executable line with executed hits; coverage dampener; cannot increase score",
+            "rawValue" : "covered=1/1;coverage=100%;confidence=fallback"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0.46511627906976744,
+            "effectiveWeight" : 0.09302325581395349,
+            "evidenceID" : "callable:Workspace.Worker.work(_:):cyclomatic-complexity",
+            "kind" : "swift.cyclomatic-complexity",
+            "normalizedScore" : 5,
+            "note" : "Cyclomatic complexity follows the existing CCF decision policy, preserving SCMA metric behavior.",
+            "rawValue" : "value=1"
+          },
+          {
+            "configuredWeight" : 0.5,
+            "contribution" : 0.07751937984496124,
+            "effectiveWeight" : 0.046511627906976744,
+            "evidenceID" : "callable:Workspace.Worker.work(_:):function-lines",
+            "kind" : "swift.function-lines",
+            "normalizedScore" : 1.6666666666666667,
+            "note" : "Physical token-bearing lines inside the callable body, excluding the outer signature and braces.",
+            "rawValue" : "value=1"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 1.8604651162790697,
+            "effectiveWeight" : 0.09302325581395349,
+            "evidenceID" : "callable:Workspace.Worker.work(_:):git-history:change-frequency",
+            "kind" : "git-history.change-frequency",
+            "normalizedScore" : 20,
+            "note" : "Counted a bounded, rename-aware Git history for the entity file; truncation is reported explicitly.",
+            "rawValue" : "commits=1;window=last-500-file-commits;truncated=false"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 9.30232558139535,
+            "effectiveWeight" : 0.09302325581395349,
+            "evidenceID" : "callable:Workspace.Worker.work(_:):git-history:contributor-concentration",
+            "kind" : "git-history.contributor-concentration",
+            "normalizedScore" : 100,
+            "note" : "Contributor identities are counted internally and omitted from evidence output.",
+            "rawValue" : "uniqueContributors=1;topShare=1.000"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0,
+            "effectiveWeight" : 0.09302325581395349,
+            "evidenceID" : "callable:Workspace.Worker.work(_:):git-history:fix-orientation",
+            "kind" : "git-history.fix-orientation",
+            "normalizedScore" : 0,
+            "note" : "Fix-oriented commits are classified by subject tokens only.",
+            "rawValue" : "fixCommits=0;commits=1;rules=fix,bug,crash,defect,regression,hotfix,repair"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 7.155635062611807,
+            "effectiveWeight" : 0.09302325581395349,
+            "evidenceID" : "callable:Workspace.Worker.work(_:):git-history:recency",
+            "kind" : "git-history.recency",
+            "normalizedScore" : 76.92307692307692,
+            "note" : "Computed against the injected reference time, not an ambient clock.",
+            "rawValue" : "lastChangeDaysAgo=9;lastChangedAt=2026-09-12T12:00:00Z;referenceTime=2026-09-22T00:00:00Z"
+          },
+          {
+            "configuredWeight" : 1,
+            "contribution" : 0,
+            "effectiveWeight" : 0.09302325581395349,
+            "evidenceID" : "callable:Workspace.Worker.work(_:):nesting-depth",
+            "kind" : "swift.nesting-depth",
+            "normalizedScore" : 0,
+            "note" : "Maximum nested Swift control-flow depth observed in this callable body.",
+            "rawValue" : "value=0"
+          },
+          {
+            "configuredWeight" : 0.5,
+            "contribution" : 0.7751937984496124,
+            "effectiveWeight" : 0.046511627906976744,
+            "evidenceID" : "callable:Workspace.Worker.work(_:):parameter-count",
+            "kind" : "swift.parameter-count",
+            "normalizedScore" : 16.666666666666668,
+            "note" : "Declared callable parameters counted with the same parser facts as NOPF.",
+            "rawValue" : "value=1"
+          }
+        ],
+        "totalAvailableWeight" : 10.75,
+        "totalConfiguredWeight" : 11.75,
+        "unavailableEvidence" : [
+
+        ]
+      }
+    }
+  ],
+  "missingEvidence" : [
+
+  ],
+  "options" : {
+    "aggregationStrategy" : "file",
+    "categories" : [
+
+    ],
+    "levels" : [
+
+    ],
+    "preset" : "balanced",
+    "problematicItemScoreThreshold" : 70,
+    "scoringPolicy" : {
+      "priorityThresholds" : {
+        "critical" : 85,
+        "high" : 70,
+        "medium" : 40
+      }
+    }
+  },
+  "reportKind" : "swiftdebt-report",
+  "schemaVersion" : 2,
+  "summary" : {
+    "aggregationCount" : 0,
+    "priorityCounts" : {
+      "low" : 9
+    },
+    "rankedItemCount" : 9,
+    "totalItemCount" : 9,
+    "unavailableEvidenceCount" : 0
+  }
+}

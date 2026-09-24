@@ -19,6 +19,7 @@ if not binary.is_file():
     parser.error(f"CLI binary does not exist: {binary}")
 package = pathlib.Path(__file__).resolve().parents[1]
 checks = 0
+expected_version = (package / "VERSION").read_text(encoding="utf-8").strip()
 
 def run(command: list[str], *, cwd: pathlib.Path | None = None, expected: int = 0) -> subprocess.CompletedProcess[str]:
     global checks
@@ -31,14 +32,15 @@ def run(command: list[str], *, cwd: pathlib.Path | None = None, expected: int = 
 def cli(*arguments: str, expected: int = 0) -> subprocess.CompletedProcess[str]:
     return run([str(binary), *arguments], expected=expected)
 
-with tempfile.TemporaryDirectory(prefix="scma-smoke-") as directory:
+with tempfile.TemporaryDirectory(prefix="swift-debt-smoke-") as directory:
     root = pathlib.Path(directory)
     sources = root / "source folder"
     sources.mkdir()
     source = sources / "Source File.swift"
     source.write_text("class C { var value = 0; func f(_ n: Int) { if n > 0 { value = n } } }\n")
     cli("--help")
-    cli("--version")
+    version = cli("--version")
+    assert version.stdout == f"SwiftDebt {expected_version}\n"
     cli("analyze", str(sources), "--unknown", expected=2)
     cli("analyze", str(sources), "--format", expected=2)
     cli("analyze", str(sources), "--format", "json", "--format", "text", expected=2)
@@ -52,7 +54,7 @@ with tempfile.TemporaryDirectory(prefix="scma-smoke-") as directory:
     assert report["inputFiles"] == ["Source File.swift"]
     cli("analyze", str(sources), "--threshold", "CCF=1", "--fail-on-violation", expected=1)
     diagnostic = cli("analyze", str(sources), "--threshold", "CCF=1", "--format", "diagnostics")
-    assert "warning: SCMA [CCF]" in diagnostic.stdout
+    assert "warning: SwiftDebt [CCF]" in diagnostic.stdout
     for format_name in ("json", "csv", "html", "text"):
         output = root / "reports" / f"report.{format_name}"
         result = cli("analyze", str(sources), "--format", format_name, "--output", str(output))
@@ -75,18 +77,18 @@ import PackageDescription
 let package = Package(
     name: "PluginConsumer",
     platforms: [.macOS(.v13)],
-    dependencies: [.package(name: "SwiftSCMA", path: {json.dumps(str(package))})],
-    targets: [.target(name: "Demo", plugins: [.plugin(name: "SCMABuildPlugin", package: "SwiftSCMA")])]
+    dependencies: [.package(name: "SwiftDebt", path: {json.dumps(str(package))})],
+    targets: [.target(name: "Demo", plugins: [.plugin(name: "SwiftDebtBuildPlugin", package: "SwiftDebt")])]
 )
 ''')
         demo_source = demo / "Demo.swift"
         demo_source.write_text("public struct Demo { public func f(_ n: Int) -> Int { if n > 0 { return n }; return 0 } }\n")
         missing_configuration = run(["swift", "build", "-j", "2"], cwd=consumer, expected=1)
         assert "requires" in missing_configuration.stdout + missing_configuration.stderr
-        config = consumer / ".scma.json"
+        config = consumer / ".swift-debt.json"
         config.write_text("{}")
         run(["swift", "build", "-j", "2"], cwd=consumer)
-        stamps = list((consumer / ".build").rglob("SCMA.analysis.swift"))
+        stamps = list((consumer / ".build").rglob("SwiftDebt.analysis.swift"))
         assert len(stamps) == 1, stamps
         stamp = stamps[0]
         # SwiftPM may finish host/destination tool relinking on the first follow-up
@@ -101,13 +103,13 @@ let package = Package(
         # Configuration existed at planning time and must now invalidate the command.
         config.write_text(json.dumps({"typeScope": "nominals", "thresholds": {"CCF": 1}, "failOnViolation": True}))
         failed = run(["swift", "build", "-j", "2"], cwd=consumer, expected=1)
-        assert "warning: SCMA [CCF]" in failed.stdout + failed.stderr
+        assert "warning: SwiftDebt [CCF]" in failed.stdout + failed.stderr
         config.write_text(json.dumps({"typeScope": "nominals", "thresholds": {"CCF": 1}, "failOnViolation": False}))
         run(["swift", "build", "-j", "2"], cwd=consumer)
-        command = run(["swift", "package", "scma", "--target", "Demo", "--format", "json"], cwd=consumer)
+        command = run(["swift", "package", "swift-debt", "--target", "Demo", "--format", "json"], cwd=consumer)
         package_report = json.loads(command.stdout)
         assert package_report["modules"] == ["Demo"]
         assert package_report["inputFileCount"] == 1
-        run(["swift", "package", "scma", "--target", "missing"], cwd=consumer, expected=1)
-        run(["swift", "package", "scma", "--target"], cwd=consumer, expected=1)
+        run(["swift", "package", "swift-debt", "--target", "missing"], cwd=consumer, expected=1)
+        run(["swift", "package", "swift-debt", "--target"], cwd=consumer, expected=1)
 print(f"PASS: {checks} subprocess checks; CLI formats, deterministic output, failures, safety" + (", and both plugins/incrementality" if args.plugins else ""))

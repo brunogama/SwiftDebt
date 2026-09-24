@@ -2,43 +2,73 @@
 import PackageDescription
 
 let package = Package(
-    name: "SwiftSCMA",
-    platforms: [.macOS(.v13)],
+    name: "SwiftDebt",
+    platforms: [
+        .macOS(.v13),
+        .iOS(.v16),
+        .tvOS(.v16),
+        .watchOS(.v9),
+        .visionOS(.v1),
+    ],
     products: [
-        .executable(name: "scma", targets: ["scma"]),
-        .library(name: "SCMAKit", targets: ["SCMAKit", "SCMACore"]),
-        .plugin(name: "SCMACommandPlugin", targets: ["SCMACommandPlugin"]),
-        .plugin(name: "SCMABuildPlugin", targets: ["SCMABuildPlugin"]),
+        .executable(name: "swift-debt", targets: ["swift-debt"]),
+        .library(name: "SwiftDebtKit", targets: ["SwiftDebtKit", "SwiftDebtCore"]),
+        .plugin(name: "SwiftDebtCommandPlugin", targets: ["SwiftDebtCommandPlugin"]),
+        .plugin(name: "SwiftDebtBuildPlugin", targets: ["SwiftDebtBuildPlugin"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/swiftlang/swift-syntax.git", exact: "602.0.0")
+        .package(url: "https://github.com/swiftlang/swift-syntax.git", exact: "602.0.0"),
+        // Build-time tooling for the checked-in SwiftDebtKit DocC catalog and Pages site.
+        .package(url: "https://github.com/swiftlang/swift-docc-plugin.git", exact: "1.5.0"),
     ],
     targets: [
-        .target(name: "SCMACore"),
+        .target(name: "SwiftDebtCore"),
         .target(
-            name: "SCMASyntax",
+            name: "SwiftDebtSyntax",
             dependencies: [
-                "SCMACore",
+                "SwiftDebtCore",
                 .product(name: "SwiftSyntax", package: "swift-syntax"),
                 .product(name: "SwiftParser", package: "swift-syntax"),
                 .product(name: "SwiftParserDiagnostics", package: "swift-syntax"),
             ]
         ),
-        .target(name: "SCMAReporting", dependencies: ["SCMACore"]),
-        .target(name: "SCMAKit", dependencies: ["SCMACore", "SCMASyntax", "SCMAReporting"]),
-        .executableTarget(name: "scma", dependencies: ["SCMACore", "SCMAKit"]),
+        .target(name: "SwiftDebtReporting", dependencies: ["SwiftDebtCore"]),
+        .target(name: "SwiftDebtInteractive", dependencies: ["SwiftDebtCore"]),
+        .target(
+            name: "SwiftDebtKit",
+            dependencies: ["SwiftDebtCore", "SwiftDebtSyntax", "SwiftDebtReporting"],
+            // SwiftPM skips the catalog during compilation; the DocC plugin discovers it independently.
+            exclude: ["SwiftDebtKit.docc"]
+        ),
+        .executableTarget(name: "swift-debt", dependencies: ["SwiftDebtCore", "SwiftDebtInteractive", "SwiftDebtKit"]),
         .plugin(
-            name: "SCMACommandPlugin",
+            name: "SwiftDebtCommandPlugin",
             capability: .command(
-                intent: .custom(verb: "scma", description: "Analyze Swift code metrics"),
+                intent: .custom(verb: "swift-debt", description: "Analyze Swift code metrics"),
                 permissions: []
             ),
-            dependencies: ["scma"]
+            dependencies: ["swift-debt"]
         ),
-        .plugin(name: "SCMABuildPlugin", capability: .buildTool(), dependencies: ["scma"]),
-        .testTarget(name: "SCMACoreTests", dependencies: ["SCMACore"]),
-        .testTarget(name: "SCMASyntaxTests", dependencies: ["SCMACore", "SCMASyntax"]),
-        .testTarget(name: "SCMAKitTests", dependencies: ["SCMACore", "SCMAKit", "SCMAReporting"]),
+        .plugin(name: "SwiftDebtBuildPlugin", capability: .buildTool(), dependencies: ["swift-debt"]),
+        .testTarget(
+            name: "SwiftDebtCoreTests",
+            dependencies: ["SwiftDebtCore"],
+            resources: [.process("Fixtures")]
+        ),
+        .testTarget(
+            name: "SwiftDebtSyntaxTests",
+            dependencies: ["SwiftDebtCore", "SwiftDebtSyntax"],
+            resources: [.process("Fixtures")]
+        ),
+        .testTarget(
+            name: "SwiftDebtKitTests",
+            dependencies: ["SwiftDebtCore", "SwiftDebtKit", "SwiftDebtReporting"],
+            resources: [.process("Fixtures")]
+        ),
+        .testTarget(
+            name: "SwiftDebtInteractiveTests",
+            dependencies: ["SwiftDebtCore", "SwiftDebtInteractive", "swift-debt"]
+        ),
     ],
     swiftLanguageModes: [.v6]
 )
