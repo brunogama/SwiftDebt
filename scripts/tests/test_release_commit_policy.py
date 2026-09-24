@@ -115,6 +115,14 @@ class CommitPolicyTests(unittest.TestCase):
             self.assertEqual(failing.returncode, 1)
             self.assertIn("missing a BREAKING CHANGE footer", failing.stderr)
 
+    def test_ai_coauthor_trailer_is_rejected_in_git_history(self) -> None:
+        with temporary_repository() as root:
+            cutover = commit(root, "chore: establish policy")
+            commit(root, "ci: check commit trailers", "Co-Authored-By: Claude <bot@example.com>")
+            result = run_script(root, cutover)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("AI co-author trailer", result.stderr)
+
 
 def run(command: list[str], root: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(command, cwd=root, text=True, capture_output=True, check=False)
