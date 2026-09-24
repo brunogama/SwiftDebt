@@ -1,0 +1,22 @@
+name: SwiftDebtXcodeConsumer
+options:
+  minimumXcodeGenVersion: 2.46.0
+packages:
+  SwiftDebt:
+    path: ../..
+targets:
+  Consumer:
+    type: framework
+    platform: macOS
+    deploymentTarget: "13.0"
+    sources:
+      - Sources
+    buildToolPlugins:
+      - plugin: SwiftDebtBuildPlugin
+        package: SwiftDebt
+    settings:
+      base:
+        CODE_SIGNING_ALLOWED: NO
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: dev.swiftdebt.xcode-plugin-consumer
+        SWIFT_VERSION: 6.0

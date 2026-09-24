@@ -6,7 +6,7 @@ Validation host: x86_64 Linux, `Swift version 6.2.1 (swift-6.2.1-RELEASE)`, targ
 
 The container's build process could not resolve `github.com`. An ordinary dependency fetch/build of SwiftSyntax 602.0.0 was therefore **not completed**. The installed Swift 6.2.1 toolchain already included host `SwiftSyntax`, `SwiftParser`, and `SwiftParserDiagnostics` modules/libraries. Tests used them through a **disposable validation copy**, not by adding private search paths or unsafe flags to the shipping package.
 
-The distributed `Package.swift` uses the ordinary exact remote SwiftSyntax 602.0.0 dependency. `swift package dump-package` validated that manifest. Resolving/compiling that exact external source release is a remaining verification step on a network-enabled machine.
+The distributed `Package.swift` uses the ordinary exact remote SwiftSyntax 602.0.0 dependency. `swift package dump-package` validated that manifest. The Xcode validation below resolved and compiled that external source through the shipping manifest without local changes.
 
 ## Executed checks
 
@@ -16,12 +16,41 @@ The distributed `Package.swift` uses the ordinary exact remote SwiftSyntax 602.0
 | SwiftPM compilation of core/parser/reporting/kit/CLI | Passed | Swift 6 language mode, installed host parser libraries. |
 | Swift Testing | **51 tests in four suites passed** | Includes parameterized complexity cases and a finite exhaustive clone check. |
 | CLI and plugin subprocess suite | **27 checks passed** | Real executable and downstream SwiftPM consumer, using the offline dependency copy. |
-| macOS build and sandbox | Not run | Linux host. |
-| Conditional Xcode project adapter | Not compiled/run | `XcodeProjectPlugin` is unavailable on this host. |
+| Xcode downstream build and plugin sandbox | Passed | Xcode 27.0 (27A5228h), Apple Swift 6.4 (swiftlang-6.4.0.27.1), macOS 27.2 (26B5091g). |
+| Conditional Xcode project adapter | Passed | Standalone project target attached `SwiftDebtBuildPlugin` through `XcodeBuildToolPlugin`. |
 | Original SCMA/Lizard parity | Not established | Original implementation/data not supplied; measurement policies differ explicitly. |
 | Large-repository performance/recall study | Not performed | No latency, memory, accuracy, or scalability benchmark claim. |
 
 Raw final test output is in [validation-logs/swift-test.log](validation-logs/swift-test.log). The integration summary is in [validation-logs/smoke-test.log](validation-logs/smoke-test.log). The XCTest discovery wrapper can display zero XCTest cases before Swift Testing runs; the final Swift Testing line records the 51 actual tests.
+
+---
+
+## Xcode build-plugin validation
+
+The checked-in [Xcode consumer](Examples/XcodePluginConsumer) is a standalone macOS framework project with a local package dependency on the repository root. Its target attaches `SwiftDebtBuildPlugin` as an Xcode build-tool plugin. The fixture consumes the shipping `Package.swift` without a local manifest variant.
+
+Run the pinned smoke gate from the repository root:
+
+```sh
+python3 scripts/xcode-plugin-smoke.py
+```
+
+The script requires Xcode 27.0, Apple Swift 6.4, and macOS 27. It copies the fixture beneath `.build`, starts with fresh DerivedData, and retains the stage log long enough to include it in any assertion failure. The local run used Xcode build 27A5228h, swiftlang-6.4.0.27.1 with clang-2100.3.27.1, and macOS 27.2 build 26B5091g. It produced:
+
+| Stage | Result | Evidence |
+| --- | --- | --- |
+| Clean build | Passed | Xcode resolved the local package, compiled the plugin tool, ran analysis, and compiled the generated completion source. |
+| Warmed no-op | Passed | A repeated build preserved the successful completion file's nanosecond timestamp. |
+| Source invalidation | Passed | Editing the consumer Swift source reran analysis and advanced the completion timestamp. |
+| Configuration invalidation | Passed | Editing `.swift-debt.json` reran analysis and advanced the completion timestamp. |
+| Enforced gate | Passed | A `CCF=1` class threshold produced the source-located `SwiftDebt [CCF]` diagnostic and `xcodebuild` exit 65 while preserving the last successful completion file. |
+| Recovery | Passed | Disabling `failOnViolation` rebuilt successfully and recorded a new completion fingerprint. |
+
+The hosted [PR #41 Xcode job](https://github.com/brunogama/SwiftDebt/actions/runs/36005349520/job/107651970985) passed the same stages on Xcode 27.0 build 27A266a, Apple Swift 6.4 with swiftlang-6.4.0.34.1 and clang-2100.3.34.1, and arm64 macOS 27.0 build 26A428.
+
+The [Xcode build-plugin workflow](.github/workflows/xcode-plugin.yml) runs the same smoke command on the `xcode-27` GitHub-hosted runner and rejects a different Xcode, Swift, or macOS major version.
+
+---
 
 ## What the tests cover
 

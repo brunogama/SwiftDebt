@@ -21,7 +21,7 @@ struct SwiftPMBuildPluginScopeTests {
         }
     }
 
-    @Test func buildPluginDoesNotExposeXcodeProjectPluginAdapter() throws {
+    @Test func buildPluginExposesConditionalXcodeProjectPluginAdapter() throws {
         let root = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
             .deletingLastPathComponent()
@@ -29,6 +29,7 @@ struct SwiftPMBuildPluginScopeTests {
         let plugin = root.appendingPathComponent("Plugins/SwiftDebtBuildPlugin/plugin.swift")
         let source = try String(contentsOf: plugin, encoding: .utf8)
 
-        #expect(!source.contains("XcodeProjectPlugin"))
+        #expect(source.contains("#if canImport(XcodeProjectPlugin)"))
+        #expect(source.contains("extension SwiftDebtBuildPlugin: XcodeBuildToolPlugin"))
     }
 }
