@@ -1,4 +1,5 @@
 .build/
+.scratch/
 .swiftpm/
 .DS_Store
 .scma/
