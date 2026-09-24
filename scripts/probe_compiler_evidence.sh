@@ -56,7 +56,7 @@ macro_members=$(jq -r \
     '.. | objects | select(((.range.buffer_id? // "") | startswith("@__swiftmacro_"))) | .name?.base_name?.name? // empty' \
     "$output_root/observable-macro.json" | sort -u | paste -sd, -)
 format_warning=$(rg 'no format is guaranteed stable across different compiler versions' \
-    "$output_root/swift-help-hidden.txt")
+    "$output_root/swift-help-hidden.txt" || true)
 
 {
     cat "$output_root/swift-version.txt"

@@ -91,6 +91,7 @@ These are reproducible probe observations. The AST JSON is rejected as a product
 
 - Syntax-only consumers continue reading the same schema-2 artifacts.
 - Compiler-backed consumers opt into a second artifact with an independent migration path.
+- Consumers reject sidecars with an unknown schema version before interpreting their fields.
 - A new compiler version fails closed until its stable adapter is supported.
 - Non-Git inputs can be identified honestly without inventing a revision.
 - Issues #33 and #34 can add normalized facts after selecting and testing a stable provider.

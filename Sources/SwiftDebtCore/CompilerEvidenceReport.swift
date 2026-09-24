@@ -39,6 +39,14 @@ public struct CompilerEvidenceReport: Codable, Equatable, Sendable {
     public let provenance: CompilerEvidenceProvenance
     public let availability: CompilerEvidenceAvailabilitySet
 
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion
+        case reportKind
+        case generator
+        case provenance
+        case availability
+    }
+
     public init(
         schemaVersion: Int = CompilerEvidenceReportSchema.currentVersion,
         reportKind: String = "swiftdebt-compiler-evidence",
@@ -51,5 +59,23 @@ public struct CompilerEvidenceReport: Codable, Equatable, Sendable {
         self.generator = generator
         self.provenance = provenance
         self.availability = availability
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        let schemaVersion = try values.decode(Int.self, forKey: .schemaVersion)
+        guard schemaVersion == CompilerEvidenceReportSchema.currentVersion else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .schemaVersion,
+                in: values,
+                debugDescription: "Unsupported compiler evidence report schema version \(schemaVersion)"
+            )
+        }
+
+        self.schemaVersion = schemaVersion
+        self.reportKind = try values.decode(String.self, forKey: .reportKind)
+        self.generator = try values.decode(String.self, forKey: .generator)
+        self.provenance = try values.decode(CompilerEvidenceProvenance.self, forKey: .provenance)
+        self.availability = try values.decode(CompilerEvidenceAvailabilitySet.self, forKey: .availability)
     }
 }

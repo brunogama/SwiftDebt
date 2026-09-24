@@ -20,6 +20,20 @@ struct CompilerEvidenceReportTests {
         #expect(decoded.provenance.buildConfiguration.compilationConditions == ["DEBUG", "FEATURE_A"])
     }
 
+    @Test("Unsupported compiler evidence schemas are rejected")
+    func unsupportedSchemaVersionIsRejected() throws {
+        let encoded = try JSONEncoder().encode(makeReport())
+        var root = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+
+        for version in [0, CompilerEvidenceReportSchema.currentVersion + 1] {
+            root["schemaVersion"] = version
+            let unsupported = try JSONSerialization.data(withJSONObject: root)
+            #expect(throws: DecodingError.self) {
+                try JSONDecoder().decode(CompilerEvidenceReport.self, from: unsupported)
+            }
+        }
+    }
+
     @Test("Unavailable and ambiguous states cannot masquerade as values or selected targets")
     func unavailableAndAmbiguousEvidenceFailClosed() throws {
         let report = try makeReport()
