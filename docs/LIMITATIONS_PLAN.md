@@ -16,7 +16,7 @@ Each row is closed only when its acceptance check runs on the shipping package, 
 | Paper quality score | The paper equations are implemented, but predictive validity is unknown. | [Issue #36](https://github.com/brunogama/SwiftDebt/issues/36) uses independently recorded outcomes, held-out evaluation, uncertainty, and simple baselines. |
 | Large-repository behavior | CI times frozen small examples against a comparable SwiftDebt reference. | [Issue #37](https://github.com/brunogama/SwiftDebt/issues/37) requires three pinned repositories with at least 100,000 Swift code lines each, including one with at least 500,000. It records ten cold and ten warm runs per repository, plus independently sampled finding review. |
 | Original SCMA and Lizard parity | Policies differ and no original reference corpus is checked in. | [Issue #38](https://github.com/brunogama/SwiftDebt/issues/38) obtains a legal reference and records metric-by-metric differences. Without those inputs, parity stays unverified. |
-| Non-Swift Debtmap parsers | SwiftDebt's current target is Swift. | [Issue #39](https://github.com/brunogama/SwiftDebt/issues/39) targets Python 3. It freezes a Debtmap 0.23.0 Python reference workflow and capability matrix before parser work, then tests mixed-language reports. |
+| Non-Swift Debtmap parsers | SwiftDebt's current target is Swift. | [Issue #39](https://github.com/brunogama/SwiftDebt/issues/39) starts with Python 3 and a frozen Debtmap 0.23.0 reference workflow. The gap stays open until the full upstream language inventory is recorded and every parser has equivalent evidence or an explicit unverified status. |
 
 ---
 
@@ -26,7 +26,7 @@ Each row is closed only when its acceptance check runs on the shipping package, 
 2. Establish a compiler evidence contract before changing metric calculations. Compare syntax and compiler-backed results on fixed fixtures, then add configuration-aware parsing, macro expansion, binding, and dispatch as separate changes.
 3. Build architecture rules on the resolved dependency evidence. Reject only violations that the chosen mode can prove.
 4. Freeze the empirical inputs before making performance or score claims. Measure large repositories and outcome validity independently.
-5. Assess original SCMA/Lizard parity and non-Swift support as separate compatibility projects. Publish a claim only when the corresponding reference data and executable checks exist.
+5. Assess original SCMA/Lizard parity and non-Swift support as separate compatibility projects. Inventory all Debtmap 0.23.0 languages before adding follow-on parser issues. Publish a claim only when the corresponding reference data and executable checks exist.
 
 Each change must retain the existing deterministic syntax mode and report schema unless a versioned migration is documented. [Issue #30](https://github.com/brunogama/SwiftDebt/issues/30) tracks the complete sequence and its blocking edges. The [measurement specification](METRICS.md) remains the reference for what current reports mean.
 
