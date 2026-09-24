@@ -334,9 +334,9 @@ Implementation-only types use internal/package access. Public types form the reu
 
 ## Validation and limitations
 
-**51 Swift Testing tests in four suites and 27 subprocess integration checks passed** with Swift 6.2.1 on x86_64 Linux. The integration checks launch the real CLI and both SwiftPM plugins in a real downstream consumer package, including source/config invalidation, gate failures, and warmed no-op builds.
+The [macOS release validation](https://github.com/brunogama/SwiftDebt/actions/runs/35983890308) resolved the pinned SwiftSyntax 602.0.0 dependency with Swift 6.2, passed 186 Swift Testing tests, and passed 28 CLI and SwiftPM plugin subprocess checks. The plugin checks exercise a real downstream package. The earlier Linux validation used a disposable offline dependency copy; its scope and qualifications remain in [the validation record](docs/VALIDATION.md).
 
-The Linux container could not resolve GitHub from the build process, so that historical check used a disposable copy linked against parser modules bundled with its toolchain. An independent Xcode 27.0 run resolved the shipping manifest normally and passed the standalone project plugin smoke suite on macOS 27.2. The environments, commands, and qualifications are in [docs/VALIDATION.md](docs/VALIDATION.md).
+An independent Xcode 27.0 run resolved the shipping manifest normally and passed the standalone project plugin smoke suite on macOS 27.2. The environments, commands, and qualifications are in [docs/VALIDATION.md](docs/VALIDATION.md).
 
 Run full validation on your own toolchain:
 
@@ -344,4 +344,4 @@ Run full validation on your own toolchain:
 ./scripts/verify.sh
 ```
 
-This tool does not type-check or expand macros, perform compiler-backed name binding, evaluate `#if`, model dispatch, prove architecture compliance, or validate the paper's quality score against outcomes. Debtmap parsers for non-Swift languages are outside the SwiftDebt parity target. There is no empirical large-repository performance claim and no claimed parity with the original SCMA/Lizard results. Read [METRICS.md](docs/METRICS.md) before comparing results with another analyzer.
+This tool does not type-check or expand macros, perform compiler-backed name binding, evaluate `#if`, model dispatch, prove architecture compliance, or validate the paper's quality score against outcomes. Debtmap parsers for non-Swift languages are outside the current SwiftDebt parity target. The current performance gate uses frozen examples, so it does not establish large-repository behavior. Original SCMA/Lizard parity has not been established. [The limitations plan](docs/LIMITATIONS_PLAN.md) states the evidence required to close each gap. Read [METRICS.md](docs/METRICS.md) before comparing results with another analyzer.
