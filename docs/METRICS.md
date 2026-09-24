@@ -14,6 +14,26 @@ Every `#if` branch is parsed; flags such as `DEBUG`, platform conditions, import
 
 Directory discovery uses a virtual module named `Workspace`. The command plugin supplies actual SwiftPM module names for the current package's selected targets. The build plugin supplies only its current target. In-memory callers supply their own explicit module identities.
 
+---
+
+## Built-in syntax rule observations
+
+Default text output runs an ordered catalog of syntax rules after source discovery. Each selected source is parsed once for the catalog. Each rule and source pair commits independently: a throw, unsupported contract, or invalid emission discards that pair without erasing another rule's committed observations. A parse failure prevents every rule from running for that source. Absence is established only when every selected pair commits with no detection.
+
+| Rule identity | Default severity | Exact syntax and location |
+| --- | --- | --- |
+| `swiftdebt.force-try` | `warning` | Every `try!`, at `!`. |
+| `swiftdebt.concurrency.unchecked-sendable` | `information` | Inherited-type syntax spelled `@unchecked Sendable`, at `@`. A final qualified component spelled `Sendable` also matches; no name binding is claimed. |
+| `swiftdebt.concurrency.actor-nonisolated-unsafe` | `information` | `nonisolated(unsafe)` on a direct member of an actor declaration, at `unsafe`. Actor extensions are not bound to their actors. |
+| `swiftdebt.code-smell.force-cast` | `warning` | Every `as!`, at `!`. |
+| `swiftdebt.code-smell.empty-catch` | `warning` | A catch body with no code block items, at `catch`. Comments and trivia do not make the body nonempty. |
+
+The two concurrency rules expose unchecked assumptions for review. They do not prove a race or definite bug. Apple documents [`@unchecked Sendable`](https://developer.apple.com/documentation/swift/sendable) as disabling compiler enforcement for a conformance, and SE-0412 defines [`nonisolated(unsafe)`](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0412-strict-concurrency-for-global-variables.md) as an opt-out from static isolation checking. Every rule visits all `#if` branches without determining which branch a build selects.
+
+Rule observations are intentionally outside `AnalysisReport` schema 2, `DebtReport` schema 2, metric scores, and policy gates. JSON and other non-text formats retain their existing bytes and do not run the catalog.
+
+---
+
 ## Type identity and extensions
 
 A type key consists of module and lexically qualified nominal name. Nested types include their containing nominal name. Types declared inside callables include a source-offset local-scope discriminator. Equal names in different modules are never merged.
@@ -92,4 +112,4 @@ Report writes are atomic and refuse selected sources, the active configuration, 
 
 ## Scope not implemented
 
-There is no compiler-index integration, architecture rule DSL, import-cycle checker, dependency-injection policy, security/concurrency lint suite, baseline suppression, automatic refactoring, persistent parse cache, SARIF output, daemon, or IDE source extension. These are distinct features, not implied by the paper or the delivered CLI/plugins. The versioned compiler-evidence sidecar and the boundary for future providers are defined in [ADR 0001](adr/0001-compiler-evidence-sidecar-boundary.md); the contract does not add compiler-backed metrics or change syntax-only reports.
+There is no compiler-index integration, architecture rule DSL, import-cycle checker, dependency-injection policy, broader compiler-backed security or concurrency lint suite, baseline suppression, automatic refactoring, persistent parse cache, SARIF output, daemon, or IDE source extension. The built-in catalog is limited to the five syntax contracts above. These are distinct features, not implied by the paper or the delivered CLI/plugins. The versioned compiler-evidence sidecar and the boundary for future providers are defined in [ADR 0001](adr/0001-compiler-evidence-sidecar-boundary.md); the contract does not add compiler-backed metrics or change syntax-only reports.

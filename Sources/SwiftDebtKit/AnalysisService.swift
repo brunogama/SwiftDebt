@@ -44,7 +44,7 @@ public struct AnalysisService: Sendable {
         let format = request.format ?? configuration.format
         let ruleAnalysisSnapshot: AnalysisSnapshot?
         if format == .text {
-            ruleAnalysisSnapshot = try RuleEngine().analyze(sources, using: ForceTryRule())
+            ruleAnalysisSnapshot = try RuleEngine().analyze(sources, using: BuiltInRuleCatalog.all)
         } else {
             ruleAnalysisSnapshot = nil
         }
