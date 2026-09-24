@@ -8,7 +8,7 @@ Clone the tagged source so the executable and its documentation describe the sam
 
 ```sh
 # swiftdebt-release-version:start
-git clone --branch v0.1.0 --depth 1 https://github.com/brunogama/SwiftDebt.git
+git clone --branch v0.2.0 --depth 1 https://github.com/brunogama/SwiftDebt.git
 # swiftdebt-release-version:end
 cd SwiftDebt
 swift build -c release
