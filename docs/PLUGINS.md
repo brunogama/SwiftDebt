@@ -4,7 +4,7 @@
 
 `SwiftDebtCommandPlugin` runs an on-demand report across selected Swift targets in the root package. `SwiftDebtBuildPlugin` attaches diagnostics to an individual target's SwiftPM build graph. Both call the same `swift-debt` executable and metric engine; neither implements a second set of metrics.
 
-The command plugin is not a Source Editor Extension or a compiler macro. The build plugin is an opt-in SwiftPM build tool. It does not expose an `XcodeBuildToolPlugin` adapter, and there is no dynamically loaded third-party rule/plugin API.
+The command plugin is not a Source Editor Extension or a compiler macro. The build plugin is an opt-in build tool with SwiftPM and `XcodeBuildToolPlugin` adapters. There is no dynamically loaded third-party rule/plugin API.
 
 ## Complete local SwiftPM example
 
@@ -97,7 +97,9 @@ Neither route obtains type-checker bindings or guarantees that all generated sou
 
 ## Xcode project integration
 
-`SwiftDebtBuildPlugin` supports Swift package targets, including packages opened in Xcode. It does not conform to `XcodeBuildToolPlugin`, so it cannot be attached directly to a standalone Xcode project target. Use a Swift package target or invoke the standalone CLI from an Xcode run-script build phase when project-only integration is required.
+`SwiftDebtBuildPlugin` supports Swift package targets, including packages opened in Xcode, and conforms to `XcodeBuildToolPlugin` for standalone Xcode project targets. The Xcode adapter reads `.swift-debt.json` from the project directory and analyzes the Swift inputs Xcode supplies for the attached target.
+
+The checked-in [standalone consumer project](../Examples/XcodePluginConsumer) demonstrates the attachment. `python3 scripts/xcode-plugin-smoke.py` passed with Xcode 27.0 (27A5228h), Apple Swift 6.4 (swiftlang-6.4.0.27.1), and macOS 27.2 (26B5091g), covering a clean build, warmed no-op, source and configuration invalidation, an enforced gate failure, and recovery. See the [validation record](VALIDATION.md) for the exact evidence.
 
 ## Explicit source manifests for the standalone CLI
 

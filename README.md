@@ -10,6 +10,8 @@ A Swift CLI, reusable analysis library, SwiftPM command plugin, and incremental 
 
 `SwiftDebtKit` also builds with Xcode 27.0 beta (27A5228h) against the iOS, tvOS, watchOS, and visionOS 27.0 simulator SDKs. The iOS simulator build covers both iPhone and iPadOS destinations.
 
+The standalone Xcode build-plugin consumer is validated with Xcode 27.0 (27A5228h), Apple Swift 6.4 (swiftlang-6.4.0.27.1), and macOS 27.2 (26B5091g). The check uses the shipping package manifest unchanged.
+
 This is an independent, paper-inspired implementation, **not a reproduction of the authors' tool**. All ten metric families are implemented, with documented measurement policies. Coupling and field access are syntactic estimates; duplicate detection is native Swift, not Lizard. The paper's inconsistent scoring formulas are opt-in rather than treated as a validated quality grade.
 
 ## Contents
@@ -209,7 +211,7 @@ swift build
 swift package swift-debt --target Demo --type-scope nominals --format json
 ```
 
-The build plugin supports Swift package targets, including packages opened in Xcode. It does not expose an `XcodeBuildToolPlugin` adapter for standalone Xcode project targets. See [PLUGINS.md](docs/PLUGINS.md) for the supported integration boundary.
+The build plugin supports Swift package targets, including packages opened in Xcode, and standalone Xcode project targets through its `XcodeBuildToolPlugin` adapter. The checked-in [Xcode consumer project](Examples/XcodePluginConsumer) attaches the plugin to a macOS framework target. Run `python3 scripts/xcode-plugin-smoke.py` on the pinned Xcode environment to verify a clean build, warmed no-op, source and configuration invalidation, an enforced failure, and recovery.
 
 ---
 
@@ -334,7 +336,7 @@ Implementation-only types use internal/package access. Public types form the reu
 
 **51 Swift Testing tests in four suites and 27 subprocess integration checks passed** with Swift 6.2.1 on x86_64 Linux. The integration checks launch the real CLI and both SwiftPM plugins in a real downstream consumer package, including source/config invalidation, gate failures, and warmed no-op builds.
 
-The container could not resolve GitHub from the build process. Verification therefore used a separate disposable copy linked against SwiftSyntax/SwiftParser modules bundled with the installed toolchain. **This does not verify the normal pinned dependency build, macOS plugin sandbox, or Xcode adapter.** The shipped `Package.swift` retains the ordinary remote dependency and has been manifest-validated. The test logs and reproduction procedure are in [docs/VALIDATION.md](docs/VALIDATION.md).
+The Linux container could not resolve GitHub from the build process, so that historical check used a disposable copy linked against parser modules bundled with its toolchain. An independent Xcode 27.0 run resolved the shipping manifest normally and passed the standalone project plugin smoke suite on macOS 27.2. The environments, commands, and qualifications are in [docs/VALIDATION.md](docs/VALIDATION.md).
 
 Run full validation on your own toolchain:
 

@@ -1,0 +1,33 @@
+name: Xcode build plugin
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  xcode-plugin:
+    name: Xcode 27 downstream project
+    # GitHub-hosted public preview: actions/runner-images#14404.
+    runs-on: ${{ 'xcode-27' }}
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+
+      - name: Verify pinned Apple toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -version | grep '^Xcode 27\.0$'
+          xcrun swift --version | grep 'Apple Swift version 6\.4'
+          test "$(sw_vers -productVersion | cut -d. -f1)" = 27
+
+      - name: Verify downstream Xcode build plugin
+        run: python3 scripts/xcode-plugin-smoke.py
