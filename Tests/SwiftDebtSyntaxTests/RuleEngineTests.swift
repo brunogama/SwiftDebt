@@ -16,17 +16,83 @@ struct RuleEngineTests {
         )
 
         #expect(snapshot.selectedSourcePaths.map(\.rawValue) == ["Sources/First.swift", "Sources/Second.swift"])
-        #expect(snapshot.ruleDescriptor.identity == ForceTryRule.identity)
+        #expect(snapshot.ruleDescriptors.map(\.identity) == [ForceTryRule.identity])
         #expect(snapshot.ruleResults.count == 2)
         #expect(snapshot.isComplete)
         #expect(snapshot.detections.count == 1)
 
         let missingResult = AnalysisSnapshot(
-            ruleDescriptor: snapshot.ruleDescriptor,
+            ruleDescriptors: snapshot.ruleDescriptors,
             selectedSourcePaths: snapshot.selectedSourcePaths,
             ruleResults: []
         )
         #expect(!missingResult.isComplete)
+    }
+
+    @Test("Multiple rules preserve independent atomic outcomes")
+    func multipleRuleTransactions() throws {
+        let snapshot = try RuleEngine().analyze(
+            [SourceUnit(path: "Input.swift", content: "let value = try! read()")],
+            using: [
+                ForceTryRule(), UnsupportedAfterEmissionRule(), ThrowAfterEmissionRule(),
+                InvalidThenUnsupportedRule(),
+            ]
+        )
+
+        #expect(
+            snapshot.ruleDescriptors.map(\.identity) == [
+                ForceTryRule.identity, UnsupportedAfterEmissionRule.identity,
+                ThrowAfterEmissionRule.identity, InvalidThenUnsupportedRule.identity,
+            ]
+        )
+        #expect(snapshot.ruleResults.count == 4)
+        #expect(snapshot.ruleResults[0].isCommitted)
+        #expect(snapshot.ruleResults[0].detections.count == 1)
+        #expect(snapshot.ruleResults[1].outcome == .unsupported(reason: "requires compiler facts"))
+        guard case .failed(let thrownReason) = snapshot.ruleResults[2].outcome else {
+            Issue.record("Expected thrown rule to fail")
+            return
+        }
+        guard case .failed(let invalidReason) = snapshot.ruleResults[3].outcome else {
+            Issue.record("Expected invalid emission to fail")
+            return
+        }
+        #expect(thrownReason.contains("rule threw: deliberate"))
+        #expect(invalidReason.contains("invalid emission"))
+        #expect(snapshot.detections.count == 1)
+        #expect(!snapshot.isComplete)
+    }
+
+    @Test("Rule and normalized source identities must be unique")
+    func duplicateSelectionIsRejected() throws {
+        #expect(throws: RuleEngineError.noRulesSelected) {
+            try RuleEngine().analyze([SourceUnit(path: "Input.swift", content: "let value = 1")], using: [])
+        }
+        #expect(throws: RuleEngineError.duplicateRuleIdentity(ForceTryRule.identity)) {
+            try RuleEngine().analyze(
+                [SourceUnit(path: "Input.swift", content: "let value = 1")],
+                using: [ForceTryRule(), ForceTryRule()]
+            )
+        }
+        let duplicatePath = try SourcePath("Sources/Input.swift")
+        #expect(throws: RuleEngineError.duplicateSourcePath(duplicatePath)) {
+            try RuleEngine().analyze(
+                [
+                    SourceUnit(path: "Sources//Input.swift", content: "let first = 1"),
+                    SourceUnit(path: "Sources/Input.swift", content: "let second = 2"),
+                ],
+                using: [ForceTryRule()]
+            )
+        }
+        #expect(RuleEngineError.noRulesSelected.description == "At least one debt rule must be selected.")
+        #expect(
+            RuleEngineError.duplicateRuleIdentity(ForceTryRule.identity).description
+                == "Duplicate rule identity: swiftdebt.force-try"
+        )
+        #expect(
+            RuleEngineError.duplicateSourcePath(duplicatePath).description
+                == "Duplicate normalized source path: Sources/Input.swift"
+        )
     }
 
     @Test("Force try reports only try! at the exclamation mark")
@@ -93,6 +159,19 @@ struct RuleEngineTests {
         #expect(!snapshot.isComplete)
         #expect(snapshot.detections.isEmpty)
         #expect(!result.provesAbsence)
+
+        let multipleRules = try RuleEngine().analyze(
+            [SourceUnit(path: "Broken.swift", content: "func broken( {")],
+            using: [RecordingRule(recorder: recorder), UnsupportedAfterEmissionRule()]
+        )
+        #expect(recorder.invocations == 0)
+        #expect(multipleRules.ruleResults.count == 2)
+        #expect(
+            multipleRules.ruleResults.allSatisfy {
+                if case .parseFailed = $0.outcome { return true }
+                return false
+            }
+        )
     }
 
     @Test("Unsupported execution is distinct and discards valid partial emissions")

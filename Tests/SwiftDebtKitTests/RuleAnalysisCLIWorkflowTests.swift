@@ -5,15 +5,24 @@ import Testing
 
 @Suite("CLI rule observation subprocess integration")
 struct RuleAnalysisCLIWorkflowTests {
-    @Test("Default text rule section matches the checked-in golden")
+    @Test("Default text built-in catalog matches the checked-in golden")
     func defaultTextRuleSectionGolden() throws {
         let directory = try makeProject(
             fileName: "Sources/App/Example.swift",
             source: """
-                func load() -> Int {
-                    try! dangerous()
+                final class LegacyBox: @unchecked Sendable {
+                    var value = 0
                 }
-                func dangerous() throws -> Int { 1 }
+                actor Cache {
+                    nonisolated(unsafe) static var sharedCount = 0
+                }
+                func inspect(_ value: Any) {
+                    _ = try! read()
+                    _ = value as! String
+                    do { throw SampleError.failed } catch {}
+                }
+                func read() throws -> Int { 1 }
+                enum SampleError: Error { case failed }
                 """
         )
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -33,7 +42,7 @@ struct RuleAnalysisCLIWorkflowTests {
         let marker = try #require(first.stdout.range(of: "RULE OBSERVATIONS\n"))
         let actualSection = String(first.stdout[marker.lowerBound...])
         let expectedSection = try String(
-            contentsOf: fixtureURL("Fixtures/RuleAnalysis/force-try.golden.txt"),
+            contentsOf: fixtureURL("Fixtures/RuleAnalysis/built-in-rules.golden.txt"),
             encoding: .utf8
         )
 
@@ -54,8 +63,12 @@ struct RuleAnalysisCLIWorkflowTests {
 
         #expect(result.status == 0)
         #expect(result.stderr.isEmpty)
-        #expect(result.stdout.contains("Status: complete | selected sources: 1 | committed sources: 1 | detections: 0"))
-        #expect(result.stdout.contains("No detections in committed sources."))
+        #expect(
+            result.stdout.contains(
+                "Status: complete | selected rules: 5 | selected sources: 1 | committed executions: 5/5"
+            )
+        )
+        #expect(result.stdout.contains("No detections in committed rule executions."))
     }
 
     @Test("A parse failure makes text rule analysis incomplete and exits two")
@@ -70,13 +83,13 @@ struct RuleAnalysisCLIWorkflowTests {
         #expect(result.stdout.split(separator: "\n").first?.hasSuffix(" - INCOMPLETE") == true)
         #expect(
             result.stdout.contains(
-                "Status: INCOMPLETE | selected sources: 1 | committed sources: 0 | detections: 0"
+                "Status: INCOMPLETE | selected rules: 5 | selected sources: 1 | committed executions: 0/5"
             )
         )
         #expect(result.stdout.contains("Invalid.swift:1:"))
         #expect(result.stdout.contains("parse-failed error:"))
-        #expect(result.stdout.contains("Absence was not established for incomplete sources."))
-        #expect(!result.stdout.contains("No detections in committed sources."))
+        #expect(result.stdout.contains("Absence was not established for incomplete rule executions."))
+        #expect(!result.stdout.contains("No detections in committed rule executions."))
     }
 
     @Test("JSON output keeps the schema 2 transport free of rule text")
@@ -95,6 +108,7 @@ struct RuleAnalysisCLIWorkflowTests {
         #expect(report.schemaVersion == 2)
         #expect(!result.stdout.contains("RULE OBSERVATIONS"))
         #expect(!result.stdout.contains("swiftdebt.force-try"))
+        #expect(!result.stdout.contains("unchecked-sendable"))
     }
 
     @Test("Analysis service returns the canonical text snapshot")
@@ -107,7 +121,15 @@ struct RuleAnalysisCLIWorkflowTests {
 
         #expect(snapshot.isComplete)
         #expect(snapshot.detections.count == 1)
-        #expect(snapshot.ruleDescriptor.identity.description == "swiftdebt.force-try")
+        #expect(
+            snapshot.ruleDescriptors.map(\.identity.description) == [
+                "swiftdebt.force-try",
+                "swiftdebt.concurrency.unchecked-sendable",
+                "swiftdebt.concurrency.actor-nonisolated-unsafe",
+                "swiftdebt.code-smell.force-cast",
+                "swiftdebt.code-smell.empty-catch",
+            ]
+        )
     }
 
     private func makeProject(fileName: String, source: String) throws -> URL {

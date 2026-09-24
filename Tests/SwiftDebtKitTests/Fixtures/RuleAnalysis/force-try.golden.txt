@@ -1,4 +1,0 @@
-RULE OBSERVATIONS
-Rule: swiftdebt.force-try@1 | Force try | default severity: warning
-Status: complete | selected sources: 1 | committed sources: 1 | detections: 1
-Sources/App/Example.swift:2:8: warning: [swiftdebt.force-try@1] This try! traps if the expression throws; handle or propagate the error.

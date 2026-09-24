@@ -69,24 +69,36 @@ public struct RuleAnalysisResult: Equatable, Sendable {
 }
 
 public struct AnalysisSnapshot: Equatable, Sendable {
-    public let ruleDescriptor: RuleDescriptor
+    public let ruleDescriptors: [RuleDescriptor]
     public let selectedSourcePaths: [SourcePath]
     public let ruleResults: [RuleAnalysisResult]
 
     package init(
-        ruleDescriptor: RuleDescriptor,
+        ruleDescriptors: [RuleDescriptor],
         selectedSourcePaths: [SourcePath],
         ruleResults: [RuleAnalysisResult]
     ) {
-        self.ruleDescriptor = ruleDescriptor
+        self.ruleDescriptors = ruleDescriptors
         self.selectedSourcePaths = selectedSourcePaths
         self.ruleResults = ruleResults
     }
 
     public var isComplete: Bool {
-        guard !selectedSourcePaths.isEmpty, selectedSourcePaths.count == ruleResults.count else { return false }
-        return zip(selectedSourcePaths, ruleResults).allSatisfy { sourcePath, result in
-            sourcePath == result.sourcePath && result.descriptor == ruleDescriptor && result.isCommitted
+        guard
+            !ruleDescriptors.isEmpty,
+            !selectedSourcePaths.isEmpty,
+            Set(ruleDescriptors.map(\.identity)).count == ruleDescriptors.count,
+            Set(selectedSourcePaths).count == selectedSourcePaths.count
+        else { return false }
+
+        let expectedPairs = ruleDescriptors.flatMap { descriptor in
+            selectedSourcePaths.map { sourcePath in (descriptor, sourcePath) }
+        }
+        guard expectedPairs.count == ruleResults.count else { return false }
+        return zip(expectedPairs, ruleResults).allSatisfy { expected, result in
+            expected.0 == result.descriptor
+                && expected.1 == result.sourcePath
+                && result.isCommitted
         }
     }
 
