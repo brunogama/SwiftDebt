@@ -67,7 +67,7 @@ struct RuleAnalysisCLIWorkflowTests {
 
         #expect(result.status == 2)
         #expect(result.stderr.isEmpty)
-        #expect(result.stdout.split(separator: "\n").first?.hasSuffix(" - complete") == true)
+        #expect(result.stdout.split(separator: "\n").first?.hasSuffix(" - INCOMPLETE") == true)
         #expect(
             result.stdout.contains(
                 "Status: INCOMPLETE | selected sources: 1 | committed sources: 0 | detections: 0"

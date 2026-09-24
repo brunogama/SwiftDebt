@@ -6,7 +6,7 @@ package struct ReportRenderer {
 
     package func render(_ report: AnalysisReport, format: ReportFormat, root: String) throws -> String {
         switch format {
-        case .text: return text(report)
+        case .text: return renderText(report, complete: report.complete)
         case .json:
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
@@ -24,9 +24,9 @@ package struct ReportRenderer {
         return String(format: "%.4f", locale: Locale(identifier: "en_US_POSIX"), value)
     }
 
-    private func text(_ report: AnalysisReport) -> String {
+    package func renderText(_ report: AnalysisReport, complete: Bool) -> String {
         var rows = [
-            "SwiftDebt \(report.engineVersion) - \(report.complete ? "complete" : "INCOMPLETE")",
+            "SwiftDebt \(report.engineVersion) - \(complete ? "complete" : "INCOMPLETE")",
             "Files: \(report.analyzedFileCount)/\(report.inputFileCount) | Code lines: \(report.codeLineCount) | Functions: \(report.functionCount)",
             "Type scope: \(report.typeScope.rawValue) | Scoring: \(report.scoringMode.rawValue) | Modules: \(report.modules.joined(separator: ", "))",
             "METRIC  ENTITIES  MAX  TOTAL  LIMIT(>)  VIOLATIONS  SCORE",

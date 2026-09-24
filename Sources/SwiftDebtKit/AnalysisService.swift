@@ -77,10 +77,12 @@ public struct AnalysisService: Sendable {
                 return try ReportRenderer().renderDebt(
                     rankedDebtAnalysis, format: format, graph: report.dependencyGraph)
             }
-            let base = try ReportRenderer().render(report, format: format, root: root.path)
             if let ruleAnalysisSnapshot {
+                let complete = report.complete && ruleAnalysisSnapshot.isComplete
+                let base = ReportRenderer().renderText(report, complete: complete)
                 return base + "\n" + RuleAnalysisRenderer().render(ruleAnalysisSnapshot)
             }
+            let base = try ReportRenderer().render(report, format: format, root: root.path)
             return format == .diagnostics ? base + debtValidationDiagnostics : base
         }()
         var protectedPaths = Set(selection.entries.map { URL(fileURLWithPath: $0.path).resolvingSymlinksInPath().path })
