@@ -1,6 +1,6 @@
 /// The release version embedded in SwiftDebt runtime output and reports.
 package enum SwiftDebtRelease {
     // swiftdebt-release-version:start
-    package static let version = "0.2.0"
+    package static let version = "0.2.1"
     // swiftdebt-release-version:end
 }
