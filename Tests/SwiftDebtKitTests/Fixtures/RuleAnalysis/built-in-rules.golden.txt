@@ -1,5 +1,5 @@
 RULE OBSERVATIONS
-Status: complete | selected rules: 6 | selected sources: 1 | committed executions: 6/6 | detections: 6
+Status: complete | selected rules: 10 | selected sources: 1 | committed executions: 10/10 | detections: 6
 Rule: swiftdebt.force-try@1 | Force try | default severity: warning
 Sources/App/Example.swift:14:12: warning: [swiftdebt.force-try@1] This try! traps if the expression throws; handle or propagate the error.
 Rule: swiftdebt.concurrency.unchecked-sendable@1 | Unchecked Sendable conformance | default severity: information
@@ -12,3 +12,7 @@ Rule: swiftdebt.code-smell.force-cast@1 | Force cast | default severity: warning
 Sources/App/Example.swift:15:17: warning: [swiftdebt.code-smell.force-cast@1] This forced cast traps if the value has a different runtime type; use a checked cast or explicit invariant.
 Rule: swiftdebt.code-smell.empty-catch@1 | Empty catch | default severity: warning
 Sources/App/Example.swift:16:37: warning: [swiftdebt.code-smell.empty-catch@1] This catch clause has an empty body and discards the error; handle or propagate it.
+Rule: swiftdebt.refactoring.long-function@1 | Long Function | default severity: warning
+Rule: swiftdebt.refactoring.long-parameter-list@1 | Long Parameter List | default severity: warning
+Rule: swiftdebt.refactoring.global-data@1 | Global Data | default severity: warning
+Rule: swiftdebt.refactoring.large-class@1 | Large Class | default severity: warning

@@ -5,6 +5,31 @@ import Testing
 
 @Suite("CLI rule observation subprocess integration")
 struct RuleAnalysisCLIWorkflowTests {
+    @Test("A smell explains the finding and fails only under the opted-in gate")
+    func codeSmellGuidanceAndGate() throws {
+        let directory = try makeProject(fileName: "Global.swift", source: "var sharedCounter = 0")
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let advisory = try runSwiftDebt(["analyze", directory.path, "--jobs", "1"])
+        let gated = try runSwiftDebt(["analyze", directory.path, "--jobs", "1", "--fail-on-violation"])
+        let jsonGate = try runSwiftDebt([
+            "analyze", directory.path, "--jobs", "1", "--format", "json", "--fail-on-violation",
+        ])
+
+        #expect(advisory.status == 0)
+        #expect(gated.status == 1)
+        #expect(jsonGate.status == 1)
+        #expect(advisory.stderr.isEmpty)
+        #expect(gated.stderr.isEmpty)
+        #expect(!jsonGate.stdout.contains("RULE OBSERVATIONS"))
+        #expect(advisory.stdout.contains("Global.swift:1:1: warning: [swiftdebt.refactoring.global-data@1]"))
+        #expect(advisory.stdout.contains("Why: File-scope mutable state"))
+        #expect(advisory.stdout.contains("Change: Move mutable state behind an owner"))
+        #expect(
+            advisory.stdout.contains(
+                "Read: https://brunogama.github.io/SwiftDebt/documentation/swiftdebtkit/globaldata"))
+    }
+
     @Test("Default text built-in catalog matches the checked-in golden")
     func defaultTextRuleSectionGolden() throws {
         let directory = try makeProject(
@@ -72,7 +97,7 @@ struct RuleAnalysisCLIWorkflowTests {
         #expect(result.stderr.isEmpty)
         #expect(
             result.stdout.contains(
-                "Status: complete | selected rules: 6 | selected sources: 1 | committed executions: 6/6"
+                "Status: complete | selected rules: 10 | selected sources: 1 | committed executions: 10/10"
             )
         )
         #expect(result.stdout.contains("No detections in committed rule executions."))
@@ -90,7 +115,7 @@ struct RuleAnalysisCLIWorkflowTests {
         #expect(result.stdout.split(separator: "\n").first?.hasSuffix(" - INCOMPLETE") == true)
         #expect(
             result.stdout.contains(
-                "Status: INCOMPLETE | selected rules: 6 | selected sources: 1 | committed executions: 0/6"
+                "Status: INCOMPLETE | selected rules: 10 | selected sources: 1 | committed executions: 0/10"
             )
         )
         #expect(result.stdout.contains("Invalid.swift:1:"))
@@ -136,6 +161,10 @@ struct RuleAnalysisCLIWorkflowTests {
                 "swiftdebt.concurrency.actor-state-across-await",
                 "swiftdebt.code-smell.force-cast",
                 "swiftdebt.code-smell.empty-catch",
+                "swiftdebt.refactoring.long-function",
+                "swiftdebt.refactoring.long-parameter-list",
+                "swiftdebt.refactoring.global-data",
+                "swiftdebt.refactoring.large-class",
             ]
         )
     }

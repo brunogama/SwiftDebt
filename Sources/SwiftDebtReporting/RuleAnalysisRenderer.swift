@@ -27,7 +27,14 @@ package struct RuleAnalysisRenderer {
             for result in results {
                 switch result.outcome {
                 case .committed(let detections):
-                    lines += detections.sorted(by: detectionOrder).map(render)
+                    for detection in detections.sorted(by: detectionOrder) {
+                        lines.append(render(detection))
+                        if let documentationURL = descriptor.metadata.documentationURL {
+                            lines.append("  Why: \(singleLine(descriptor.contract.rationale))")
+                            lines.append("  Change: \(singleLine(descriptor.metadata.remediation))")
+                            lines.append("  Read: \(singleLine(documentationURL))")
+                        }
+                    }
                 case .parseFailed(let diagnostics):
                     lines += diagnostics.sorted(by: diagnosticOrder).map { diagnostic in
                         "\(result.sourcePath):\(diagnostic.location.line):\(diagnostic.location.column): parse-failed"

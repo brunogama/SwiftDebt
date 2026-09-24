@@ -133,6 +133,9 @@ jobs:
             --disable-indexing \
             --warnings-as-errors
           test -f "$site/index.html"
+          for article in codesmells longfunction longparameterlist globaldata largeclass standalonecli; do
+            test -f "$site/documentation/swiftdebtkit/$article/index.html"
+          done
           test -z "$(git status --porcelain --untracked-files=no)"
 
       - name: Recheck main, tag, and publish refs
