@@ -54,7 +54,8 @@ struct DebtExplorerTests {
 
         let ciOutput = TerminalDebtExplorer.render(analysis, environment: ci, fallbackOutput: "fallback\n")
         let dumbOutput = TerminalDebtExplorer.render(analysis, environment: dumb, fallbackOutput: "fallback\n")
-        let interactiveOutput = TerminalDebtExplorer.render(analysis, environment: capable, fallbackOutput: "fallback\n")
+        let interactiveOutput = TerminalDebtExplorer.render(
+            analysis, environment: capable, fallbackOutput: "fallback\n")
 
         #expect(ciOutput.usedFallback)
         #expect(ciOutput.text == "fallback\n")

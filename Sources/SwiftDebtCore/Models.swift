@@ -199,7 +199,6 @@ public struct AnalysisReport: Codable, Sendable {
     }
 }
 
-
 extension AnalysisReport {
     public init(from decoder: any Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
@@ -225,7 +224,8 @@ extension AnalysisReport {
         findings = try values.decode([Finding].self, forKey: .findings)
         diagnostics = try values.decode([AnalysisDiagnostic].self, forKey: .diagnostics)
         couplings = try values.decode([CouplingEdge].self, forKey: .couplings)
-        dependencyGraph = try values.decodeIfPresent(SwiftDependencyGraph.self, forKey: .dependencyGraph)
+        dependencyGraph =
+            try values.decodeIfPresent(SwiftDependencyGraph.self, forKey: .dependencyGraph)
             ?? Self.emptyDependencyGraph
         duplicateBlocks = try values.decode([DuplicateBlock].self, forKey: .duplicateBlocks)
         debtItems = try values.decode([DebtItem].self, forKey: .debtItems)

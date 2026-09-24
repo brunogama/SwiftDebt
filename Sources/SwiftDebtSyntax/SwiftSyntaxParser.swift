@@ -169,7 +169,8 @@ private final class DeclarationCollector: SyntaxVisitor {
                 )
             }
         } else if node.bindingSpecifier.text == "var",
-            hasAnyModifier(Syntax(node), named: ["class", "static"]) {
+            hasAnyModifier(Syntax(node), named: ["class", "static"])
+        {
             riskFacts.append(
                 SwiftRiskFact(
                     category: .mutableSharedState,
@@ -228,15 +229,17 @@ private final class DeclarationCollector: SyntaxVisitor {
         guard let parameterClause = signature?.parameterClause else { return [] }
         switch parameterClause {
         case .simpleInput(let parameters):
-            return Set(parameters.compactMap { parameter in
-                let value = cleanName(parameter.name.text)
-                return value == "_" ? nil : value
-            })
+            return Set(
+                parameters.compactMap { parameter in
+                    let value = cleanName(parameter.name.text)
+                    return value == "_" ? nil : value
+                })
         case .parameterClause(let clause):
-            return Set(clause.parameters.compactMap { parameter in
-                let value = cleanName((parameter.secondName ?? parameter.firstName).text)
-                return value == "_" ? nil : value
-            })
+            return Set(
+                clause.parameters.compactMap { parameter in
+                    let value = cleanName((parameter.secondName ?? parameter.firstName).text)
+                    return value == "_" ? nil : value
+                })
         }
     }
 
@@ -253,16 +256,19 @@ private final class DeclarationCollector: SyntaxVisitor {
         ).union(implicitNames)
         let visitor = BodyVisitor(parameters: names, sourceLines: sourceLines)
         visitor.walk(statements)
-        let ownerProperties = owner.map { key in
-            types.filter { $0.key == key }.reduce(into: Set<String>()) { $0.formUnion($1.propertyNames) }
-        } ?? []
+        let ownerProperties =
+            owner.map { key in
+                types.filter { $0.key == key }.reduce(into: Set<String>()) { $0.formUnion($1.propertyNames) }
+            } ?? []
         let effectVisitor = EffectVisitor(parameters: names, ownerProperties: ownerProperties, sourceLines: sourceLines)
         for parameter in parameters {
             guard parameter.type.description.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("inout ") else {
                 continue
             }
             let value = cleanName((parameter.secondName ?? parameter.firstName).text)
-            if value != "_" { effectVisitor.recordInoutParameter(name: value, location: sourceLines.location(parameter)) }
+            if value != "_" {
+                effectVisitor.recordInoutParameter(name: value, location: sourceLines.location(parameter))
+            }
         }
         effectVisitor.walk(statements)
         var functionRiskFacts = effectVisitor.riskFacts

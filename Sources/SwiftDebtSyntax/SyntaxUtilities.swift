@@ -34,7 +34,7 @@ private let unsafeStandardLibraryTypeNames: Set<String> = [
     "UnsafePointer",
     "UnsafeRawBufferPointer",
     "UnsafeRawPointer",
-    "UnsafeThrowingContinuation"
+    "UnsafeThrowingContinuation",
 ]
 
 func isUnsafeStandardLibraryTypeName(_ name: String) -> Bool {

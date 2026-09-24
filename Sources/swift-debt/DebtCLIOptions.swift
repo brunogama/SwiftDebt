@@ -45,7 +45,9 @@ extension CLIOptions {
         while index < arguments.count {
             let argument = arguments[index]
             index += 1
-            if !literal && (argument == "--help" || argument == "-h") { throw CLIError("Use 'swift-debt debt \(validates ? "validate" : "analyze") --help'") }
+            if !literal && (argument == "--help" || argument == "-h") {
+                throw CLIError("Use 'swift-debt debt \(validates ? "validate" : "analyze") --help'")
+            }
             if !literal && argument == "--" {
                 literal = true
                 continue
@@ -114,15 +116,18 @@ extension CLIOptions {
         let maximumFileBytes = try optionalInteger(
             values["--max-file-bytes"], named: "--max-file-bytes", range: 1...Int.max)
         let preset = try optionalRaw(DebtAnalysisPreset.self, values["--preset"], named: "debt preset")
-        let aggregation = try optionalRaw(DebtAggregationStrategy.self, values["--aggregation"], named: "debt aggregation")
+        let aggregation = try optionalRaw(
+            DebtAggregationStrategy.self, values["--aggregation"], named: "debt aggregation")
         let minPriority = try optionalRaw(Priority.self, values["--min-priority"], named: "minimum priority")
         let minScore = try optionalScore(values["--min-score"], named: "--min-score")
         let top = try optionalInteger(values["--top"], named: "--top", range: 0...Int.max)
         let head = try optionalInteger(values["--head"], named: "--head", range: 0...Int.max)
         let tail = try optionalInteger(values["--tail"], named: "--tail", range: 0...Int.max)
-        let hasDebtOverrides = preset != nil || aggregation != nil || minScore != nil || minPriority != nil
+        let hasDebtOverrides =
+            preset != nil || aggregation != nil || minScore != nil || minPriority != nil
             || !categories.isEmpty || !levels.isEmpty || top != nil || head != nil || tail != nil
-        let options = hasDebtOverrides
+        let options =
+            hasDebtOverrides
             ? DebtAnalysisOptions(
                 preset: preset ?? .balanced,
                 aggregationStrategy: aggregation ?? .file,

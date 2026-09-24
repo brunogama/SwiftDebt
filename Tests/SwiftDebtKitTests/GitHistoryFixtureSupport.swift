@@ -5,7 +5,8 @@ import Testing
 @testable import SwiftDebtKit
 
 func temporaryGitTestDirectory() throws -> URL {
-    let root = FileManager.default.temporaryDirectory.appendingPathComponent("swift-debt-git-tests-\(UUID().uuidString)")
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(
+        "swift-debt-git-tests-\(UUID().uuidString)")
     try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
     return root
 }
@@ -150,12 +151,13 @@ final class RecordingGitRunner: GitHistoryProcessRunning, @unchecked Sendable {
     ) -> GitHistoryProcessResult {
         lock.lock()
         defer { lock.unlock() }
-        recordedCalls.append(.init(
-            executableURL: executableURL,
-            arguments: arguments,
-            workingDirectory: workingDirectory,
-            timeoutSeconds: timeoutSeconds
-        ))
+        recordedCalls.append(
+            .init(
+                executableURL: executableURL,
+                arguments: arguments,
+                workingDirectory: workingDirectory,
+                timeoutSeconds: timeoutSeconds
+            ))
         if responses.isEmpty {
             return GitHistoryProcessResult(exitCode: 1, stdout: "", stderr: "missing response", timedOut: false)
         }

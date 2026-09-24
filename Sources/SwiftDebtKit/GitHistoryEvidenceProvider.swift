@@ -139,7 +139,9 @@ public struct GitHistoryEvidenceProvider: Sendable {
             return "shallow git history is unavailable"
         }
         let count = runGit(["rev-list", "--count", "HEAD"], root: root)
-        guard count.exitCode == 0, let value = Int(count.stdout.trimmingCharacters(in: .whitespacesAndNewlines)), value > 0 else {
+        guard count.exitCode == 0, let value = Int(count.stdout.trimmingCharacters(in: .whitespacesAndNewlines)),
+            value > 0
+        else {
             return "git repository has no commits: \(diagnosticText(count))"
         }
         return nil

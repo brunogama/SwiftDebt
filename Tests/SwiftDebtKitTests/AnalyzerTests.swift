@@ -153,7 +153,9 @@ struct AnalyzerTests {
         #expect(resolvedCall.note.contains("not compiler semantic proof"))
 
         let ambiguousCall = try #require(
-            graph.edges.first { $0.kind == .call && $0.confidence == .ambiguousSyntax && $0.unresolvedName == "make(_:)" }
+            graph.edges.first {
+                $0.kind == .call && $0.confidence == .ambiguousSyntax && $0.unresolvedName == "make(_:)"
+            }
         )
         #expect(ambiguousCall.target == nil)
         #expect(ambiguousCall.targetCandidates.count == 2)
@@ -295,25 +297,25 @@ struct AnalyzerTests {
     @Test func structuralDebtEvidenceCarriesLocationsAndExplanations() async throws {
         let repeated = (0..<3).map { "    let v\($0) = \($0)" }.joined(separator: "\n")
         let code = """
-        class Worker {
-            var values: [Int] = []
-            func risky(flag: Bool) async throws {
-                if flag {
-                    for value in values {
-                        if value > 0 {
-                            print(value)
+            class Worker {
+                var values: [Int] = []
+                func risky(flag: Bool) async throws {
+                    if flag {
+                        for value in values {
+                            if value > 0 {
+                                print(value)
+                            }
                         }
                     }
                 }
+                func cloneA() {
+            \(repeated)
+                }
+                func cloneB() {
+            \(repeated)
+                }
             }
-            func cloneA() {
-        \(repeated)
-            }
-            func cloneB() {
-        \(repeated)
-            }
-        }
-        """
+            """
         let report = try await Analyzer().analyze(
             [source("Structural.swift", code)],
             options: .init(minimumDuplicateLines: 3)
@@ -398,7 +400,8 @@ struct AnalyzerTests {
     }
     @Test func coverageExplanationWorkflowReportsMatchingStrategies() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        try FileManager.default.createDirectory(at: directory.appendingPathComponent("Sources"), withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(
+            at: directory.appendingPathComponent("Sources"), withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
         let source = directory.appendingPathComponent("Sources/Processor.swift")
         try "struct Processor { func run(value: Int) { print(value) } }".write(
@@ -408,12 +411,12 @@ struct AnalyzerTests {
         )
         let lcov = directory.appendingPathComponent("coverage.lcov")
         try """
-            SF:\(source.path)
-            FN:1,Workspace.Processor.run(value:)
-            FNDA:1,Workspace.Processor.run(value:)
-            DA:1,1
-            end_of_record
-            """.write(to: lcov, atomically: true, encoding: .utf8)
+        SF:\(source.path)
+        FN:1,Workspace.Processor.run(value:)
+        FNDA:1,Workspace.Processor.run(value:)
+        DA:1,1
+        end_of_record
+        """.write(to: lcov, atomically: true, encoding: .utf8)
 
         let result = try CoverageExplanationService().run(.init(path: directory.path, lcovPath: lcov.path))
 
@@ -448,7 +451,6 @@ struct AnalyzerTests {
         #expect(decoded.dependencyGraph.nodes.isEmpty)
         #expect(decoded.dependencyGraph.edges.isEmpty)
     }
-
 
     @Test func parallelismDoesNotChangeJSON() async throws {
         let sources = (0..<20).map { source("\($0).swift", "class C\($0) { func f(_ n: Int) { if n > 1 {} } }") }

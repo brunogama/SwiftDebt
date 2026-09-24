@@ -145,8 +145,8 @@ public enum DebtExplorerReducer {
     }
 }
 
-private extension RankedDebtItem {
-    func matchesDebtExplorerQuery(_ query: String) -> Bool {
+extension RankedDebtItem {
+    fileprivate func matchesDebtExplorerQuery(_ query: String) -> Bool {
         let fields = [
             item.id,
             item.entity.displayName,

@@ -41,7 +41,8 @@ struct DebtScoringTests {
     @Test func optionalUnavailableEvidenceIsRenormalizedNotZeroed() throws {
         let score = DebtScoring().score(evidence: [
             evidence("complexity", weight: 2, score: 80, rawValue: "ccf=12"),
-            evidence("coverage", weight: 3, score: nil, rawValue: "missing", availability: .unavailable(reason: "no LCOV")),
+            evidence(
+                "coverage", weight: 3, score: nil, rawValue: "missing", availability: .unavailable(reason: "no LCOV")),
         ])
 
         #expect(score.value == 80)
@@ -112,7 +113,8 @@ struct DebtScoringTests {
         let forward = [
             evidence("coverage", weight: 3, score: 40, rawValue: "line=40%"),
             evidence("complexity", weight: 2, score: 100, rawValue: "ccf=25"),
-            evidence("history", weight: 5, score: nil, rawValue: "missing", availability: .unavailable(reason: "no git")),
+            evidence(
+                "history", weight: 5, score: nil, rawValue: "missing", availability: .unavailable(reason: "no git")),
         ]
         let reverse = Array(forward.reversed())
 
@@ -185,7 +187,8 @@ struct DebtScoringTests {
     }
 
     @Test func paperScoringRemainsSeparateFromDebtScoring() {
-        let inputs = ScoreInputs(methodCount: 4, propertyCount: 2, parameterCount: 8, duplicateLines: 12, totalLines: 100)
+        let inputs = ScoreInputs(
+            methodCount: 4, propertyCount: 2, parameterCount: 8, duplicateLines: 12, totalLines: 100)
         let paper = PaperScoring().score(metric: .dc, values: [12], inputs: inputs, mode: .paper)
         let debt = DebtScoring().score(evidence: [evidence("dc", weight: 1, score: 80, rawValue: "duplicated=12")])
 
@@ -195,7 +198,8 @@ struct DebtScoringTests {
     }
 
     @Test func domainSupportsCallableTypeFileAndModuleAggregationContracts() {
-        let callable = entity("callable:App.Processor.process", level: .callable, file: "Sources/Processor.swift", line: 12)
+        let callable = entity(
+            "callable:App.Processor.process", level: .callable, file: "Sources/Processor.swift", line: 12)
         let type = entity("type:App.Processor", level: .type, file: "Sources/Processor.swift", line: 1)
         let file = entity("file:Sources/Processor.swift", level: .file, file: "Sources/Processor.swift")
         let module = entity("module:App", level: .module, file: nil)
@@ -216,13 +220,15 @@ struct DebtScoringTests {
 
     private func swiftDebtCoreSourceFiles() throws -> [URL] {
         let testFile = URL(fileURLWithPath: #filePath)
-        let repositoryRoot = testFile
+        let repositoryRoot =
+            testFile
             .deletingLastPathComponent()
             .deletingLastPathComponent()
             .deletingLastPathComponent()
         let sourceRoot = repositoryRoot.appendingPathComponent("Sources/SwiftDebtCore", isDirectory: true)
         let enumerator = try #require(FileManager.default.enumerator(at: sourceRoot, includingPropertiesForKeys: nil))
-        return enumerator
+        return
+            enumerator
             .compactMap { $0 as? URL }
             .filter { $0.pathExtension == "swift" }
             .sorted { relativePath($0) < relativePath($1) }
@@ -242,7 +248,8 @@ struct DebtScoringTests {
 
     private func relativePath(_ file: URL) -> String {
         let testFile = URL(fileURLWithPath: #filePath)
-        let repositoryRoot = testFile
+        let repositoryRoot =
+            testFile
             .deletingLastPathComponent()
             .deletingLastPathComponent()
             .deletingLastPathComponent()

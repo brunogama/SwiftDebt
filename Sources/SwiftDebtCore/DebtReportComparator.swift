@@ -102,9 +102,10 @@ public struct DebtReportComparator: Sendable {
         let evidence = setDelta(before: evidenceIDs(before), after: evidenceIDs(after))
         let unavailableEvidence = setDelta(before: unavailableEvidenceIDs(before), after: unavailableEvidenceIDs(after))
         let moved = before.location != after.location
-        guard moved || before.score != after.score || before.priority != after.priority
-            || !evidence.added.isEmpty || !evidence.removed.isEmpty
-            || !unavailableEvidence.added.isEmpty || !unavailableEvidence.removed.isEmpty
+        guard
+            moved || before.score != after.score || before.priority != after.priority
+                || !evidence.added.isEmpty || !evidence.removed.isEmpty
+                || !unavailableEvidence.added.isEmpty || !unavailableEvidence.removed.isEmpty
         else { return nil }
         return DebtReportChangedItem(
             id: before.id,
@@ -125,8 +126,9 @@ public struct DebtReportComparator: Sendable {
     ) -> DebtReportChangedAggregation? {
         let memberItems = setDelta(before: before.memberItemIDs, after: after.memberItemIDs)
         let moved = before.location != after.location
-        guard moved || before.score != after.score || before.priority != after.priority
-            || !memberItems.added.isEmpty || !memberItems.removed.isEmpty
+        guard
+            moved || before.score != after.score || before.priority != after.priority
+                || !memberItems.added.isEmpty || !memberItems.removed.isEmpty
         else { return nil }
         return DebtReportChangedAggregation(
             id: before.id,

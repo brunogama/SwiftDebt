@@ -110,7 +110,7 @@ func ordered<T: Comparable>(_ lhs: T?, _ rhs: T?) -> Bool? {
     case (.none, .none): nil
     case (.none, .some): true
     case (.some, .none): false
-    case let (.some(left), .some(right)): left == right ? nil : left < right
+    case (.some(let left), .some(let right)): left == right ? nil : left < right
     }
 }
 

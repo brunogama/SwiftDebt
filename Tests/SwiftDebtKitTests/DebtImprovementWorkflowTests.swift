@@ -11,8 +11,10 @@ struct DebtImprovementWorkflowTests {
         .deletingLastPathComponent()
 
     @Test func goldenBeforeAfterComparisonIsDeterministicAndSchemaAware() throws {
-        let before: DebtReport = try loadJSON("Tests/SwiftDebtKitTests/Fixtures/DebtImprovement/before-report.fixture.json")
-        let after: DebtReport = try loadJSON("Tests/SwiftDebtKitTests/Fixtures/DebtImprovement/after-report.fixture.json")
+        let before: DebtReport = try loadJSON(
+            "Tests/SwiftDebtKitTests/Fixtures/DebtImprovement/before-report.fixture.json")
+        let after: DebtReport = try loadJSON(
+            "Tests/SwiftDebtKitTests/Fixtures/DebtImprovement/after-report.fixture.json")
 
         let comparison = try DebtReportComparator().compare(before: before, after: after)
         let repeated = try DebtReportComparator().compare(before: before, after: after)
@@ -58,8 +60,10 @@ struct DebtImprovementWorkflowTests {
         let afterPath = fixturePath("Tests/SwiftDebtKitTests/Fixtures/DebtImprovement/after-report.fixture.json")
         let service = DebtImprovementService()
 
-        let passing = try service.validateImprovement(.init(beforePath: beforePath, afterPath: afterPath, minimumImprovement: 5))
-        let failing = try service.validateImprovement(.init(beforePath: beforePath, afterPath: afterPath, minimumImprovement: 6))
+        let passing = try service.validateImprovement(
+            .init(beforePath: beforePath, afterPath: afterPath, minimumImprovement: 5))
+        let failing = try service.validateImprovement(
+            .init(beforePath: beforePath, afterPath: afterPath, minimumImprovement: 6))
 
         let expectedPassing = try read("Tests/SwiftDebtKitTests/Fixtures/DebtImprovement/validation-pass.golden.json")
         let expectedFailing = try read("Tests/SwiftDebtKitTests/Fixtures/DebtImprovement/validation-fail.golden.json")

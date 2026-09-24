@@ -108,65 +108,65 @@ struct FunctionalEvidenceTests {
         StrictConcurrencyFixture(
             name: "actor isolation",
             code: """
-            actor Store {
-              func scenario() {}
-            }
-            """,
+                actor Store {
+                  func scenario() {}
+                }
+                """,
             expected: .actorIsolation
         ),
         StrictConcurrencyFixture(
             name: "global actor",
             code: """
-            @MainActor
-            func scenario() {}
-            """,
+                @MainActor
+                func scenario() {}
+                """,
             expected: .globalActorIsolation
         ),
         StrictConcurrencyFixture(
             name: "sendable conformance",
             code: """
-            struct Value: Sendable {
-              let id: Int
-            }
-            """,
+                struct Value: Sendable {
+                  let id: Int
+                }
+                """,
             expected: .sendableConformance
         ),
         StrictConcurrencyFixture(
             name: "unchecked sendable",
             code: """
-            final class UnsafeBox: @unchecked Sendable {
-              var value = 0
-            }
-            """,
+                final class UnsafeBox: @unchecked Sendable {
+                  var value = 0
+                }
+                """,
             expected: .uncheckedSendable
         ),
         StrictConcurrencyFixture(
             name: "task creation",
             code: """
-            func scenario() {
-              Task { await refresh() }
-              Task.detached { await refresh() }
-            }
-            """,
+                func scenario() {
+                  Task { await refresh() }
+                  Task.detached { await refresh() }
+                }
+                """,
             expected: .unstructuredTask,
             expectedMinimumCount: 2
         ),
         StrictConcurrencyFixture(
             name: "nonisolated declaration",
             code: """
-            actor Store {
-              nonisolated func scenario() {}
-            }
-            """,
+                actor Store {
+                  nonisolated func scenario() {}
+                }
+                """,
             expected: .nonisolatedDeclaration
         ),
         StrictConcurrencyFixture(
             name: "unsafe escape hatch",
             code: """
-            func scenario(_ pointer: UnsafeRawPointer) {
-              _ = pointer
-            }
-            """,
+                func scenario(_ pointer: UnsafeRawPointer) {
+                  _ = pointer
+                }
+                """,
             expected: .unsafeEscapeHatch
         ),
     ])
@@ -302,7 +302,9 @@ struct FunctionalEvidenceTests {
 
         #expect(originalEvidence == shuffledEvidence)
         #expect(originalScore == shuffledScore)
-        #expect(originalEvidence.map { "\($0.id)|\($0.rawValue)|\($0.note ?? "")" } == shuffledEvidence.map { "\($0.id)|\($0.rawValue)|\($0.note ?? "")" })
+        #expect(
+            originalEvidence.map { "\($0.id)|\($0.rawValue)|\($0.note ?? "")" }
+                == shuffledEvidence.map { "\($0.id)|\($0.rawValue)|\($0.note ?? "")" })
     }
 
     @Test func disabledSwiftSpecificRiskEvidenceIsDeterministic() throws {

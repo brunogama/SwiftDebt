@@ -70,7 +70,8 @@ public struct CoverageExplanationService: Sendable {
             maximumFileBytes: request.maximumFileBytes ?? configuration.maximumFileBytes
         )
         let parser = SwiftSyntaxParser()
-        let entities = sources
+        let entities =
+            sources
             .map { parser.parse($0) }
             .filter(\.isValid)
             .flatMap(entities)

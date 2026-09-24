@@ -43,7 +43,8 @@ public struct DebtImprovementService: Sendable {
     public func compare(_ request: DebtComparisonRequest) throws -> DebtWorkflowRunResult {
         let comparison = try loadComparison(beforePath: request.beforePath, afterPath: request.afterPath)
         let rendered = try renderJSON(comparison)
-        try writeIfRequested(rendered, outputPath: request.outputPath, protectedPaths: [request.beforePath, request.afterPath])
+        try writeIfRequested(
+            rendered, outputPath: request.outputPath, protectedPaths: [request.beforePath, request.afterPath])
         return DebtWorkflowRunResult(standardOutput: request.outputPath == nil ? rendered : "", exitStatus: 0)
     }
 
@@ -63,7 +64,8 @@ public struct DebtImprovementService: Sendable {
             comparisonSummary: comparison.summary
         )
         let rendered = try renderJSON(validation)
-        try writeIfRequested(rendered, outputPath: request.outputPath, protectedPaths: [request.beforePath, request.afterPath])
+        try writeIfRequested(
+            rendered, outputPath: request.outputPath, protectedPaths: [request.beforePath, request.afterPath])
         return DebtWorkflowRunResult(standardOutput: request.outputPath == nil ? rendered : "", exitStatus: status)
     }
 
@@ -80,7 +82,8 @@ public struct DebtImprovementService: Sendable {
         } catch let failure as AnalysisFailure {
             throw failure
         } catch let failure as DecodingError {
-            throw AnalysisFailure.invalidConfiguration("Invalid \(label) debt report \(path): \(decodingErrorDescription(failure))")
+            throw AnalysisFailure.invalidConfiguration(
+                "Invalid \(label) debt report \(path): \(decodingErrorDescription(failure))")
         } catch {
             throw WorkspaceError("Unable to read \(label) debt report \(path): \(error)")
         }
@@ -95,11 +98,13 @@ public struct DebtImprovementService: Sendable {
     private func writeIfRequested(_ content: String, outputPath: String?, protectedPaths: [String]) throws {
         guard let outputPath else { return }
         let outputURL = URL(fileURLWithPath: outputPath).standardizedFileURL.resolvingSymlinksInPath()
-        let protected = Set(protectedPaths.map { URL(fileURLWithPath: $0).standardizedFileURL.resolvingSymlinksInPath().path })
+        let protected = Set(
+            protectedPaths.map { URL(fileURLWithPath: $0).standardizedFileURL.resolvingSymlinksInPath().path })
         guard !protected.contains(outputURL.path), outputURL.pathExtension != "swift" else {
             throw WorkspaceError("Refusing to overwrite an input report or Swift file")
         }
-        try FileManager.default.createDirectory(at: outputURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(
+            at: outputURL.deletingLastPathComponent(), withIntermediateDirectories: true)
         try content.write(to: outputURL, atomically: true, encoding: .utf8)
     }
 

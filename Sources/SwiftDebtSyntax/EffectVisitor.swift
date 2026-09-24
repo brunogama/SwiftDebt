@@ -5,8 +5,12 @@ import SwiftSyntax
 final class EffectVisitor: SyntaxVisitor {
     private let sourceLines: SourceLines
     private let ownerProperties: Set<String>
-    private let benignCompositionOperations: Set<String> = ["map", "compactMap", "filter", "reduce", "flatMap", "sorted"]
-    private let mutatingCalls: Set<String> = ["append", "removeAll", "remove", "insert", "updateValue", "sort", "reverse", "toggle"]
+    private let benignCompositionOperations: Set<String> = [
+        "map", "compactMap", "filter", "reduce", "flatMap", "sorted",
+    ]
+    private let mutatingCalls: Set<String> = [
+        "append", "removeAll", "remove", "insert", "updateValue", "sort", "reverse", "toggle",
+    ]
     private var localNames: Set<String>
     private var closureDepth = 0
 
@@ -60,7 +64,8 @@ final class EffectVisitor: SyntaxVisitor {
 
     override func visit(_ node: SequenceExprSyntax) -> SyntaxVisitorContinueKind {
         guard let assignment = assignment(in: node.description) else { return .visitChildren }
-        recordAssignment(target: assignment.target, operatorText: assignment.operatorText, location: sourceLines.location(node))
+        recordAssignment(
+            target: assignment.target, operatorText: assignment.operatorText, location: sourceLines.location(node))
         return .visitChildren
     }
 
@@ -141,7 +146,8 @@ final class EffectVisitor: SyntaxVisitor {
             )
         }
         if let name = expressionName(node.calledExpression),
-            name.split(separator: ".").contains(where: { isUnsafeStandardLibraryTypeName(String($0)) }) {
+            name.split(separator: ".").contains(where: { isUnsafeStandardLibraryTypeName(String($0)) })
+        {
             riskFacts.append(
                 SwiftRiskFact(
                     category: .unsafeEscapeHatch,
@@ -237,18 +243,21 @@ final class EffectVisitor: SyntaxVisitor {
     }
 
     private func isPropertyTarget(_ target: String) -> Bool {
-        target.hasPrefix("self.") || target.hasPrefix("Self.") || target.contains(".") || ownerProperties.contains(firstIdentifier(target))
+        target.hasPrefix("self.") || target.hasPrefix("Self.") || target.contains(".")
+            || ownerProperties.contains(firstIdentifier(target))
     }
 
     private func isGlobalOrStaticTarget(_ target: String) -> Bool {
         let first = firstIdentifier(target)
         if target.hasPrefix("Self.") || target.contains(".shared") || target.contains("Defaults") { return true }
         if let scalar = first.unicodeScalars.first, CharacterSet.uppercaseLetters.contains(scalar) { return true }
-        return !first.isEmpty && !localNames.contains(first) && !ownerProperties.contains(first) && first != "self" && first != "Self"
+        return !first.isEmpty && !localNames.contains(first) && !ownerProperties.contains(first) && first != "self"
+            && first != "Self"
     }
 
     private func compositionOperation(_ node: FunctionCallExprSyntax) -> String? {
-        let name = expressionName(node.calledExpression)
+        let name =
+            expressionName(node.calledExpression)
             ?? node.calledExpression.as(MemberAccessExprSyntax.self).map { cleanName($0.declName.baseName.text) }
         guard let name else { return nil }
         let operation = lastComponent(name)
@@ -311,6 +320,7 @@ final class EffectVisitor: SyntaxVisitor {
     }
 
     private func compact(_ text: String) -> String {
-        text.trimmingCharacters(in: .whitespacesAndNewlines).split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+        text.trimmingCharacters(in: .whitespacesAndNewlines).split(whereSeparator: { $0.isWhitespace }).joined(
+            separator: " ")
     }
 }

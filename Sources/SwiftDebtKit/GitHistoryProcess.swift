@@ -24,55 +24,59 @@ struct GitHistorySubprocessRunner: GitHistoryProcessRunning {
         timeoutSeconds: TimeInterval
     ) -> GitHistoryProcessResult {
         #if os(macOS) || os(Linux)
-        let temporary = FileManager.default.temporaryDirectory
-            .appendingPathComponent("swift-debt-git-history-\(UUID().uuidString)", isDirectory: true)
-        do {
-            try FileManager.default.createDirectory(at: temporary, withIntermediateDirectories: true)
-            defer { try? FileManager.default.removeItem(at: temporary) }
-            let stdoutURL = temporary.appendingPathComponent("stdout")
-            let stderrURL = temporary.appendingPathComponent("stderr")
-            FileManager.default.createFile(atPath: stdoutURL.path, contents: nil)
-            FileManager.default.createFile(atPath: stderrURL.path, contents: nil)
-            let stdout = try FileHandle(forWritingTo: stdoutURL)
-            let stderr = try FileHandle(forWritingTo: stderrURL)
-            defer { try? stdout.close(); try? stderr.close() }
+            let temporary = FileManager.default.temporaryDirectory
+                .appendingPathComponent("swift-debt-git-history-\(UUID().uuidString)", isDirectory: true)
+            do {
+                try FileManager.default.createDirectory(at: temporary, withIntermediateDirectories: true)
+                defer { try? FileManager.default.removeItem(at: temporary) }
+                let stdoutURL = temporary.appendingPathComponent("stdout")
+                let stderrURL = temporary.appendingPathComponent("stderr")
+                FileManager.default.createFile(atPath: stdoutURL.path, contents: nil)
+                FileManager.default.createFile(atPath: stderrURL.path, contents: nil)
+                let stdout = try FileHandle(forWritingTo: stdoutURL)
+                let stderr = try FileHandle(forWritingTo: stderrURL)
+                defer {
+                    try? stdout.close()
+                    try? stderr.close()
+                }
 
-            let process = Process()
-            process.executableURL = executableURL
-            process.arguments = arguments
-            process.currentDirectoryURL = workingDirectory
-            process.standardOutput = stdout
-            process.standardError = stderr
-            let termination = DispatchSemaphore(value: 0)
-            process.terminationHandler = { _ in termination.signal() }
-            try process.run()
-            if termination.wait(timeout: .now() + timeoutSeconds) == .timedOut {
-                process.terminate()
+                let process = Process()
+                process.executableURL = executableURL
+                process.arguments = arguments
+                process.currentDirectoryURL = workingDirectory
+                process.standardOutput = stdout
+                process.standardError = stderr
+                let termination = DispatchSemaphore(value: 0)
+                process.terminationHandler = { _ in termination.signal() }
+                try process.run()
+                if termination.wait(timeout: .now() + timeoutSeconds) == .timedOut {
+                    process.terminate()
+                    process.waitUntilExit()
+                    return GitHistoryProcessResult(
+                        exitCode: process.terminationStatus,
+                        stdout: read(stdoutURL),
+                        stderr: read(stderrURL),
+                        timedOut: true
+                    )
+                }
                 process.waitUntilExit()
                 return GitHistoryProcessResult(
                     exitCode: process.terminationStatus,
                     stdout: read(stdoutURL),
                     stderr: read(stderrURL),
-                    timedOut: true
+                    timedOut: false
                 )
+            } catch {
+                return GitHistoryProcessResult(
+                    exitCode: -1, stdout: "", stderr: String(describing: error), timedOut: false)
             }
-            process.waitUntilExit()
+        #else
             return GitHistoryProcessResult(
-                exitCode: process.terminationStatus,
-                stdout: read(stdoutURL),
-                stderr: read(stderrURL),
+                exitCode: -1,
+                stdout: "",
+                stderr: "Git subprocesses are unavailable on this platform",
                 timedOut: false
             )
-        } catch {
-            return GitHistoryProcessResult(exitCode: -1, stdout: "", stderr: String(describing: error), timedOut: false)
-        }
-        #else
-        return GitHistoryProcessResult(
-            exitCode: -1,
-            stdout: "",
-            stderr: "Git subprocesses are unavailable on this platform",
-            timedOut: false
-        )
         #endif
     }
 
