@@ -3,7 +3,7 @@
 A Swift CLI, reusable analysis library, SwiftPM command plugin, and incremental build-tool plugin based on **SCMA: A Lightweight Tool to Analyze Swift Projects**, by Fazle Rabbi, Syeda Sumbul Hossain, and Mir Mohammad Samsul Arefin.
 
 <!-- swiftdebt-release-version:start -->
-**Version:** 0.2.1.
+**Version:** 0.3.0.
 <!-- swiftdebt-release-version:end -->
 
 **Toolchain baseline:** Swift 6.2.x, Swift 6 language mode. The shipping manifest pins SwiftSyntax **602.0.0** and declares macOS 13, iOS and iPadOS 16, tvOS 16, watchOS 9, and visionOS 1 as its minimum Apple deployment targets. Linux validation used Swift 6.2.1. Newer Swift syntax is not implicitly supported by the pinned parser.
@@ -41,7 +41,7 @@ let package = Package(
     name: "MyTools",
     dependencies: [
         // swiftdebt-release-version:start
-        .package(url: "https://github.com/brunogama/SwiftDebt.git", from: "0.2.1")
+        .package(url: "https://github.com/brunogama/SwiftDebt.git", from: "0.3.0")
         // swiftdebt-release-version:end
     ],
     targets: [
@@ -67,7 +67,7 @@ To install the standalone CLI from a tagged release:
 
 ```sh
 # swiftdebt-release-version:start
-git clone --branch v0.2.1 --depth 1 https://github.com/brunogama/SwiftDebt.git
+git clone --branch v0.3.0 --depth 1 https://github.com/brunogama/SwiftDebt.git
 # swiftdebt-release-version:end
 cd SwiftDebt
 swift build -c release
