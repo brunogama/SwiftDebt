@@ -46,6 +46,8 @@ The script requires Xcode 27.0, Apple Swift 6.4, and macOS 27. It copies the fix
 | Enforced gate | Passed | A `CCF=1` class threshold produced the source-located `SwiftDebt [CCF]` diagnostic and `xcodebuild` exit 65 while preserving the last successful completion file. |
 | Recovery | Passed | Disabling `failOnViolation` rebuilt successfully and recorded a new completion fingerprint. |
 
+The hosted [PR #41 Xcode job](https://github.com/brunogama/SwiftDebt/actions/runs/36005349520/job/107651970985) passed the same stages on Xcode 27.0 build 27A266a, Apple Swift 6.4 with swiftlang-6.4.0.34.1 and clang-2100.3.34.1, and arm64 macOS 27.0 build 26A428.
+
 The [Xcode build-plugin workflow](../.github/workflows/xcode-plugin.yml) runs the same smoke command on the `xcode-27` GitHub-hosted runner and rejects a different Xcode, Swift, or macOS major version.
 
 ---
