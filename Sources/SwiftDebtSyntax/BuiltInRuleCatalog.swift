@@ -7,6 +7,10 @@ public enum BuiltInRuleCatalog {
             ActorStateAcrossAwaitRule(),
             ForceCastRule(),
             EmptyCatchRule(),
+            LongFunctionRule(),
+            LongParameterListRule(),
+            GlobalDataRule(),
+            LargeClassRule(),
         ]
     }
 }

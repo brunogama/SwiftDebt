@@ -37,7 +37,7 @@ let package = Package(
         .target(
             name: "SwiftDebtKit",
             dependencies: ["SwiftDebtCore", "SwiftDebtSyntax", "SwiftDebtReporting"],
-            // SwiftPM skips the catalog during compilation; the DocC plugin discovers it independently.
+            // DocC receives the excluded catalog explicitly in the documentation workflow.
             exclude: ["SwiftDebtKit.docc"]
         ),
         .executableTarget(name: "swift-debt", dependencies: ["SwiftDebtCore", "SwiftDebtInteractive", "SwiftDebtKit"]),

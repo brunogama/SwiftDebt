@@ -54,7 +54,7 @@ struct CLIOptions {
           --exclude RELATIVE_PATH        Exclude a relative path prefix; repeatable; no globs.
           --jobs INTEGER                 Bounded parallel parsing, 1...64 (default: CPU count, max 8).
           --max-file-bytes INTEGER       Maximum bytes accepted for each source file.
-          --fail-on-violation            Exit 1 when configured thresholds are exceeded.
+          --fail-on-violation            Exit 1 when metric thresholds are exceeded or any rule detects debt.
           --strict                       Exit 2 on any parse error instead of skipping that file.
           --manifest PATH                Explicit JSON source manifest (used by plugins).
           --lcov PATH                    LCOV input for explain coverage or debt evidence.
@@ -72,7 +72,7 @@ struct CLIOptions {
           --stamp PATH                   Internal build-plugin completion marker.
           --                             Treat the remaining argument as a literal path.
 
-        EXIT STATUS: 0 success; 1 opted-in metric or improvement gate failed; 2 input/configuration/analysis error.
+        EXIT STATUS: 0 success; 1 opted-in metric, rule, or improvement gate failed; 2 input/configuration/analysis error.
         Paper equations are experimental. Undefined scores are not replaced with a passing grade.
         """
 

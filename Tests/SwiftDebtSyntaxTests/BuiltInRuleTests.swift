@@ -237,6 +237,10 @@ struct BuiltInRuleTests {
                 "swiftdebt.concurrency.actor-state-across-await",
                 "swiftdebt.code-smell.force-cast",
                 "swiftdebt.code-smell.empty-catch",
+                "swiftdebt.refactoring.long-function",
+                "swiftdebt.refactoring.long-parameter-list",
+                "swiftdebt.refactoring.global-data",
+                "swiftdebt.refactoring.large-class",
             ]
         )
     }

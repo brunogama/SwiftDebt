@@ -85,11 +85,18 @@ public struct RuleMetadata: Equatable, Sendable {
     public let name: String
     public let defaultSeverity: RuleSeverity
     public let remediation: String
+    public let documentationURL: String?
 
-    public init(name: String, defaultSeverity: RuleSeverity, remediation: String) {
+    public init(
+        name: String,
+        defaultSeverity: RuleSeverity,
+        remediation: String,
+        documentationURL: String? = nil
+    ) {
         self.name = name
         self.defaultSeverity = defaultSeverity
         self.remediation = remediation
+        self.documentationURL = documentationURL
     }
 }
 

@@ -36,13 +36,13 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - run: swift package resolve
-      - name: Enforce metric thresholds
+      - name: Enforce metric thresholds and rule detections
         run: |
           swift package swift-debt \
-            --format diagnostics \
+            --format text \
             --fail-on-violation
 ```
 
-Status `0` means analysis completed without an enabled gate failure. Status `1` means analysis completed and violated an opted-in threshold. Status `2` means input, configuration, or analysis was invalid or incomplete. SwiftPM can wrap these in its own nonzero plugin status, so use the diagnostic output to distinguish the cause.
+Status `0` means analysis completed without an enabled gate failure. Status `1` means analysis completed and violated an opted-in threshold or produced a rule detection. Status `2` means input, configuration, or analysis was invalid or incomplete. SwiftPM can wrap these in its own nonzero plugin status, so use the report to distinguish the cause. Use text output for the full rule explanation and DocC article link. Other formats retain their existing schema while the opted-in rule gate still applies.
 
 For ranked debt, run `swift package swift-debt debt validate --max-score SCORE` and provide `--debt-reference-time` when Git-history evidence participates in the score. The explicit time keeps repeat runs deterministic.
