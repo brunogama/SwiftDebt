@@ -3,5 +3,5 @@ id	state	decision	evidence
 002	verified	Keep findings advisory unless the existing CI gate is enabled	User selected opt-in CI gate
 003	verified	Do not equate a syntactic occurrence with a subjective smell	R1 observation integrity and compiler-evidence ADR 0001
 004	implemented	First slice covers Long Function, Long Parameter List, Global Data, and Large Class	Concrete syntax spans and testable thresholds exist
-005	verified	Pass the excluded DocC catalog explicitly to the Pages release workflow	Without the catalog path DocC succeeded but omitted all articles; explicit-path build produced every article and tutorial without SwiftPM warnings
+005	verified	Declare the DocC catalog as a target resource and configure SPI documentation targets	Plain DocC previously omitted the excluded catalog; resource-backed build produced every article and tutorial without SwiftPM warnings
 006	verified	Track remaining 20 smell detectors with explicit evidence requirements	GitHub issue 48

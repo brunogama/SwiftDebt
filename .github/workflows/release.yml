@@ -127,7 +127,6 @@ jobs:
             --allow-writing-to-directory "$site" \
             generate-documentation \
             --target SwiftDebtKit \
-            Sources/SwiftDebtKit/SwiftDebtKit.docc \
             --output-path "$site" \
             --transform-for-static-hosting \
             --hosting-base-path "$REPOSITORY_NAME" \

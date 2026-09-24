@@ -37,8 +37,8 @@ let package = Package(
         .target(
             name: "SwiftDebtKit",
             dependencies: ["SwiftDebtCore", "SwiftDebtSyntax", "SwiftDebtReporting"],
-            // DocC receives the excluded catalog explicitly in the documentation workflow.
-            exclude: ["SwiftDebtKit.docc"]
+            // Keep the catalog in the target for ordinary DocC and Swift Package Index builds.
+            resources: [.copy("SwiftDebtKit.docc")]
         ),
         .executableTarget(name: "swift-debt", dependencies: ["SwiftDebtCore", "SwiftDebtInteractive", "SwiftDebtKit"]),
         .plugin(
