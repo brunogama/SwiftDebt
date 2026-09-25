@@ -21,7 +21,7 @@ struct GitHistorySubprocessRunner: GitHistoryProcessRunning {
         "GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR", "GIT_INDEX_FILE",
         "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES",
         "GIT_CEILING_DIRECTORIES", "GIT_DISCOVERY_ACROSS_FILESYSTEM",
-        "GIT_NAMESPACE", "GIT_PREFIX", "GIT_SUPER_PREFIX",
+        "GIT_NAMESPACE", "GIT_PREFIX", "GIT_SUPER_PREFIX", "GIT_IMPLICIT_WORK_TREE",
     ]
 
     static func repositoryScopedEnvironment(_ inherited: [String: String]) -> [String: String] {
