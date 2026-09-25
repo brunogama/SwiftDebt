@@ -64,7 +64,9 @@ struct ResolutionCoverageEvaluator {
             blockers.append(
                 try LifecycleReason(
                     code: "capabilities-incomparable",
-                    message: "The capability availability set changed."
+                    message: "Capability availability changed: opening ["
+                        + capabilitySummary(firstSnapshot.provenance.capabilities)
+                        + "]; later [" + capabilitySummary(snapshot.provenance.capabilities) + "]."
                 )
             )
         }
@@ -74,7 +76,9 @@ struct ResolutionCoverageEvaluator {
             blockers.append(
                 try LifecycleReason(
                     code: "capability-unavailable",
-                    message: "A required capability is unavailable or ambiguous."
+                    message: "Required capabilities are unavailable or ambiguous: opening ["
+                        + capabilitySummary(firstSnapshot.provenance.capabilities)
+                        + "]; later [" + capabilitySummary(snapshot.provenance.capabilities) + "]."
                 )
             )
         }
@@ -133,6 +137,22 @@ struct ResolutionCoverageEvaluator {
                 )
             ] + relocation.proofReasons).sorted(by: lifecycleReasonOrder)
         )
+    }
+
+    private func capabilitySummary(_ capabilities: [SnapshotCapability]) -> String {
+        guard !capabilities.isEmpty else { return "none" }
+        return capabilities.map { capability in
+            let state: String
+            switch capability.state {
+            case .available:
+                state = "available"
+            case .unavailable(let reason):
+                state = "unavailable (\(reason.code): \(reason.message))"
+            case .ambiguous(let reason):
+                state = "ambiguous (\(reason.code): \(reason.message))"
+            }
+            return "\(capability.name)=\(state)"
+        }.joined(separator: ", ")
     }
 
     private func requireOrderedSuccessor(
