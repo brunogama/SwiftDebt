@@ -1,6 +1,7 @@
 import Foundation
 import SwiftDebtCore
 import SwiftDebtKit
+import SwiftDebtLifecycle
 
 struct CLIError: Error, CustomStringConvertible {
     let description: String
@@ -16,6 +17,7 @@ enum CLIAction {
     case validateImprovement(DebtValidationRequest)
     case explainCoverage(CoverageExplanationRequest)
     case performanceGate(PerformanceGateRequest)
+    case lifecycle(LifecycleCLIRequest)
 }
 
 struct CLIOptions {
@@ -29,6 +31,9 @@ struct CLIOptions {
                swift-debt validate-improvement BEFORE_JSON AFTER_JSON [--threshold SCORE] [--output PATH]
                swift-debt explain coverage [path] --lcov PATH [options]
                swift-debt performance-gate BASELINE_JSON CANDIDATE_JSON [options]
+               swift-debt lifecycle inventory ARTIFACT [--format text|json]
+               swift-debt lifecycle explain ARTIFACT FINDING_ID [--format text|json]
+               swift-debt lifecycle snapshot ARTIFACT SNAPSHOT_ID [--format text|json]
                swift-debt --help
                swift-debt --version
 
@@ -93,6 +98,9 @@ struct CLIOptions {
         }
         if arguments.first == "performance-gate" {
             return try parsePerformanceGate(Array(arguments.dropFirst()))
+        }
+        if arguments.first == "lifecycle" {
+            return try parseLifecycle(Array(arguments.dropFirst()))
         }
         if arguments.first == "debt", isDebtNamespace(Array(arguments.dropFirst())) {
             return try parseDebt(Array(arguments.dropFirst()))

@@ -1,0 +1,106 @@
+import Foundation
+
+#if canImport(Darwin)
+    import Darwin
+#elseif canImport(Glibc)
+    import Glibc
+#endif
+
+public enum LifecycleStoreError: Error, Equatable, Sendable, CustomStringConvertible {
+    case missingArtifact(String)
+    case lockFailed(path: String, reason: String)
+    case readFailed(path: String, reason: String)
+    case writeFailed(path: String, reason: String)
+
+    public var description: String {
+        switch self {
+        case .missingArtifact(let path):
+            "Lifecycle artifact does not exist: \(path)"
+        case .lockFailed(let path, let reason):
+            "Unable to lock lifecycle artifact \(path): \(reason)"
+        case .readFailed(let path, let reason):
+            "Unable to read lifecycle artifact \(path): \(reason)"
+        case .writeFailed(let path, let reason):
+            "Unable to write lifecycle artifact \(path): \(reason)"
+        }
+    }
+}
+
+public struct LifecycleArtifactStore: Sendable {
+    public let artifactURL: URL
+    public let generatorVersion: String
+
+    public init(artifactURL: URL, generatorVersion: String = "SwiftDebt") {
+        self.artifactURL = artifactURL.standardizedFileURL
+        self.generatorVersion = generatorVersion
+    }
+
+    public func load() throws -> LifecycleArtifact {
+        guard FileManager.default.fileExists(atPath: artifactURL.path) else {
+            throw LifecycleStoreError.missingArtifact(artifactURL.path)
+        }
+        do {
+            let data = try Data(contentsOf: artifactURL)
+            return try JSONDecoder().decode(LifecycleArtifact.self, from: data)
+        } catch {
+            throw LifecycleStoreError.readFailed(path: artifactURL.path, reason: String(describing: error))
+        }
+    }
+
+    public func ingest(_ snapshot: ObservationSnapshot) throws -> LifecycleReduction {
+        let directory = artifactURL.deletingLastPathComponent()
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        } catch {
+            throw LifecycleStoreError.writeFailed(path: artifactURL.path, reason: String(describing: error))
+        }
+        return try withExclusiveLock {
+            let artifact: LifecycleArtifact
+            if FileManager.default.fileExists(atPath: artifactURL.path) {
+                artifact = try load()
+            } else {
+                artifact = try LifecycleArtifact(generatorVersion: generatorVersion)
+            }
+            let reduction = try LifecycleReducer().ingest(snapshot, into: artifact)
+            if reduction.status == .accepted {
+                try write(reduction.artifact)
+            }
+            return reduction
+        }
+    }
+
+    public func canonicalData(for artifact: LifecycleArtifact) throws -> Data {
+        try artifact.validate()
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+        var data = try encoder.encode(artifact)
+        data.append(0x0A)
+        return data
+    }
+
+    private func write(_ artifact: LifecycleArtifact) throws {
+        do {
+            try canonicalData(for: artifact).write(to: artifactURL, options: .atomic)
+        } catch {
+            throw LifecycleStoreError.writeFailed(path: artifactURL.path, reason: String(describing: error))
+        }
+    }
+
+    private func withExclusiveLock<Result>(_ operation: () throws -> Result) throws -> Result {
+        let lockPath = artifactURL.path + ".lock"
+        let descriptor = open(lockPath, O_CREAT | O_RDWR, mode_t(S_IRUSR | S_IWUSR))
+        guard descriptor >= 0 else {
+            throw LifecycleStoreError.lockFailed(path: lockPath, reason: systemErrorDescription())
+        }
+        defer { close(descriptor) }
+        guard flock(descriptor, LOCK_EX) == 0 else {
+            throw LifecycleStoreError.lockFailed(path: lockPath, reason: systemErrorDescription())
+        }
+        defer { flock(descriptor, LOCK_UN) }
+        return try operation()
+    }
+
+    private func systemErrorDescription() -> String {
+        String(cString: strerror(errno))
+    }
+}
