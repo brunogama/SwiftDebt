@@ -28,6 +28,19 @@ struct RefactoringCodeSmellCatalogTests {
             ])
         #expect(supported.allSatisfy { $0.ruleIdentity != nil && $0.semanticRevision == 1 })
         #expect(supported.allSatisfy { !$0.fixtureReferences.isEmpty })
+        #expect(
+            Dictionary(uniqueKeysWithValues: supported.map { ($0.name, $0.ruleIdentity ?? "") }) == [
+                "Long Function": "swiftdebt.refactoring.long-function",
+                "Long Parameter List": "swiftdebt.refactoring.long-parameter-list",
+                "Global Data": "swiftdebt.refactoring.global-data",
+                "Large Class": "swiftdebt.refactoring.large-class",
+            ])
+        #expect(
+            RefactoringCodeSmellCatalog.named("Long Function")?.requiredEvidence.contains("top-level statement count")
+                == true)
+        #expect(
+            RefactoringCodeSmellCatalog.named("Large Class")?.requiredEvidence.contains(
+                "direct member declaration count") == true)
         #expect(RefactoringCodeSmellCatalog.named("Data Clumps")?.supportState == .research)
         #expect(RefactoringCodeSmellCatalog.named("Repeated Switches")?.supportState == .research)
         #expect(RefactoringCodeSmellCatalog.named("Feature Envy")?.supportState == .research)
@@ -56,6 +69,31 @@ struct RefactoringCodeSmellCatalogTests {
         }
     }
 
+    @Test("Malformed or incomplete rule references fail decoding")
+    func malformedRuleReference() throws {
+        let encoded = try JSONEncoder().encode(RefactoringCodeSmellCatalog.report)
+        let original = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        let cases: [(String?, Any?)] = [
+            ("Invalid Name", 1),
+            ("swiftdebt.refactoring.long-function", 0),
+            ("swiftdebt.refactoring.long-function", nil),
+            (nil, 1),
+            ("invalid", 1),
+            ("swiftdebt..invalid", 1),
+        ]
+        for (identity, revision) in cases {
+            var object = original
+            var entries = try #require(object["entries"] as? [[String: Any]])
+            entries[0]["ruleIdentity"] = identity
+            entries[0]["semanticRevision"] = revision
+            object["entries"] = entries
+            let changed = try JSONSerialization.data(withJSONObject: object)
+            #expect(throws: DecodingError.self) {
+                try JSONDecoder().decode(RefactoringCodeSmellCatalogReport.self, from: changed)
+            }
+        }
+    }
+
     @Test("The human coverage table agrees with the machine catalog")
     func documentationParity() throws {
         let repository = URL(fileURLWithPath: #filePath)
@@ -66,15 +104,15 @@ struct RefactoringCodeSmellCatalogTests {
         )
         let start = try #require(document.range(of: "## Evidence map\n"))
         let evidenceMap = document[start.upperBound...].components(separatedBy: "\n---\n")[0]
-        let documented: [String: String] = Dictionary(
+        let documented: [String: [String]] = Dictionary(
             uniqueKeysWithValues: evidenceMap.split(separator: "\n").compactMap { line in
                 let cells = line.split(separator: "|").map { $0.trimmingCharacters(in: .whitespaces) }
                 guard cells.count == 3, Self.secondEditionNames.contains(cells[0]) else { return nil }
-                return (cells[0], cells[2])
+                return (cells[0], [cells[1], cells[2]])
             })
         let expected = Dictionary(
             uniqueKeysWithValues: RefactoringCodeSmellCatalog.all.map { entry in
-                (entry.name, entry.supportState.documentationName)
+                (entry.name, [entry.minimumPredicate, entry.supportState.documentationName])
             })
 
         #expect(documented == expected)

@@ -3,11 +3,11 @@ extension RefactoringCodeSmellCatalog {
         RefactoringCodeSmell(
             name: "Long Function", supportState: .supported,
             ruleIdentity: "swiftdebt.refactoring.long-function", semanticRevision: 1,
-            minimumPredicate: "Function body exceeds the documented line threshold.",
-            requiredEvidence: ["syntax", "body line count"], scope: "one parsed function",
+            minimumPredicate: "A function body contains 20 or more top-level statements.",
+            requiredEvidence: ["syntax", "top-level statement count"], scope: "one parsed function",
             falsePositiveRisk: "Generated or deliberately linear code can be long but clear.",
             falseNegativeRisk: "Short functions can still have too many responsibilities.",
-            explanationContract: "Show the measured line count, threshold, and an extraction direction.",
+            explanationContract: "Show the measured top-level statement count, threshold, and an extraction direction.",
             fixtureReferences: ["Tests/SwiftDebtSyntaxTests/RefactoringSmellRuleTests.swift"]
         ),
         RefactoringCodeSmell(
@@ -33,11 +33,11 @@ extension RefactoringCodeSmellCatalog {
         RefactoringCodeSmell(
             name: "Large Class", supportState: .supported,
             ruleIdentity: "swiftdebt.refactoring.large-class", semanticRevision: 1,
-            minimumPredicate: "A nominal type body exceeds the documented line threshold.",
-            requiredEvidence: ["syntax", "type body line count"], scope: "one parsed nominal type",
+            minimumPredicate: "A class declares 20 or more direct members.",
+            requiredEvidence: ["syntax", "direct member declaration count"], scope: "one parsed class",
             falsePositiveRisk: "A large cohesive declaration can be appropriate.",
             falseNegativeRisk: "Responsibilities can be scattered across small extensions.",
-            explanationContract: "Show the measured type size, threshold, and a responsibility split.",
+            explanationContract: "Show the measured direct-member count, threshold, and a responsibility split.",
             fixtureReferences: ["Tests/SwiftDebtSyntaxTests/RefactoringSmellRuleTests.swift"]
         ),
     ]

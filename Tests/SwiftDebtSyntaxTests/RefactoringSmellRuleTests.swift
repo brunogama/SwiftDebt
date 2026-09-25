@@ -75,4 +75,22 @@ struct RefactoringSmellRuleTests {
         #expect(result.detections.count == 1)
         #expect(result.detections.first?.message.contains("20 direct members") == true)
     }
+
+    @Test("Statement and member counts are independent of physical lines")
+    func countsDeclarationsRatherThanLines() throws {
+        let statements = (1...20).map { "let value\($0) = \($0)" }.joined(separator: "; ")
+        let members = (1...20).map { "var value\($0) = \($0)" }.joined(separator: "; ")
+        let source = SourceUnit(
+            path: "Example.swift",
+            content: "func lengthy() { \(statements) }\nclass Large { \(members) }\nstruct AlsoLarge { \(members) }"
+        )
+
+        let functionResult = try RuleEngine().analyze(source, using: LongFunctionRule())
+        let classResult = try RuleEngine().analyze(source, using: LargeClassRule())
+
+        #expect(functionResult.isCommitted)
+        #expect(classResult.isCommitted)
+        #expect(functionResult.detections.map(\.location.line) == [1])
+        #expect(classResult.detections.map(\.location.line) == [2])
+    }
 }
