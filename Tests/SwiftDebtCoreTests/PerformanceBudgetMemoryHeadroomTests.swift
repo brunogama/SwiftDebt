@@ -65,6 +65,19 @@ struct PerformanceBudgetMemoryHeadroomTests {
         #expect(decoded.maximumPeakMemoryRegressionBytes == 0)
     }
 
+    @Test("Legacy evaluations decode without an observed byte delta")
+    func legacyEvaluationDefaultsToNoByteDelta() throws {
+        let data = Data(
+            #"{"comparable":true,"passed":false,"wallClockRegressionPercent":4.1,"peakMemoryRegressionPercent":16.6,"reasons":["peak-memory regression exceeds 15.0%"]}"#
+                .utf8
+        )
+
+        let decoded = try JSONDecoder().decode(PerformanceBudgetEvaluation.self, from: data)
+
+        #expect(decoded.peakMemoryRegressionBytes == nil)
+        #expect(decoded.reasons == ["peak-memory regression exceeds 15.0%"])
+    }
+
     private func benchmark(
         wallClock: Double = 1,
         memory: UInt64
