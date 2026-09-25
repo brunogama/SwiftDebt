@@ -47,8 +47,13 @@ public struct Finding: Codable, Equatable, Sendable {
 
     mutating func append(_ event: LifecycleEvent) throws {
         guard !events.contains(where: { $0.id == event.id }) else { return }
-        events.append(event)
-        try validateEventSequence()
+        let next = try Finding(
+            id: id,
+            lineageID: lineageID,
+            rule: rule,
+            events: events + [event]
+        )
+        self = next
     }
 
     private func validateEventSequence() throws {

@@ -1,5 +1,6 @@
-import SwiftDebtLifecycle
 import Testing
+
+@testable import SwiftDebtLifecycle
 
 @Suite("R3 conservative continuity acceptance")
 struct ContinuitySafetyAcceptanceTests {
@@ -30,6 +31,22 @@ struct ContinuitySafetyAcceptanceTests {
         #expect(finding.evidenceState == .verifiedAbsent)
         #expect(finding.events.map(\.transition.kind) == [.opened, .resolved])
         #expect(artifact.unresolvedDetections.count == 1)
+
+        var mutableFinding = finding
+        let originalEvents = mutableFinding.events
+        let invalidEvent = LifecycleEvent(
+            id: try LifecycleEventID("event:post-resolution-uncertain"),
+            snapshotID: later.id,
+            transition: .unverified([
+                try LifecycleReason(code: "invalid-after-resolution", message: "No new absence evidence.")
+            ])
+        )
+        do {
+            try mutableFinding.append(invalidEvent)
+            Issue.record("Expected the invalid event sequence to be rejected")
+        } catch {
+            #expect(mutableFinding.events == originalEvents)
+        }
     }
 
     @Test("AT-5 one prior Detection copied to two successors remains ambiguous")

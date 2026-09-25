@@ -37,7 +37,8 @@ struct LifecycleGitSnapshotProvider: Sendable {
         let topLevel = run(["rev-parse", "--show-toplevel"], root: root)
         guard topLevel.exitCode == 0, !topLevel.timedOut else {
             if !topLevel.timedOut, topLevel.exitCode == 128,
-                topLevel.stderr.contains("not a git repository")
+                topLevel.stderr.contains("not a git repository"),
+                !hasGitMetadata(atOrAbove: root)
             {
                 return .unavailable
             }
@@ -67,6 +68,19 @@ struct LifecycleGitSnapshotProvider: Sendable {
             parentRevisions: parents,
             statusDigest: LifecycleSHA256.hexDigest(Data(status.utf8))
         )
+    }
+
+    private func hasGitMetadata(atOrAbove root: URL) -> Bool {
+        var directory = root.standardizedFileURL.resolvingSymlinksInPath()
+        while true {
+            if FileManager.default.fileExists(atPath: directory.appendingPathComponent(".git").path) {
+                return true
+            }
+            if directory.path == "/" { return false }
+            let parent = directory.deletingLastPathComponent()
+            if parent.path == directory.path || parent.path.isEmpty { return false }
+            directory = parent
+        }
     }
 
     private func statusArguments(excluding outputURLs: [URL], repositoryRoot: URL) throws -> [String] {

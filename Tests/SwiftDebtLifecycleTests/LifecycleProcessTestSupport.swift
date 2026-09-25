@@ -1,5 +1,11 @@
 import Foundation
 
+#if canImport(Darwin)
+    import Darwin
+#elseif canImport(Glibc)
+    import Glibc
+#endif
+
 struct LifecycleProcessResult {
     let status: Int32
     let standardOutput: String
@@ -8,6 +14,7 @@ struct LifecycleProcessResult {
 
 enum LifecycleProcessFailure: Error {
     case timedOut([String])
+    case couldNotReap([String])
 }
 
 func runLifecycleProcess(
@@ -21,7 +28,10 @@ func runLifecycleProcess(
         "swift-debt-process-\(UUID().uuidString)", isDirectory: true
     )
     try FileManager.default.createDirectory(at: captureDirectory, withIntermediateDirectories: true)
-    defer { try? FileManager.default.removeItem(at: captureDirectory) }
+    var removeCaptureDirectory = true
+    defer {
+        if removeCaptureDirectory { try? FileManager.default.removeItem(at: captureDirectory) }
+    }
 
     let outputURL = captureDirectory.appendingPathComponent("stdout")
     let errorURL = captureDirectory.appendingPathComponent("stderr")
@@ -44,8 +54,15 @@ func runLifecycleProcess(
     process.terminationHandler = { _ in finished.signal() }
     try process.run()
     if finished.wait(timeout: .now() + timeout) == .timedOut {
-        process.terminate()
-        _ = finished.wait(timeout: .now() + 5)
+        if process.isRunning { process.terminate() }
+        if finished.wait(timeout: .now() + 2) == .timedOut {
+            _ = kill(process.processIdentifier, SIGKILL)
+            if finished.wait(timeout: .now() + 5) == .timedOut {
+                removeCaptureDirectory = false
+                throw LifecycleProcessFailure.couldNotReap(arguments)
+            }
+        }
+        process.waitUntilExit()
         throw LifecycleProcessFailure.timedOut(arguments)
     }
     process.waitUntilExit()
