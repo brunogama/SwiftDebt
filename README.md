@@ -29,6 +29,8 @@ This is an independent, paper-inspired implementation, **not a reproduction of t
 
 Detailed references: [paper mapping](docs/PAPER_MAPPING.md), [measurement definitions](docs/METRICS.md), [plugin integration](docs/PLUGINS.md), [release process](docs/RELEASE_PROCESS.md), [validation record](docs/VALIDATION.md).
 
+An [optional SQVector integration](Integrations/SwiftDebtSQVector/README.md) builds a local static candidate index on SQVector's supported Apple platforms. It is separate from the base package.
+
 ## Installation
 
 Add the released package and the products you need to your package manifest:

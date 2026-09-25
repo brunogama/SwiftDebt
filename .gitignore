@@ -1,6 +1,7 @@
 .build/
 .scratch/
 .swiftpm/
+.vendor/
 .DS_Store
 .swift-debt/
 reports/
