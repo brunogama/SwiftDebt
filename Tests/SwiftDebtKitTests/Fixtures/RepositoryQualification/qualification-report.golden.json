@@ -20,8 +20,8 @@
   },
   "determinism": {
     "allRunsByteIdentical": true,
-    "evidenceByteCount": 84283,
-    "evidenceByteDigest": "f29de26ab29e5606114594f682ba88b700537cc4cd1459ccb25c825a1840f152",
+    "evidenceByteCount": 84284,
+    "evidenceByteDigest": "8723bd28c35d75409e8283ad49efc69a8b2fae6bb03bad87468d572052b6b203",
     "parseJobCounts": [
       1,
       2,
@@ -30,21 +30,21 @@
     "runs": [
       {
         "allByteIdentical": true,
-        "byteDigest": "f29de26ab29e5606114594f682ba88b700537cc4cd1459ccb25c825a1840f152",
+        "byteDigest": "8723bd28c35d75409e8283ad49efc69a8b2fae6bb03bad87468d572052b6b203",
         "gitStateBeforeAndAfterEveryRun": "clean",
         "parseJobs": 1,
         "runs": 10
       },
       {
         "allByteIdentical": true,
-        "byteDigest": "f29de26ab29e5606114594f682ba88b700537cc4cd1459ccb25c825a1840f152",
+        "byteDigest": "8723bd28c35d75409e8283ad49efc69a8b2fae6bb03bad87468d572052b6b203",
         "gitStateBeforeAndAfterEveryRun": "clean",
         "parseJobs": 2,
         "runs": 10
       },
       {
         "allByteIdentical": true,
-        "byteDigest": "f29de26ab29e5606114594f682ba88b700537cc4cd1459ccb25c825a1840f152",
+        "byteDigest": "8723bd28c35d75409e8283ad49efc69a8b2fae6bb03bad87468d572052b6b203",
         "gitStateBeforeAndAfterEveryRun": "clean",
         "parseJobs": 8,
         "runs": 10
@@ -65,7 +65,7 @@
   },
   "networkIsolation": {
     "defaultCLIConfiguration": true,
-    "evidenceByteDigest": "f29de26ab29e5606114594f682ba88b700537cc4cd1459ccb25c825a1840f152",
+    "evidenceByteDigest": "8723bd28c35d75409e8283ad49efc69a8b2fae6bb03bad87468d572052b6b203",
     "harness": "macOS sandbox-exec deny network wildcard",
     "outputMatchesUnsandboxedBaseline": true,
     "status": "pass"
@@ -73,7 +73,7 @@
   "qualificationState": "blocked-pending-independent-review",
   "realWorldSnapshots": [
     {
-      "analyzerGenerator": "SwiftDebt 0.9.0",
+      "analyzerGenerator": "SwiftDebt 0.10.0",
       "checkout": "git clone https://github.com/apple/swift-argument-parser.git && git checkout cdc5f0c6e836de848699ae11f6480f2d99ac5ef1",
       "commit": "cdc5f0c6e836de848699ae11f6480f2d99ac5ef1",
       "id": "swift-argument-parser-cdc5f0c",
@@ -607,7 +607,7 @@
       }
     },
     {
-      "analyzerGenerator": "SwiftDebt 0.9.0",
+      "analyzerGenerator": "SwiftDebt 0.10.0",
       "checkout": "git clone https://github.com/apple/swift-algorithms.git && git checkout 5b7143f8e291dee0e14c118fd0212487f0b37af5",
       "commit": "5b7143f8e291dee0e14c118fd0212487f0b37af5",
       "id": "swift-algorithms-5b7143f",
@@ -1048,7 +1048,7 @@
   "reportKind": "swiftdebt-repository-rule-qualification",
   "repositoryShapes": [
     {
-      "analyzerGenerator": "SwiftDebt 0.9.0",
+      "analyzerGenerator": "SwiftDebt 0.10.0",
       "caseCount": 60,
       "description": "One flat source root discovered by the CLI as module Workspace.",
       "id": "flat-single-module",
@@ -1068,7 +1068,7 @@
       }
     },
     {
-      "analyzerGenerator": "SwiftDebt 0.9.0",
+      "analyzerGenerator": "SwiftDebt 0.10.0",
       "caseCount": 60,
       "description": "Sources are distributed under nested feature directories and discovered recursively.",
       "id": "nested-source-tree",
@@ -1088,7 +1088,7 @@
       }
     },
     {
-      "analyzerGenerator": "SwiftDebt 0.9.0",
+      "analyzerGenerator": "SwiftDebt 0.10.0",
       "caseCount": 60,
       "description": "An explicit CLI source manifest assigns files to three modules in a workspace-shaped tree.",
       "id": "explicit-multi-module",
