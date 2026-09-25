@@ -8,7 +8,7 @@ This document describes the first persistent lifecycle slice. It is a foundation
 
 `SwiftDebtLifecycle` converts an engine-produced `AnalysisSnapshot` into an immutable `ObservationSnapshot`. The conversion preserves each R1 rule by SourceUnit result as one `AtomicObservationOutcome` and records only committed canonical Detections.
 
-Callers supply `SnapshotProvenance`, including:
+Direct library callers supply `SnapshotProvenance`, including:
 
 - a validated SHA-256 source content identity;
 - a validated SHA-256 effective configuration fingerprint;
@@ -37,7 +37,7 @@ The supported CLI write path accepts only an artifact location:
 swift-debt analyze PATH --lifecycle-artifact ARTIFACT
 ```
 
-`AnalysisService` derives the Observation Snapshot from the same in-memory `SourceUnit` values passed to `RuleEngine` and `Analyzer`. It computes the source digest, rule-analysis configuration fingerprint, capability state, engine version, Git source state, and lineage. None of those values are accepted as CLI input.
+`AnalysisService` derives the Observation Snapshot from the same in-memory `SourceUnit` values passed to `RuleEngine` and `Analyzer`. It computes the source digest, typed effective configuration and fingerprint, capability state, engine version, Git source state, and lineage. None of those values are accepted as CLI input.
 
 ## Authority boundary
 
@@ -140,20 +140,22 @@ The existing schema-2 report models and renderers are unchanged. Structural evid
 
 ---
 
-`RuleContract` owns directional, claim-specific compatibility declarations. A destination Semantic Revision may declare that one earlier revision supports `continuity`, `absence`, or both. `RuleEngine` rejects duplicate sources and declarations that do not point from an earlier revision into the destination revision. Lifecycle callers cannot add declarations through the public `SnapshotRule` initializer; the authoritative snapshot conversion copies them from the engine-produced `AnalysisSnapshot`.
+`RuleContract` owns directional, claim-specific semantic and effective-configuration compatibility declarations. A destination Semantic Revision may declare that one earlier revision supports `continuity`, `absence`, or both. `RuleEngine` rejects duplicate declarations, forward declarations, and cross-revision configuration declarations without matching semantic authority. Lifecycle callers cannot add declarations through the public `SnapshotRule` initializer; the authoritative snapshot conversion copies them from the engine-produced `AnalysisSnapshot`.
 
-Different Semantic Revisions remain incomparable by default. A declaration relaxes only the revision check for its listed claims. Configuration fingerprints and engine versions must still match, both source identities must support comparison, and capability sets must match with every capability available. Resolution and exact introduction also keep their independent repository-scope and committed-observation requirements.
+Different Semantic Revisions remain incomparable by default. A semantic declaration relaxes only the revision check for its listed claims. A configuration declaration separately names the tested configuration condition and claim. A comparison across both a revision and a configuration change requires both declarations. Engine versions still match exactly, both source identities must support comparison, and capability sets must match with every capability available. Resolution and exact introduction also keep their independent repository-scope and committed-observation requirements.
+
+The current typed effective configuration records source-selection kind, excluded source prefixes, maximum file bytes, and selected Rule Identities. Exact fingerprint equality remains the default and supports older snapshots that predate typed dimensions. The first narrower declaration permits `absence` for `ForceTry` when maximum file bytes increases; it does not authorize continuity, the reverse direction, or changes to any other dimension. Its stable test reference and rationale are persisted with the destination rule contract.
 
 Every continuation, resolution, reopening, and Introduction Conclusion persists an immutable `SemanticComparisonBasis` containing:
 
 - the claim and compatible or blocked decision;
 - both snapshot IDs and full selected rule contracts;
-- both configuration fingerprints, capability sets, source identities, scopes, and engine versions; and
-- the exact destination-owned declaration when one applies.
+- both configuration fingerprints and typed dimensions, capability sets, source identities, scopes, and engine versions; and
+- the exact destination-owned semantic and configuration declarations, including test evidence, when they apply.
 
 Artifact validation recomputes each decision and the lifecycle outcome from those persisted dimensions. Removing or altering a basis causes decode to fail closed. Explanations render the direction, claim, decision, snapshot pair, configuration pair, engine pair, and declaration rationale.
 
-The lifecycle configuration digest is versioned independently from Semantic Revision. This permits an exact effective-configuration match across rule revisions for new schema-3 snapshots while the snapshot ID continues to bind the complete selected Semantic Revisions and compatibility declarations. Existing schema-2 analysis and report bytes remain unchanged. A genuine schema-2 lifecycle artifact uses the older configuration digest, which includes Semantic Revisions. Equality with the new digest cannot be inferred from those hashes. Migration preserves its historical claims, but a new Detection remains unresolved when that legacy configuration boundary lacks an explicit proof of equivalence. The CLI reports `configuration-incomparable` instead of inventing continuity or absence. `LegacySchemaTwoGitReintroduction.json` was produced by the pre-schema-3 CLI at `09e3b1b` over the fixed Git revisions reconstructed by its CLI test.
+The lifecycle configuration digest is versioned independently from Semantic Revision. This permits an exact effective-configuration match across rule revisions for new schema-3 snapshots while the snapshot ID continues to bind the complete selected Semantic Revisions and compatibility declarations. Artifact decode recomputes the typed fingerprints, direction, claim, differing dimensions, and matching declarations before accepting a decision. Existing schema-2 analysis and report bytes remain unchanged. A genuine schema-2 lifecycle artifact uses the older configuration digest, which includes Semantic Revisions. Equality with the new digest cannot be inferred from those hashes. Migration preserves its historical claims, but a new Detection remains unresolved when that legacy configuration boundary lacks an explicit proof of equivalence. The CLI reports `configuration-incomparable` instead of inventing continuity or absence. `LegacySchemaTwoGitReintroduction.json` was produced by the pre-schema-3 CLI at `09e3b1b` over the fixed Git revisions reconstructed by its CLI test.
 
 ## Verified absence
 
@@ -232,11 +234,11 @@ The current slice completes the first-observation, line-move, corroborated file-
 
 - rule-specific evidence that can safely distinguish copied or semantically edited occurrences beyond the conservative structural anchor;
 - cross-file continuity without a direct-parent Git rename, which remains unresolved rather than inferred from identical code;
-- directional effective-configuration compatibility beyond exact fingerprint equality;
+- tested declarations for configuration dimensions other than nondecreasing maximum file bytes;
 - historical configuration reproduction beyond the default directory selection and maximum-file-size input;
 - archived cross-file introduction continuity with persisted Git rename corroboration;
 - complete human and machine audit parity;
 - concurrent replay and interrupted-write fault injection; and
 - measured artifact and query performance budgets.
 
-The structural evidence code currently contains a local SHA-256 implementation. R2's `RepositorySHA256` exists on a separate unmerged branch, so consolidation remains an integration task rather than a dependency on unpublished code.
+Lifecycle framing and repository evidence share SwiftDebtCore's `RepositorySHA256` implementation. A canonical digest fixture locks the existing lifecycle configuration bytes across that consolidation.

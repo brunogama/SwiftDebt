@@ -19,35 +19,34 @@ struct SemanticComparisonEvaluator {
             priorRule: priorRule,
             currentRule: currentRule
         )
-        var reasons = try environmentReasons(
+        let environmentReasons = try environmentReasons(
             claim: claim,
             priorSnapshot: priorSnapshot,
             priorRule: priorRule,
             currentSnapshot: currentSnapshot,
             currentRule: currentRule
         )
-        reasons += try semanticReasons(
+        let configuration = try ConfigurationComparisonEvaluator().assess(
+            claim: claim,
+            priorSnapshot: priorSnapshot,
+            priorRule: priorRule,
+            currentSnapshot: currentSnapshot,
+            currentRule: currentRule
+        )
+        let semanticReasons = try semanticReasons(
             claim: claim,
             priorRule: priorRule,
             currentRule: currentRule,
             declaration: declaration
         )
-
-        let blockingCodes = Set([
-            "rule-identity-incomparable",
-            "configuration-incomparable",
-            "engine-incomparable",
-            "source-identity-unavailable",
-            "capability-incomparable",
-            "capabilities-incomparable",
-            "capability-unavailable",
-            "semantic-continuity-not-declared",
-            "semantic-absence-not-declared",
-            "semantic-revision-incomparable",
-            "semantic-contract-mutated",
-        ])
+        let semanticsCompatible =
+            priorRule.semanticRevision == currentRule.semanticRevision
+            ? priorRule == currentRule
+            : declaration?.supportedClaims.contains(claim) == true
         let decision: SemanticComparisonDecision =
-            reasons.contains(where: { blockingCodes.contains($0.code) }) ? .blocked : .compatible
+            environmentReasons.isEmpty && configuration.isCompatible && semanticsCompatible
+            ? .compatible
+            : .blocked
         let basis = try SemanticComparisonBasis(
             claim: claim,
             decision: decision,
@@ -55,11 +54,13 @@ struct SemanticComparisonEvaluator {
             currentSnapshot: currentSnapshot,
             priorRule: priorRule,
             currentRule: currentRule,
-            compatibilityDeclaration: declaration
+            compatibilityDeclaration: declaration,
+            configurationCompatibilityDeclaration: configuration.declaration
         )
         return SemanticComparisonAssessment(
             basis: basis,
-            reasons: reasons.sorted(by: lifecycleReasonOrder)
+            reasons: (environmentReasons + configuration.reasons + semanticReasons)
+                .sorted(by: lifecycleReasonOrder)
         )
     }
 
@@ -83,16 +84,6 @@ struct SemanticComparisonEvaluator {
         var reasons: [LifecycleReason] = []
         if priorRule.identity != currentRule.identity {
             reasons.append(try reason("rule-identity-incomparable", "Semantic comparison requires one Rule Identity."))
-        }
-        if priorSnapshot.provenance.configurationFingerprint
-            != currentSnapshot.provenance.configurationFingerprint
-        {
-            reasons.append(
-                try reason(
-                    "configuration-incomparable",
-                    "The current and prior effective configuration fingerprints differ."
-                )
-            )
         }
         if priorSnapshot.provenance.engineVersion != currentSnapshot.provenance.engineVersion {
             reasons.append(

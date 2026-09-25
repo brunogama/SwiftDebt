@@ -16,6 +16,8 @@ public struct SemanticComparisonBasis: Codable, Equatable, Sendable {
     public let currentRule: SnapshotRule
     public let priorConfigurationFingerprint: LifecycleDigest
     public let currentConfigurationFingerprint: LifecycleDigest
+    public let priorEffectiveConfiguration: LifecycleEffectiveConfiguration?
+    public let currentEffectiveConfiguration: LifecycleEffectiveConfiguration?
     public let priorCapabilities: [SnapshotCapability]
     public let currentCapabilities: [SnapshotCapability]
     public let priorSourceIdentity: SnapshotSourceIdentity
@@ -25,6 +27,7 @@ public struct SemanticComparisonBasis: Codable, Equatable, Sendable {
     public let priorEngineVersion: String
     public let currentEngineVersion: String
     public let compatibilityDeclaration: SemanticCompatibilityDeclaration?
+    public let configurationCompatibilityDeclaration: ConfigurationCompatibilityDeclaration?
 
     package init(
         claim: SemanticCompatibilityClaim,
@@ -33,7 +36,8 @@ public struct SemanticComparisonBasis: Codable, Equatable, Sendable {
         currentSnapshot: ObservationSnapshot,
         priorRule: SnapshotRule,
         currentRule: SnapshotRule,
-        compatibilityDeclaration: SemanticCompatibilityDeclaration?
+        compatibilityDeclaration: SemanticCompatibilityDeclaration?,
+        configurationCompatibilityDeclaration: ConfigurationCompatibilityDeclaration?
     ) throws {
         self.claim = claim
         self.decision = decision
@@ -43,6 +47,8 @@ public struct SemanticComparisonBasis: Codable, Equatable, Sendable {
         self.currentRule = currentRule
         self.priorConfigurationFingerprint = priorSnapshot.provenance.configurationFingerprint
         self.currentConfigurationFingerprint = currentSnapshot.provenance.configurationFingerprint
+        self.priorEffectiveConfiguration = priorSnapshot.provenance.effectiveConfiguration
+        self.currentEffectiveConfiguration = currentSnapshot.provenance.effectiveConfiguration
         self.priorCapabilities = priorSnapshot.provenance.capabilities
         self.currentCapabilities = currentSnapshot.provenance.capabilities
         self.priorSourceIdentity = priorSnapshot.provenance.sourceIdentity
@@ -52,6 +58,7 @@ public struct SemanticComparisonBasis: Codable, Equatable, Sendable {
         self.priorEngineVersion = priorSnapshot.provenance.engineVersion
         self.currentEngineVersion = currentSnapshot.provenance.engineVersion
         self.compatibilityDeclaration = compatibilityDeclaration
+        self.configurationCompatibilityDeclaration = configurationCompatibilityDeclaration
         try validate()
     }
 
@@ -71,6 +78,14 @@ public struct SemanticComparisonBasis: Codable, Equatable, Sendable {
             LifecycleDigest.self,
             forKey: .currentConfigurationFingerprint
         )
+        self.priorEffectiveConfiguration = try values.decodeIfPresent(
+            LifecycleEffectiveConfiguration.self,
+            forKey: .priorEffectiveConfiguration
+        )
+        self.currentEffectiveConfiguration = try values.decodeIfPresent(
+            LifecycleEffectiveConfiguration.self,
+            forKey: .currentEffectiveConfiguration
+        )
         self.priorCapabilities = try values.decode([SnapshotCapability].self, forKey: .priorCapabilities)
         self.currentCapabilities = try values.decode([SnapshotCapability].self, forKey: .currentCapabilities)
         self.priorSourceIdentity = try values.decode(SnapshotSourceIdentity.self, forKey: .priorSourceIdentity)
@@ -82,6 +97,10 @@ public struct SemanticComparisonBasis: Codable, Equatable, Sendable {
         self.compatibilityDeclaration = try values.decodeIfPresent(
             SemanticCompatibilityDeclaration.self,
             forKey: .compatibilityDeclaration
+        )
+        self.configurationCompatibilityDeclaration = try values.decodeIfPresent(
+            ConfigurationCompatibilityDeclaration.self,
+            forKey: .configurationCompatibilityDeclaration
         )
         do {
             try validate()
@@ -102,9 +121,32 @@ public struct SemanticComparisonBasis: Codable, Equatable, Sendable {
             priorRule.semanticRevision == currentRule.semanticRevision
             ? priorRule == currentRule
             : matchingDeclaration?.supportedClaims.contains(claim) == true
+        let configurationAssessment = try ConfigurationComparisonEvaluator().assess(
+            claim: claim,
+            priorConfigurationFingerprint: priorConfigurationFingerprint,
+            priorEffectiveConfiguration: priorEffectiveConfiguration,
+            priorRule: priorRule,
+            currentConfigurationFingerprint: currentConfigurationFingerprint,
+            currentEffectiveConfiguration: currentEffectiveConfiguration,
+            currentRule: currentRule
+        )
+        if let priorEffectiveConfiguration {
+            guard try priorEffectiveConfiguration.fingerprint() == priorConfigurationFingerprint else {
+                throw LifecycleContractError.invalidArtifact(
+                    "A Semantic Comparison Basis has a mismatched prior effective configuration."
+                )
+            }
+        }
+        if let currentEffectiveConfiguration {
+            guard try currentEffectiveConfiguration.fingerprint() == currentConfigurationFingerprint else {
+                throw LifecycleContractError.invalidArtifact(
+                    "A Semantic Comparison Basis has a mismatched current effective configuration."
+                )
+            }
+        }
         let environmentCompatible =
             priorRule.identity == currentRule.identity
-            && priorConfigurationFingerprint == currentConfigurationFingerprint
+            && configurationAssessment.isCompatible
             && priorCapabilities == currentCapabilities
             && priorCapabilities.allSatisfy(\.state.supportsComparison)
             && priorSourceIdentity.supportsComparison
@@ -115,6 +157,7 @@ public struct SemanticComparisonBasis: Codable, Equatable, Sendable {
         guard
             compatibilityDeclaration
                 == (priorRule.semanticRevision == currentRule.semanticRevision ? nil : matchingDeclaration),
+            configurationCompatibilityDeclaration == configurationAssessment.declaration,
             decision == expectedDecision
         else {
             throw LifecycleContractError.invalidArtifact(
@@ -132,6 +175,8 @@ public struct SemanticComparisonBasis: Codable, Equatable, Sendable {
         case currentRule
         case priorConfigurationFingerprint
         case currentConfigurationFingerprint
+        case priorEffectiveConfiguration
+        case currentEffectiveConfiguration
         case priorCapabilities
         case currentCapabilities
         case priorSourceIdentity
@@ -141,5 +186,6 @@ public struct SemanticComparisonBasis: Codable, Equatable, Sendable {
         case priorEngineVersion
         case currentEngineVersion
         case compatibilityDeclaration
+        case configurationCompatibilityDeclaration
     }
 }
