@@ -255,6 +255,7 @@ struct DebtmapParityFixtureTests {
         #expect(methodology.regressionBudgets.map(\.name) == ["baseline-analysis", "full-evidence-analysis"])
         #expect(methodology.regressionBudgets.allSatisfy { $0.workloadFamily == "SwiftDebt" })
         #expect(methodology.regressionBudgets.map(\.maximumPeakMemoryRegressionPercent) == [15, 15])
+        #expect(methodology.regressionBudgets.map(\.maximumPeakMemoryRegressionBytes) == [2_097_152, 2_097_152])
         #expect(methodology.regressionBudgets[0].maximumWallClockRegressionPercent == 10)
         #expect(methodology.regressionBudgets[0].maximumWallClockRegressionSeconds == 0.010)
         #expect(methodology.regressionBudgets[0].optionalContext == "none")
@@ -271,6 +272,9 @@ struct DebtmapParityFixtureTests {
         #expect(workflow.contains("--max-wall-clock-regression 10"))
         #expect(workflow.contains("--max-wall-clock-regression-seconds 0.010"))
         #expect(workflow.contains("--max-peak-memory-regression 15"))
+        #expect(
+            workflow.components(separatedBy: "--max-peak-memory-regression-bytes 2097152").count - 1 == 2
+        )
         #expect(workflow.contains("--debt-reference-time 2026-09-22T00:00:00Z"))
         #expect(workflow.contains("benchmarks/debtmap-baseline/fixtures/example.lcov"))
         #expect(workflow.contains("git -C \"$workload\" init --quiet"))

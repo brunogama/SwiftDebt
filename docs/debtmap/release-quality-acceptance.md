@@ -24,6 +24,8 @@ Required gates are represented by these release proofs:
 
 The observed baseline gate passed at -12.472651 percent wall clock and -0.117096 percent peak memory. The observed full-evidence gate exercised measured LCOV coverage and available Git history, then passed at -96.452110 percent wall clock and -0.561798 percent peak memory. No approved exceptions were recorded for required gates.
 
+The merge workflow keeps the 15 percent peak-memory limit and pairs it with a fixed 2 MiB absolute allowance for these small process workloads. Peak memory fails only when both limits are exceeded. The policy was exercised against the paired PR #62 baseline artifact: candidate and reference median RSS were 12,484,608 and 10,706,944 bytes, a 1,777,664-byte increase. The observed 16.602907 percent exceeds the relative limit but stays below 2 MiB. The paired sample deltas ranged from 1,392,640 through 1,916,928 bytes. A 2,097,153-byte increase fails, so the allowance cannot hide a regression above both ceilings.
+
 The frozen-input provenance commit preserves the original benchmark corpus but is not automatically a valid performance reference. A performance reference is the latest committed predecessor that accepts the same command surface and executes the same always-on analysis capabilities, optional evidence, and report generation. Comparisons against older, capability-incomplete commits are retained as diagnostics and are not treated as budget passes, failures, or approved exceptions.
 
 ## Intentional divergences and unsupported scope

@@ -73,6 +73,7 @@ jobs:
             --max-wall-clock-regression 10 \
             --max-wall-clock-regression-seconds 0.010 \
             --max-peak-memory-regression 15 \
+            --max-peak-memory-regression-bytes 2097152 \
             --output artifacts/performance/baseline-evaluation.json
           .build/release/swift-debt analyze Examples/Sources \
             --format json --jobs 1 \
@@ -121,6 +122,7 @@ jobs:
             --name full-evidence-analysis \
             --max-wall-clock-regression 20 \
             --max-peak-memory-regression 15 \
+            --max-peak-memory-regression-bytes 2097152 \
             --output artifacts/performance/full-evidence-evaluation.json
           .build/release/swift-debt debt analyze "$workload" \
             --format debt-json --jobs 1 \

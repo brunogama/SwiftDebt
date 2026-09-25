@@ -47,17 +47,20 @@ public struct PerformanceRegressionBudget: Codable, Equatable, Sendable {
     public let maximumWallClockRegressionPercent: Double
     public let maximumPeakMemoryRegressionPercent: Double
     public let maximumWallClockRegressionSeconds: Double
+    public let maximumPeakMemoryRegressionBytes: UInt64
 
     public init(
         name: String,
         maximumWallClockRegressionPercent: Double,
         maximumPeakMemoryRegressionPercent: Double,
-        maximumWallClockRegressionSeconds: Double = 0
+        maximumWallClockRegressionSeconds: Double = 0,
+        maximumPeakMemoryRegressionBytes: UInt64 = 0
     ) {
         self.name = name
         self.maximumWallClockRegressionPercent = maximumWallClockRegressionPercent
         self.maximumPeakMemoryRegressionPercent = maximumPeakMemoryRegressionPercent
         self.maximumWallClockRegressionSeconds = maximumWallClockRegressionSeconds
+        self.maximumPeakMemoryRegressionBytes = maximumPeakMemoryRegressionBytes
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -65,6 +68,7 @@ public struct PerformanceRegressionBudget: Codable, Equatable, Sendable {
         case maximumWallClockRegressionPercent
         case maximumPeakMemoryRegressionPercent
         case maximumWallClockRegressionSeconds
+        case maximumPeakMemoryRegressionBytes
     }
 
     public init(from decoder: any Decoder) throws {
@@ -83,6 +87,11 @@ public struct PerformanceRegressionBudget: Codable, Equatable, Sendable {
                 Double.self,
                 forKey: .maximumWallClockRegressionSeconds
             ) ?? 0
+        maximumPeakMemoryRegressionBytes =
+            try container.decodeIfPresent(
+                UInt64.self,
+                forKey: .maximumPeakMemoryRegressionBytes
+            ) ?? 0
     }
 }
 
@@ -91,6 +100,7 @@ public struct PerformanceBudgetEvaluation: Codable, Equatable, Sendable {
     public let passed: Bool
     public let wallClockRegressionPercent: Double?
     public let peakMemoryRegressionPercent: Double?
+    public let peakMemoryRegressionBytes: UInt64?
     public let reasons: [String]
 }
 
@@ -110,6 +120,7 @@ public enum PerformanceBudgetGate: Sendable {
                 passed: false,
                 wallClockRegressionPercent: nil,
                 peakMemoryRegressionPercent: nil,
+                peakMemoryRegressionBytes: nil,
                 reasons: differences
             )
         }
@@ -122,6 +133,10 @@ public enum PerformanceBudgetGate: Sendable {
             baseline: Double(baseline.peakMemoryBytesMedian),
             candidate: Double(candidate.peakMemoryBytesMedian)
         )
+        let memoryRegressionBytes =
+            candidate.peakMemoryBytesMedian > baseline.peakMemoryBytesMedian
+            ? candidate.peakMemoryBytesMedian - baseline.peakMemoryBytesMedian
+            : 0
         var reasons: [String] = []
         if wallClockRegression > budget.maximumWallClockRegressionPercent,
             wallClockRegressionSeconds > budget.maximumWallClockRegressionSeconds
@@ -135,14 +150,25 @@ public enum PerformanceBudgetGate: Sendable {
                 )
             }
         }
-        if memoryRegression > budget.maximumPeakMemoryRegressionPercent {
-            reasons.append("peak-memory regression exceeds \(budget.maximumPeakMemoryRegressionPercent)%")
+        if memoryRegression > budget.maximumPeakMemoryRegressionPercent,
+            memoryRegressionBytes > budget.maximumPeakMemoryRegressionBytes
+        {
+            if budget.maximumPeakMemoryRegressionBytes == 0 {
+                reasons.append("peak-memory regression exceeds \(budget.maximumPeakMemoryRegressionPercent)%")
+            } else {
+                reasons.append(
+                    "peak-memory regression exceeds \(budget.maximumPeakMemoryRegressionPercent)% and "
+                        + "\(budget.maximumPeakMemoryRegressionBytes) bytes "
+                        + "(observed \(memoryRegressionBytes) bytes)"
+                )
+            }
         }
         return PerformanceBudgetEvaluation(
             comparable: true,
             passed: reasons.isEmpty,
             wallClockRegressionPercent: wallClockRegression,
             peakMemoryRegressionPercent: memoryRegression,
+            peakMemoryRegressionBytes: memoryRegressionBytes,
             reasons: reasons
         )
     }

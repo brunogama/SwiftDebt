@@ -58,6 +58,8 @@ struct CLIOptions {
                                          Ignore wall-clock regressions within this absolute tolerance.
           --max-peak-memory-regression PERCENT
                                          Maximum accepted peak-memory regression.
+          --max-peak-memory-regression-bytes BYTES
+                                         Ignore peak-memory regressions within this absolute tolerance.
           --threshold SCORE              Required improvement for validate-improvement.
           --type-scope SCOPE             classes (paper scope) or nominals.
           --scoring MODE                 none (default), paper (literal), bounded (clamped),

@@ -18,6 +18,7 @@ extension CLIOptions {
             "--max-wall-clock-regression",
             "--max-wall-clock-regression-seconds",
             "--max-peak-memory-regression",
+            "--max-peak-memory-regression-bytes",
             "--output",
         ])
         while index < arguments.count {
@@ -49,6 +50,10 @@ extension CLIOptions {
             values["--max-peak-memory-regression"],
             option: "--max-peak-memory-regression"
         )
+        let peakMemoryBytes = try performanceByteLimit(
+            values["--max-peak-memory-regression-bytes"] ?? "0",
+            option: "--max-peak-memory-regression-bytes"
+        )
         return .performanceGate(
             PerformanceGateRequest(
                 baselinePath: paths[0],
@@ -58,7 +63,8 @@ extension CLIOptions {
                     name: name,
                     maximumWallClockRegressionPercent: wallClock,
                     maximumPeakMemoryRegressionPercent: peakMemory,
-                    maximumWallClockRegressionSeconds: wallClockSeconds
+                    maximumWallClockRegressionSeconds: wallClockSeconds,
+                    maximumPeakMemoryRegressionBytes: peakMemoryBytes
                 )
             )
         )
@@ -67,6 +73,13 @@ extension CLIOptions {
     private func performanceLimit(_ value: String?, option: String) throws -> Double {
         guard let value, let result = Double(value), result >= 0, result.isFinite else {
             throw CLIError("\(option) must be a nonnegative finite number")
+        }
+        return result
+    }
+
+    private func performanceByteLimit(_ value: String, option: String) throws -> UInt64 {
+        guard let result = UInt64(value) else {
+            throw CLIError("\(option) must be a nonnegative integer number of bytes")
         }
         return result
     }
