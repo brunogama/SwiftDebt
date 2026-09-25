@@ -9,7 +9,7 @@ Declare the released package in `Package.swift` and add `SwiftDebtKit` to the ta
 ```swift
 dependencies: [
     // swiftdebt-release-version:start
-    .package(url: "https://github.com/brunogama/SwiftDebt.git", from: "0.7.2")
+    .package(url: "https://github.com/brunogama/SwiftDebt.git", from: "0.7.3")
     // swiftdebt-release-version:end
 ],
 targets: [
