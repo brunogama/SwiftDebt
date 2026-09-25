@@ -12,7 +12,8 @@ let package = Package(
     ],
     products: [
         .executable(name: "swift-debt", targets: ["swift-debt"]),
-        .library(name: "SwiftDebtKit", targets: ["SwiftDebtKit", "SwiftDebtCore"]),
+        .library(name: "SwiftDebtKit", targets: ["SwiftDebtKit", "SwiftDebtCore", "SwiftDebtLifecycle"]),
+        .library(name: "SwiftDebtLifecycle", targets: ["SwiftDebtLifecycle"]),
         .plugin(name: "SwiftDebtCommandPlugin", targets: ["SwiftDebtCommandPlugin"]),
         .plugin(name: "SwiftDebtBuildPlugin", targets: ["SwiftDebtBuildPlugin"]),
     ],
@@ -34,13 +35,18 @@ let package = Package(
         ),
         .target(name: "SwiftDebtReporting", dependencies: ["SwiftDebtCore"]),
         .target(name: "SwiftDebtInteractive", dependencies: ["SwiftDebtCore"]),
+        .target(name: "SwiftDebtLifecycle", dependencies: ["SwiftDebtCore"]),
         .target(
             name: "SwiftDebtKit",
-            dependencies: ["SwiftDebtCore", "SwiftDebtSyntax", "SwiftDebtReporting"],
+            // The composition root converts engine-owned rule results into persisted lifecycle observations.
+            dependencies: ["SwiftDebtCore", "SwiftDebtSyntax", "SwiftDebtReporting", "SwiftDebtLifecycle"],
             // Keep the catalog in the target for ordinary DocC and Swift Package Index builds.
             resources: [.copy("SwiftDebtKit.docc")]
         ),
-        .executableTarget(name: "swift-debt", dependencies: ["SwiftDebtCore", "SwiftDebtInteractive", "SwiftDebtKit"]),
+        .executableTarget(
+            name: "swift-debt",
+            dependencies: ["SwiftDebtCore", "SwiftDebtInteractive", "SwiftDebtKit", "SwiftDebtLifecycle"]
+        ),
         .plugin(
             name: "SwiftDebtCommandPlugin",
             capability: .command(
@@ -68,6 +74,10 @@ let package = Package(
         .testTarget(
             name: "SwiftDebtInteractiveTests",
             dependencies: ["SwiftDebtCore", "SwiftDebtInteractive", "swift-debt"]
+        ),
+        .testTarget(
+            name: "SwiftDebtLifecycleTests",
+            dependencies: ["SwiftDebtCore", "SwiftDebtLifecycle", "SwiftDebtSyntax", "swift-debt"]
         ),
     ],
     swiftLanguageModes: [.v6]

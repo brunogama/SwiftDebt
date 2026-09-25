@@ -1,5 +1,6 @@
 import Foundation
 import SwiftDebtCore
+import SwiftDebtLifecycle
 
 package enum DebtReferenceTimeParser {
     package static let example = "2026-09-12T00:00:00Z"
@@ -181,6 +182,7 @@ public struct AnalysisRequest: Sendable {
     public let profileOutputPath: String?
     public let pluginEvidenceLimitations: Bool
     public let maximumFileBytes: Int?
+    public let lifecycleArtifactPath: String?
 
     public init(
         path: String = ".", manifestPath: String? = nil, configurationPath: String? = nil,
@@ -191,7 +193,8 @@ public struct AnalysisRequest: Sendable {
         enableDebtAnalysis: Bool = false, lcovPath: String? = nil, debtReferenceTime: Date? = nil,
         profileOutputPath: String? = nil,
         pluginEvidenceLimitations: Bool = false,
-        maximumFileBytes: Int? = nil
+        maximumFileBytes: Int? = nil,
+        lifecycleArtifactPath: String? = nil
     ) {
         self.path = path
         self.manifestPath = manifestPath
@@ -213,6 +216,7 @@ public struct AnalysisRequest: Sendable {
         self.profileOutputPath = profileOutputPath
         self.pluginEvidenceLimitations = pluginEvidenceLimitations
         self.maximumFileBytes = maximumFileBytes
+        self.lifecycleArtifactPath = lifecycleArtifactPath
     }
 }
 
@@ -225,6 +229,7 @@ public struct AnalysisRunResult: Sendable {
     public let rankedDebtAnalysis: RankedDebtAnalysis?
     public let profile: AnalysisProfile?
     public let ruleAnalysisSnapshot: AnalysisSnapshot?
+    public let lifecycleReduction: LifecycleReduction?
 
     public init(
         report: AnalysisReport,
@@ -232,7 +237,8 @@ public struct AnalysisRunResult: Sendable {
         exitStatus: Int32,
         rankedDebtAnalysis: RankedDebtAnalysis? = nil,
         profile: AnalysisProfile? = nil,
-        ruleAnalysisSnapshot: AnalysisSnapshot? = nil
+        ruleAnalysisSnapshot: AnalysisSnapshot? = nil,
+        lifecycleReduction: LifecycleReduction? = nil
     ) {
         self.report = report
         self.standardOutput = standardOutput
@@ -240,5 +246,6 @@ public struct AnalysisRunResult: Sendable {
         self.rankedDebtAnalysis = rankedDebtAnalysis
         self.profile = profile
         self.ruleAnalysisSnapshot = ruleAnalysisSnapshot
+        self.lifecycleReduction = lifecycleReduction
     }
 }

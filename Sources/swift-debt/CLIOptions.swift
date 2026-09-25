@@ -1,6 +1,7 @@
 import Foundation
 import SwiftDebtCore
 import SwiftDebtKit
+import SwiftDebtLifecycle
 
 struct CLIError: Error, CustomStringConvertible {
     let description: String
@@ -16,6 +17,7 @@ enum CLIAction {
     case validateImprovement(DebtValidationRequest)
     case explainCoverage(CoverageExplanationRequest)
     case performanceGate(PerformanceGateRequest)
+    case lifecycle(LifecycleCLIRequest)
 }
 
 struct CLIOptions {
@@ -29,6 +31,9 @@ struct CLIOptions {
                swift-debt validate-improvement BEFORE_JSON AFTER_JSON [--threshold SCORE] [--output PATH]
                swift-debt explain coverage [path] --lcov PATH [options]
                swift-debt performance-gate BASELINE_JSON CANDIDATE_JSON [options]
+               swift-debt lifecycle inventory ARTIFACT [--format text|json]
+               swift-debt lifecycle explain ARTIFACT FINDING_ID [--format text|json]
+               swift-debt lifecycle snapshot ARTIFACT SNAPSHOT_ID [--format text|json]
                swift-debt --help
                swift-debt --version
 
@@ -41,6 +46,7 @@ struct CLIOptions {
           --interactive-debt             Open ranked debt explorer when terminal supports it.
           --output PATH                  Write a report atomically instead of stdout.
           --profile-output PATH          Write machine-readable phase profiling JSON.
+          --lifecycle-artifact PATH      Append an engine-owned Observation Snapshot to this artifact.
           --name NAME                    Performance budget name.
           --max-wall-clock-regression PERCENT
                                          Maximum accepted wall-clock regression.
@@ -94,6 +100,9 @@ struct CLIOptions {
         if arguments.first == "performance-gate" {
             return try parsePerformanceGate(Array(arguments.dropFirst()))
         }
+        if arguments.first == "lifecycle" {
+            return try parseLifecycle(Array(arguments.dropFirst()))
+        }
         if arguments.first == "debt", isDebtNamespace(Array(arguments.dropFirst())) {
             return try parseDebt(Array(arguments.dropFirst()))
         }
@@ -111,7 +120,7 @@ struct CLIOptions {
         let valuedOptions: Set<String> = [
             "--config", "--format", "--output", "--profile-output", "--type-scope", "--scoring", "--jobs",
             "--manifest", "--stamp", "--exclude", "--threshold", "--lcov", "--debt-reference-time",
-            "--max-file-bytes",
+            "--max-file-bytes", "--lifecycle-artifact",
         ]
         while index < arguments.count {
             let argument = arguments[index]
@@ -218,7 +227,8 @@ struct CLIOptions {
                 debtReferenceTime: try parseDebtReferenceTime(values["--debt-reference-time"]),
                 profileOutputPath: values["--profile-output"],
                 pluginEvidenceLimitations: pluginEvidenceLimitations,
-                maximumFileBytes: maximumFileBytes
+                maximumFileBytes: maximumFileBytes,
+                lifecycleArtifactPath: values["--lifecycle-artifact"]
             ),
             interactiveDebt: interactiveDebt
         )

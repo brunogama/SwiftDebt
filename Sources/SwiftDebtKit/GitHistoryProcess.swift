@@ -17,6 +17,17 @@ struct GitHistoryProcessResult: Equatable, Sendable {
 }
 
 struct GitHistorySubprocessRunner: GitHistoryProcessRunning {
+    private static let repositoryOverrideKeys: Set<String> = [
+        "GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR", "GIT_INDEX_FILE",
+        "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+        "GIT_CEILING_DIRECTORIES", "GIT_DISCOVERY_ACROSS_FILESYSTEM",
+        "GIT_NAMESPACE", "GIT_PREFIX", "GIT_SUPER_PREFIX", "GIT_IMPLICIT_WORK_TREE",
+    ]
+
+    static func repositoryScopedEnvironment(_ inherited: [String: String]) -> [String: String] {
+        inherited.filter { !repositoryOverrideKeys.contains($0.key) }
+    }
+
     func run(
         executableURL: URL,
         arguments: [String],
@@ -44,6 +55,7 @@ struct GitHistorySubprocessRunner: GitHistoryProcessRunning {
                 process.executableURL = executableURL
                 process.arguments = arguments
                 process.currentDirectoryURL = workingDirectory
+                process.environment = Self.repositoryScopedEnvironment(ProcessInfo.processInfo.environment)
                 process.standardOutput = stdout
                 process.standardError = stderr
                 let termination = DispatchSemaphore(value: 0)

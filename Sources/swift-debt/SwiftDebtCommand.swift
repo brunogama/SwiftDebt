@@ -2,6 +2,7 @@ import Foundation
 import SwiftDebtCore
 import SwiftDebtInteractive
 import SwiftDebtKit
+import SwiftDebtLifecycle
 
 #if canImport(Darwin)
     import Darwin
@@ -54,6 +55,9 @@ struct SwiftDebtCommand {
                 let result = try PerformanceGateCLI.run(request)
                 FileHandle.standardOutput.write(Data(result.output.utf8))
                 exit(result.exitStatus)
+            case .lifecycle(let request):
+                FileHandle.standardOutput.write(Data(try request.run().utf8))
+                exit(0)
             }
         } catch {
             let message = "swift-debt: error: \(error)\n"
