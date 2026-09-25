@@ -46,6 +46,7 @@ struct CLIOptions {
           --interactive-debt             Open ranked debt explorer when terminal supports it.
           --output PATH                  Write a report atomically instead of stdout.
           --profile-output PATH          Write machine-readable phase profiling JSON.
+          --lifecycle-artifact PATH      Append an engine-owned Observation Snapshot to this artifact.
           --name NAME                    Performance budget name.
           --max-wall-clock-regression PERCENT
                                          Maximum accepted wall-clock regression.
@@ -119,7 +120,7 @@ struct CLIOptions {
         let valuedOptions: Set<String> = [
             "--config", "--format", "--output", "--profile-output", "--type-scope", "--scoring", "--jobs",
             "--manifest", "--stamp", "--exclude", "--threshold", "--lcov", "--debt-reference-time",
-            "--max-file-bytes",
+            "--max-file-bytes", "--lifecycle-artifact",
         ]
         while index < arguments.count {
             let argument = arguments[index]
@@ -226,7 +227,8 @@ struct CLIOptions {
                 debtReferenceTime: try parseDebtReferenceTime(values["--debt-reference-time"]),
                 profileOutputPath: values["--profile-output"],
                 pluginEvidenceLimitations: pluginEvidenceLimitations,
-                maximumFileBytes: maximumFileBytes
+                maximumFileBytes: maximumFileBytes,
+                lifecycleArtifactPath: values["--lifecycle-artifact"]
             ),
             interactiveDebt: interactiveDebt
         )

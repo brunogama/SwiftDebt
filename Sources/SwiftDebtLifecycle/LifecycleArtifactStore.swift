@@ -48,6 +48,18 @@ public struct LifecycleArtifactStore: Sendable {
     }
 
     public func ingest(_ snapshot: ObservationSnapshot) throws -> LifecycleReduction {
+        try ingestLocked { _ in snapshot }
+    }
+
+    package func ingest(
+        buildingSnapshot buildSnapshot: (LifecycleArtifact?) throws -> ObservationSnapshot
+    ) throws -> LifecycleReduction {
+        try ingestLocked(buildSnapshot)
+    }
+
+    private func ingestLocked(
+        _ buildSnapshot: (LifecycleArtifact?) throws -> ObservationSnapshot
+    ) throws -> LifecycleReduction {
         let directory = artifactURL.deletingLastPathComponent()
         do {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -55,12 +67,9 @@ public struct LifecycleArtifactStore: Sendable {
             throw LifecycleStoreError.writeFailed(path: artifactURL.path, reason: String(describing: error))
         }
         return try withExclusiveLock {
-            let artifact: LifecycleArtifact
-            if FileManager.default.fileExists(atPath: artifactURL.path) {
-                artifact = try load()
-            } else {
-                artifact = try LifecycleArtifact(generatorVersion: generatorVersion)
-            }
+            let existingArtifact = FileManager.default.fileExists(atPath: artifactURL.path) ? try load() : nil
+            let snapshot = try buildSnapshot(existingArtifact)
+            let artifact = try existingArtifact ?? LifecycleArtifact(generatorVersion: generatorVersion)
             let reduction = try LifecycleReducer().ingest(snapshot, into: artifact)
             if reduction.status == .accepted {
                 try write(reduction.artifact)

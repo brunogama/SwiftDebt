@@ -29,15 +29,23 @@ let result = try LifecycleArtifactStore(artifactURL: artifactURL).ingest(observa
 
 The store serializes one schema-versioned `swiftdebt-lifecycle` artifact. Ingestion holds an advisory exclusive lock, writes by atomic replacement, orders pending lineage snapshots by their explicit predecessor relationship, and leaves bytes unchanged when the same snapshot is retried.
 
+The supported CLI write path accepts only an artifact location:
+
+```text
+swift-debt analyze PATH --lifecycle-artifact ARTIFACT
+```
+
+`AnalysisService` derives the Observation Snapshot from the same in-memory `SourceUnit` values passed to `RuleEngine` and `Analyzer`. It computes the source digest, rule-analysis configuration fingerprint, capability state, engine version, Git source state, and lineage. None of those values are accepted as CLI input.
+
 ## Authority boundary
 
 ---
 
 The public snapshot conversion accepts only an R1 `AnalysisSnapshot`; raw arrays of sources, atomics, and Detections are package scoped. A lifecycle caller can therefore attach provenance to engine-owned observations, but it cannot use the public initializer to fabricate a canonical Detection.
 
-Provenance remains a trusted integration input. A syntactically valid digest does not prove that it was computed from the analyzed checkout. The current `swift-debt analyze` service does not expose one authoritative value for source identity, complete scope, effective configuration, capability availability, and lineage. For that reason this slice does not add an analyze-to-store CLI path. A later integration must compute and validate those values before it calls `ingest`.
+Provenance remains a trusted integration input for direct library callers. A syntactically valid digest alone does not prove that an external caller computed it from the analyzed checkout. The CLI path closes that gap for command-line ingestion by constructing provenance inside `AnalysisService` and exposing only the artifact destination.
 
-The CLI is read-only:
+The lifecycle query commands remain read-only:
 
 ```text
 swift-debt lifecycle inventory ARTIFACT [--format text|json]
@@ -46,6 +54,28 @@ swift-debt lifecycle snapshot ARTIFACT SNAPSHOT_ID [--format text|json]
 ```
 
 These commands decode and validate the entire artifact before reporting. They never repair, replace, or partially interpret unreadable history.
+
+## CLI provenance derivation
+
+---
+
+The analyze-to-artifact path records:
+
+| Provenance field | Engine-owned derivation |
+| --- | --- |
+| Source content identity | SHA-256 over a length-framed, sorted encoding of the exact `SourceUnit` path, module, and content values used by both engines. |
+| Git source identity | Full validated `HEAD` commit ID, clean or modified state, and the source content digest. Git state is captured immediately before and after the one source read. |
+| Observation scope | Repository only for a directory analysis rooted at the Git repository root with no configured exclusions and no skipped symbolic links; otherwise partial with reasons. |
+| Configuration fingerprint | Versioned SHA-256 over source selection kind, effective exclusions, maximum file size, and the exact Rule Identities and Semantic Revisions emitted by R1. |
+| Capability availability | `syntax-analysis` available. Parse and rule failures remain explicit source and Atomic Observation outcomes rather than unavailable capability claims. |
+| Engine identity | The schema-2 report engine version produced by the same analysis run. |
+| Lineage | Existing position for an exact retry, or the unique clean single-parent Git successor of one clean artifact head. |
+
+The Git cleanliness check excludes only untracked or ignored lifecycle artifacts, lock files, and exact `--output`, `--profile-output`, and `--stamp` paths requested for that run when they are inside the repository. A Git-tracked output remains visible to provenance. Directory discovery also omits the requested generated stamp SourceUnit. These rules prevent ordinary SwiftDebt outputs from changing the source state it records without hiding tracked or unrelated changes, which continue to block successor claims.
+
+The first snapshot may use a content-only identity when the input is outside Git. A later content-only snapshot cannot be ordered automatically. Dirty working trees, merge commits, skipped commits, duplicate but different evidence for one revision, and disconnected histories also fail closed. The CLI does not infer a successor from invocation time.
+
+The local SHA-256 implementation exists because the current R2 digest helper validates but does not compute digests. Consolidation with R2's `RepositorySHA256` is an integration task after that separate branch lands; this slice does not couple to unmerged code.
 
 ## Conservative continuity
 
@@ -99,7 +129,7 @@ All implemented acceptance tests use the real R1 `RuleEngine`, the public lifecy
 | AT-4 | Open | No declaration identity or rename reconciliation contract. |
 | AT-5 | Partial | One-to-many cardinality stays ambiguous, but the fixture does not copy a declaration into two files. |
 | AT-6 | Direct | Two prior Findings and one current Detection remain ambiguous. |
-| AT-7 | Direct | Complete comparable committed absence creates an audited resolution. |
+| AT-7 | Direct | Complete comparable committed absence creates an audited resolution, including a real clean direct-child Git CLI run. |
 | AT-8 | Direct | A real parse failure records not-executed atomics and blocks resolution. |
 | AT-9 | Open | No prior-Finding changed-files exclusion fixture. |
 | AT-10 | Open | Eligible relocation coverage for deletion is not modeled. |
@@ -109,11 +139,11 @@ All implemented acceptance tests use the real R1 `RuleEngine`, the public lifecy
 | AT-14 | Open | Unique supported reopen is not available without continuity evidence. |
 | AT-15 | Open | Post-resolution new occurrence classification is not implemented. |
 | AT-16 to AT-20 | Open | Git introduction inference is not implemented. |
-| AT-21 | Direct | Reverse arrival and divergent lineage fixtures preserve source order. |
-| AT-22 | Partial | Retry and reverse-arrival replay preserve canonical bytes; concurrent replay and interruption injection remain open. |
-| AT-23 | Partial | Persisted human and JSON queries expose blockers; full candidate parity and audit export remain open. |
+| AT-21 | Partial | Reverse arrival and divergent library fixtures preserve source order; the CLI accepts only a verified direct Git parent and rejects dirty, merge, or disconnected successors. Real divergent Git lineages in one artifact remain open. |
+| AT-22 | Partial | Retry and reverse-arrival replay preserve canonical bytes, and real CLI replay is byte-identical; concurrent replay and interruption injection remain open. |
+| AT-23 | Partial | Persisted human and JSON queries expose blockers and CLI snapshot inspection shows derived Git, configuration, capability, engine, and scope provenance; full candidate parity and audit export remain open. |
 | AT-24 | Direct | Unknown schema, broken references, reference-valid false resolution proof, and invalid candidate references fail closed. |
-| AT-25 | Regression gate | Lifecycle uses a separate report kind and full existing tests guard schema-2 output; no dedicated byte snapshot was added here. |
+| AT-25 | Direct | A real CLI fixture compares schema-2 stdout byte for byte with lifecycle disabled and verifies `--fail-on-violation` keeps status 1 while retrying the same lifecycle snapshot without mutation. |
 | AT-26 | Partial | Capability provenance is validated and unavailable capability cannot support decoded resolution; a real optional-provider run remains open. |
 | AT-27 | Direct | Exact path, line, and column reuse remains unresolved and does not continue the Finding. |
 
@@ -121,11 +151,11 @@ All implemented acceptance tests use the real R1 `RuleEngine`, the public lifecy
 
 ---
 
-The current slice does not complete UJ-1. The missing pieces are:
+The current slice completes the first-observation, clean direct-child resolution, replay, and persisted inspection portions of UJ-1. It does not complete the full journey. The missing pieces are:
 
-- authoritative analyze-to-store provenance from `AnalysisService`;
 - engine-owned structural continuity evidence and unique assignment;
 - observed-again, moved, reopened, and new-after-resolution transitions;
+- a real incomplete changed-files CLI observation between first observation and resolution;
 - explicit selection and exclusion coverage for moves and deletions;
 - directional semantic and configuration compatibility declarations;
 - Git introduction conclusions and merge handling;

@@ -1,5 +1,6 @@
 import Foundation
 import SwiftDebtCore
+import SwiftDebtLifecycle
 import SwiftDebtReporting
 import SwiftDebtSyntax
 
@@ -10,7 +11,12 @@ public struct AnalysisService: Sendable {
     public func run(_ request: AnalysisRequest) async throws -> AnalysisRunResult {
         let profiler = request.profileOutputPath == nil ? nil : AnalysisProfiler()
         let discovery = SourceDiscovery()
-        let (root, configurationURL, configuration, options, selection, sources) = try {
+        let lifecycleArtifactURL = try lifecycleArtifactURL(for: request.lifecycleArtifactPath)
+        let generatedOutputURLs = generatedOutputURLs(
+            for: request,
+            lifecycleArtifactURL: lifecycleArtifactURL
+        )
+        let (root, configurationURL, configuration, options, selection, sources, lifecycleCapture) = try {
             profiler?.begin(.discovery)
             defer { profiler?.end(.discovery) }
             let root = try discovery.root(for: request)
@@ -33,18 +39,50 @@ public struct AnalysisService: Sendable {
                 }
             }
             let options = try configuration.analysisOptions(overrides: request)
+            let exclusions = configuration.exclude + request.exclude
+            let maximumFileBytes = request.maximumFileBytes ?? configuration.maximumFileBytes
             let selection = try discovery.select(
-                request: request, root: root, excludes: configuration.exclude + request.exclude)
+                request: request, root: root, excludes: exclusions)
+            let gitProvider: LifecycleGitSnapshotProvider?
+            let gitBeforeRead: LifecycleGitSnapshot?
+            if lifecycleArtifactURL != nil {
+                let provider = LifecycleGitSnapshotProvider()
+                gitProvider = provider
+                gitBeforeRead = try provider.capture(
+                    root: root,
+                    excludingGeneratedOutputs: generatedOutputURLs
+                )
+            } else {
+                gitProvider = nil
+                gitBeforeRead = nil
+            }
             let sources = try discovery.read(
                 selection,
-                maximumFileBytes: request.maximumFileBytes ?? configuration.maximumFileBytes
+                maximumFileBytes: maximumFileBytes
             )
-            return (root, configurationURL, configuration, options, selection, sources)
+            let lifecycleCapture: LifecycleAnalysisCapture?
+            if let gitProvider, let gitBeforeRead {
+                let gitAfterRead = try gitProvider.capture(
+                    root: root,
+                    excludingGeneratedOutputs: generatedOutputURLs
+                )
+                lifecycleCapture = try LifecycleAnalysisCapture(
+                    selection: selection,
+                    sources: sources,
+                    exclusions: exclusions,
+                    maximumFileBytes: maximumFileBytes,
+                    gitBeforeRead: gitBeforeRead,
+                    gitAfterRead: gitAfterRead
+                )
+            } else {
+                lifecycleCapture = nil
+            }
+            return (root, configurationURL, configuration, options, selection, sources, lifecycleCapture)
         }()
         let format = request.format ?? configuration.format
         let failOnViolation = request.failOnViolation || configuration.failOnViolation
         let ruleAnalysisSnapshot: AnalysisSnapshot?
-        if format == .text || failOnViolation {
+        if format == .text || failOnViolation || lifecycleArtifactURL != nil {
             ruleAnalysisSnapshot = try RuleEngine().analyze(sources, using: BuiltInRuleCatalog.all)
         } else {
             ruleAnalysisSnapshot = nil
@@ -91,6 +129,19 @@ public struct AnalysisService: Sendable {
         if let manifest = request.manifestPath {
             protectedPaths.insert(URL(fileURLWithPath: manifest).resolvingSymlinksInPath().path)
         }
+        if let lifecycleArtifactURL {
+            var isDirectory: ObjCBool = false
+            let artifactExists = FileManager.default.fileExists(
+                atPath: lifecycleArtifactURL.path,
+                isDirectory: &isDirectory
+            )
+            guard !protectedPaths.contains(lifecycleArtifactURL.path), lifecycleArtifactURL.pathExtension != "swift",
+                !artifactExists || !isDirectory.boolValue
+            else {
+                throw LifecycleAnalysisError.invalidArtifactPath
+            }
+            protectedPaths.insert(lifecycleArtifactURL.path)
+        }
         if let output = request.outputPath {
             let url = URL(fileURLWithPath: output).standardizedFileURL.resolvingSymlinksInPath()
             guard !protectedPaths.contains(url.path), url.pathExtension != "swift" else {
@@ -135,14 +186,53 @@ public struct AnalysisService: Sendable {
             }
             try write(content, to: url)
         }
+        let lifecycleReduction: LifecycleReduction?
+        if let lifecycleArtifactURL {
+            guard let lifecycleCapture, let ruleAnalysisSnapshot else {
+                throw WorkspaceError("Lifecycle ingestion requires an engine-owned observation capture")
+            }
+            lifecycleReduction = try LifecycleObservationIngestor().ingest(
+                analysis: ruleAnalysisSnapshot,
+                capture: lifecycleCapture,
+                engineVersion: report.engineVersion,
+                artifactURL: lifecycleArtifactURL
+            )
+        } else {
+            lifecycleReduction = nil
+        }
         return AnalysisRunResult(
             report: report,
             standardOutput: request.outputPath == nil ? rendered : "",
             exitStatus: status,
             rankedDebtAnalysis: rankedDebtAnalysis,
             profile: profile,
-            ruleAnalysisSnapshot: ruleAnalysisSnapshot
+            ruleAnalysisSnapshot: ruleAnalysisSnapshot,
+            lifecycleReduction: lifecycleReduction
         )
+    }
+
+    private func lifecycleArtifactURL(for path: String?) throws -> URL? {
+        guard let path else { return nil }
+        guard !path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw LifecycleAnalysisError.invalidArtifactPath
+        }
+        return URL(fileURLWithPath: path).standardizedFileURL.resolvingSymlinksInPath()
+    }
+
+    private func generatedOutputURLs(
+        for request: AnalysisRequest,
+        lifecycleArtifactURL: URL?
+    ) -> [URL] {
+        var urls: [URL] = []
+        if let lifecycleArtifactURL {
+            urls.append(lifecycleArtifactURL)
+            urls.append(URL(fileURLWithPath: lifecycleArtifactURL.path + ".lock"))
+        }
+        for path in [request.outputPath, request.profileOutputPath, request.stampPath] {
+            guard let path, !path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { continue }
+            urls.append(URL(fileURLWithPath: path).standardizedFileURL.resolvingSymlinksInPath())
+        }
+        return urls
     }
 
     private func makeRankedDebtAnalysis(

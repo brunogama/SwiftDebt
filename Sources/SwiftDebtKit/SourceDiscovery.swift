@@ -14,6 +14,8 @@ struct SourceDiscovery {
     struct Selection {
         let root: URL
         let entries: [SourceManifest.Entry]
+        let kind: LifecycleSelectionKind
+        let skippedSymbolicLinks: Bool
     }
     private let ignoredDirectories: Set<String> = [
         ".git", ".build", ".swiftpm", "Pods", "Carthage", "node_modules", ".swift-debt",
@@ -52,7 +54,12 @@ struct SourceDiscovery {
                     module: entry.module
                 )
             }
-            return Selection(root: root, entries: entries.sorted { $0.path < $1.path })
+            return Selection(
+                root: root,
+                entries: entries.sorted { $0.path < $1.path },
+                kind: .manifest,
+                skippedSymbolicLinks: false
+            )
         }
         let input = URL(fileURLWithPath: request.path).standardizedFileURL
         let inputValues = try input.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
@@ -64,7 +71,7 @@ struct SourceDiscovery {
             let entries =
                 isExcluded(relativePath(input, root: root), excludes: excludes)
                 ? [] : [SourceManifest.Entry(path: input.path, module: "Workspace")]
-            return Selection(root: root, entries: entries)
+            return Selection(root: root, entries: entries, kind: .file, skippedSymbolicLinks: false)
         }
         var enumerationError: (any Error)?
         guard
@@ -78,9 +85,14 @@ struct SourceDiscovery {
             )
         else { throw WorkspaceError("Unable to enumerate \(root.path)") }
         var entries: [SourceManifest.Entry] = []
+        var skippedSymbolicLinks = false
+        let stampPath = request.stampPath.map {
+            canonicalPath(URL(fileURLWithPath: $0).standardizedFileURL.resolvingSymlinksInPath())
+        }
         for case let url as URL in enumerator {
             let values = try url.resourceValues(forKeys: [.isRegularFileKey, .isDirectoryKey, .isSymbolicLinkKey])
             if values.isSymbolicLink == true {
+                skippedSymbolicLinks = true
                 enumerator.skipDescendants()
                 continue
             }
@@ -94,10 +106,16 @@ struct SourceDiscovery {
             }
             guard values.isRegularFile == true, url.pathExtension == "swift", url.lastPathComponent != "Package.swift"
             else { continue }
+            if let stampPath, canonicalPath(url) == stampPath { continue }
             entries.append(SourceManifest.Entry(path: url.path, module: "Workspace"))
         }
         if let enumerationError { throw enumerationError }
-        return Selection(root: root, entries: entries.sorted { $0.path < $1.path })
+        return Selection(
+            root: root,
+            entries: entries.sorted { $0.path < $1.path },
+            kind: .directory,
+            skippedSymbolicLinks: skippedSymbolicLinks
+        )
     }
 
     func read(_ selection: Selection, maximumFileBytes: Int) throws -> [SourceUnit] {

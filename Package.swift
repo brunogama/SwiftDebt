@@ -38,7 +38,8 @@ let package = Package(
         .target(name: "SwiftDebtLifecycle", dependencies: ["SwiftDebtCore"]),
         .target(
             name: "SwiftDebtKit",
-            dependencies: ["SwiftDebtCore", "SwiftDebtSyntax", "SwiftDebtReporting"],
+            // The composition root converts engine-owned rule results into persisted lifecycle observations.
+            dependencies: ["SwiftDebtCore", "SwiftDebtSyntax", "SwiftDebtReporting", "SwiftDebtLifecycle"],
             // Keep the catalog in the target for ordinary DocC and Swift Package Index builds.
             resources: [.copy("SwiftDebtKit.docc")]
         ),
