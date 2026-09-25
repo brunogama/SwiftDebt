@@ -1,5 +1,5 @@
 <!-- swiftdebt-release-version:start -->
-# Measurement specification - engine 0.9.0
+# Measurement specification - engine 0.10.0
 <!-- swiftdebt-release-version:end -->
 
 This document defines **implemented behavior**, not additional claims from the paper. The original categories and equations are mapped in PAPER_MAPPING.md.
