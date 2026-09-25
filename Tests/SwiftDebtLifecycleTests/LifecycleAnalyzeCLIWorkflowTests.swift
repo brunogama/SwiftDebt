@@ -4,6 +4,31 @@ import Testing
 
 @Suite("R3 analyze-to-lifecycle CLI acceptance")
 struct LifecycleAnalyzeCLIWorkflowTests {
+    @Test("Inherited Git environment cannot hide a real repository")
+    func inheritedGitEnvironmentDoesNotHideRepository() throws {
+        let fixture = try TemporaryLifecycleGitRepository()
+        let revision = try fixture.commit(source: Self.detectedSource, message: "add forced try")
+        var environment = ProcessInfo.processInfo.environment
+        environment["GIT_DIR"] = fixture.repository.appendingPathComponent("missing-git-dir").path
+
+        let result = try runLifecycleCLI(
+            [
+                "analyze", fixture.repository.path,
+                "--format", "json",
+                "--lifecycle-artifact", fixture.artifact.path,
+                "--jobs", "2",
+            ], environment: environment)
+
+        #expect(result.status == 0)
+        let artifact = try LifecycleArtifactStore(artifactURL: fixture.artifact).load()
+        let snapshot = try #require(artifact.snapshots.first)
+        guard case .git(let observedRevision, _, _) = snapshot.provenance.sourceIdentity else {
+            Issue.record("Expected authoritative Git identity despite inherited GIT_DIR")
+            return
+        }
+        #expect(observedRevision.rawValue == revision)
+    }
+
     @Test("Real Git analyses persist authoritative provenance, resolve, and replay exactly")
     func analyzePersistsAndReplaysLifecycle() throws {
         let fixture = try TemporaryLifecycleGitRepository()

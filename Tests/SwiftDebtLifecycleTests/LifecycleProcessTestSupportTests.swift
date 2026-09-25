@@ -30,4 +30,19 @@ struct LifecycleProcessTestSupportTests {
             // The helper reaped the process before returning this error.
         }
     }
+
+    @Test("A child ignoring SIGTERM is forcefully reaped")
+    func forcefullyReapsChildIgnoringTermination() throws {
+        do {
+            _ = try runLifecycleProcess(
+                executable: URL(fileURLWithPath: "/bin/sh"),
+                arguments: ["-c", "trap '' TERM; while :; do :; done"],
+                directory: FileManager.default.temporaryDirectory,
+                timeout: 0.25
+            )
+            Issue.record("Expected the subprocess deadline to expire")
+        } catch LifecycleProcessFailure.timedOut {
+            // The helper sent SIGKILL and reaped the child before returning.
+        }
+    }
 }

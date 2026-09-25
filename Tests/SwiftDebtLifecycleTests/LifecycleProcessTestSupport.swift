@@ -21,6 +21,7 @@ func runLifecycleProcess(
     executable: URL,
     arguments: [String],
     directory: URL,
+    environment: [String: String]? = nil,
     mergeStandardError: Bool = false,
     timeout: TimeInterval = 30
 ) throws -> LifecycleProcessResult {
@@ -48,6 +49,7 @@ func runLifecycleProcess(
     process.executableURL = executable
     process.arguments = arguments
     process.currentDirectoryURL = directory
+    process.environment = environment
     process.standardOutput = output
     process.standardError = mergeStandardError ? output : errors
     let finished = DispatchSemaphore(value: 0)
@@ -56,7 +58,7 @@ func runLifecycleProcess(
     if finished.wait(timeout: .now() + timeout) == .timedOut {
         if process.isRunning { process.terminate() }
         if finished.wait(timeout: .now() + 2) == .timedOut {
-            _ = kill(process.processIdentifier, SIGKILL)
+            if process.isRunning { _ = kill(process.processIdentifier, SIGKILL) }
             if finished.wait(timeout: .now() + 5) == .timedOut {
                 removeCaptureDirectory = false
                 throw LifecycleProcessFailure.couldNotReap(arguments)

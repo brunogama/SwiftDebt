@@ -7,11 +7,14 @@ struct LifecycleCLIRunResult {
     let standardError: String
 }
 
-func runLifecycleCLI(_ arguments: [String]) throws -> LifecycleCLIRunResult {
+func runLifecycleCLI(
+    _ arguments: [String], environment: [String: String]? = nil
+) throws -> LifecycleCLIRunResult {
     let result = try runLifecycleProcess(
         executable: lifecycleExecutableURL(),
         arguments: arguments,
-        directory: repositoryRoot
+        directory: repositoryRoot,
+        environment: environment
     )
     return LifecycleCLIRunResult(
         status: result.status,

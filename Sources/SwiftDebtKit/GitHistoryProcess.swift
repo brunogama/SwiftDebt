@@ -44,6 +44,9 @@ struct GitHistorySubprocessRunner: GitHistoryProcessRunning {
                 process.executableURL = executableURL
                 process.arguments = arguments
                 process.currentDirectoryURL = workingDirectory
+                process.environment = ProcessInfo.processInfo.environment.filter {
+                    !$0.key.hasPrefix("GIT_")
+                }
                 process.standardOutput = stdout
                 process.standardError = stderr
                 let termination = DispatchSemaphore(value: 0)
