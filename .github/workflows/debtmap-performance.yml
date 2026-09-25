@@ -31,6 +31,9 @@ jobs:
       - name: Verify Swift toolchain
         run: swift --version | grep 'Swift version 6.2'
 
+      - name: Verify benchmark harness
+        run: python3 -m unittest discover -s scripts/tests -p 'test_run_debtmap_benchmark.py'
+
       - name: Build candidate and reference analyzers
         shell: bash
         run: |

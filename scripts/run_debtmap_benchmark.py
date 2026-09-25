@@ -13,6 +13,7 @@ import statistics
 import subprocess
 import sys
 import time
+import uuid
 from pathlib import Path
 
 
@@ -198,9 +199,12 @@ def benchmark_result(
 
 def write_result(path: Path, result: dict[str, object]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_name(path.name + ".tmp")
-    temporary.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    os.replace(temporary, path)
+    temporary = path.with_name(path.name + ".tmp-" + uuid.uuid4().hex)
+    try:
+        temporary.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def main() -> int:
@@ -213,11 +217,15 @@ def main() -> int:
         argument_parser.error("a command is required after --")
     if (arguments.paired_output is None) != (arguments.paired_executable is None):
         argument_parser.error("--paired-output and --paired-executable must be used together")
-    if (
-        arguments.paired_output is not None
-        and arguments.output.resolve() == arguments.paired_output.resolve()
-    ):
-        argument_parser.error("--output and --paired-output must resolve to different paths")
+    if arguments.paired_output is not None:
+        output = arguments.output.resolve()
+        paired_output = arguments.paired_output.resolve()
+        same_spelling = str(output).casefold() == str(paired_output).casefold()
+        same_existing_file = (
+            output.exists() and paired_output.exists() and output.samefile(paired_output)
+        )
+        if same_spelling or same_existing_file:
+            argument_parser.error("--output and --paired-output must resolve to different paths")
     missing = [str(path) for path in arguments.input if not path.is_file()]
     if missing:
         argument_parser.error("input files do not exist: " + ", ".join(missing))
@@ -238,9 +246,15 @@ def main() -> int:
         "measuredRuns": arguments.runs,
         "measurementDesign": "paired-interleaved-v1" if paired_command else "sequential-v1",
     }
-    write_result(arguments.output, benchmark_result(arguments, primary_samples, metadata))
+    generation_id = uuid.uuid4().hex if paired_samples is not None else None
+    primary_result = benchmark_result(arguments, primary_samples, metadata)
+    if generation_id is not None:
+        primary_result["pairGenerationID"] = generation_id
+    write_result(arguments.output, primary_result)
     if arguments.paired_output is not None and paired_samples is not None:
-        write_result(arguments.paired_output, benchmark_result(arguments, paired_samples, metadata))
+        paired_result = benchmark_result(arguments, paired_samples, metadata)
+        paired_result["pairGenerationID"] = generation_id
+        write_result(arguments.paired_output, paired_result)
     return 0
 
 

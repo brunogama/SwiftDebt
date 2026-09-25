@@ -18,6 +18,29 @@ SPEC.loader.exec_module(BENCHMARK)
 
 
 class DebtmapBenchmarkPairingTests(unittest.TestCase):
+    def test_case_variant_outputs_are_rejected_before_measurement(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            input_path = root / "input.swift"
+            input_path.write_text("struct Input {}\n", encoding="utf-8")
+            arguments = [
+                "run_debtmap_benchmark.py", "--output", str(root / "result.json"),
+                "--paired-output", str(root / "RESULT.json"),
+                "--paired-executable", "candidate", "--input", str(input_path),
+                "--analyzer", "SwiftDebt", "--workload-family", "SwiftDebt",
+                "--command-fingerprint", "frozen", "--analysis-mode", "baseline",
+                "--optional-context", "none", "--", "reference",
+            ]
+            with (
+                mock.patch.object(sys, "argv", arguments),
+                mock.patch.object(BENCHMARK, "timed_command") as timed_command,
+                mock.patch.object(sys, "stderr", io.StringIO()),
+            ):
+                with self.assertRaises(SystemExit) as raised:
+                    BENCHMARK.main()
+            self.assertEqual(raised.exception.code, 2)
+            timed_command.assert_not_called()
+
     def test_paired_samples_are_adjacent_and_alternate_order(self) -> None:
         calls: list[str] = []
 
@@ -55,6 +78,24 @@ class DebtmapBenchmarkPairingTests(unittest.TestCase):
         self.assertEqual([sample["orderInPair"] for sample in candidate], [1, 2, 1, 2])
         self.assertEqual([sample["peakMemoryBytes"] for sample in reference], [100] * 4)
         self.assertEqual([sample["peakMemoryBytes"] for sample in candidate], [200] * 4)
+
+    def test_paired_executable_keeps_all_command_arguments(self) -> None:
+        calls: list[list[str]] = []
+
+        def timed(command: list[str]) -> tuple[float, int]:
+            calls.append(command)
+            return 1.0, 100
+
+        with mock.patch.object(BENCHMARK, "timed_command", side_effect=timed):
+            BENCHMARK.collect_samples(
+                ["reference", "analyze", "sources", "--format", "json", "--jobs", "1"],
+                warmups=0,
+                runs=2,
+                paired_command=["candidate", "analyze", "sources", "--format", "json", "--jobs", "1"],
+            )
+
+        self.assertEqual([command[1:] for command in calls], [calls[0][1:]] * 4)
+        self.assertEqual([command[0] for command in calls], ["reference", "candidate", "candidate", "reference"])
 
     def test_unpaired_sampling_keeps_existing_sequence(self) -> None:
         calls: list[str] = []
@@ -123,6 +164,8 @@ class DebtmapBenchmarkPairingTests(unittest.TestCase):
             candidate = json.loads(candidate_path.read_text(encoding="utf-8"))
             self.assertEqual(reference["workload"], candidate["workload"])
             self.assertEqual(reference["metadata"], candidate["metadata"])
+            self.assertEqual(reference["pairGenerationID"], candidate["pairGenerationID"])
+            self.assertEqual(len(reference["pairGenerationID"]), 32)
             self.assertEqual(reference["metadata"]["measurementDesign"], "paired-interleaved-v1")
             self.assertEqual(reference["wallClockSecondsMedian"], 1.0)
             self.assertEqual(candidate["wallClockSecondsMedian"], 1.1)

@@ -57,6 +57,7 @@
     "Record elapsed wall-clock seconds and peak resident memory from the platform time tool.",
     "Record phase-wall-clock nanoseconds from the analyzer profile output for discovery, parsing, structural evidence, graph, coverage, repository history, functional evidence, scoring, aggregation and rendering when those phases run.",
     "Report every raw sample with its pair index and order, plus the median, minimum and maximum with the Swift version, OS, CPU model and memory size.",
+    "Stamp paired result files with one shared generation ID; the gate rejects mixed generations after an interrupted publication.",
     "Use medians for CI regression gates and include all raw samples when requesting an approved exception.",
     "For the short baseline stage, fail wall-clock only when regression exceeds both 10 percent and the approved 0.010 second absolute noise floor.",
     "Run .github/workflows/debtmap-performance.yml on pull requests to enforce both regression budgets against equivalent frozen SwiftDebt workloads."

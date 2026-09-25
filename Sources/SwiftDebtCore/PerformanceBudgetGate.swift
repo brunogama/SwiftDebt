@@ -27,15 +27,18 @@ public struct PerformanceBenchmarkResult: Codable, Equatable, Sendable {
     public let workload: PerformanceWorkloadIdentity
     public let wallClockSecondsMedian: Double
     public let peakMemoryBytesMedian: UInt64
+    public let pairGenerationID: String?
 
     public init(
         workload: PerformanceWorkloadIdentity,
         wallClockSecondsMedian: Double,
-        peakMemoryBytesMedian: UInt64
+        peakMemoryBytesMedian: UInt64,
+        pairGenerationID: String? = nil
     ) {
         self.workload = workload
         self.wallClockSecondsMedian = wallClockSecondsMedian
         self.peakMemoryBytesMedian = peakMemoryBytesMedian
+        self.pairGenerationID = pairGenerationID
     }
 }
 
@@ -97,7 +100,10 @@ public enum PerformanceBudgetGate: Sendable {
         candidate: PerformanceBenchmarkResult,
         budget: PerformanceRegressionBudget
     ) -> PerformanceBudgetEvaluation {
-        let differences = incomparableReasons(baseline.workload, candidate.workload)
+        var differences = incomparableReasons(baseline.workload, candidate.workload)
+        if baseline.pairGenerationID != candidate.pairGenerationID {
+            differences.append("measurement pair generation differs")
+        }
         guard differences.isEmpty else {
             return PerformanceBudgetEvaluation(
                 comparable: false,
