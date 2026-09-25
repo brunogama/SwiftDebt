@@ -41,6 +41,7 @@ extension CLIOptions {
             "--config", "--format", "--output", "--profile-output", "--jobs", "--manifest", "--stamp", "--exclude",
             "--lcov", "--coverage", "--preset", "--aggregation", "--top", "--head", "--tail", "--min-score",
             "--min-priority", "--category", "--level", "--max-score", "--debt-reference-time", "--max-file-bytes",
+            "--repository-evidence",
         ]
         while index < arguments.count {
             let argument = arguments[index]
@@ -155,7 +156,8 @@ extension CLIOptions {
             debtReferenceTime: try parseDebtReferenceTime(values["--debt-reference-time"]),
             profileOutputPath: values["--profile-output"],
             pluginEvidenceLimitations: pluginEvidenceLimitations,
-            maximumFileBytes: maximumFileBytes
+            maximumFileBytes: maximumFileBytes,
+            repositoryEvidenceOutputPath: values["--repository-evidence"]
         )
         let maxScore = try optionalScore(values["--max-score"], named: "--max-score")
         if validates, maxScore == nil { throw CLIError("Missing required --max-score for debt validate") }

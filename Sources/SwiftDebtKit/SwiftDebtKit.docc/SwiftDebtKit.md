@@ -24,6 +24,8 @@ The built-in <doc:CodeSmells> rules report concrete syntax signals and suggest S
 - <doc:LongParameterList>
 - <doc:GlobalData>
 - <doc:LargeClass>
+- <doc:DataClumps>
+- <doc:RepeatedSwitches>
 
 ---
 

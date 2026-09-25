@@ -87,16 +87,26 @@ public struct AnalysisService: Sendable {
         } else {
             ruleAnalysisSnapshot = nil
         }
+        let repositoryEvidenceReport = try request.repositoryEvidenceOutputPath.map { _ in
+            return try RepositoryAnalyzer().analyze(
+                sources,
+                versionControl: RepositoryVersionControlInspector().identity(
+                    at: root,
+                    excluding: generatedOutputURLs
+                )
+            )
+        }
         let report = try await Analyzer().analyze(
             sources, options: options, jobs: request.jobs ?? configuration.jobs, phaseSink: profiler)
         let debtOptions =
             request.debtAnalysisOptions ?? configuration.debtAnalysis
             ?? (request.enableDebtAnalysis || configuration.debtValidation != nil ? DebtAnalysisOptions() : nil)
+        let lcovURL = resolvedInputURL(request.lcovPath ?? configuration.lcovPath, root: root)
         let rankedDebtAnalysis = makeRankedDebtAnalysis(
             report: report,
             root: root,
             options: debtOptions,
-            lcovPath: request.lcovPath ?? configuration.lcovPath,
+            lcovURL: lcovURL,
             referenceTime: request.debtReferenceTime ?? configuration.debtReferenceTime,
             profiler: profiler,
             pluginEvidenceLimitations: request.pluginEvidenceLimitations
@@ -117,66 +127,89 @@ public struct AnalysisService: Sendable {
                     rankedDebtAnalysis, format: format, graph: report.dependencyGraph)
             }
             if let ruleAnalysisSnapshot, format == .text {
-                let complete = report.complete && ruleAnalysisSnapshot.isComplete
+                let complete =
+                    report.complete && ruleAnalysisSnapshot.isComplete
+                    && (repositoryEvidenceReport?.isComplete ?? true)
                 let base = ReportRenderer().renderText(report, complete: complete)
-                return base + "\n" + RuleAnalysisRenderer().render(ruleAnalysisSnapshot)
+                let rules = RuleAnalysisRenderer().render(ruleAnalysisSnapshot)
+                let repository =
+                    repositoryEvidenceReport.map {
+                        "\n" + RepositoryEvidenceRenderer().text($0)
+                    } ?? ""
+                return base + "\n" + rules + repository
             }
             let base = try ReportRenderer().render(report, format: format, root: root.path)
             return format == .diagnostics ? base + debtValidationDiagnostics : base
         }()
-        var protectedPaths = Set(selection.entries.map { URL(fileURLWithPath: $0.path).resolvingSymlinksInPath().path })
-        protectedPaths.insert(configurationURL.resolvingSymlinksInPath().path)
+        var protectedPaths = Set(selection.entries.map { filesystemPathIdentity(URL(fileURLWithPath: $0.path)) })
+        protectedPaths.insert(filesystemPathIdentity(configurationURL))
         if let manifest = request.manifestPath {
-            protectedPaths.insert(URL(fileURLWithPath: manifest).resolvingSymlinksInPath().path)
+            protectedPaths.insert(filesystemPathIdentity(URL(fileURLWithPath: manifest)))
+        }
+        if let lcovURL {
+            protectedPaths.insert(filesystemPathIdentity(lcovURL))
         }
         if let lifecycleArtifactURL {
+            let lifecycleArtifactIdentity = filesystemPathIdentity(lifecycleArtifactURL)
             var isDirectory: ObjCBool = false
             let artifactExists = FileManager.default.fileExists(
                 atPath: lifecycleArtifactURL.path,
                 isDirectory: &isDirectory
             )
-            guard !protectedPaths.contains(lifecycleArtifactURL.path), lifecycleArtifactURL.pathExtension != "swift",
+            guard !protectedPaths.contains(lifecycleArtifactIdentity),
+                lifecycleArtifactURL.pathExtension.lowercased() != "swift",
                 !artifactExists || !isDirectory.boolValue
             else {
                 throw LifecycleAnalysisError.invalidArtifactPath
             }
-            protectedPaths.insert(lifecycleArtifactURL.path)
-        }
-        if let output = request.outputPath {
-            let url = URL(fileURLWithPath: output).standardizedFileURL.resolvingSymlinksInPath()
-            guard !protectedPaths.contains(url.path), url.pathExtension != "swift" else {
-                throw WorkspaceError(
-                    "Refusing to overwrite a source, configuration, manifest, or Swift file with a report")
-            }
-            try write(rendered, to: url)
-            protectedPaths.insert(url.path)
+            protectedPaths.insert(lifecycleArtifactIdentity)
         }
         let profile = profiler?.profile()
-        if let profileOutput = request.profileOutputPath, let profile {
-            let url = URL(fileURLWithPath: profileOutput).standardizedFileURL.resolvingSymlinksInPath()
-            guard !protectedPaths.contains(url.path), url.pathExtension != "swift" else {
-                throw WorkspaceError(
-                    "Refusing to overwrite a source, configuration, manifest, report, or Swift file with a profile")
-            }
+        let repositoryRendered = try repositoryEvidenceReport.map { try RepositoryEvidenceRenderer().json($0) }
+        let reportURL = try reserveOutput(
+            request.outputPath,
+            role: "report",
+            protectedPaths: &protectedPaths
+        )
+        let repositoryURL = try reserveOutput(
+            request.repositoryEvidenceOutputPath,
+            role: "repository evidence",
+            protectedPaths: &protectedPaths
+        )
+        let profileURL = try reserveOutput(
+            profile == nil ? nil : request.profileOutputPath,
+            role: "profile",
+            protectedPaths: &protectedPaths
+        )
+        if let reportURL {
+            try write(rendered, to: reportURL)
+        }
+        if let repositoryURL, let repositoryRendered {
+            try write(repositoryRendered, to: repositoryURL)
+        }
+        if let profileURL, let profile {
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
             let data = try encoder.encode(profile)
             try FileManager.default.createDirectory(
-                at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try data.write(to: url, options: .atomic)
-            protectedPaths.insert(url.path)
+                at: profileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try data.write(to: profileURL, options: .atomic)
         }
         let debtValidationFailed = debtValidationFailed(configuration.debtValidation, analysis: rankedDebtAnalysis)
         let ruleAnalysisIncomplete = ruleAnalysisSnapshot.map { !$0.isComplete } ?? false
+        let repositoryAnalysisIncomplete = repositoryEvidenceReport.map { !$0.isComplete } ?? false
         let status: Int32 =
-            !report.complete || ruleAnalysisIncomplete
+            !report.complete || ruleAnalysisIncomplete || repositoryAnalysisIncomplete
             ? 2
-            : ((failOnViolation && (report.hasViolations || !(ruleAnalysisSnapshot?.detections.isEmpty ?? true)))
+            : ((failOnViolation
+                && (report.hasViolations || !(ruleAnalysisSnapshot?.detections.isEmpty ?? true)))
                 || debtValidationFailed ? 1 : 0)
         if let stamp = request.stampPath, status == 0 {
             let url = URL(fileURLWithPath: stamp).standardizedFileURL.resolvingSymlinksInPath()
             let content = "// Generated by SwiftDebt: analysis completed. No runtime declarations.\n"
-            guard url.lastPathComponent == "SwiftDebt.analysis.swift", !protectedPaths.contains(url.path) else {
+            guard url.lastPathComponent == "SwiftDebt.analysis.swift",
+                !protectedPaths.contains(filesystemPathIdentity(url))
+            else {
                 throw WorkspaceError("Invalid build stamp path; expected an unprotected SwiftDebt.analysis.swift")
             }
             if FileManager.default.fileExists(atPath: url.path) {
@@ -207,7 +240,8 @@ public struct AnalysisService: Sendable {
             rankedDebtAnalysis: rankedDebtAnalysis,
             profile: profile,
             ruleAnalysisSnapshot: ruleAnalysisSnapshot,
-            lifecycleReduction: lifecycleReduction
+            lifecycleReduction: lifecycleReduction,
+            repositoryEvidenceReport: repositoryEvidenceReport
         )
     }
 
@@ -228,7 +262,12 @@ public struct AnalysisService: Sendable {
             urls.append(lifecycleArtifactURL)
             urls.append(URL(fileURLWithPath: lifecycleArtifactURL.path + ".lock"))
         }
-        for path in [request.outputPath, request.profileOutputPath, request.stampPath] {
+        for path in [
+            request.outputPath,
+            request.repositoryEvidenceOutputPath,
+            request.profileOutputPath,
+            request.stampPath,
+        ] {
             guard let path, !path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { continue }
             urls.append(URL(fileURLWithPath: path).standardizedFileURL.resolvingSymlinksInPath())
         }
@@ -239,7 +278,7 @@ public struct AnalysisService: Sendable {
         report: AnalysisReport,
         root: URL,
         options: DebtAnalysisOptions?,
-        lcovPath: String?,
+        lcovURL: URL?,
         referenceTime: Date?,
         profiler: AnalysisProfiler?,
         pluginEvidenceLimitations: Bool
@@ -247,14 +286,10 @@ public struct AnalysisService: Sendable {
         guard let options else { return nil }
         let entities = report.debtItems.map(\.entity)
         var evidence: [DebtEvidence] = []
-        if let lcovPath {
+        if let lcovURL {
             profiler?.begin(.coverage)
-            let url =
-                (lcovPath as NSString).isAbsolutePath
-                ? URL(fileURLWithPath: lcovPath)
-                : root.appendingPathComponent(lcovPath)
             do {
-                let text = try String(contentsOf: url, encoding: .utf8)
+                let text = try String(contentsOf: lcovURL, encoding: .utf8)
                 let lcov = LcovParser().parse(text)
                 evidence +=
                     CoverageMatcher().match(report: lcov, entities: entities, repositoryRoot: root.path).evidence
@@ -379,4 +414,52 @@ public struct AnalysisService: Sendable {
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try content.write(to: url, atomically: true, encoding: .utf8)
     }
+
+    private func reserveOutput(
+        _ path: String?,
+        role: String,
+        protectedPaths: inout Set<String>
+    ) throws -> URL? {
+        guard let path else { return nil }
+        let url = URL(fileURLWithPath: path).standardizedFileURL.resolvingSymlinksInPath()
+        let identity = filesystemPathIdentity(url)
+        guard !protectedPaths.contains(identity), url.pathExtension.lowercased() != "swift" else {
+            throw WorkspaceError(
+                "Refusing to overwrite a source, configuration, manifest, another output, or Swift file with \(role)"
+            )
+        }
+        protectedPaths.insert(identity)
+        return url
+    }
+
+    private func resolvedInputURL(_ path: String?, root: URL) -> URL? {
+        guard let path else { return nil }
+        return (path as NSString).isAbsolutePath
+            ? URL(fileURLWithPath: path)
+            : root.appendingPathComponent(path)
+    }
+
+    private func filesystemPathIdentity(_ url: URL) -> String {
+        let resolved = url.standardizedFileURL.resolvingSymlinksInPath()
+        #if os(macOS)
+            if volumeUsesCaseInsensitiveNames(at: resolved) {
+                return resolved.path.precomposedStringWithCanonicalMapping.lowercased(
+                    with: Locale(identifier: "en_US_POSIX"))
+            }
+        #endif
+        return resolved.path
+    }
+
+    #if os(macOS)
+        private func volumeUsesCaseInsensitiveNames(at url: URL) -> Bool {
+            var existing = url
+            while !FileManager.default.fileExists(atPath: existing.path) {
+                let parent = existing.deletingLastPathComponent()
+                guard parent.path != existing.path else { return false }
+                existing = parent
+            }
+            let values = try? existing.resourceValues(forKeys: [.volumeSupportsCaseSensitiveNamesKey])
+            return values?.volumeSupportsCaseSensitiveNames == false
+        }
+    #endif
 }

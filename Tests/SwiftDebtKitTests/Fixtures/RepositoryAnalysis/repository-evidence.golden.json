@@ -1,0 +1,311 @@
+{
+  "diagnostics" : [
+
+  ],
+  "generator" : "SwiftDebt 0.8.1",
+  "reportKind" : "swiftdebt-repository-evidence",
+  "rules" : [
+    {
+      "capabilities" : [
+        {
+          "capability" : "exact-data-clump-enumeration",
+          "provider" : {
+            "name" : "SwiftSyntax",
+            "version" : "602.0.0"
+          },
+          "state" : "available"
+        }
+      ],
+      "completionState" : "complete",
+      "detections" : [
+        {
+          "explanation" : {
+            "comparedUnits" : [
+              {
+                "displayName" : "Workspace.DeliveryAddress",
+                "kind" : "nominal-properties",
+                "location" : {
+                  "column" : 1,
+                  "file" : "Models.swift",
+                  "line" : 1
+                }
+              },
+              {
+                "displayName" : "Workspace.scheduleDelivery",
+                "kind" : "function-parameters",
+                "location" : {
+                  "column" : 1,
+                  "file" : "Operations.swift",
+                  "line" : 1
+                }
+              },
+              {
+                "displayName" : "Workspace.quoteDelivery",
+                "kind" : "function-parameters",
+                "location" : {
+                  "column" : 1,
+                  "file" : "Operations.swift",
+                  "line" : 9
+                }
+              }
+            ],
+            "decisiveFacts" : [
+              {
+                "evidenceClass" : "metric",
+                "kind" : "occurrence-count",
+                "locations" : [
+                  {
+                    "column" : 1,
+                    "file" : "Models.swift",
+                    "line" : 1
+                  },
+                  {
+                    "column" : 1,
+                    "file" : "Operations.swift",
+                    "line" : 1
+                  },
+                  {
+                    "column" : 1,
+                    "file" : "Operations.swift",
+                    "line" : 9
+                  }
+                ],
+                "value" : "3"
+              },
+              {
+                "evidenceClass" : "structural",
+                "kind" : "shared-elements",
+                "locations" : [
+                  {
+                    "column" : 1,
+                    "file" : "Models.swift",
+                    "line" : 1
+                  },
+                  {
+                    "column" : 1,
+                    "file" : "Operations.swift",
+                    "line" : 1
+                  },
+                  {
+                    "column" : 1,
+                    "file" : "Operations.swift",
+                    "line" : 9
+                  }
+                ],
+                "value" : "countryCode: String, customerID: String, postalCode: String"
+              }
+            ],
+            "documentationURL" : "https://brunogama.github.io/SwiftDebt/documentation/swiftdebtkit/dataclumps",
+            "evidenceClasses" : [
+              "syntax",
+              "metric",
+              "structural"
+            ],
+            "limitations" : [
+              "Type compatibility is exact normalized syntax, not compiler-resolved type identity.",
+              "Equal names and type spellings can represent unrelated concepts in different binding contexts."
+            ],
+            "predicate" : "Observed 3 shared elements in 3 units; required at least 3 elements in 2 units.",
+            "refactoringDirection" : "Introduce a parameter object or value type that owns this repeated group."
+          },
+          "primaryLocation" : {
+            "column" : 1,
+            "file" : "Models.swift",
+            "line" : 1
+          },
+          "selector" : {
+            "evidenceFingerprint" : {
+              "algorithm" : "sha256",
+              "value" : "22a215fd271f2bcd34fa46de6bdd9a6f09df77ac7a0bb9934e5cfc12b13acab3"
+            },
+            "location" : {
+              "column" : 1,
+              "file" : "Models.swift",
+              "line" : 1
+            },
+            "ruleIdentity" : "swiftdebt.refactoring.data-clumps",
+            "semanticRevision" : 2,
+            "snapshotDigest" : {
+              "algorithm" : "sha256",
+              "value" : "477a60411ee25fc0ce5a5a68162c1bff32efdcabb52c827f31bdd9c27cee77a5"
+            }
+          },
+          "summary" : "3 compatible elements recur across 3 declaration units.",
+          "title" : "Data Clumps"
+        }
+      ],
+      "issues" : [
+
+      ],
+      "name" : "Data Clumps",
+      "predicate" : "A closed group of at least the configured number of identical local-name and normalized-type elements occurs in at least the configured number of parameter or property units.",
+      "qualification" : "Research",
+      "ruleIdentity" : "swiftdebt.refactoring.data-clumps",
+      "semanticRevision" : 2
+    },
+    {
+      "capabilities" : [
+        {
+          "capability" : "exact-repeated-switch-enumeration",
+          "provider" : {
+            "name" : "SwiftSyntax",
+            "version" : "602.0.0"
+          },
+          "state" : "available"
+        }
+      ],
+      "completionState" : "complete",
+      "detections" : [
+        {
+          "explanation" : {
+            "comparedUnits" : [
+              {
+                "displayName" : "switch mode in Workspace.FulfillmentCoordinator",
+                "kind" : "switch-statement",
+                "location" : {
+                  "column" : 9,
+                  "file" : "Switches.swift",
+                  "line" : 5
+                }
+              },
+              {
+                "displayName" : "switch mode in Workspace.FulfillmentCoordinator",
+                "kind" : "switch-statement",
+                "location" : {
+                  "column" : 9,
+                  "file" : "Switches.swift",
+                  "line" : 14
+                }
+              }
+            ],
+            "decisiveFacts" : [
+              {
+                "evidenceClass" : "structural",
+                "kind" : "discriminator",
+                "locations" : [
+                  {
+                    "column" : 9,
+                    "file" : "Switches.swift",
+                    "line" : 5
+                  },
+                  {
+                    "column" : 9,
+                    "file" : "Switches.swift",
+                    "line" : 14
+                  }
+                ],
+                "value" : "mode"
+              },
+              {
+                "evidenceClass" : "structural",
+                "kind" : "ordered-case-shape",
+                "locations" : [
+                  {
+                    "column" : 9,
+                    "file" : "Switches.swift",
+                    "line" : 5
+                  },
+                  {
+                    "column" : 9,
+                    "file" : "Switches.swift",
+                    "line" : 14
+                  }
+                ],
+                "value" : "case.pickup: | case.delivery:"
+              },
+              {
+                "evidenceClass" : "syntax",
+                "kind" : "textual-scope",
+                "locations" : [
+                  {
+                    "column" : 9,
+                    "file" : "Switches.swift",
+                    "line" : 5
+                  },
+                  {
+                    "column" : 9,
+                    "file" : "Switches.swift",
+                    "line" : 14
+                  }
+                ],
+                "value" : "Workspace.FulfillmentCoordinator"
+              }
+            ],
+            "documentationURL" : "https://brunogama.github.io/SwiftDebt/documentation/swiftdebtkit/repeatedswitches",
+            "evidenceClasses" : [
+              "syntax",
+              "structural"
+            ],
+            "limitations" : [
+              "Discriminator identity is exact syntax within a textual module/type scope, not compiler name binding.",
+              "Case bodies do not participate in the dispatch-shape key."
+            ],
+            "predicate" : "Observed 2 switches with the same simple discriminator and ordered case labels; required at least 2.",
+            "refactoringDirection" : "Centralize the dispatch or replace the repeated type/code distinction with polymorphic behavior."
+          },
+          "primaryLocation" : {
+            "column" : 9,
+            "file" : "Switches.swift",
+            "line" : 5
+          },
+          "selector" : {
+            "evidenceFingerprint" : {
+              "algorithm" : "sha256",
+              "value" : "8d866cb9be5ba8e21430f91754ba612c557da5529e8c617d021c86cb7e635850"
+            },
+            "location" : {
+              "column" : 9,
+              "file" : "Switches.swift",
+              "line" : 5
+            },
+            "ruleIdentity" : "swiftdebt.refactoring.repeated-switches",
+            "semanticRevision" : 2,
+            "snapshotDigest" : {
+              "algorithm" : "sha256",
+              "value" : "477a60411ee25fc0ce5a5a68162c1bff32efdcabb52c827f31bdd9c27cee77a5"
+            }
+          },
+          "summary" : "The same 2-branch switch shape recurs 2 times for mode.",
+          "title" : "Repeated Switches"
+        }
+      ],
+      "issues" : [
+
+      ],
+      "name" : "Repeated Switches",
+      "predicate" : "At least the configured number of switches in one textual module/type scope have the same simple discriminator and ordered normalized case-label shape.",
+      "qualification" : "Research",
+      "ruleIdentity" : "swiftdebt.refactoring.repeated-switches",
+      "semanticRevision" : 2
+    }
+  ],
+  "schemaVersion" : 1,
+  "snapshot" : {
+    "configuration" : {
+      "maximumAnalysisUnitsPerRule" : 50000,
+      "maximumDataClumpComparisons" : 250000,
+      "maximumDetectionsPerRule" : 10000,
+      "maximumSourceFiles" : 10000,
+      "maximumTotalSourceBytes" : 268435456,
+      "minimumDataClumpElements" : 3,
+      "minimumDataClumpOccurrences" : 2,
+      "minimumRepeatedSwitchOccurrences" : 2
+    },
+    "contentDigest" : {
+      "algorithm" : "sha256",
+      "value" : "477a60411ee25fc0ce5a5a68162c1bff32efdcabb52c827f31bdd9c27cee77a5"
+    },
+    "sourceFiles" : [
+      "Models.swift",
+      "Operations.swift",
+      "Switches.swift"
+    ]
+  },
+  "summary" : {
+    "completeRuleCount" : 2,
+    "currentSnapshotNotice" : "Detections describe only this analyzed source snapshot and are not durable Findings or lifecycle state.",
+    "detectionCount" : 2,
+    "incompleteRuleCount" : 0,
+    "sourceFileCount" : 3
+  }
+}
