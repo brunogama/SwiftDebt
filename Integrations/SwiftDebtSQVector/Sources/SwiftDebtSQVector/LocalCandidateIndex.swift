@@ -12,6 +12,8 @@ public enum LocalCandidateIndexIdentityField: String, Codable, Sendable {
     case model
     case modelRevision
     case projectionRevision
+    case sqVectorPackageVersion
+    case sqVectorPackageRevision
 }
 
 public enum LocalCandidateVersionIdentity: Codable, Equatable, Sendable {
@@ -28,7 +30,7 @@ public enum LocalCandidateVersionIdentity: Codable, Equatable, Sendable {
 }
 
 public struct LocalCandidateIndexIdentity: Codable, Equatable, Sendable {
-    public static let currentSchemaVersion = 1
+    public static let currentSchemaVersion = 2
 
     public let schemaVersion: Int
     public let namespace: String
@@ -39,6 +41,8 @@ public struct LocalCandidateIndexIdentity: Codable, Equatable, Sendable {
     public let dimensions: Int
     public let metric: LocalCandidateDistanceMetric
     public let projectionRevision: String
+    public let sourceSnapshotDigest: LocalCandidateSourceSnapshotDigest
+    public let sqVectorPackage: SQVectorPackageIdentity
 
     public init(
         namespace: String,
@@ -48,7 +52,9 @@ public struct LocalCandidateIndexIdentity: Codable, Equatable, Sendable {
         modelRevision: LocalCandidateVersionIdentity,
         dimensions: Int,
         metric: LocalCandidateDistanceMetric,
-        projectionRevision: String
+        projectionRevision: String,
+        sourceSnapshotDigest: LocalCandidateSourceSnapshotDigest,
+        sqVectorPackage: SQVectorPackageIdentity
     ) throws {
         self.init(
             schemaVersion: Self.currentSchemaVersion,
@@ -59,7 +65,9 @@ public struct LocalCandidateIndexIdentity: Codable, Equatable, Sendable {
             modelRevision: modelRevision,
             dimensions: dimensions,
             metric: metric,
-            projectionRevision: projectionRevision
+            projectionRevision: projectionRevision,
+            sourceSnapshotDigest: sourceSnapshotDigest,
+            sqVectorPackage: sqVectorPackage
         )
         try validate()
     }
@@ -73,7 +81,9 @@ public struct LocalCandidateIndexIdentity: Codable, Equatable, Sendable {
         modelRevision: LocalCandidateVersionIdentity,
         dimensions: Int,
         metric: LocalCandidateDistanceMetric,
-        projectionRevision: String
+        projectionRevision: String,
+        sourceSnapshotDigest: LocalCandidateSourceSnapshotDigest,
+        sqVectorPackage: SQVectorPackageIdentity
     ) {
         self.schemaVersion = schemaVersion
         self.namespace = namespace
@@ -84,6 +94,8 @@ public struct LocalCandidateIndexIdentity: Codable, Equatable, Sendable {
         self.dimensions = dimensions
         self.metric = metric
         self.projectionRevision = projectionRevision
+        self.sourceSnapshotDigest = sourceSnapshotDigest
+        self.sqVectorPackage = sqVectorPackage
     }
 
     func validate() throws {

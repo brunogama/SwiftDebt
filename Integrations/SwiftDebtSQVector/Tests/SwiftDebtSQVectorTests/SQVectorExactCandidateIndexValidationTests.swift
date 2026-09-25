@@ -24,6 +24,19 @@
                 try makeIdentity(dimensions: 3),
                 try makeIdentity(metric: .l2),
                 try makeIdentity(projectionRevision: "other"),
+                try makeIdentity(
+                    sourceSnapshotDigest: makeSourceSnapshotDigest(
+                        value: String(repeating: "c", count: 64)
+                    )
+                ),
+                try makeIdentity(
+                    sqVectorPackage: makeSQVectorPackageIdentity(version: "test-version-2")
+                ),
+                try makeIdentity(
+                    sqVectorPackage: makeSQVectorPackageIdentity(
+                        revision: String(repeating: "d", count: 40)
+                    )
+                ),
             ]
 
             for expected in incompatible {
@@ -66,6 +79,108 @@
             #expect(throws: LocalCandidateIndexError.emptyIdentityField(.modelRevision)) {
                 _ = try makeIdentity(modelRevision: .available(""))
             }
+            #expect(
+                throws: LocalCandidateIndexError.emptyIdentityField(.sqVectorPackageVersion)
+            ) {
+                _ = try makeSQVectorPackageIdentity(version: " ")
+            }
+            #expect(
+                throws: LocalCandidateIndexError.invalidSQVectorPackageRevision("main")
+            ) {
+                _ = try makeSQVectorPackageIdentity(revision: "main")
+            }
+            #expect(
+                throws: LocalCandidateIndexError.invalidSourceSnapshotDigest("not-a-digest")
+            ) {
+                _ = try makeSourceSnapshotDigest(value: "not-a-digest")
+            }
+        }
+
+        @Test("rejects schema v1 storage instead of inferring missing provenance")
+        func rejectsSchemaV1Storage() async throws {
+            let url = temporaryIndexURL()
+            defer { removeIndexFiles(at: url) }
+            let storage = try await SQLiteDatabase.open(at: url.path)
+            try await storage.execute(
+                sql: """
+                    CREATE TABLE swiftdebt_index_manifest (
+                        singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+                        schema_version INTEGER NOT NULL,
+                        namespace TEXT NOT NULL,
+                        provider TEXT NOT NULL,
+                        provider_version_state TEXT NOT NULL,
+                        provider_version_value TEXT,
+                        model TEXT NOT NULL,
+                        model_revision_state TEXT NOT NULL,
+                        model_revision_value TEXT,
+                        dimensions INTEGER NOT NULL,
+                        metric TEXT NOT NULL,
+                        projection_revision TEXT NOT NULL
+                    )
+                    """
+            )
+            try await storage.execute(
+                sql: """
+                    CREATE TABLE swiftdebt_candidates (
+                        id TEXT PRIMARY KEY NOT NULL,
+                        embedding BLOB NOT NULL,
+                        metadata_json BLOB NOT NULL
+                    )
+                    """
+            )
+            try await storage.execute(
+                sql: """
+                    CREATE TABLE swiftdebt_candidate_metadata (
+                        candidate_id TEXT NOT NULL
+                            REFERENCES swiftdebt_candidates(id) ON DELETE CASCADE,
+                        key TEXT NOT NULL,
+                        value TEXT NOT NULL,
+                        PRIMARY KEY (candidate_id, key)
+                    )
+                    """
+            )
+            try await storage.execute(
+                sql: """
+                    INSERT INTO swiftdebt_index_manifest (
+                        singleton, schema_version, namespace, provider,
+                        provider_version_state, provider_version_value,
+                        model, model_revision_state, model_revision_value,
+                        dimensions, metric, projection_revision
+                    ) VALUES (1, 1, 'snapshot', 'provider', 'available', 'v1',
+                        'model', 'available', 'r1', 2, 'cosine', 'projection-v1')
+                    """
+            )
+            try await storage.close()
+
+            await #expect(throws: LocalCandidateIndexError.unsupportedSchemaVersion(1)) {
+                _ = try await SQVectorExactCandidateIndex.open(
+                    at: url,
+                    identity: makeIdentity()
+                )
+            }
+
+            let unchanged = try await SQLiteDatabase.open(at: url.path)
+            let columns = try await unchanged.fetchRows(
+                sql: "PRAGMA table_info(swiftdebt_index_manifest)"
+            )
+            #expect(
+                columns.compactMap { $0["name"]?.stringValue }
+                    == [
+                        "singleton",
+                        "schema_version",
+                        "namespace",
+                        "provider",
+                        "provider_version_state",
+                        "provider_version_value",
+                        "model",
+                        "model_revision_state",
+                        "model_revision_value",
+                        "dimensions",
+                        "metric",
+                        "projection_revision",
+                    ]
+            )
+            try await unchanged.close()
         }
 
         @Test("rejects invalid vector values before storage or search")

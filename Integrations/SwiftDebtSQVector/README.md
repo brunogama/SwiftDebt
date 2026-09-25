@@ -55,12 +55,12 @@ work budget.
 
 ## Compatibility identity
 
-Schema version 1 persists the following identity in the database manifest and
+Schema version 2 persists the following identity in the database manifest and
 requires exact equality whenever the index is reopened:
 
 | Field | Meaning |
 |---|---|
-| `namespace` | Caller-owned repository and source-snapshot namespace |
+| `namespace` | Caller-owned index namespace |
 | `provider` | Embedding provider name |
 | `providerVersion` | Provider implementation version or explicit `unavailable` |
 | `model` | Model or vocabulary identity |
@@ -68,6 +68,9 @@ requires exact equality whenever the index is reopened:
 | `dimensions` | Vector dimension |
 | `metric` | Cosine or L2 |
 | `projectionRevision` | Semantic projection revision |
+| `sourceSnapshotDigest` | Typed SHA-256 digest of the exact source snapshot |
+| `sqVectorPackage.version` | Exact published SQVector package version |
+| `sqVectorPackage.revision` | Exact immutable SQVector source revision |
 | `schemaVersion` | Adapter storage schema version |
 
 An unavailable provider version or model revision is preserved as unavailable;
@@ -75,6 +78,11 @@ the adapter does not invent an identifier. That state cannot establish
 cross-environment embedding compatibility. Callers must select a new namespace
 or rebuild derived state whenever an unreported provider or model may have
 changed.
+
+Schema v1 storage is rejected because it cannot establish source-snapshot or
+SQVector-package compatibility. The caller must rebuild it with a complete v2
+identity. The adapter does not infer a package version or revision from a local
+checkout.
 
 ---
 
@@ -99,14 +107,13 @@ The current exact path also has these limits:
   [SQVector issue 346](https://github.com/brunogama/sqvector-swift/issues/346);
 - the `SQVectorStatic` dependency graph still compiles unrelated SQVector
   modules and has not passed the minimal-slice or binary-size qualification;
-- package version and SQVector source revision are documented but are not yet
-  persisted as compatibility fields in this adapter manifest;
-- source-snapshot compatibility depends on the caller supplying a precise
-  namespace; and
+- no published SQVector package revision currently exposes `SQVectorStatic`, so
+  there is no truthful remote package identity to pin in this integration; and
 - ANN recall, hybrid retrieval, scale, latency, memory, index-size, and frozen
   corpus gates remain Research.
 
 The local contract covers the exact insert, replacement, deletion, persistence,
 dimension, namespace, provider, model, metric, projection, bounded retrieval,
-and filtering behaviors in FR-24. It is an exact reference adapter, not evidence
-that the complete R2 similarity and index gate has passed.
+source-snapshot, package-compatibility, and filtering behaviors in FR-24 and
+FR-25. It is an exact reference adapter, not evidence that the complete R2
+similarity and index gate has passed.

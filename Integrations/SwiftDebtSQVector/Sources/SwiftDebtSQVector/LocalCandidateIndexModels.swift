@@ -63,6 +63,8 @@ public enum LocalCandidateIndexError: Error, Equatable, Sendable {
     case dimensionMismatch(expected: Int, actual: Int)
     case nonFiniteVectorValue(index: Int)
     case zeroNormCosineVector
+    case invalidSourceSnapshotDigest(String)
+    case invalidSQVectorPackageRevision(String)
     case incompatibleIndex(
         expected: LocalCandidateIndexIdentity,
         actual: LocalCandidateIndexIdentity

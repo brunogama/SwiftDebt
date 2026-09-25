@@ -22,7 +22,11 @@
                                 model_revision_value TEXT,
                                 dimensions INTEGER NOT NULL,
                                 metric TEXT NOT NULL,
-                                projection_revision TEXT NOT NULL
+                                projection_revision TEXT NOT NULL,
+                                source_snapshot_digest_algorithm TEXT NOT NULL,
+                                source_snapshot_digest_value TEXT NOT NULL,
+                                sqvector_package_version TEXT NOT NULL,
+                                sqvector_package_revision TEXT NOT NULL
                             )
                             """),
                     .init(
@@ -98,8 +102,12 @@
                         model_revision_value,
                         dimensions,
                         metric,
-                        projection_revision
-                    ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        projection_revision,
+                        source_snapshot_digest_algorithm,
+                        source_snapshot_digest_value,
+                        sqvector_package_version,
+                        sqvector_package_revision
+                    ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                 arguments: [
                     .integer(Int64(identity.schemaVersion)),
@@ -113,6 +121,10 @@
                     .integer(Int64(identity.dimensions)),
                     .text(identity.metric.rawValue),
                     .text(identity.projectionRevision),
+                    .text(identity.sourceSnapshotDigest.algorithm.rawValue),
+                    .text(identity.sourceSnapshotDigest.value),
+                    .text(identity.sqVectorPackage.version),
+                    .text(identity.sqVectorPackage.revision),
                 ]
             )
         }
@@ -120,6 +132,14 @@
         private static func decodeIdentity(from row: SQLiteRow) throws -> LocalCandidateIndexIdentity {
             guard
                 let schemaVersion = row["schema_version"]?.intValue,
+                let schemaVersionInt = Int(exactly: schemaVersion)
+            else {
+                throw LocalCandidateIndexError.corruptStorage
+            }
+            guard schemaVersionInt == LocalCandidateIndexIdentity.currentSchemaVersion else {
+                throw LocalCandidateIndexError.unsupportedSchemaVersion(schemaVersionInt)
+            }
+            guard
                 let namespace = row["namespace"]?.stringValue,
                 let provider = row["provider"]?.stringValue,
                 let providerVersionState = row["provider_version_state"]?.stringValue,
@@ -129,8 +149,14 @@
                 let metricValue = row["metric"]?.stringValue,
                 let metric = LocalCandidateDistanceMetric(rawValue: metricValue),
                 let projectionRevision = row["projection_revision"]?.stringValue,
-                let schemaVersionInt = Int(exactly: schemaVersion),
-                let dimensionsInt = Int(exactly: dimensions)
+                let dimensionsInt = Int(exactly: dimensions),
+                let digestAlgorithmValue = row["source_snapshot_digest_algorithm"]?.stringValue,
+                let digestAlgorithm = LocalCandidateDigestAlgorithm(
+                    rawValue: digestAlgorithmValue
+                ),
+                let digestValue = row["source_snapshot_digest_value"]?.stringValue,
+                let sqVectorPackageVersion = row["sqvector_package_version"]?.stringValue,
+                let sqVectorPackageRevision = row["sqvector_package_revision"]?.stringValue
             else {
                 throw LocalCandidateIndexError.corruptStorage
             }
@@ -142,6 +168,14 @@
                 state: modelRevisionState,
                 value: row["model_revision_value"]?.stringValue
             )
+            let sourceSnapshotDigest = try LocalCandidateSourceSnapshotDigest(
+                algorithm: digestAlgorithm,
+                value: digestValue
+            )
+            let sqVectorPackage = try SQVectorPackageIdentity(
+                version: sqVectorPackageVersion,
+                revision: sqVectorPackageRevision
+            )
 
             return LocalCandidateIndexIdentity(
                 schemaVersion: schemaVersionInt,
@@ -152,7 +186,9 @@
                 modelRevision: modelRevision,
                 dimensions: dimensionsInt,
                 metric: metric,
-                projectionRevision: projectionRevision
+                projectionRevision: projectionRevision,
+                sourceSnapshotDigest: sourceSnapshotDigest,
+                sqVectorPackage: sqVectorPackage
             )
         }
 
