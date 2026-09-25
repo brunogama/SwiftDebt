@@ -31,6 +31,9 @@ jobs:
       - name: Verify Swift toolchain
         run: swift --version | grep 'Swift version 6.2'
 
+      - name: Verify benchmark harness
+        run: python3 -m unittest discover -s scripts/tests -p 'test_run_debtmap_benchmark.py'
+
       - name: Build candidate and reference analyzers
         shell: bash
         run: |
@@ -57,16 +60,12 @@ jobs:
           )
           python3 scripts/run_debtmap_benchmark.py \
             --output artifacts/performance/baseline-reference.json \
-            --runs 15 \
+            --paired-output artifacts/performance/baseline-candidate.json \
+            --paired-executable .build/release/swift-debt \
+            --runs 16 \
             "${common[@]}" -- \
             "$RUNNER_TEMP/swift-debt-reference/.build/release/scma" analyze "$GITHUB_WORKSPACE/Examples/Sources" \
-            --format json --jobs 1 --output "$RUNNER_TEMP/baseline-reference-report.json"
-          python3 scripts/run_debtmap_benchmark.py \
-            --output artifacts/performance/baseline-candidate.json \
-            --runs 15 \
-            "${common[@]}" -- \
-            .build/release/swift-debt analyze Examples/Sources \
-            --format json --jobs 1 --output "$RUNNER_TEMP/baseline-candidate-report.json"
+            --format json --jobs 1 --output "$RUNNER_TEMP/baseline-paired-report.json"
           .build/release/swift-debt performance-gate \
             artifacts/performance/baseline-reference.json \
             artifacts/performance/baseline-candidate.json \
@@ -107,22 +106,15 @@ jobs:
           )
           python3 scripts/run_debtmap_benchmark.py \
             --output artifacts/performance/full-evidence-reference.json \
-            --runs 15 \
+            --paired-output artifacts/performance/full-evidence-candidate.json \
+            --paired-executable .build/release/swift-debt \
+            --runs 16 \
             "${common[@]}" -- \
             "$RUNNER_TEMP/swift-debt-reference/.build/release/scma" debt analyze "$workload" \
             --format debt-json --jobs 1 \
             --lcov "$GITHUB_WORKSPACE/benchmarks/debtmap-baseline/fixtures/example.lcov" \
             --debt-reference-time 2026-09-22T00:00:00Z \
-            --output "$RUNNER_TEMP/full-evidence-reference-report.json"
-          python3 scripts/run_debtmap_benchmark.py \
-            --output artifacts/performance/full-evidence-candidate.json \
-            --runs 15 \
-            "${common[@]}" -- \
-            .build/release/swift-debt debt analyze "$workload" \
-            --format debt-json --jobs 1 \
-            --lcov "$GITHUB_WORKSPACE/benchmarks/debtmap-baseline/fixtures/example.lcov" \
-            --debt-reference-time 2026-09-22T00:00:00Z \
-            --output "$RUNNER_TEMP/full-evidence-candidate-report.json"
+            --output "$RUNNER_TEMP/full-evidence-paired-report.json"
           .build/release/swift-debt performance-gate \
             artifacts/performance/full-evidence-reference.json \
             artifacts/performance/full-evidence-candidate.json \

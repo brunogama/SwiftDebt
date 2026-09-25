@@ -107,6 +107,7 @@ struct BenchmarkRegressionBudget: Decodable {
     let optionalContext: String
     let workloadFamily: String
     let maximumWallClockRegressionPercent: Double
+    let maximumWallClockRegressionSeconds: Double?
     let maximumPeakMemoryRegressionPercent: Double
 }
 
