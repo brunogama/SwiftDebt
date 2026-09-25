@@ -1,6 +1,6 @@
-import Foundation
+package struct RepositorySHA256 {
+    private static let hexadecimalDigits = Array("0123456789abcdef")
 
-struct RepositorySHA256 {
     private static let initialState: [UInt32] = [
         0x6a09_e667, 0xbb67_ae85, 0x3c6e_f372, 0xa54f_f53a,
         0x510e_527f, 0x9b05_688c, 0x1f83_d9ab, 0x5be0_cd19,
@@ -23,15 +23,15 @@ struct RepositorySHA256 {
     private var buffer: [UInt8] = []
     private var byteCount: UInt64 = 0
 
-    init() {
+    package init() {
         buffer.reserveCapacity(64)
     }
 
-    mutating func update(_ value: String) {
+    package mutating func update(_ value: String) {
         update(value.utf8)
     }
 
-    mutating func update(_ bytes: some Sequence<UInt8>) {
+    package mutating func update(_ bytes: some Sequence<UInt8>) {
         for byte in bytes {
             buffer.append(byte)
             byteCount &+= 1
@@ -42,12 +42,12 @@ struct RepositorySHA256 {
         }
     }
 
-    mutating func updateFramed(_ value: String) {
+    package mutating func updateFramed(_ value: String) {
         update(bigEndianBytes(UInt64(value.utf8.count)))
         update(value)
     }
 
-    mutating func finalizeHex() -> String {
+    package mutating func finalizeHex() -> String {
         let bitCount = byteCount &* 8
         buffer.append(0x80)
         while buffer.count % 64 != 56 {
@@ -58,10 +58,18 @@ struct RepositorySHA256 {
             compress(Array(buffer[start..<(start + 64)]))
         }
         buffer.removeAll(keepingCapacity: false)
-        return state.map { String(format: "%08x", $0) }.joined()
+        var result = ""
+        result.reserveCapacity(64)
+        for value in state {
+            for shift in stride(from: 28, through: 0, by: -4) {
+                let digit = Int((value >> UInt32(shift)) & 0x0f)
+                result.append(Self.hexadecimalDigits[digit])
+            }
+        }
+        return result
     }
 
-    static func hex(_ value: String) -> String {
+    package static func hex(_ value: String) -> String {
         var hasher = RepositorySHA256()
         hasher.update(value)
         return hasher.finalizeHex()

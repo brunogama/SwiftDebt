@@ -6,8 +6,8 @@ Rule: swiftdebt.refactoring.data-clumps@2 | Data Clumps | qualification: Researc
   Capability [exact-data-clump-enumeration]: available via SwiftSyntax 602.0.0
 Models.swift:1:1: warning: [swiftdebt.refactoring.data-clumps@2] 3 compatible elements recur across 3 declaration units.
   Predicate: Observed 3 shared elements in 3 units; required at least 3 elements in 2 units.
-  Evidence [structural/shared-elements]: countryCode: String, customerID: String, postalCode: String
   Evidence [metric/occurrence-count]: 3
+  Evidence [structural/shared-elements]: countryCode: String, customerID: String, postalCode: String
   Compared units:
     - nominal-properties Workspace.DeliveryAddress at Models.swift:1:1
     - function-parameters Workspace.scheduleDelivery at Operations.swift:1:1
@@ -20,9 +20,9 @@ Rule: swiftdebt.refactoring.repeated-switches@2 | Repeated Switches | qualificat
   Capability [exact-repeated-switch-enumeration]: available via SwiftSyntax 602.0.0
 Switches.swift:5:9: warning: [swiftdebt.refactoring.repeated-switches@2] The same 2-branch switch shape recurs 2 times for mode.
   Predicate: Observed 2 switches with the same simple discriminator and ordered case labels; required at least 2.
-  Evidence [syntax/textual-scope]: Workspace.FulfillmentCoordinator
   Evidence [structural/discriminator]: mode
   Evidence [structural/ordered-case-shape]: case.pickup: | case.delivery:
+  Evidence [syntax/textual-scope]: Workspace.FulfillmentCoordinator
   Compared units:
     - switch-statement switch mode in Workspace.FulfillmentCoordinator at Switches.swift:5:9
     - switch-statement switch mode in Workspace.FulfillmentCoordinator at Switches.swift:14:9

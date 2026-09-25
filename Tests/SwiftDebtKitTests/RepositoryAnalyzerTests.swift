@@ -142,6 +142,55 @@ struct RepositoryAnalyzerTests {
         #expect(report.rules.allSatisfy { $0.detections.isEmpty })
     }
 
+    @Test("Switch where clauses participate in the ordered case shape")
+    func switchWhereClausesRemainDistinct() throws {
+        let report = try RepositoryAnalyzer().analyze([
+            SourceUnit(
+                path: "WhereClauses.swift",
+                content: """
+                    enum Choice { case value(Int); case other }
+
+                    func positive(_ choice: Choice) {
+                        switch choice {
+                        case .value(let value) where value > 0: break
+                        case .other: break
+                        default: break
+                        }
+                    }
+
+                    func negative(_ choice: Choice) {
+                        switch choice {
+                        case .value(let value) where value < 0: break
+                        case .other: break
+                        default: break
+                        }
+                    }
+                    """
+            )
+        ])
+
+        #expect(report.diagnostics.isEmpty)
+        #expect(report.rules.last?.detections.isEmpty == true)
+    }
+
+    @Test("Parameter attributes and isolation modifiers remain part of compatibility")
+    func parameterModifiersRemainDistinct() throws {
+        let report = try RepositoryAnalyzer().analyze([
+            SourceUnit(
+                path: "ParameterModifiers.swift",
+                content: """
+                    actor Worker {}
+
+                    func ordinary(_ worker: Worker, count: Int, label: String) {}
+                    func isolated(isolated _ worker: Worker, count: Int, label: String) {}
+                    """
+            )
+        ])
+
+        #expect(report.diagnostics.isEmpty)
+        #expect(report.rules.first?.detections.isEmpty == true)
+    }
+
     @Test("Conditional switch cases make only Repeated Switches incomplete")
     func conditionalSwitchCasesAreIncomplete() throws {
         let report = try RepositoryAnalyzer().analyze(try fixtureSources("Conditional"))

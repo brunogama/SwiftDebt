@@ -42,7 +42,7 @@ public struct RepositoryObservedFact: Codable, Equatable, Sendable {
         self.kind = kind
         self.value = value
         self.evidenceClass = evidenceClass
-        self.locations = locations
+        self.locations = locations.sorted(by: repositorySourceLocationOrder)
     }
 }
 
@@ -87,9 +87,9 @@ public struct RepositoryDetectionExplanation: Codable, Equatable, Sendable {
         documentationURL: String
     ) {
         self.predicate = predicate
-        self.decisiveFacts = decisiveFacts
-        self.comparedUnits = comparedUnits
-        self.evidenceClasses = evidenceClasses
+        self.decisiveFacts = decisiveFacts.sorted(by: repositoryObservedFactOrder)
+        self.comparedUnits = comparedUnits.sorted(by: repositoryComparedUnitOrder)
+        self.evidenceClasses = evidenceClasses.sorted(by: repositoryEvidenceClassOrder)
         self.limitations = limitations
         self.refactoringDirection = refactoringDirection
         self.documentationURL = documentationURL

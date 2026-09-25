@@ -22,6 +22,10 @@ normalized-type pairs in at least two declaration units. SwiftDebt computes
 closed repeated groups so a four-element group does not also produce every
 three-element subset with the same occurrences.
 
+Parameter attributes, ownership modifiers, declared-type tokens, and variadic
+markers participate in the parameter compatibility key. Default values and
+external argument labels do not.
+
 The schema 1 repository sidecar records every compared unit, the exact shared
 elements, the occurrence count, the threshold, source locations, and source
 snapshot digest.

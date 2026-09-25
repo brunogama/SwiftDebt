@@ -15,7 +15,7 @@ public struct RepositorySnapshotIdentity: Codable, Equatable, Sendable {
         configuration: RepositoryAnalysisConfiguration,
         versionControl: RepositoryVersionControlIdentity?
     ) {
-        self.sourceFiles = sourceFiles
+        self.sourceFiles = sourceFiles.sorted()
         self.contentDigest = contentDigest
         self.configuration = configuration
         self.versionControl = versionControl
@@ -59,9 +59,9 @@ public struct RepositoryRuleEvidence: Equatable, Sendable {
         self.qualification = qualification
         self.completionState = completionState
         self.predicate = predicate
-        self.capabilities = capabilities
-        self.detections = detections
-        self.issues = issues
+        self.capabilities = capabilities.sorted(by: repositoryCapabilityOrder)
+        self.detections = detections.sorted(by: repositoryDetectionOrder)
+        self.issues = issues.sorted(by: repositoryIssueOrder)
     }
 
     public var provesAbsence: Bool {
@@ -117,8 +117,8 @@ public struct RepositoryEvidenceReport: Equatable, Sendable {
         reportKind = RepositoryEvidenceReportSchema.reportKind
         self.generator = generator
         self.snapshot = snapshot
-        self.rules = rules
-        self.diagnostics = diagnostics
+        self.rules = rules.sorted { $0.ruleIdentity < $1.ruleIdentity }
+        self.diagnostics = diagnostics.sorted(by: repositoryDiagnosticOrder)
         self.summary = summary
     }
 

@@ -10,7 +10,6 @@ struct DataClumpElement: Hashable, Comparable, Sendable {
     }
 
     var displayValue: String { "\(name): \(normalizedType.displayValue)" }
-    var fingerprintValue: String { "\(name):\(normalizedType.canonicalValue)" }
 }
 
 struct DataClumpUnit: Sendable {

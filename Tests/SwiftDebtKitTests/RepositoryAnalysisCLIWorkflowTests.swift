@@ -35,7 +35,9 @@ struct RepositoryAnalysisCLIWorkflowTests {
         #expect(firstRun.stderr.isEmpty)
         #expect(secondRun.stderr.isEmpty)
         #expect(firstJSON == secondJSON)
-        #expect(firstJSON == expectedJSON)
+        let actualReport = try JSONDecoder().decode(RepositoryEvidenceReport.self, from: Data(firstJSON.utf8))
+        #expect(actualReport.generator == "SwiftDebt \(SwiftDebtRelease.version)")
+        #expect(try normalizingRepositoryGenerator(firstJSON) == normalizingRepositoryGenerator(expectedJSON))
         #expect(repositorySection(firstRun.stdout) == expectedText)
         #expect(repositorySection(secondRun.stdout) == expectedText)
     }
@@ -72,16 +74,48 @@ struct RepositoryAnalysisCLIWorkflowTests {
         try runGitFixture(["config", "user.email", "test@example.test"], root: fixture.root)
         try runGitFixture(["add", "input"], root: fixture.root)
         try runGitFixture(["commit", "-m", "fixture"], root: fixture.root)
+        let nestedSidecar = fixture.root.appendingPathComponent(".swift-debt/repository-evidence.json")
 
         let first = try runSwiftDebt([
-            "analyze", fixture.root.path, "--jobs", "1", "--repository-evidence", fixture.sidecar.path,
+            "analyze", fixture.root.path, "--jobs", "1", "--repository-evidence", nestedSidecar.path,
         ])
-        let firstBytes = try Data(contentsOf: fixture.sidecar)
+        let firstBytes = try Data(contentsOf: nestedSidecar)
         let firstReport = try JSONDecoder().decode(RepositoryEvidenceReport.self, from: firstBytes)
         let second = try runSwiftDebt([
-            "analyze", fixture.root.path, "--jobs", "1", "--repository-evidence", fixture.sidecar.path,
+            "analyze", fixture.root.path, "--jobs", "1", "--repository-evidence", nestedSidecar.path,
         ])
-        let secondBytes = try Data(contentsOf: fixture.sidecar)
+        let secondBytes = try Data(contentsOf: nestedSidecar)
+        let secondReport = try JSONDecoder().decode(RepositoryEvidenceReport.self, from: secondBytes)
+
+        #expect(first.status == 0)
+        #expect(second.status == 0)
+        #expect(firstReport.snapshot.versionControl?.workingTreeState == .clean)
+        #expect(secondReport.snapshot.versionControl?.workingTreeState == .clean)
+        #expect(firstBytes == secondBytes)
+    }
+
+    @Test("Lifecycle and repository outputs are both excluded from Git provenance")
+    func combinedLifecycleAndRepositoryOutputsKeepGitProvenanceStable() throws {
+        let fixture = try makeFixtureCopy()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        try runGitFixture(["init"], root: fixture.root)
+        try runGitFixture(["config", "user.name", "Test User"], root: fixture.root)
+        try runGitFixture(["config", "user.email", "test@example.test"], root: fixture.root)
+        try runGitFixture(["add", "input"], root: fixture.root)
+        try runGitFixture(["commit", "-m", "fixture"], root: fixture.root)
+        let lifecycle = fixture.root.appendingPathComponent(".swift-debt/lifecycle.json")
+        let sidecar = fixture.root.appendingPathComponent(".swift-debt/repository-evidence.json")
+        let arguments = [
+            "analyze", fixture.root.path, "--jobs", "1",
+            "--lifecycle-artifact", lifecycle.path,
+            "--repository-evidence", sidecar.path,
+        ]
+
+        let first = try runSwiftDebt(arguments)
+        let firstBytes = try Data(contentsOf: sidecar)
+        let firstReport = try JSONDecoder().decode(RepositoryEvidenceReport.self, from: firstBytes)
+        let second = try runSwiftDebt(arguments)
+        let secondBytes = try Data(contentsOf: sidecar)
         let secondReport = try JSONDecoder().decode(RepositoryEvidenceReport.self, from: secondBytes)
 
         #expect(first.status == 0)
@@ -124,6 +158,76 @@ struct RepositoryAnalysisCLIWorkflowTests {
         #expect(result.status == 2)
         #expect(result.stderr.contains("another output"))
         #expect(!FileManager.default.fileExists(atPath: collision.path))
+    }
+
+    @Test("Repository evidence cannot overwrite the effective LCOV input")
+    func rejectsLCOVInputCollision() throws {
+        let fixture = try makeFixtureCopy()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let source = fixture.input.appendingPathComponent("Models.swift")
+        let lcov = fixture.root.appendingPathComponent("coverage.info")
+        let original = """
+            TN:repository
+            SF:\(source.path)
+            DA:1,1
+            end_of_record
+
+            """
+        try original.write(to: lcov, atomically: true, encoding: .utf8)
+
+        let result = try runSwiftDebt([
+            "debt", "analyze", fixture.root.path, "--jobs", "1", "--lcov", lcov.path,
+            "--repository-evidence", lcov.path, "--debt-reference-time", "2026-09-12T00:00:00Z",
+        ])
+
+        #expect(result.status == 2)
+        #expect(result.stderr.contains("Refusing to overwrite"))
+        #expect(try String(contentsOf: lcov, encoding: .utf8) == original)
+    }
+
+    @Test("Case-only output names collide on case-insensitive macOS volumes")
+    func rejectsCaseOnlyOutputCollision() throws {
+        #if os(macOS)
+            let fixture = try makeFixtureCopy()
+            defer { try? FileManager.default.removeItem(at: fixture.root) }
+            let values = try fixture.root.resourceValues(forKeys: [.volumeSupportsCaseSensitiveNamesKey])
+            guard values.volumeSupportsCaseSensitiveNames == false else { return }
+            let report = fixture.root.appendingPathComponent("Report.json")
+            let repository = fixture.root.appendingPathComponent("report.json")
+
+            let result = try runSwiftDebt([
+                "analyze", fixture.input.path, "--jobs", "1", "--format", "json", "--output", report.path,
+                "--repository-evidence", repository.path,
+            ])
+
+            #expect(result.status == 2)
+            #expect(result.stderr.contains("another output"))
+            #expect(!FileManager.default.fileExists(atPath: report.path))
+            #expect(!FileManager.default.fileExists(atPath: repository.path))
+        #endif
+    }
+
+    @Test("Lifecycle artifact and repository sidecar use the same filesystem identity guard")
+    func rejectsCaseOnlyLifecycleCollision() throws {
+        #if os(macOS)
+            let fixture = try makeFixtureCopy()
+            defer { try? FileManager.default.removeItem(at: fixture.root) }
+            let values = try fixture.root.resourceValues(forKeys: [.volumeSupportsCaseSensitiveNamesKey])
+            guard values.volumeSupportsCaseSensitiveNames == false else { return }
+            let lifecycle = fixture.root.appendingPathComponent("Lifecycle.json")
+            let repository = fixture.root.appendingPathComponent("lifecycle.json")
+
+            let result = try runSwiftDebt([
+                "analyze", fixture.input.path, "--jobs", "1",
+                "--lifecycle-artifact", lifecycle.path,
+                "--repository-evidence", repository.path,
+            ])
+
+            #expect(result.status == 2)
+            #expect(result.stderr.contains("another output"))
+            #expect(!FileManager.default.fileExists(atPath: lifecycle.path))
+            #expect(!FileManager.default.fileExists(atPath: repository.path))
+        #endif
     }
 
     @Test("Canonical repository evidence cannot be forged through public constructors")

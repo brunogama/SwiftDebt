@@ -2,7 +2,7 @@
   "diagnostics" : [
 
   ],
-  "generator" : "SwiftDebt 0.8.0",
+  "generator" : "SwiftDebt 0.8.1",
   "reportKind" : "swiftdebt-repository-evidence",
   "rules" : [
     {
@@ -51,28 +51,6 @@
             ],
             "decisiveFacts" : [
               {
-                "evidenceClass" : "structural",
-                "kind" : "shared-elements",
-                "locations" : [
-                  {
-                    "column" : 1,
-                    "file" : "Models.swift",
-                    "line" : 1
-                  },
-                  {
-                    "column" : 1,
-                    "file" : "Operations.swift",
-                    "line" : 1
-                  },
-                  {
-                    "column" : 1,
-                    "file" : "Operations.swift",
-                    "line" : 9
-                  }
-                ],
-                "value" : "countryCode: String, customerID: String, postalCode: String"
-              },
-              {
                 "evidenceClass" : "metric",
                 "kind" : "occurrence-count",
                 "locations" : [
@@ -93,6 +71,28 @@
                   }
                 ],
                 "value" : "3"
+              },
+              {
+                "evidenceClass" : "structural",
+                "kind" : "shared-elements",
+                "locations" : [
+                  {
+                    "column" : 1,
+                    "file" : "Models.swift",
+                    "line" : 1
+                  },
+                  {
+                    "column" : 1,
+                    "file" : "Operations.swift",
+                    "line" : 1
+                  },
+                  {
+                    "column" : 1,
+                    "file" : "Operations.swift",
+                    "line" : 9
+                  }
+                ],
+                "value" : "countryCode: String, customerID: String, postalCode: String"
               }
             ],
             "documentationURL" : "https://brunogama.github.io/SwiftDebt/documentation/swiftdebtkit/dataclumps",
@@ -116,7 +116,7 @@
           "selector" : {
             "evidenceFingerprint" : {
               "algorithm" : "sha256",
-              "value" : "83090f8685a87c985903bd6019be2800dd7a6090158259b118d6f8706a4a4e23"
+              "value" : "22a215fd271f2bcd34fa46de6bdd9a6f09df77ac7a0bb9934e5cfc12b13acab3"
             },
             "location" : {
               "column" : 1,
@@ -180,23 +180,6 @@
             ],
             "decisiveFacts" : [
               {
-                "evidenceClass" : "syntax",
-                "kind" : "textual-scope",
-                "locations" : [
-                  {
-                    "column" : 9,
-                    "file" : "Switches.swift",
-                    "line" : 5
-                  },
-                  {
-                    "column" : 9,
-                    "file" : "Switches.swift",
-                    "line" : 14
-                  }
-                ],
-                "value" : "Workspace.FulfillmentCoordinator"
-              },
-              {
                 "evidenceClass" : "structural",
                 "kind" : "discriminator",
                 "locations" : [
@@ -229,6 +212,23 @@
                   }
                 ],
                 "value" : "case.pickup: | case.delivery:"
+              },
+              {
+                "evidenceClass" : "syntax",
+                "kind" : "textual-scope",
+                "locations" : [
+                  {
+                    "column" : 9,
+                    "file" : "Switches.swift",
+                    "line" : 5
+                  },
+                  {
+                    "column" : 9,
+                    "file" : "Switches.swift",
+                    "line" : 14
+                  }
+                ],
+                "value" : "Workspace.FulfillmentCoordinator"
               }
             ],
             "documentationURL" : "https://brunogama.github.io/SwiftDebt/documentation/swiftdebtkit/repeatedswitches",
@@ -251,7 +251,7 @@
           "selector" : {
             "evidenceFingerprint" : {
               "algorithm" : "sha256",
-              "value" : "044c968ef7e85ff75513cd7a7e5a36cb8f9359d2a66ebb6096559fe665f5f74a"
+              "value" : "8d866cb9be5ba8e21430f91754ba612c557da5529e8c617d021c86cb7e635850"
             },
             "location" : {
               "column" : 9,

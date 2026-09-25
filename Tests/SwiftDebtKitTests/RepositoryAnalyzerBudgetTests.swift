@@ -70,6 +70,37 @@ struct RepositoryAnalyzerBudgetTests {
         #expect(dataClumps.issues.map(\.code) == ["comparison-budget-exceeded"])
     }
 
+    @Test("The final closure equality consumes the comparison budget")
+    func comparisonBudgetCountsClosureEquality() throws {
+        let configuration = try RepositoryAnalysisConfiguration(
+            minimumDataClumpElements: 3,
+            minimumDataClumpOccurrences: 2,
+            minimumRepeatedSwitchOccurrences: 2,
+            maximumSourceFiles: 100,
+            maximumTotalSourceBytes: 1_000_000,
+            maximumAnalysisUnitsPerRule: 100,
+            maximumDataClumpComparisons: 5,
+            maximumDetectionsPerRule: 100
+        )
+        let report = try RepositoryAnalyzer().analyze(
+            [
+                SourceUnit(
+                    path: "ClosureEquality.swift",
+                    content: """
+                        func first(a: Int, b: Int, c: Int) {}
+                        func second(a: Int, b: Int, c: Int) {}
+                        """
+                )
+            ],
+            configuration: configuration
+        )
+        let dataClumps = try #require(report.rules.first)
+
+        #expect(dataClumps.completionState == .incomplete)
+        #expect(dataClumps.detections.isEmpty)
+        #expect(dataClumps.issues.map(\.code) == ["comparison-budget-exceeded"])
+    }
+
     @Test("Unit budgets cap syntax fact materialization before rule analysis")
     func unitBudgetsCapFactMaterialization() {
         let functions = (0..<20).map { index in
@@ -93,6 +124,68 @@ struct RepositoryAnalyzerBudgetTests {
 
         #expect(facts.dataClumpUnits.count == 2)
         #expect(facts.repeatedSwitchUnits.count == 2)
+    }
+
+    @Test("Conditional switches share the Repeated Switches materialization budget")
+    func conditionalSwitchFactsAreBounded() throws {
+        let switches = (0..<20).map { index in
+            """
+            func switchOperation\(index)(_ value: Bool) {
+                switch value {
+                #if FEATURE
+                case true: break
+                #else
+                case false: break
+                #endif
+                }
+            }
+            """
+        }.joined(separator: "\n")
+        let configuration = try RepositoryAnalysisConfiguration(
+            minimumDataClumpElements: 3,
+            minimumDataClumpOccurrences: 2,
+            minimumRepeatedSwitchOccurrences: 2,
+            maximumSourceFiles: 100,
+            maximumTotalSourceBytes: 1_000_000,
+            maximumAnalysisUnitsPerRule: 1,
+            maximumDataClumpComparisons: 1_000,
+            maximumDetectionsPerRule: 100
+        )
+        let source = SourceUnit(path: "Conditional.swift", content: switches)
+        let facts = RepositorySyntaxExtractor().extract(
+            [source],
+            maximumAnalysisUnitsPerRule: configuration.maximumAnalysisUnitsPerRule
+        )
+        let report = try RepositoryAnalyzer().analyze([source], configuration: configuration)
+        let repeatedSwitches = try #require(report.rules.last)
+
+        #expect(facts.repeatedSwitchUnits.count + facts.conditionalSwitchLocations.count == 2)
+        #expect(repeatedSwitches.completionState == .incomplete)
+        #expect(
+            repeatedSwitches.issues.map(\.code) == [
+                "analysis-unit-budget-exceeded", "conditional-switch-cases-unavailable",
+            ])
+    }
+
+    @Test("An unbounded analysis-unit budget does not overflow")
+    func maximumIntegerUnitBudgetIsSafe() throws {
+        let configuration = try RepositoryAnalysisConfiguration(
+            minimumDataClumpElements: 3,
+            minimumDataClumpOccurrences: 2,
+            minimumRepeatedSwitchOccurrences: 2,
+            maximumSourceFiles: 100,
+            maximumTotalSourceBytes: 1_000_000,
+            maximumAnalysisUnitsPerRule: .max,
+            maximumDataClumpComparisons: 1_000,
+            maximumDetectionsPerRule: 100
+        )
+
+        let report = try RepositoryAnalyzer().analyze(
+            [SourceUnit(path: "Input.swift", content: "func input() {}")],
+            configuration: configuration
+        )
+
+        #expect(report.isComplete)
     }
 
     @Test("Detection budgets bound materialization and make both affected rules incomplete")

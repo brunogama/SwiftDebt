@@ -9,8 +9,8 @@ struct RepositorySyntaxExtractor {
         maximumAnalysisUnitsPerRule: Int = .max
     ) -> RepositorySyntaxFacts {
         var result = RepositorySyntaxFacts()
-        let materializationLimit =
-            maximumAnalysisUnitsPerRule == .max ? Int.max : maximumAnalysisUnitsPerRule + 1
+        let (nextUnitCount, unitCountOverflowed) = maximumAnalysisUnitsPerRule.addingReportingOverflow(1)
+        let materializationLimit = unitCountOverflowed ? Int.max : nextUnitCount
         for source in sources {
             let tree = Parser.parse(source: source.content)
             let converter = SourceLocationConverter(fileName: source.path, tree: tree)
@@ -29,11 +29,13 @@ struct RepositorySyntaxExtractor {
             result.diagnostics += diagnostics
             guard !diagnostics.contains(where: { $0.severity == .error }) else { continue }
 
+            let materializedSwitchCount =
+                result.repeatedSwitchUnits.count + result.conditionalSwitchLocations.count
             let visitor = RepositoryFactVisitor(
                 source: source,
                 converter: converter,
                 maximumDataClumpUnits: max(0, materializationLimit - result.dataClumpUnits.count),
-                maximumRepeatedSwitchUnits: max(0, materializationLimit - result.repeatedSwitchUnits.count)
+                maximumRepeatedSwitchFacts: max(0, materializationLimit - materializedSwitchCount)
             )
             visitor.walk(tree)
             result.dataClumpUnits += visitor.dataClumpUnits
@@ -52,7 +54,7 @@ private final class RepositoryFactVisitor: SyntaxVisitor {
     let source: SourceUnit
     let converter: SourceLocationConverter
     let maximumDataClumpUnits: Int
-    let maximumRepeatedSwitchUnits: Int
+    let maximumRepeatedSwitchFacts: Int
     var dataClumpUnits: [DataClumpUnit] = []
     var repeatedSwitchUnits: [RepeatedSwitchUnit] = []
     var conditionalSwitchLocations: [SwiftDebtCore.SourceLocation] = []
@@ -61,12 +63,12 @@ private final class RepositoryFactVisitor: SyntaxVisitor {
         source: SourceUnit,
         converter: SourceLocationConverter,
         maximumDataClumpUnits: Int,
-        maximumRepeatedSwitchUnits: Int
+        maximumRepeatedSwitchFacts: Int
     ) {
         self.source = source
         self.converter = converter
         self.maximumDataClumpUnits = maximumDataClumpUnits
-        self.maximumRepeatedSwitchUnits = maximumRepeatedSwitchUnits
+        self.maximumRepeatedSwitchFacts = maximumRepeatedSwitchFacts
         super.init(viewMode: .sourceAccurate)
     }
 
@@ -116,7 +118,9 @@ private final class RepositoryFactVisitor: SyntaxVisitor {
     }
 
     override func visit(_ node: SwitchExprSyntax) -> SyntaxVisitorContinueKind {
-        guard repeatedSwitchUnits.count < maximumRepeatedSwitchUnits else { return .visitChildren }
+        guard repeatedSwitchUnits.count + conditionalSwitchLocations.count < maximumRepeatedSwitchFacts else {
+            return .visitChildren
+        }
         let location = sourceLocation(node)
         var labels: [NormalizedTokenSequence] = []
         for element in node.cases {

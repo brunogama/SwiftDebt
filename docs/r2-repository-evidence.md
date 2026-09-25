@@ -57,11 +57,12 @@ do not gain repository fields.
 ### Data Clumps
 
 A parameter/property element is the exact pair of its local identifier and its
-formatting-independent SwiftSyntax token sequence for the declared type. Token
+formatting-independent SwiftSyntax type shape. For parameters, declaration
+attributes, ownership modifiers, the declared type, and a variadic marker all
+participate because they change how the value can be passed or used. Token
 boundaries remain part of the canonical key, so `some P` and `someP` are
-different types in this syntax-only comparison.
-Defaults do not participate. Unnamed parameters and properties without an
-explicit type do not participate.
+different types in this syntax-only comparison. Defaults do not participate.
+Unnamed parameters and properties without an explicit type do not participate.
 
 A Detection requires a closed group of at least three compatible elements that
 occurs in at least two declaration units. Supported units in this slice are
@@ -123,6 +124,11 @@ Decoded schema 1 artifacts recompute rule completion, capability, selector,
 snapshot-digest, ordering, and summary invariants before callers can use
 `isComplete` or `provesAbsence`. An empty rule list and contradictory complete
 outcome are invalid artifacts rather than vacuous proof.
+
+Each selector fingerprint is a domain-separated SHA-256 digest over the rule
+identity, semantic revision, canonical decisive facts, their locations, and the
+canonical compared units. Decoding recomputes that digest so facts and unit
+references cannot be replaced independently of the selector.
 
 Requested output paths are excluded from Git working-tree provenance. This
 keeps repeated CLI runs byte-identical when the prior sidecar is otherwise the

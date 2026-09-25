@@ -26,7 +26,8 @@ struct RepeatedSwitchesRepositoryRule {
                 )
             )
         }
-        guard units.count <= configuration.maximumAnalysisUnitsPerRule else {
+        let selectedUnitCount = units.count + conditionalSwitchLocations.count
+        guard selectedUnitCount <= configuration.maximumAnalysisUnitsPerRule else {
             issues.append(
                 try RepositoryEvidenceIssue(
                     code: "analysis-unit-budget-exceeded",
@@ -91,12 +92,6 @@ struct RepeatedSwitchesRepositoryRule {
     ) throws -> RepositoryDetection {
         let compared = occurrences.map(\.comparedUnit).sorted(by: comparedUnitOrder)
         let primary = compared[0].location
-        let values = [key.scope, key.discriminator.canonicalValue] + key.caseShape.map(\.canonicalValue)
-        let fingerprint = try detectionFingerprint(
-            ruleIdentity: Self.identity,
-            values: values,
-            units: compared
-        )
         let facts = [
             RepositoryObservedFact(
                 kind: "textual-scope",
@@ -117,6 +112,12 @@ struct RepeatedSwitchesRepositoryRule {
                 locations: compared.map(\.location)
             ),
         ]
+        let fingerprint = try repositoryEvidenceFingerprint(
+            ruleIdentity: Self.identity,
+            semanticRevision: Self.semanticRevision,
+            decisiveFacts: facts,
+            comparedUnits: compared
+        )
         return RepositoryDetection(
             selector: RepositoryDetectionSelector(
                 ruleIdentity: Self.identity,

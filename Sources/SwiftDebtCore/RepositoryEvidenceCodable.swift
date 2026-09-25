@@ -29,6 +29,10 @@ extension RepositoryRuleEvidence: Codable {
             hasRepositoryEvidenceContent(predicate),
             !capabilities.isEmpty,
             Set(capabilities.map(\.capability)).count == capabilities.count,
+            capabilities == capabilities.sorted(by: repositoryCapabilityOrder),
+            detections == detections.sorted(by: repositoryDetectionOrder),
+            issues == issues.sorted(by: repositoryIssueOrder),
+            Set(detections.map(\.selector)).count == detections.count,
             capabilities.allSatisfy({ capability in
                 hasRepositoryEvidenceContent(capability.capability)
                     && hasRepositoryEvidenceContent(capability.provider.name)
@@ -38,6 +42,7 @@ extension RepositoryRuleEvidence: Codable {
                 detection.selector.ruleIdentity == ruleIdentity
                     && detection.selector.semanticRevision == semanticRevision
                     && detection.primaryLocation == detection.selector.location
+                    && repositoryDetectionIsInternallyValid(detection)
             })
         else {
             throw DecodingError.dataCorrupted(
@@ -136,14 +141,33 @@ extension RepositoryEvidenceReport: Codable {
             || rules.allSatisfy { rule in
                 rule.completionState == .incomplete && rule.issues.contains { $0.code == "parse-failed" }
             }
+        let sourceFileSet = Set(snapshot.sourceFiles)
+        let detections = rules.flatMap(\.detections)
+        let referencedLocations =
+            diagnostics.map(\.location)
+            + detections.flatMap { detection in
+                [detection.selector.location, detection.primaryLocation]
+                    + detection.explanation.comparedUnits.map(\.location)
+                    + detection.explanation.decisiveFacts.flatMap(\.locations)
+            }
         guard hasRepositoryEvidenceContent(generator),
             sourceFilesAreCanonical,
             !rules.isEmpty,
             Set(ruleIdentities).count == rules.count,
             ruleIdentities == ruleIdentities.sorted(),
-            rules.flatMap(\.detections).allSatisfy({ detection in
+            diagnostics == diagnostics.sorted(by: repositoryDiagnosticOrder),
+            diagnostics.allSatisfy({ diagnostic in
+                hasRepositoryEvidenceContent(diagnostic.message)
+                    && repositoryLocationIsValid(diagnostic.location)
+            }),
+            Set(detections.map(\.selector)).count == detections.count,
+            detections.allSatisfy({ detection in
                 detection.selector.snapshotDigest == snapshot.contentDigest
             }),
+            referencedLocations.allSatisfy({ location in
+                sourceFileSet.contains(location.file) && repositoryLocationIsValid(location)
+            }),
+            rules.allSatisfy({ $0.detections.count <= snapshot.configuration.maximumDetectionsPerRule }),
             hasRepositoryEvidenceContent(summary.currentSnapshotNotice),
             summaryMatches,
             parseFailuresAreIncomplete
@@ -167,4 +191,60 @@ extension RepositoryEvidenceReport: Codable {
         try values.encode(diagnostics, forKey: .diagnostics)
         try values.encode(summary, forKey: .summary)
     }
+}
+
+private func repositoryDetectionIsInternallyValid(_ detection: RepositoryDetection) -> Bool {
+    let explanation = detection.explanation
+    let facts = explanation.decisiveFacts
+    let units = explanation.comparedUnits
+    let classes = explanation.evidenceClasses
+    let unitLocations = Set(units.map(\.location))
+    let expectedFingerprint = try? repositoryEvidenceFingerprint(
+        ruleIdentity: detection.selector.ruleIdentity,
+        semanticRevision: detection.selector.semanticRevision,
+        decisiveFacts: facts,
+        comparedUnits: units
+    )
+
+    return hasRepositoryEvidenceContent(detection.title)
+        && hasRepositoryEvidenceContent(detection.summary)
+        && repositoryLocationIsValid(detection.primaryLocation)
+        && !facts.isEmpty
+        && facts == facts.sorted(by: repositoryObservedFactOrder)
+        && !hasAdjacentDuplicates(facts)
+        && facts.allSatisfy { fact in
+            hasRepositoryEvidenceContent(fact.kind)
+                && hasRepositoryEvidenceContent(fact.value)
+                && !fact.locations.isEmpty
+                && fact.locations == fact.locations.sorted(by: repositorySourceLocationOrder)
+                && Set(fact.locations).count == fact.locations.count
+                && fact.locations.allSatisfy(unitLocations.contains)
+                && classes.contains(fact.evidenceClass)
+        }
+        && !units.isEmpty
+        && units == units.sorted(by: repositoryComparedUnitOrder)
+        && Set(units).count == units.count
+        && units.allSatisfy { unit in
+            hasRepositoryEvidenceContent(unit.displayName) && repositoryLocationIsValid(unit.location)
+        }
+        && units.first?.location == detection.primaryLocation
+        && !classes.isEmpty
+        && classes == classes.sorted(by: repositoryEvidenceClassOrder)
+        && Set(classes).count == classes.count
+        && hasRepositoryEvidenceContent(explanation.predicate)
+        && explanation.limitations.allSatisfy(hasRepositoryEvidenceContent)
+        && hasRepositoryEvidenceContent(explanation.refactoringDirection)
+        && hasRepositoryEvidenceContent(explanation.documentationURL)
+        && expectedFingerprint == detection.selector.evidenceFingerprint
+}
+
+private func repositoryLocationIsValid(_ location: SourceLocation) -> Bool {
+    guard location.line > 0, location.column > 0,
+        let path = try? SourcePath(location.file)
+    else { return false }
+    return path.rawValue == location.file
+}
+
+private func hasAdjacentDuplicates<T: Equatable>(_ values: [T]) -> Bool {
+    zip(values, values.dropFirst()).contains { $0 == $1 }
 }

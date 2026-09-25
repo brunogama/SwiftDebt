@@ -1,4 +1,5 @@
 import Foundation
+import SwiftDebtCore
 
 extension RepositoryAnalysisCLIWorkflowTests {
     func makeFixtureCopy(named name: String = "Positive") throws -> (
@@ -29,6 +30,18 @@ extension RepositoryAnalysisCLIWorkflowTests {
 
     func fixtureText(_ name: String) throws -> String {
         try String(contentsOf: fixtureRoot.appendingPathComponent(name), encoding: .utf8)
+    }
+
+    func normalizingRepositoryGenerator(_ json: String) throws -> String {
+        let report = try JSONDecoder().decode(RepositoryEvidenceReport.self, from: Data(json.utf8))
+        let value = #""generator" : "\#(report.generator)""#
+        guard json.components(separatedBy: value).count == 2 else {
+            throw RepositoryAPITestError("Repository evidence must contain one canonical generator field")
+        }
+        return json.replacingOccurrences(
+            of: value,
+            with: #""generator" : "SwiftDebt <release-version>""#
+        )
     }
 
     var fixtureRoot: URL {

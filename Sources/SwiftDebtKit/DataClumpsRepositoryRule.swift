@@ -128,6 +128,7 @@ struct DataClumpsRepositoryRule {
                 try budget.consume()
                 closure.formIntersection(units[index].elements)
             }
+            try budget.consume()
             if closure == candidateSet {
                 groups.append(DataClumpGroup(elements: candidate, unitIndices: support))
             }
@@ -145,11 +146,6 @@ struct DataClumpsRepositoryRule {
         let compared = group.unitIndices.map { units[$0].comparedUnit }.sorted(by: comparedUnitOrder)
         let primary = compared[0].location
         let values = group.elements.map(\.displayValue)
-        let fingerprint = try detectionFingerprint(
-            ruleIdentity: Self.identity,
-            values: group.elements.map(\.fingerprintValue),
-            units: compared
-        )
         let refactoring =
             compared.contains { $0.kind != .nominalProperties }
             ? "Introduce a parameter object or value type that owns this repeated group."
@@ -168,6 +164,12 @@ struct DataClumpsRepositoryRule {
                 locations: compared.map(\.location)
             ),
         ]
+        let fingerprint = try repositoryEvidenceFingerprint(
+            ruleIdentity: Self.identity,
+            semanticRevision: Self.semanticRevision,
+            decisiveFacts: facts,
+            comparedUnits: compared
+        )
         return RepositoryDetection(
             selector: RepositoryDetectionSelector(
                 ruleIdentity: Self.identity,

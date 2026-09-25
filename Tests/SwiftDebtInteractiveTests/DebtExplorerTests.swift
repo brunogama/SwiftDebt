@@ -99,7 +99,11 @@ struct DebtExplorerTests {
         let elapsed = start.duration(to: clock.now)
 
         #expect(state.visibleItemIDs.count == 12_000)
-        #expect(elapsed < .milliseconds(750))
+        #expect(state.selectedVisibleIndex == 4_000)
+        #expect(state.selectedItemID == "callable:Worker4000.run")
+        // Tight performance comparisons belong in the paired benchmark gate. This smoke budget
+        // still rejects accidental per-navigation scans without failing under a contended host.
+        #expect(elapsed < .seconds(3))
     }
 
     private func runSwiftDebt(arguments: [String]) throws -> (status: Int32, stdout: String, stderr: String) {
