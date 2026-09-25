@@ -5,6 +5,22 @@ import Testing
 
 @Suite("Refactoring smell syntax signals")
 struct RefactoringSmellRuleTests {
+    @Test("Published catalog references the executable rule contracts")
+    func catalogReferencesExecutableRules() throws {
+        let rules: [(String, RuleIdentity, SemanticRevision)] = [
+            ("Long Function", LongFunctionRule.identity, LongFunctionRule.contract.semanticRevision),
+            ("Long Parameter List", LongParameterListRule.identity, LongParameterListRule.contract.semanticRevision),
+            ("Global Data", GlobalDataRule.identity, GlobalDataRule.contract.semanticRevision),
+            ("Large Class", LargeClassRule.identity, LargeClassRule.contract.semanticRevision),
+        ]
+
+        for (name, identity, revision) in rules {
+            let entry = try #require(RefactoringCodeSmellCatalog.named(name))
+            #expect(entry.ruleIdentity == identity.description)
+            #expect(entry.semanticRevision == revision.rawValue)
+        }
+    }
+
     @Test("Long Function reports the threshold and preserves a clean shorter function")
     func longFunction() throws {
         let body = (1...20).map { "let value\($0) = \($0)" }.joined(separator: "\n")
@@ -74,5 +90,23 @@ struct RefactoringSmellRuleTests {
         #expect(result.isCommitted)
         #expect(result.detections.count == 1)
         #expect(result.detections.first?.message.contains("20 direct members") == true)
+    }
+
+    @Test("Statement and member counts are independent of physical lines")
+    func countsDeclarationsRatherThanLines() throws {
+        let statements = (1...20).map { "let value\($0) = \($0)" }.joined(separator: "; ")
+        let members = (1...20).map { "var value\($0) = \($0)" }.joined(separator: "; ")
+        let source = SourceUnit(
+            path: "Example.swift",
+            content: "func lengthy() { \(statements) }\nclass Large { \(members) }\nstruct AlsoLarge { \(members) }"
+        )
+
+        let functionResult = try RuleEngine().analyze(source, using: LongFunctionRule())
+        let classResult = try RuleEngine().analyze(source, using: LargeClassRule())
+
+        #expect(functionResult.isCommitted)
+        #expect(classResult.isCommitted)
+        #expect(functionResult.detections.map(\.location.line) == [1])
+        #expect(classResult.detections.map(\.location.line) == [2])
     }
 }
