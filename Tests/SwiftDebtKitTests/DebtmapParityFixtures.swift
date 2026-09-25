@@ -109,6 +109,7 @@ struct BenchmarkRegressionBudget: Decodable {
     let maximumWallClockRegressionPercent: Double
     let maximumWallClockRegressionSeconds: Double?
     let maximumPeakMemoryRegressionPercent: Double
+    let maximumPeakMemoryRegressionBytes: UInt64?
 }
 
 struct GoldenFixture: Decodable {

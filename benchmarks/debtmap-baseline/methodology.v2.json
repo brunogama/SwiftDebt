@@ -20,7 +20,7 @@
     },
     {
       "name": "enforce-merge-budget",
-      "argv": [".build/release/swift-debt", "performance-gate", "BASELINE.json", "CANDIDATE.json", "--name", "BUDGET", "--max-wall-clock-regression", "PERCENT", "--max-peak-memory-regression", "PERCENT", "--output", "EVALUATION.json"]
+      "argv": [".build/release/swift-debt", "performance-gate", "BASELINE.json", "CANDIDATE.json", "--name", "BUDGET", "--max-wall-clock-regression", "PERCENT", "--max-peak-memory-regression", "PERCENT", "--max-peak-memory-regression-bytes", "BYTES", "--output", "EVALUATION.json"]
     }
   ],
   "inputs": [
@@ -60,6 +60,7 @@
     "Stamp paired result files with one shared generation ID; the gate rejects mixed generations after an interrupted publication.",
     "Use medians for CI regression gates and include all raw samples when requesting an approved exception.",
     "For the short baseline stage, fail wall-clock only when regression exceeds both 10 percent and the approved 0.010 second absolute noise floor.",
+    "Fail peak memory only when regression exceeds both 15 percent and the fixed 2 MiB small-process allowance; the percentage limit remains unchanged and any increase above both limits fails.",
     "Run .github/workflows/debtmap-performance.yml on pull requests to enforce both regression budgets against equivalent frozen SwiftDebt workloads."
   ],
   "outputDirectory": ".swift-debt/benchmarks/debtmap-baseline",
@@ -105,7 +106,8 @@
       "workloadFamily": "SwiftDebt",
       "maximumWallClockRegressionPercent": 10,
       "maximumWallClockRegressionSeconds": 0.01,
-      "maximumPeakMemoryRegressionPercent": 15
+      "maximumPeakMemoryRegressionPercent": 15,
+      "maximumPeakMemoryRegressionBytes": 2097152
     },
     {
       "name": "full-evidence-analysis",
@@ -113,7 +115,8 @@
       "optionalContext": "coverage-and-repository-history",
       "workloadFamily": "SwiftDebt",
       "maximumWallClockRegressionPercent": 20,
-      "maximumPeakMemoryRegressionPercent": 15
+      "maximumPeakMemoryRegressionPercent": 15,
+      "maximumPeakMemoryRegressionBytes": 2097152
     }
   ],
   "schemaVersion": 2,
