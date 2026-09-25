@@ -16,7 +16,7 @@
     },
     {
       "name": "benchmark-harness",
-      "argv": ["python3", "scripts/run_debtmap_benchmark.py", "--output", "RESULT.json", "--input", "Examples/Sources/Example.swift", "--input", ".swift-debt.example.json", "--analyzer", "SwiftDebt", "--workload-family", "SwiftDebt", "--command-fingerprint", "WORKLOAD", "--analysis-mode", "MODE", "--optional-context", "CONTEXT", "--", "COMMAND"]
+      "argv": ["python3", "scripts/run_debtmap_benchmark.py", "--output", "REFERENCE.json", "--paired-output", "CANDIDATE.json", "--paired-executable", "CANDIDATE-EXECUTABLE", "--input", "Examples/Sources/Example.swift", "--input", ".swift-debt.example.json", "--analyzer", "SwiftDebt", "--workload-family", "SwiftDebt", "--command-fingerprint", "WORKLOAD", "--analysis-mode", "MODE", "--optional-context", "CONTEXT", "--", "REFERENCE-COMMAND"]
     },
     {
       "name": "enforce-merge-budget",
@@ -43,7 +43,7 @@
       "lineCount": 68
     }
   ],
-  "measuredRuns": 15,
+  "measuredRuns": 16,
   "measurements": ["wall-clock-seconds", "peak-memory-bytes", "phase-wall-clock-nanoseconds"],
   "methodology": [
     "Use the latest clean committed predecessor that accepts the same command surface and implements the same always-on analysis capabilities, optional evidence, and report generation as the candidate.",
@@ -51,13 +51,14 @@
     "Resolve dependencies before the first measured run.",
     "Run the release build command once after dependency resolution.",
     "Run the selected platform measure command for one warmup run and discard that sample.",
-    "Run the same command for fifteen measured runs without changing inputs.",
+    "Measure reference and candidate commands as sixteen adjacent pairs without changing inputs, alternating reference-first and candidate-first order between pairs.",
     "Use benchmarks/debtmap-baseline/fixtures/example.lcov and the frozen 2026-09-22T00:00:00Z debt reference time for full-evidence measurements.",
     "For full-evidence measurements, copy Example.swift to the root of a temporary Git repository and commit it with fixed author and committer metadata at 2026-09-12T12:00:00Z.",
     "Record elapsed wall-clock seconds and peak resident memory from the platform time tool.",
     "Record phase-wall-clock nanoseconds from the analyzer profile output for discovery, parsing, structural evidence, graph, coverage, repository history, functional evidence, scoring, aggregation and rendering when those phases run.",
-    "Report every raw sample, median, minimum and maximum with the Swift version, OS, CPU model and memory size.",
+    "Report every raw sample with its pair index and order, plus the median, minimum and maximum with the Swift version, OS, CPU model and memory size.",
     "Use medians for CI regression gates and include all raw samples when requesting an approved exception.",
+    "For the short baseline stage, fail wall-clock only when regression exceeds both 10 percent and the approved 0.010 second absolute noise floor.",
     "Run .github/workflows/debtmap-performance.yml on pull requests to enforce both regression budgets against equivalent frozen SwiftDebt workloads."
   ],
   "outputDirectory": ".swift-debt/benchmarks/debtmap-baseline",
@@ -87,7 +88,8 @@
     "noiseControls": [
       "release build",
       "one discarded warmup run",
-      "fifteen measured runs",
+      "sixteen measured runs",
+      "paired interleaved reference and candidate runs",
       "fixed --jobs 1 parallelism",
       "frozen input SHA-256 checksums",
       "raw sample reporting"
@@ -101,6 +103,7 @@
       "optionalContext": "none",
       "workloadFamily": "SwiftDebt",
       "maximumWallClockRegressionPercent": 10,
+      "maximumWallClockRegressionSeconds": 0.01,
       "maximumPeakMemoryRegressionPercent": 15
     },
     {

@@ -29,6 +29,15 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--optional-context", required=True)
     result.add_argument("--warmups", type=nonnegative_int, default=1)
     result.add_argument("--runs", type=positive_int, default=5)
+    result.add_argument(
+        "--paired-output",
+        type=Path,
+        help="Emit a second result from paired, interleaved command measurements.",
+    )
+    result.add_argument(
+        "--paired-executable",
+        help="Replace the measured command executable for the paired result.",
+    )
     result.add_argument("command", nargs=argparse.REMAINDER)
     return result
 
@@ -119,32 +128,54 @@ def system_memory_bytes() -> int:
         return 0
 
 
-def main() -> int:
-    arguments = parser().parse_args()
-    command = arguments.command
-    if command[:1] == ["--"]:
-        command = command[1:]
-    if not command:
-        parser().error("a command is required after --")
-    missing = [str(path) for path in arguments.input if not path.is_file()]
-    if missing:
-        parser().error("input files do not exist: " + ", ".join(missing))
+def measured_sample(
+    command: list[str], pair_index: int | None = None, order_in_pair: int | None = None
+) -> dict[str, float | int]:
+    wall_clock, peak_memory = timed_command(command)
+    sample: dict[str, float | int] = {
+        "wallClockSeconds": wall_clock,
+        "peakMemoryBytes": peak_memory,
+    }
+    if pair_index is not None and order_in_pair is not None:
+        sample["pairIndex"] = pair_index
+        sample["orderInPair"] = order_in_pair
+    return sample
 
-    for _ in range(arguments.warmups):
-        timed_command(command)
-    samples = []
-    for _ in range(arguments.runs):
-        wall_clock, peak_memory = timed_command(command)
-        samples.append(
-            {
-                "wallClockSeconds": wall_clock,
-                "peakMemoryBytes": peak_memory,
-            }
+
+def collect_samples(
+    command: list[str], warmups: int, runs: int, paired_command: list[str] | None = None
+) -> tuple[list[dict[str, float | int]], list[dict[str, float | int]] | None]:
+    if paired_command is None:
+        for _ in range(warmups):
+            timed_command(command)
+        return ([measured_sample(command) for _ in range(runs)], None)
+
+    for pair_index in range(warmups):
+        commands = (command, paired_command) if pair_index % 2 == 0 else (paired_command, command)
+        for selected in commands:
+            timed_command(selected)
+
+    samples: dict[str, list[dict[str, float | int]]] = {"primary": [], "paired": []}
+    for pair_index in range(runs):
+        primary_first = (pair_index + warmups) % 2 == 0
+        order = (
+            (("primary", command), ("paired", paired_command))
+            if primary_first
+            else (("paired", paired_command), ("primary", command))
         )
+        for order_in_pair, (role, selected) in enumerate(order, start=1):
+            samples[role].append(measured_sample(selected, pair_index, order_in_pair))
+    return samples["primary"], samples["paired"]
 
-    wall_clock_samples = [sample["wallClockSeconds"] for sample in samples]
-    memory_samples = [sample["peakMemoryBytes"] for sample in samples]
-    result = {
+
+def benchmark_result(
+    arguments: argparse.Namespace,
+    samples: list[dict[str, float | int]],
+    metadata: dict[str, object],
+) -> dict[str, object]:
+    wall_clock_samples = [float(sample["wallClockSeconds"]) for sample in samples]
+    memory_samples = [int(sample["peakMemoryBytes"]) for sample in samples]
+    return {
         "schemaVersion": 1,
         "workload": {
             "analyzer": arguments.analyzer,
@@ -161,20 +192,55 @@ def main() -> int:
         "peakMemoryBytesMinimum": min(memory_samples),
         "peakMemoryBytesMaximum": max(memory_samples),
         "samples": samples,
-        "metadata": {
-            "swiftVersion": command_output(["swift", "--version"]),
-            "os": platform.platform(),
-            "architecture": platform.machine(),
-            "cpuModel": cpu_model(),
-            "memoryBytes": system_memory_bytes(),
-            "warmupRuns": arguments.warmups,
-            "measuredRuns": arguments.runs,
-        },
+        "metadata": metadata,
     }
-    arguments.output.parent.mkdir(parents=True, exist_ok=True)
-    temporary = arguments.output.with_name(arguments.output.name + ".tmp")
+
+
+def write_result(path: Path, result: dict[str, object]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(path.name + ".tmp")
     temporary.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    os.replace(temporary, arguments.output)
+    os.replace(temporary, path)
+
+
+def main() -> int:
+    argument_parser = parser()
+    arguments = argument_parser.parse_args()
+    command = arguments.command
+    if command[:1] == ["--"]:
+        command = command[1:]
+    if not command:
+        argument_parser.error("a command is required after --")
+    if (arguments.paired_output is None) != (arguments.paired_executable is None):
+        argument_parser.error("--paired-output and --paired-executable must be used together")
+    if (
+        arguments.paired_output is not None
+        and arguments.output.resolve() == arguments.paired_output.resolve()
+    ):
+        argument_parser.error("--output and --paired-output must resolve to different paths")
+    missing = [str(path) for path in arguments.input if not path.is_file()]
+    if missing:
+        argument_parser.error("input files do not exist: " + ", ".join(missing))
+
+    paired_command = None
+    if arguments.paired_executable is not None:
+        paired_command = [arguments.paired_executable, *command[1:]]
+    primary_samples, paired_samples = collect_samples(
+        command, arguments.warmups, arguments.runs, paired_command
+    )
+    metadata = {
+        "swiftVersion": command_output(["swift", "--version"]),
+        "os": platform.platform(),
+        "architecture": platform.machine(),
+        "cpuModel": cpu_model(),
+        "memoryBytes": system_memory_bytes(),
+        "warmupRuns": arguments.warmups,
+        "measuredRuns": arguments.runs,
+        "measurementDesign": "paired-interleaved-v1" if paired_command else "sequential-v1",
+    }
+    write_result(arguments.output, benchmark_result(arguments, primary_samples, metadata))
+    if arguments.paired_output is not None and paired_samples is not None:
+        write_result(arguments.paired_output, benchmark_result(arguments, paired_samples, metadata))
     return 0
 
 
