@@ -13,7 +13,7 @@ extension RefactoringCodeSmellCatalog {
         RefactoringCodeSmell(
             name: "Long Parameter List", supportState: .supported,
             ruleIdentity: "swiftdebt.refactoring.long-parameter-list", semanticRevision: 1,
-            minimumPredicate: "Declared parameter count exceeds the documented threshold.",
+            minimumPredicate: "A function or initializer declares six or more parameters.",
             requiredEvidence: ["syntax", "parameter count"], scope: "one parsed callable",
             falsePositiveRisk: "A stable data transfer boundary may need many independent values.",
             falseNegativeRisk: "A short list may still group unrelated concepts.",
@@ -23,7 +23,8 @@ extension RefactoringCodeSmellCatalog {
         RefactoringCodeSmell(
             name: "Global Data", supportState: .supported,
             ruleIdentity: "swiftdebt.refactoring.global-data", semanticRevision: 1,
-            minimumPredicate: "A mutable declaration occurs at file scope.",
+            minimumPredicate:
+                "A mutable var is declared directly in a file's top-level statement list, outside #if clauses.",
             requiredEvidence: ["syntax", "declaration scope"], scope: "one parsed source file",
             falsePositiveRisk: "A guarded global may have controlled access outside syntax evidence.",
             falseNegativeRisk: "Mutable shared state can hide behind a static property.",

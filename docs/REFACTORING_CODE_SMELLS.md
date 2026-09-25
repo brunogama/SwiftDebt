@@ -19,8 +19,8 @@ Findings are advisory by default. `--fail-on-violation` is the explicit CI gate.
 | Mysterious Name | The name obscures the intended domain meaning. | Not Reliably Observable |
 | Duplicated Code | Two concrete bodies have meaningful normalized equivalence. | Research |
 | Long Function | A function body contains 20 or more top-level statements. | Supported |
-| Long Parameter List | Declared parameter count exceeds the documented threshold. | Supported |
-| Global Data | A mutable declaration occurs at file scope. | Supported |
+| Long Parameter List | A function or initializer declares six or more parameters. | Supported |
+| Global Data | A mutable var is declared directly in a file's top-level statement list, outside #if clauses. | Supported |
 | Mutable Data | Mutation and aliasing expose state outside a clear owner. | Research |
 | Divergent Change | One unit changes repeatedly for distinct reasons. | Research |
 | Shotgun Surgery | One kind of change repeatedly requires coordinated edits across units. | Research |
@@ -42,6 +42,8 @@ Findings are advisory by default. `--fail-on-violation` is the explicit CI gate.
 | Comments | A comment compensates for code that fails to express its behavior. | Not Reliably Observable |
 
 The public `RefactoringCodeSmellCatalog` in `SwiftDebtCore` exposes the same 24 entries with their evidence needs, risks, and explanation contracts. `Research` and `Not Reliably Observable` entries are excluded from the active rule catalog. Their absence from a run is not evidence that the smell is absent.
+
+Catalog report schema 1 contains this exact ordered catalog. A change to its entries, predicates, or support states requires a new catalog report schema version so archived reports cannot silently change meaning.
 
 The remaining work is tracked in [issue 48](https://github.com/brunogama/SwiftDebt/issues/48).
 

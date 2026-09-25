@@ -5,6 +5,22 @@ import Testing
 
 @Suite("Refactoring smell syntax signals")
 struct RefactoringSmellRuleTests {
+    @Test("Published catalog references the executable rule contracts")
+    func catalogReferencesExecutableRules() throws {
+        let rules: [(String, RuleIdentity, SemanticRevision)] = [
+            ("Long Function", LongFunctionRule.identity, LongFunctionRule.contract.semanticRevision),
+            ("Long Parameter List", LongParameterListRule.identity, LongParameterListRule.contract.semanticRevision),
+            ("Global Data", GlobalDataRule.identity, GlobalDataRule.contract.semanticRevision),
+            ("Large Class", LargeClassRule.identity, LargeClassRule.contract.semanticRevision),
+        ]
+
+        for (name, identity, revision) in rules {
+            let entry = try #require(RefactoringCodeSmellCatalog.named(name))
+            #expect(entry.ruleIdentity == identity.description)
+            #expect(entry.semanticRevision == revision.rawValue)
+        }
+    }
+
     @Test("Long Function reports the threshold and preserves a clean shorter function")
     func longFunction() throws {
         let body = (1...20).map { "let value\($0) = \($0)" }.joined(separator: "\n")

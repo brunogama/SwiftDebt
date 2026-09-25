@@ -125,5 +125,12 @@ public struct RefactoringCodeSmellCatalogReport: Codable, Equatable, Sendable {
         self.reportKind = reportKind
         self.schemaVersion = schemaVersion
         entries = try container.decode([RefactoringCodeSmell].self, forKey: .entries)
+        guard entries == RefactoringCodeSmellCatalog.all else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .entries,
+                in: container,
+                debugDescription: "Catalog entries do not match this schema's canonical Fowler catalog."
+            )
+        }
     }
 }

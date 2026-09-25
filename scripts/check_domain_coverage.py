@@ -47,7 +47,7 @@ def main() -> int:
     domain = (root / "Sources" / "SwiftDebtCore").resolve()
     report_path = coverage_path(root, options.coverage_json)
     report = json.loads(report_path.read_text(encoding="utf-8"))
-    rows: dict[str, tuple[int, int, list[int]]] = {}
+    rows: dict[str, tuple[int, int]] = {}
     for dataset in report.get("data", []):
         for file_report in dataset.get("files", []):
             source = Path(file_report["filename"]).resolve()
@@ -59,28 +59,21 @@ def main() -> int:
             name = str(relative)
             if name in rows:
                 raise RuntimeError(f"duplicate coverage record for {name}")
-            zero_regions = sorted({
-                int(segment[0])
-                for segment in file_report.get("segments", [])
-                if segment[3] and segment[2] == 0
-            })
-            rows[name] = (int(lines["covered"]), int(lines["count"]), zero_regions)
+            rows[name] = (int(lines["covered"]), int(lines["count"]))
 
     if not rows:
         raise RuntimeError(f"no executable coverage records found under {domain}")
 
     missed_total = 0
     for name in sorted(rows):
-        covered, count, zero_regions = rows[name]
+        covered, count = rows[name]
         missed = count - covered
         missed_total += missed
         percent = 100 * covered / count if count else 100
         print(f"{percent:6.2f}% {covered:4}/{count:4} {name}")
-        if missed:
-            print(f"  zero-count region starts: {zero_regions}")
 
-    covered_total = sum(covered for covered, _, _ in rows.values())
-    line_total = sum(count for _, count, _ in rows.values())
+    covered_total = sum(covered for covered, _ in rows.values())
+    line_total = sum(count for _, count in rows.values())
     total_percent = 100 * covered_total / line_total if line_total else 100
     print(f"TOTAL {total_percent:.2f}% {covered_total}/{line_total}")
     if missed_total:

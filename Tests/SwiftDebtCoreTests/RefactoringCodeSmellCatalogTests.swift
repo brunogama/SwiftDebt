@@ -67,6 +67,13 @@ struct RefactoringCodeSmellCatalogTests {
         #expect(throws: DecodingError.self) {
             try JSONDecoder().decode(RefactoringCodeSmellCatalogReport.self, from: changed)
         }
+
+        object["schemaVersion"] = 1
+        object["reportKind"] = "another-report"
+        let changedKind = try JSONSerialization.data(withJSONObject: object)
+        #expect(throws: DecodingError.self) {
+            try JSONDecoder().decode(RefactoringCodeSmellCatalogReport.self, from: changedKind)
+        }
     }
 
     @Test("Malformed or incomplete rule references fail decoding")
@@ -87,6 +94,32 @@ struct RefactoringCodeSmellCatalogTests {
             entries[0]["ruleIdentity"] = identity
             entries[0]["semanticRevision"] = revision
             object["entries"] = entries
+            let changed = try JSONSerialization.data(withJSONObject: object)
+            #expect(throws: DecodingError.self) {
+                try JSONDecoder().decode(RefactoringCodeSmellCatalogReport.self, from: changed)
+            }
+        }
+    }
+
+    @Test("A catalog report rejects omitted, duplicated, or changed entries")
+    func noncanonicalEntries() throws {
+        let encoded = try JSONEncoder().encode(RefactoringCodeSmellCatalog.report)
+        let original = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        let entries = try #require(original["entries"] as? [[String: Any]])
+        var changedPredicate = entries
+        changedPredicate[0]["minimumPredicate"] = "A different predicate."
+        var changedSupport = entries
+        changedSupport[0]["supportState"] = "research"
+        let variants = [
+            Array(entries.dropLast()),
+            Array(entries.dropLast()) + [entries[0]],
+            changedPredicate,
+            changedSupport,
+        ]
+
+        for variant in variants {
+            var object = original
+            object["entries"] = variant
             let changed = try JSONSerialization.data(withJSONObject: object)
             #expect(throws: DecodingError.self) {
                 try JSONDecoder().decode(RefactoringCodeSmellCatalogReport.self, from: changed)
