@@ -43,15 +43,43 @@ public struct PerformanceRegressionBudget: Codable, Equatable, Sendable {
     public let name: String
     public let maximumWallClockRegressionPercent: Double
     public let maximumPeakMemoryRegressionPercent: Double
+    public let maximumWallClockRegressionSeconds: Double
 
     public init(
         name: String,
         maximumWallClockRegressionPercent: Double,
-        maximumPeakMemoryRegressionPercent: Double
+        maximumPeakMemoryRegressionPercent: Double,
+        maximumWallClockRegressionSeconds: Double = 0
     ) {
         self.name = name
         self.maximumWallClockRegressionPercent = maximumWallClockRegressionPercent
         self.maximumPeakMemoryRegressionPercent = maximumPeakMemoryRegressionPercent
+        self.maximumWallClockRegressionSeconds = maximumWallClockRegressionSeconds
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case name
+        case maximumWallClockRegressionPercent
+        case maximumPeakMemoryRegressionPercent
+        case maximumWallClockRegressionSeconds
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        name = try container.decode(String.self, forKey: .name)
+        maximumWallClockRegressionPercent = try container.decode(
+            Double.self,
+            forKey: .maximumWallClockRegressionPercent
+        )
+        maximumPeakMemoryRegressionPercent = try container.decode(
+            Double.self,
+            forKey: .maximumPeakMemoryRegressionPercent
+        )
+        maximumWallClockRegressionSeconds =
+            try container.decodeIfPresent(
+                Double.self,
+                forKey: .maximumWallClockRegressionSeconds
+            ) ?? 0
     }
 }
 
@@ -83,13 +111,23 @@ public enum PerformanceBudgetGate: Sendable {
             baseline: baseline.wallClockSecondsMedian,
             candidate: candidate.wallClockSecondsMedian
         )
+        let wallClockRegressionSeconds = candidate.wallClockSecondsMedian - baseline.wallClockSecondsMedian
         let memoryRegression = regressionPercent(
             baseline: Double(baseline.peakMemoryBytesMedian),
             candidate: Double(candidate.peakMemoryBytesMedian)
         )
         var reasons: [String] = []
-        if wallClockRegression > budget.maximumWallClockRegressionPercent {
-            reasons.append("wall-clock regression exceeds \(budget.maximumWallClockRegressionPercent)%")
+        if wallClockRegression > budget.maximumWallClockRegressionPercent,
+            wallClockRegressionSeconds > budget.maximumWallClockRegressionSeconds
+        {
+            if budget.maximumWallClockRegressionSeconds == 0 {
+                reasons.append("wall-clock regression exceeds \(budget.maximumWallClockRegressionPercent)%")
+            } else {
+                reasons.append(
+                    "wall-clock regression exceeds \(budget.maximumWallClockRegressionPercent)% and "
+                        + "\(budget.maximumWallClockRegressionSeconds) seconds"
+                )
+            }
         }
         if memoryRegression > budget.maximumPeakMemoryRegressionPercent {
             reasons.append("peak-memory regression exceeds \(budget.maximumPeakMemoryRegressionPercent)%")

@@ -72,6 +72,7 @@ jobs:
             artifacts/performance/baseline-candidate.json \
             --name baseline-analysis \
             --max-wall-clock-regression 10 \
+            --max-wall-clock-regression-seconds 0.010 \
             --max-peak-memory-regression 15 \
             --output artifacts/performance/baseline-evaluation.json
           .build/release/swift-debt analyze Examples/Sources \

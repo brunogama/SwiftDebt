@@ -16,6 +16,7 @@ extension CLIOptions {
         let options = Set([
             "--name",
             "--max-wall-clock-regression",
+            "--max-wall-clock-regression-seconds",
             "--max-peak-memory-regression",
             "--output",
         ])
@@ -36,11 +37,15 @@ extension CLIOptions {
             throw CLIError("Expected baseline and candidate benchmark result paths")
         }
         let name = values["--name"] ?? "performance"
-        let wallClock = try performancePercentage(
+        let wallClock = try performanceLimit(
             values["--max-wall-clock-regression"],
             option: "--max-wall-clock-regression"
         )
-        let peakMemory = try performancePercentage(
+        let wallClockSeconds = try performanceLimit(
+            values["--max-wall-clock-regression-seconds"] ?? "0",
+            option: "--max-wall-clock-regression-seconds"
+        )
+        let peakMemory = try performanceLimit(
             values["--max-peak-memory-regression"],
             option: "--max-peak-memory-regression"
         )
@@ -52,13 +57,14 @@ extension CLIOptions {
                 budget: PerformanceRegressionBudget(
                     name: name,
                     maximumWallClockRegressionPercent: wallClock,
-                    maximumPeakMemoryRegressionPercent: peakMemory
+                    maximumPeakMemoryRegressionPercent: peakMemory,
+                    maximumWallClockRegressionSeconds: wallClockSeconds
                 )
             )
         )
     }
 
-    private func performancePercentage(_ value: String?, option: String) throws -> Double {
+    private func performanceLimit(_ value: String?, option: String) throws -> Double {
         guard let value, let result = Double(value), result >= 0, result.isFinite else {
             throw CLIError("\(option) must be a nonnegative finite number")
         }

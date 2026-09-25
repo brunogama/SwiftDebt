@@ -194,6 +194,82 @@ struct PerformanceProfilingTests {
         #expect(evaluation.peakMemoryRegressionPercent == 20)
     }
 
+    @Test func performanceGateCLIAcceptsSmallAbsoluteRegression() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SwiftDebtPerformanceGate-")
+            .appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let baseline = directory.appendingPathComponent("baseline.json")
+        let candidate = directory.appendingPathComponent("candidate.json")
+        let output = directory.appendingPathComponent("evaluation.json")
+        let workload = PerformanceWorkloadIdentity(
+            analyzer: "SwiftDebt",
+            workloadFamily: "SwiftDebt",
+            inputSHA256: "frozen-input",
+            commandFingerprint: "swift-debt analyze Examples/Sources --jobs 1",
+            analysisMode: "baseline",
+            optionalContext: "none"
+        )
+        try write(
+            PerformanceBenchmarkResult(
+                workload: workload,
+                wallClockSecondsMedian: 0.021_137,
+                peakMemoryBytesMedian: 10_829_824
+            ),
+            to: baseline
+        )
+        try write(
+            PerformanceBenchmarkResult(
+                workload: workload,
+                wallClockSecondsMedian: 0.027_381_166,
+                peakMemoryBytesMedian: 11_173_888
+            ),
+            to: candidate
+        )
+
+        let result = try runSwiftDebt(arguments: [
+            "performance-gate",
+            baseline.path,
+            candidate.path,
+            "--name", "baseline-analysis",
+            "--max-wall-clock-regression", "10",
+            "--max-wall-clock-regression-seconds", "0.010",
+            "--max-peak-memory-regression", "15",
+            "--output", output.path,
+        ])
+        let evaluation = try JSONDecoder().decode(
+            PerformanceBudgetEvaluation.self,
+            from: Data(contentsOf: output)
+        )
+
+        #expect(result.status == 0)
+        #expect(result.stdout.isEmpty)
+        #expect(result.stderr.isEmpty)
+        #expect(evaluation.comparable)
+        #expect(evaluation.passed)
+        #expect(evaluation.reasons.isEmpty)
+    }
+
+    @Test(arguments: ["-0.001", "nan", "inf"])
+    func performanceGateCLIRejectsInvalidAbsoluteRegressionLimit(_ value: String) throws {
+        let result = try runSwiftDebt(arguments: [
+            "performance-gate",
+            "baseline.json",
+            "candidate.json",
+            "--max-wall-clock-regression", "10",
+            "--max-wall-clock-regression-seconds", value,
+            "--max-peak-memory-regression", "15",
+        ])
+
+        #expect(result.status == 2)
+        #expect(result.stdout.isEmpty)
+        #expect(
+            result.stderr
+                == "swift-debt: error: --max-wall-clock-regression-seconds must be a nonnegative finite number\n"
+        )
+    }
+
     @Test func benchmarkHarnessRecordsRawSamplesAndMachineReadableMedian() throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("SwiftDebtBenchmarkHarness-")
