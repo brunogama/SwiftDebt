@@ -1,10 +1,19 @@
 import Foundation
+import SwiftDebtKit
 import SwiftDebtLifecycle
 
 enum LifecycleCLIRequest {
     case inventory(artifactPath: String, format: LifecycleReadFormat)
     case explain(artifactPath: String, findingID: FindingID, format: LifecycleReadFormat)
     case snapshot(artifactPath: String, snapshotID: SnapshotID, format: LifecycleReadFormat)
+    case inferIntroduction(
+        artifactPath: String,
+        findingID: FindingID,
+        repositoryPath: String,
+        maximumRevisions: Int,
+        maximumFileBytes: Int,
+        format: LifecycleReadFormat
+    )
 
     func run() throws -> String {
         let service = LifecycleReadService()
@@ -23,6 +32,25 @@ enum LifecycleCLIRequest {
                 at: URL(fileURLWithPath: artifactPath),
                 format: format
             )
+        case .inferIntroduction(
+            let artifactPath,
+            let findingID,
+            let repositoryPath,
+            let maximumRevisions,
+            let maximumFileBytes,
+            let format
+        ):
+            let artifactURL = URL(fileURLWithPath: artifactPath)
+            _ = try LifecycleIntroductionService().infer(
+                LifecycleIntroductionRequest(
+                    artifactURL: artifactURL,
+                    repositoryURL: URL(fileURLWithPath: repositoryPath),
+                    findingID: findingID,
+                    maximumRevisions: maximumRevisions,
+                    maximumFileBytes: maximumFileBytes
+                )
+            )
+            return try service.explain(findingID: findingID, at: artifactURL, format: format)
         }
     }
 }
@@ -30,7 +58,10 @@ enum LifecycleCLIRequest {
 extension CLIOptions {
     func parseLifecycle(_ arguments: [String]) throws -> CLIAction {
         guard let command = arguments.first else {
-            throw CLIError("Expected lifecycle inventory, explain, or snapshot")
+            throw CLIError("Expected lifecycle inventory, explain, snapshot, or infer-introduction")
+        }
+        if command == "infer-introduction" {
+            return try parseLifecycleIntroduction(Array(arguments.dropFirst()))
         }
         var positional: [String] = []
         var format = LifecycleReadFormat.text

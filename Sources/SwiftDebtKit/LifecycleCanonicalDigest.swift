@@ -22,13 +22,27 @@ enum LifecycleCanonicalDigest {
         analysis: AnalysisSnapshot,
         capture: LifecycleAnalysisCapture
     ) throws -> LifecycleDigest {
+        try configuration(
+            analysis: analysis,
+            selectionKind: capture.selectionKind,
+            exclusions: capture.exclusions,
+            maximumFileBytes: capture.maximumFileBytes
+        )
+    }
+
+    static func configuration(
+        analysis: AnalysisSnapshot,
+        selectionKind: LifecycleSelectionKind,
+        exclusions: [String],
+        maximumFileBytes: Int
+    ) throws -> LifecycleDigest {
         var input = LifecycleDigestInput()
         input.append("swiftdebt-lifecycle-configuration-v1")
         input.append("source-discovery-policy-v1")
-        input.append(capture.selectionKind.rawValue)
-        input.append(capture.maximumFileBytes.description)
-        input.append(UInt64(capture.exclusions.count))
-        for exclusion in capture.exclusions { input.append(exclusion) }
+        input.append(selectionKind.rawValue)
+        input.append(maximumFileBytes.description)
+        input.append(UInt64(exclusions.count))
+        for exclusion in exclusions { input.append(exclusion) }
         let rules = analysis.ruleDescriptors.sorted {
             $0.identity.description < $1.identity.description
         }

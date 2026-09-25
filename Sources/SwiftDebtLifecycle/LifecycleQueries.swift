@@ -8,6 +8,7 @@ public struct FindingSummary: Codable, Equatable, Sendable {
     public let evidenceState: FindingEvidenceState
     public let firstObservationSnapshotID: SnapshotID
     public let lastKnownLocation: SnapshotLocation
+    public let introductionConclusion: IntroductionConclusion?
 }
 
 public struct LifecycleInventoryReport: Codable, Equatable, Sendable {
@@ -36,7 +37,8 @@ public struct LifecycleInventoryReport: Codable, Equatable, Sendable {
                 lifecycleState: finding.lifecycleState,
                 evidenceState: finding.evidenceState,
                 firstObservationSnapshotID: finding.firstObservationSnapshotID,
-                lastKnownLocation: detection.location
+                lastKnownLocation: detection.location,
+                introductionConclusion: artifact.currentIntroductionConclusion(for: finding.id)
             )
         }
         self.unresolvedDetections = artifact.unresolvedDetections
@@ -49,6 +51,7 @@ public struct FindingExplanationReport: Codable, Equatable, Sendable {
     public let finding: Finding
     public let supportingSnapshots: [ObservationSnapshot]
     public let unresolvedDetections: [UnresolvedDetection]
+    public let introductionConclusions: [IntroductionConclusion]
 
     public init(findingID: FindingID, artifact: LifecycleArtifact) throws {
         try artifact.validate()
@@ -63,6 +66,7 @@ public struct FindingExplanationReport: Codable, Equatable, Sendable {
         self.unresolvedDetections = artifact.unresolvedDetections.filter {
             $0.candidateFindingIDs.contains(findingID)
         }
+        self.introductionConclusions = artifact.introductionConclusions(for: findingID)
     }
 }
 

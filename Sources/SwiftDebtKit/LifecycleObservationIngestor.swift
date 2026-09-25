@@ -7,6 +7,7 @@ public enum LifecycleAnalysisError: Error, Equatable, Sendable, CustomStringConv
     case sourceChangedDuringCapture
     case gitInspectionFailed(String)
     case unorderedSnapshot(String)
+    case invalidHistoryBudget
 
     public var description: String {
         switch self {
@@ -18,6 +19,8 @@ public enum LifecycleAnalysisError: Error, Equatable, Sendable, CustomStringConv
             "Unable to inspect Git provenance for lifecycle ingestion: \(reason)"
         case .unorderedSnapshot(let reason):
             "Lifecycle ingestion cannot establish source order: \(reason)"
+        case .invalidHistoryBudget:
+            "Lifecycle introduction limits must be positive integers."
         }
     }
 }

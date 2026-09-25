@@ -43,6 +43,7 @@ public struct LifecycleArtifact: Codable, Equatable, Sendable {
     public internal(set) var unresolvedDetections: [UnresolvedDetection]
     public internal(set) var processedSnapshotIDs: [SnapshotID]
     public internal(set) var lineageHeads: [LineageHead]
+    public internal(set) var introductionConclusions: [IntroductionConclusion]
 
     public init(generatorVersion: String) throws {
         guard hasLifecycleContent(generatorVersion) else {
@@ -56,6 +57,7 @@ public struct LifecycleArtifact: Codable, Equatable, Sendable {
         self.unresolvedDetections = []
         self.processedSnapshotIDs = []
         self.lineageHeads = []
+        self.introductionConclusions = []
     }
 
     init(
@@ -66,7 +68,8 @@ public struct LifecycleArtifact: Codable, Equatable, Sendable {
         findings: [Finding],
         unresolvedDetections: [UnresolvedDetection],
         processedSnapshotIDs: [SnapshotID],
-        lineageHeads: [LineageHead]
+        lineageHeads: [LineageHead],
+        introductionConclusions: [IntroductionConclusion]
     ) throws {
         guard schemaVersion == LifecycleArtifactSchema.currentVersion else {
             throw LifecycleContractError.invalidArtifact(
@@ -87,6 +90,7 @@ public struct LifecycleArtifact: Codable, Equatable, Sendable {
         self.unresolvedDetections = unresolvedDetections.sorted(by: Self.unresolvedOrder)
         self.processedSnapshotIDs = processedSnapshotIDs.sorted { $0.rawValue < $1.rawValue }
         self.lineageHeads = lineageHeads.sorted { $0.lineageID.rawValue < $1.lineageID.rawValue }
+        self.introductionConclusions = introductionConclusions
         try validate()
     }
 
@@ -102,6 +106,18 @@ public struct LifecycleArtifact: Codable, Equatable, Sendable {
         snapshot(id: snapshotID)?.detection(id: id)
     }
 
+    public func introductionConclusions(for findingID: FindingID) -> [IntroductionConclusion] {
+        introductionConclusions.filter { $0.findingID == findingID }
+    }
+
+    public func currentIntroductionConclusion(for findingID: FindingID) -> IntroductionConclusion? {
+        introductionConclusions(for: findingID).max { lhs, rhs in
+            let left = Self.introductionRank(lhs.kind)
+            let right = Self.introductionRank(rhs.kind)
+            return left == right ? lhs.attempt < rhs.attempt : left < right
+        }
+    }
+
     private static func snapshotOrder(_ lhs: ObservationSnapshot, _ rhs: ObservationSnapshot) -> Bool {
         let left = lhs.provenance.lineage
         let right = rhs.provenance.lineage
@@ -115,6 +131,14 @@ public struct LifecycleArtifact: Codable, Equatable, Sendable {
         return lhs.detectionID.rawValue < rhs.detectionID.rawValue
     }
 
+    private static func introductionRank(_ kind: IntroductionConclusionKind) -> Int {
+        switch kind {
+        case .unavailable: 0
+        case .bounded: 1
+        case .exact: 2
+        }
+    }
+
     private enum CodingKeys: String, CodingKey {
         case schemaVersion
         case reportKind
@@ -124,6 +148,7 @@ public struct LifecycleArtifact: Codable, Equatable, Sendable {
         case unresolvedDetections
         case processedSnapshotIDs
         case lineageHeads
+        case introductionConclusions
     }
 
     public init(from decoder: any Decoder) throws {
@@ -153,7 +178,11 @@ public struct LifecycleArtifact: Codable, Equatable, Sendable {
                 findings: values.decode([Finding].self, forKey: .findings),
                 unresolvedDetections: values.decode([UnresolvedDetection].self, forKey: .unresolvedDetections),
                 processedSnapshotIDs: values.decode([SnapshotID].self, forKey: .processedSnapshotIDs),
-                lineageHeads: values.decode([LineageHead].self, forKey: .lineageHeads)
+                lineageHeads: values.decode([LineageHead].self, forKey: .lineageHeads),
+                introductionConclusions: values.decodeIfPresent(
+                    [IntroductionConclusion].self,
+                    forKey: .introductionConclusions
+                ) ?? []
             )
         } catch {
             throw DecodingError.dataCorruptedError(

@@ -47,7 +47,7 @@ Structural evidence and direct-parent source rename evidence also have package-s
 
 Provenance remains a trusted integration input for direct library callers. A syntactically valid digest alone does not prove that an external caller computed it from the analyzed checkout. The CLI path closes that gap for command-line ingestion by constructing provenance inside `AnalysisService` and exposing only the artifact destination.
 
-The lifecycle query commands remain read-only:
+The lifecycle audit query commands remain read-only:
 
 ```text
 swift-debt lifecycle inventory ARTIFACT [--format text|json]
@@ -56,6 +56,28 @@ swift-debt lifecycle snapshot ARTIFACT SNAPSHOT_ID [--format text|json]
 ```
 
 These commands decode and validate the entire artifact before reporting. They never repair, replace, or partially interpret unreadable history.
+
+Introduction inference is a separate, explicit artifact mutation:
+
+```text
+swift-debt lifecycle infer-introduction ARTIFACT FINDING_ID \
+  --repository PATH --max-revisions INTEGER [--max-file-bytes INTEGER] \
+  [--format text|json]
+```
+
+Normal `analyze` runs never traverse history. The inference command has a required positive revision budget and analyzes committed trees through `git archive` without checking out or modifying them. It appends an immutable Introduction Conclusion attempt and then renders the same validated explanation used by the read-only command. An identical retry leaves artifact bytes unchanged.
+
+## Git introduction evidence
+
+---
+
+Each Introduction Conclusion persists the Git `HEAD`, working-tree state and status digest, shallow-repository state, requested starting revision, maximum revision count, unvisited frontier, and every examined revision. An examined revision records its parents and either a complete engine-produced Observation Snapshot or a specific availability gap. Historical snapshots contain source identity, configuration fingerprint, capability state, engine version, repository scope, Atomic Observations, and structural Detection evidence.
+
+Artifact decode recomputes `exact`, `bounded`, or `unavailable` from that raw evidence. An exact conclusion requires a uniquely matching structural Detection on the original SourceUnit path and committed target-rule evidence for every selected SourceUnit. Every direct parent must prove comparable absence, or exactly one positive parent is followed farther through history. A merge is exact only when every parent proves absence. A tampered exact revision, missing parent record, failed parse, partial scope, configuration mismatch, capability mismatch, or unavailable object fails closed.
+
+Dirty and shallow repositories retain First Observation but block exact committed attribution with machine-readable reasons. Exhausting the revision budget produces a bounded conclusion with the unexamined frontier. A later deeper query appends a refinement without changing the Finding, its First Observation, or earlier conclusions.
+
+Historical cross-file continuity remains bounded because this slice does not persist per-edge Git rename evidence for archived revisions. The inference command currently reproduces the default directory selection with the requested maximum file size. If that fingerprint differs from the opening Observation, comparability fails rather than accepting caller-supplied configuration claims.
 
 ## CLI provenance derivation
 
@@ -151,7 +173,11 @@ All implemented acceptance tests use the real R1 `RuleEngine`, the public lifecy
 | AT-13 | Open | Directional compatibility declarations are not modeled. |
 | AT-14 | Direct | A real three-revision CLI fixture opens, resolves, and uniquely reopens the same Finding while retaining all three events. |
 | AT-15 | Direct | A post-resolution Detection in another file, with different subject and declaration structure and no Git rename edge, opens a separate Finding and leaves the original resolved. |
-| AT-16 to AT-20 | Open | Git introduction inference is not implemented. |
+| AT-16 | Direct | A real linear Git fixture persists the detected child and verified-absent parent, then reports the child as exact. |
+| AT-17 | Direct | A real unparseable parent produces a bounded conclusion with an incomplete historical-observation reason. |
+| AT-18 | Direct | A real merge with one positive and one absent parent follows the positive lineage and attributes introduction to its earlier commit. |
+| AT-19 | Direct | A real merge that introduces the Detection after both parents prove absence is exact at the merge. |
+| AT-20 | Direct | Real dirty-worktree and shallow-clone fixtures retain First Observation and block exact attribution with specific reasons. |
 | AT-21 | Partial | Reverse arrival and divergent library fixtures preserve source order; the CLI accepts only a verified direct Git parent and rejects dirty, merge, or disconnected successors. Real divergent Git lineages in one artifact remain open. |
 | AT-22 | Partial | Retry and reverse-arrival replay preserve canonical bytes, and real CLI replay is byte-identical; concurrent replay and interruption injection remain open. |
 | AT-23 | Partial | Persisted human and JSON queries expose blockers; ambiguity records complete candidate Finding IDs and Detection IDs; CLI snapshot inspection shows derived Git, configuration, capability, engine, scope, and rename provenance. Full human/machine audit parity remains open. |
@@ -171,7 +197,8 @@ The current slice completes the first-observation, line-move, corroborated file-
 - a real incomplete changed-files CLI observation between first observation and resolution;
 - explicit selection and exclusion coverage for moves and deletions;
 - directional semantic and configuration compatibility declarations;
-- Git introduction conclusions and merge handling;
+- historical configuration reproduction beyond the default directory selection and maximum-file-size input;
+- archived cross-file introduction continuity with persisted Git rename corroboration;
 - complete human and machine audit parity;
 - concurrent replay and interrupted-write fault injection; and
 - measured artifact and query performance budgets.

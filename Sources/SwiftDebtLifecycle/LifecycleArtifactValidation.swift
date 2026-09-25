@@ -19,6 +19,7 @@ extension LifecycleArtifact {
         let processed = Set(processedSnapshotIDs)
         try validateLineages(snapshotByID: snapshotByID, processed: processed)
         try validateFindings(snapshotByID: snapshotByID, processed: processed)
+        try validateIntroductionConclusions()
     }
 
     private func validateLineages(
