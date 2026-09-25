@@ -1,6 +1,7 @@
 import importlib.util
 import io
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -40,6 +41,34 @@ class DebtmapBenchmarkPairingTests(unittest.TestCase):
                     BENCHMARK.main()
             self.assertEqual(raised.exception.code, 2)
             timed_command.assert_not_called()
+
+    def test_hard_linked_outputs_are_rejected_before_measurement(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            input_path = root / "input.swift"
+            output_path = root / "reference.json"
+            alias_path = root / "candidate.json"
+            input_path.write_text("struct Input {}\n", encoding="utf-8")
+            output_path.write_text("prior result\n", encoding="utf-8")
+            os.link(output_path, alias_path)
+            arguments = [
+                "run_debtmap_benchmark.py", "--output", str(output_path),
+                "--paired-output", str(alias_path), "--paired-executable", "candidate",
+                "--input", str(input_path), "--analyzer", "SwiftDebt",
+                "--workload-family", "SwiftDebt", "--command-fingerprint", "frozen",
+                "--analysis-mode", "baseline", "--optional-context", "none",
+                "--", "reference",
+            ]
+            with (
+                mock.patch.object(sys, "argv", arguments),
+                mock.patch.object(BENCHMARK, "timed_command") as timed_command,
+                mock.patch.object(sys, "stderr", io.StringIO()),
+            ):
+                with self.assertRaises(SystemExit) as raised:
+                    BENCHMARK.main()
+            self.assertEqual(raised.exception.code, 2)
+            timed_command.assert_not_called()
+            self.assertEqual(output_path.read_text(encoding="utf-8"), "prior result\n")
 
     def test_paired_samples_are_adjacent_and_alternate_order(self) -> None:
         calls: list[str] = []
