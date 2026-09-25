@@ -14,34 +14,34 @@ Findings are advisory by default. `--fail-on-violation` is the explicit CI gate.
 
 ## Evidence map
 
-| Book smell | Minimum Swift signal or evidence requirement | Status |
+| Book smell | Minimum Swift signal or evidence requirement | Support state |
 | --- | --- | --- |
-| Mysterious Name | Project naming intent or a narrowly defined placeholder name | Later |
-| Duplicated Code | Normalized bodies across files with meaningful equivalence | Later |
-| Long Function | Function body size over a documented threshold | Active |
-| Long Parameter List | Function declaration parameter count over a documented threshold | Active |
-| Global Data | Mutable top-level declaration | Active |
-| Mutable Data | Mutation/aliasing and state ownership | Later |
-| Divergent Change | Distinct reasons for edits over change history | Later |
-| Shotgun Surgery | Coordinated edits across files over change history | Later |
-| Feature Envy | Resolved ownership of accessed members | Later |
-| Data Clumps | Repeated parameter or property groups across declarations | Later |
-| Primitive Obsession | Domain meaning of primitive values | Later |
-| Repeated Switches | Repeated dispatch structure across source units | Later |
-| Loops | Loop whose transformation would improve clarity, not mere loop syntax | Later |
-| Lazy Element | Role and actual use of a small abstraction | Later |
-| Speculative Generality | Unused extension points and change intent | Later |
-| Temporary Field | State valid only during part of an object's lifetime | Later |
-| Message Chains | Resolved access graph and an actionable delegation boundary | Later |
-| Middle Man | Resolved forwarding methods and owners | Later |
-| Insider Trading | Cross-type member access and visibility semantics | Later |
-| Large Class | Type body size over a documented threshold | Active |
-| Alternative Classes with Different Interfaces | Role equivalence and different public APIs | Later |
-| Data Class | Behavioral role and externally owned behavior | Later |
-| Refused Bequest | Inheritance contract and unused inherited behavior | Later |
-| Comments | Comment hiding unclear behavior, not documentation or useful context | Later |
+| Mysterious Name | Project naming intent or a narrowly defined placeholder name | Not Reliably Observable |
+| Duplicated Code | Normalized bodies across files with meaningful equivalence | Research |
+| Long Function | Function body size over a documented threshold | Supported |
+| Long Parameter List | Function declaration parameter count over a documented threshold | Supported |
+| Global Data | Mutable top-level declaration | Supported |
+| Mutable Data | Mutation/aliasing and state ownership | Research |
+| Divergent Change | Distinct reasons for edits over change history | Research |
+| Shotgun Surgery | Coordinated edits across files over change history | Research |
+| Feature Envy | Resolved ownership of accessed members | Research |
+| Data Clumps | Repeated parameter or property groups across declarations | Research |
+| Primitive Obsession | Domain meaning of primitive values | Not Reliably Observable |
+| Repeated Switches | Repeated dispatch structure across source units | Research |
+| Loops | Loop whose transformation would improve clarity, not mere loop syntax | Not Reliably Observable |
+| Lazy Element | Role and actual use of a small abstraction | Research |
+| Speculative Generality | Unused extension points and change intent | Research |
+| Temporary Field | State valid only during part of an object's lifetime | Research |
+| Message Chains | Resolved access graph and an actionable delegation boundary | Research |
+| Middle Man | Resolved forwarding methods and owners | Research |
+| Insider Trading | Cross-type member access and visibility semantics | Research |
+| Large Class | Type body size over a documented threshold | Supported |
+| Alternative Classes with Different Interfaces | Role equivalence and different public APIs | Research |
+| Data Class | Behavioral role and externally owned behavior | Research |
+| Refused Bequest | Inheritance contract and unused inherited behavior | Research |
+| Comments | Comment hiding unclear behavior, not documentation or useful context | Not Reliably Observable |
 
-"Later" is an evidence requirement, not an absence result. These entries are deliberately excluded from the active rule catalog until a detector can meet the completion predicate.
+The public `RefactoringCodeSmellCatalog` in `SwiftDebtCore` exposes the same 24 entries with their evidence needs, risks, and explanation contracts. `Research` and `Not Reliably Observable` entries are excluded from the active rule catalog. Their absence from a run is not evidence that the smell is absent.
 
 The remaining work is tracked in [issue 48](https://github.com/brunogama/SwiftDebt/issues/48).
 
