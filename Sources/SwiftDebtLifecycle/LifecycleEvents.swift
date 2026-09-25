@@ -160,21 +160,65 @@ extension LifecycleTransition: Codable {
     }
 }
 
-public struct LifecycleEvent: Codable, Equatable, Sendable {
+public struct LifecycleEvent: Equatable, Sendable {
     public let id: LifecycleEventID
     public let snapshotID: SnapshotID
     public let basisEventIDs: [LifecycleEventID]
     public let transition: LifecycleTransition
+    public let semanticComparisons: [SemanticComparisonBasis]
 
     public init(
         id: LifecycleEventID,
         snapshotID: SnapshotID,
         basisEventIDs: [LifecycleEventID] = [],
-        transition: LifecycleTransition
+        transition: LifecycleTransition,
+        semanticComparisons: [SemanticComparisonBasis] = []
     ) {
         self.id = id
         self.snapshotID = snapshotID
         self.basisEventIDs = basisEventIDs.sorted { $0.rawValue < $1.rawValue }
         self.transition = transition
+        self.semanticComparisons = uniqueSemanticComparisons(semanticComparisons)
+    }
+}
+
+extension LifecycleEvent: Codable {
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case snapshotID
+        case transition
+        case semanticComparisons
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        let comparisons =
+            try values.decodeIfPresent(
+                [SemanticComparisonBasis].self,
+                forKey: .semanticComparisons
+            ) ?? []
+        guard comparisons == uniqueSemanticComparisons(comparisons) else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .semanticComparisons,
+                in: values,
+                debugDescription: "Semantic comparison evidence must be unique and canonical."
+            )
+        }
+        self.init(
+            id: try values.decode(LifecycleEventID.self, forKey: .id),
+            snapshotID: try values.decode(SnapshotID.self, forKey: .snapshotID),
+            transition: try values.decode(LifecycleTransition.self, forKey: .transition),
+            semanticComparisons: comparisons
+        )
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var values = encoder.container(keyedBy: CodingKeys.self)
+        try values.encode(id, forKey: .id)
+        try values.encode(snapshotID, forKey: .snapshotID)
+        try values.encode(transition, forKey: .transition)
+        if !semanticComparisons.isEmpty {
+            try values.encode(semanticComparisons, forKey: .semanticComparisons)
+        }
     }
 }

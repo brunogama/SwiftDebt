@@ -29,12 +29,14 @@ extension IntroductionConclusionEvaluator {
                         code: "verified-repository-root",
                         message: "The comparable positive revision is a verified repository root."
                     )
-                ]
+                ],
+                semanticComparisons: []
             )
         }
 
         var positiveParents: [GitRevisionID] = []
         var blockers: [LifecycleReason] = []
+        var semanticComparisons: [SemanticComparisonBasis] = []
         for parent in record.parentRevisions {
             guard let parentRecord = records[parent] else {
                 let code = frontier.contains(parent) ? "history-budget-exhausted" : "history-parent-missing"
@@ -52,12 +54,15 @@ extension IntroductionConclusionEvaluator {
                 openingSnapshot: openingSnapshot,
                 rule: rule
             ) {
-            case .present:
+            case .present(let comparison):
                 positiveParents.append(parent)
-            case .absent:
+                semanticComparisons.append(comparison)
+            case .absent(let comparison):
+                semanticComparisons.append(comparison)
                 continue
-            case .incomplete(let reasons):
+            case .incomplete(let reasons, let comparisons):
                 blockers += reasons
+                semanticComparisons += comparisons
             }
         }
         if !blockers.isEmpty {
@@ -65,7 +70,8 @@ extension IntroductionConclusionEvaluator {
                 kind: .bounded,
                 exactRevision: nil,
                 earliestPositiveRevision: revision,
-                reasons: unique(blockers)
+                reasons: unique(blockers),
+                semanticComparisons: uniqueSemanticComparisons(semanticComparisons)
             )
         }
         if positiveParents.isEmpty {
@@ -79,16 +85,19 @@ extension IntroductionConclusionEvaluator {
                         message:
                             "The Finding is present at \(revision.rawValue) and absent from every comparable parent."
                     )
-                ]
+                ],
+                semanticComparisons: uniqueSemanticComparisons(semanticComparisons)
             )
         }
         guard positiveParents.count == 1, let positiveParent = positiveParents.first else {
-            return try bounded(
+            var result = try bounded(
                 at: revision,
                 code: "multiple-positive-parent-lineages",
                 message:
                     "More than one parent contains the Finding, so this boundary does not identify one introduction path."
             )
+            result.semanticComparisons = uniqueSemanticComparisons(semanticComparisons)
+            return result
         }
         var result = try trace(
             positiveParent,
@@ -106,6 +115,9 @@ extension IntroductionConclusionEvaluator {
             )
         )
         result.reasons = unique(result.reasons)
+        result.semanticComparisons = uniqueSemanticComparisons(
+            result.semanticComparisons + semanticComparisons
+        )
         return result
     }
 
@@ -114,7 +126,8 @@ extension IntroductionConclusionEvaluator {
             kind: .bounded,
             exactRevision: nil,
             earliestPositiveRevision: revision,
-            reasons: [try LifecycleReason(code: code, message: message)]
+            reasons: [try LifecycleReason(code: code, message: message)],
+            semanticComparisons: []
         )
     }
 

@@ -1,13 +1,14 @@
 extension LifecycleArtifact {
     func validateMatchedContinuity(
         _ evidence: MatchedContinuityEvidence,
+        semanticComparisons: [SemanticComparisonBasis],
         finding: Finding,
         snapshot: ObservationSnapshot
     ) throws {
         guard let currentDetection = snapshot.detection(id: evidence.currentDetection.detectionID),
             let currentAtomic = snapshot.atomicObservation(id: evidence.currentDetection.atomicObservationID),
-            currentDetection.rule == finding.rule,
-            currentAtomic.rule == finding.rule,
+            currentDetection.rule.identity == finding.rule.identity,
+            currentAtomic.rule == currentDetection.rule,
             currentAtomic.sourcePath == currentDetection.location.sourcePath,
             currentAtomic.outcome.references(currentDetection.id),
             let eventIndex = finding.events.firstIndex(where: { $0.snapshotID == snapshot.id }),
@@ -33,8 +34,9 @@ extension LifecycleArtifact {
             detection: currentDetection,
             snapshot: snapshot
         )
-        guard case .supported(let expectedReasons) = relation,
-            evidence.reasons == expectedReasons.sorted(by: lifecycleReasonOrder)
+        guard case .supported(let expectedReasons, let expectedComparison) = relation,
+            evidence.reasons == expectedReasons.sorted(by: lifecycleReasonOrder),
+            semanticComparisons == [expectedComparison]
         else {
             throw LifecycleContractError.invalidArtifact(
                 "An observed or reopened event lacks sufficient structural continuity evidence."

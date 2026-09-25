@@ -42,6 +42,7 @@ struct LifecycleObservationIngestor: Sendable {
             sourceIdentity: capture.sourceIdentity,
             scope: capture.scope,
             configuration: configuration,
+            rules: analysis.ruleDescriptors,
             capabilities: capabilities,
             engineVersion: engineVersion,
             sourceSelection: capture.sourceSelection,

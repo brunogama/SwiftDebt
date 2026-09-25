@@ -1,6 +1,10 @@
 enum ResolutionCoverageAssessment {
-    case verified(atomicObservationIDs: [AtomicObservationID], reasons: [LifecycleReason])
-    case unverified([LifecycleReason])
+    case verified(
+        atomicObservationIDs: [AtomicObservationID],
+        reasons: [LifecycleReason],
+        semanticComparisons: [SemanticComparisonBasis]
+    )
+    case unverified([LifecycleReason], semanticComparisons: [SemanticComparisonBasis])
 }
 
 struct ResolutionCoverageEvaluator {
@@ -12,8 +16,18 @@ struct ResolutionCoverageEvaluator {
         guard let firstSnapshot = artifact.snapshot(id: finding.firstObservationSnapshotID) else {
             throw LifecycleContractError.invalidArtifact("Finding \(finding.id) has no first snapshot.")
         }
+        let priorReference = finding.latestDetectionReference
+        guard let priorSnapshot = artifact.snapshot(id: priorReference.snapshotID),
+            let priorDetection = priorSnapshot.detection(id: priorReference.detectionID)
+        else {
+            throw LifecycleContractError.invalidArtifact(
+                "Finding \(finding.id) has no latest Detection evidence."
+            )
+        }
 
         var blockers: [LifecycleReason] = []
+        var proofReasons: [LifecycleReason] = []
+        var semanticComparisons: [SemanticComparisonBasis] = []
         try requireOrderedSuccessor(
             firstSnapshot: firstSnapshot,
             currentSnapshot: snapshot,
@@ -35,67 +49,32 @@ struct ResolutionCoverageEvaluator {
             artifact: artifact
         )
         blockers += relocation.blockers
-        if !firstSnapshot.provenance.sourceIdentity.supportsComparison
-            || !snapshot.provenance.sourceIdentity.supportsComparison
-        {
-            blockers.append(
-                try LifecycleReason(
-                    code: "source-identity-unavailable",
-                    message: "Comparable source identity is unavailable for one or both snapshots."
-                )
-            )
-        }
-        if snapshot.provenance.configurationFingerprint != firstSnapshot.provenance.configurationFingerprint {
-            blockers.append(
-                try LifecycleReason(
-                    code: "configuration-incomparable",
-                    message: "The effective configuration fingerprint changed."
-                )
-            )
-        }
-        if snapshot.provenance.engineVersion != firstSnapshot.provenance.engineVersion {
-            blockers.append(
-                try LifecycleReason(
-                    code: "engine-incomparable",
-                    message: "The analysis engine version changed without a compatibility declaration."
-                )
-            )
-        }
-        if snapshot.provenance.capabilities != firstSnapshot.provenance.capabilities {
-            blockers.append(
-                try LifecycleReason(
-                    code: "capabilities-incomparable",
-                    message: "Capability availability changed: opening ["
-                        + capabilitySummary(firstSnapshot.provenance.capabilities)
-                        + "]; later [" + capabilitySummary(snapshot.provenance.capabilities) + "]."
-                )
-            )
-        }
-        if firstSnapshot.provenance.capabilities.contains(where: { !$0.state.supportsComparison })
-            || snapshot.provenance.capabilities.contains(where: { !$0.state.supportsComparison })
-        {
-            blockers.append(
-                try LifecycleReason(
-                    code: "capability-unavailable",
-                    message: "Required capabilities are unavailable or ambiguous: opening ["
-                        + capabilitySummary(firstSnapshot.provenance.capabilities)
-                        + "]; later [" + capabilitySummary(snapshot.provenance.capabilities) + "]."
-                )
-            )
-        }
-
         let sameIdentityRules = snapshot.rules.filter { $0.identity == finding.rule.identity }
-        let hasComparableRule = sameIdentityRules.contains(finding.rule)
-        let comparable = snapshot.atomicObservations.filter { $0.rule == finding.rule }
-        if !hasComparableRule {
+        let currentRule = sameIdentityRules.first
+        let comparable: [AtomicObservation]
+        if let currentRule {
+            let comparison = try SemanticComparisonEvaluator().assess(
+                claim: .absence,
+                priorSnapshot: priorSnapshot,
+                priorRule: priorDetection.rule,
+                currentSnapshot: snapshot,
+                currentRule: currentRule
+            )
+            semanticComparisons = [comparison.basis]
+            if comparison.isCompatible {
+                proofReasons += comparison.reasons
+            } else {
+                blockers += comparison.reasons
+            }
+            comparable = snapshot.atomicObservations.filter { $0.rule == currentRule }
+        } else {
             blockers.append(
                 try LifecycleReason(
-                    code: sameIdentityRules.isEmpty ? "rule-omitted" : "semantic-revision-incomparable",
-                    message: sameIdentityRules.isEmpty
-                        ? "The later snapshot omitted the Finding's rule."
-                        : "The later snapshot has no compatible Semantic Revision."
+                    code: "rule-omitted",
+                    message: "The later snapshot omitted the Finding's rule."
                 )
             )
+            comparable = []
         }
         for observation in comparable where !observation.outcome.provesAbsence {
             blockers.append(
@@ -126,34 +105,26 @@ struct ResolutionCoverageEvaluator {
         }
 
         guard blockers.isEmpty else {
-            return .unverified(blockers.sorted(by: lifecycleReasonOrder))
+            return .unverified(
+                Array(Set(blockers)).sorted(by: lifecycleReasonOrder),
+                semanticComparisons: semanticComparisons
+            )
         }
         return .verified(
             atomicObservationIDs: comparable.map(\.id).sorted { $0.rawValue < $1.rawValue },
-            reasons: ([
-                try LifecycleReason(
-                    code: "complete-comparable-absence",
-                    message: "Complete repository scope committed every comparable "
-                        + "Atomic Observation with zero Detections."
+            reasons: Array(
+                Set(
+                    [
+                        try LifecycleReason(
+                            code: "complete-comparable-absence",
+                            message: "Complete repository scope committed every comparable "
+                                + "Atomic Observation with zero Detections."
+                        )
+                    ] + relocation.proofReasons + proofReasons
                 )
-            ] + relocation.proofReasons).sorted(by: lifecycleReasonOrder)
+            ).sorted(by: lifecycleReasonOrder),
+            semanticComparisons: semanticComparisons
         )
-    }
-
-    private func capabilitySummary(_ capabilities: [SnapshotCapability]) -> String {
-        guard !capabilities.isEmpty else { return "none" }
-        return capabilities.map { capability in
-            let state: String
-            switch capability.state {
-            case .available:
-                state = "available"
-            case .unavailable(let reason):
-                state = "unavailable (\(reason.code): \(reason.message))"
-            case .ambiguous(let reason):
-                state = "ambiguous (\(reason.code): \(reason.message))"
-            }
-            return "\(capability.name)=\(state)"
-        }.joined(separator: ", ")
     }
 
     private func requireOrderedSuccessor(

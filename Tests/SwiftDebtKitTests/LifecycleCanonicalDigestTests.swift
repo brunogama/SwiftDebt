@@ -42,4 +42,88 @@ struct LifecycleCanonicalDigestTests {
             ]) != digest
         )
     }
+
+    @Test("Configuration identity is stable across revisions while snapshot identity binds semantics")
+    func semanticContractDigestSeparation() throws {
+        let identity = RuleIdentity(
+            namespace: try #require(RuleNamespace("swiftdebt.test")),
+            id: try #require(RuleID("semantic-digest"))
+        )
+        let metadata = RuleMetadata(
+            name: "Semantic digest fixture",
+            defaultSeverity: .warning,
+            remediation: "Fixture only."
+        )
+        let revisionTwo = try #require(SemanticRevision(2))
+        let declaration = try #require(
+            SemanticCompatibilityDeclaration(
+                fromRevision: .initial,
+                supportedClaims: [.continuity],
+                rationale: "Revision 2 preserves positive Detection identity."
+            )
+        )
+        let revisionOne = RuleDescriptor(
+            identity: identity,
+            metadata: metadata,
+            contract: RuleContract(
+                semanticRevision: .initial,
+                semantics: "Revision 1.",
+                rationale: "Fixture."
+            )
+        )
+        let compatibleRevisionTwo = RuleDescriptor(
+            identity: identity,
+            metadata: metadata,
+            contract: RuleContract(
+                semanticRevision: revisionTwo,
+                semantics: "Revision 2.",
+                rationale: "Fixture.",
+                compatibilityDeclarations: [declaration]
+            )
+        )
+        let firstAnalysis = AnalysisSnapshot(
+            ruleDescriptors: [revisionOne],
+            selectedSourcePaths: [],
+            ruleResults: []
+        )
+        let secondAnalysis = AnalysisSnapshot(
+            ruleDescriptors: [compatibleRevisionTwo],
+            selectedSourcePaths: [],
+            ruleResults: []
+        )
+        let firstConfiguration = try LifecycleCanonicalDigest.configuration(
+            analysis: firstAnalysis,
+            selectionKind: .directory,
+            exclusions: [],
+            maximumFileBytes: 1_024
+        )
+        let secondConfiguration = try LifecycleCanonicalDigest.configuration(
+            analysis: secondAnalysis,
+            selectionKind: .directory,
+            exclusions: [],
+            maximumFileBytes: 1_024
+        )
+        #expect(firstConfiguration == secondConfiguration)
+
+        let sourceDigest = try LifecycleCanonicalDigest.sourceUnits([
+            SourceUnit(path: "Sources/Input.swift", content: "let value = 1\n")
+        ])
+        let firstSnapshotID = try LifecycleCanonicalDigest.snapshotID(
+            sourceIdentity: .contentDigest(sourceDigest),
+            scope: .repository,
+            configuration: firstConfiguration,
+            rules: [revisionOne],
+            capabilities: [],
+            engineVersion: "test-engine"
+        )
+        let secondSnapshotID = try LifecycleCanonicalDigest.snapshotID(
+            sourceIdentity: .contentDigest(sourceDigest),
+            scope: .repository,
+            configuration: secondConfiguration,
+            rules: [compatibleRevisionTwo],
+            capabilities: [],
+            engineVersion: "test-engine"
+        )
+        #expect(firstSnapshotID != secondSnapshotID)
+    }
 }

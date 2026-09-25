@@ -39,6 +39,9 @@ extension ContinuityReconciler {
                     && componentDetections.contains($0.key.detection)
             }
             var reasons = Set(pairs.values.flatMap(\.reasons))
+            let semanticComparisons = uniqueSemanticComparisons(
+                pairs.values.map(\.semanticComparison)
+            )
             let cardinalityAmbiguous =
                 pairs.values.contains(where: \.isAmbiguous)
                 && (componentCandidates.count > 1 || componentDetections.count > 1)
@@ -59,6 +62,7 @@ extension ContinuityReconciler {
                         $0.id.rawValue < $1.id.rawValue
                     },
                     reasons: reasons.sorted(by: lifecycleReasonOrder),
+                    semanticComparisons: semanticComparisons,
                     isAmbiguous: pairs.values.contains(where: \.isAmbiguous)
                 )
             )

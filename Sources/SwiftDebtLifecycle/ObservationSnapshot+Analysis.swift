@@ -15,19 +15,21 @@ extension ObservationSnapshot {
             }
             return lhs.sourcePath.rawValue < rhs.sourcePath.rawValue
         }
-        let rules = analysis.ruleDescriptors.map {
-            SnapshotRule(
+        let rules = try analysis.ruleDescriptors.map {
+            try SnapshotRule(
                 identity: $0.identity,
-                semanticRevision: $0.semanticRevision
+                semanticRevision: $0.semanticRevision,
+                compatibilityDeclarations: $0.contract.compatibilityDeclarations
             )
         }
 
         var observedDetections: [ObservedDetection] = []
         var atomicObservations: [AtomicObservation] = []
         for (atomicIndex, result) in orderedResults.enumerated() {
-            let rule = SnapshotRule(
+            let rule = try SnapshotRule(
                 identity: result.descriptor.identity,
-                semanticRevision: result.descriptor.semanticRevision
+                semanticRevision: result.descriptor.semanticRevision,
+                compatibilityDeclarations: result.descriptor.contract.compatibilityDeclarations
             )
             let atomicID = try AtomicObservationID("\(id.rawValue):atomic:\(atomicIndex)")
             let outcome: AtomicObservationOutcome

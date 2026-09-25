@@ -6,12 +6,14 @@ struct ContinuityMatch {
     let priorDetection: ObservedDetection
     let currentDetection: ObservedDetection
     let reasons: [LifecycleReason]
+    let semanticComparison: SemanticComparisonBasis
 }
 
 struct ContinuityUnresolvedGroup {
     let findings: [Finding]
     let detections: [ObservedDetection]
     let reasons: [LifecycleReason]
+    let semanticComparisons: [SemanticComparisonBasis]
     let isAmbiguous: Bool
 }
 
@@ -61,6 +63,7 @@ struct ContinuityReconciler {
         try addSameSourceDivergenceCandidates(
             candidates: candidates,
             detections: detections,
+            snapshot: snapshot,
             relations: &relations,
             candidateEdges: &candidateEdges,
             detectionEdges: &detectionEdges
@@ -70,7 +73,7 @@ struct ContinuityReconciler {
         var matchedDetections = Set<Int>()
         var matches: [ContinuityMatch] = []
         for pair in relations.keys.sorted() {
-            guard case .supported(let reasons) = relations[pair],
+            guard case .supported(let reasons, let semanticComparison) = relations[pair],
                 candidateEdges[pair.candidate].count == 1,
                 detectionEdges[pair.detection].count == 1
             else { continue }
@@ -81,7 +84,8 @@ struct ContinuityReconciler {
                     priorSnapshot: candidate.snapshot,
                     priorDetection: candidate.detection,
                     currentDetection: detections[pair.detection],
-                    reasons: reasons
+                    reasons: reasons,
+                    semanticComparison: semanticComparison
                 )
             )
             matchedCandidates.insert(pair.candidate)
@@ -125,6 +129,7 @@ struct ContinuityReconciler {
     private func addSameSourceDivergenceCandidates(
         candidates: [Candidate],
         detections: [ObservedDetection],
+        snapshot: ObservationSnapshot,
         relations: inout [Pair: PairRelation],
         candidateEdges: inout [Set<Int>],
         detectionEdges: inout [Set<Int>]
@@ -137,12 +142,22 @@ struct ContinuityReconciler {
                 == detections[detectionIndex].location.sourcePath
             {
                 let pair = Pair(candidate: candidateIndex, detection: detectionIndex)
-                relations[pair] = .ambiguous([
-                    try reason(
-                        "same-source-structural-divergence",
-                        "Both structural digests changed within the same SourceUnit, so an edited occurrence cannot be ruled out."
-                    )
-                ])
+                let comparison = try SemanticComparisonEvaluator().assess(
+                    claim: .continuity,
+                    priorSnapshot: candidates[candidateIndex].snapshot,
+                    priorRule: candidates[candidateIndex].detection.rule,
+                    currentSnapshot: snapshot,
+                    currentRule: detections[detectionIndex].rule
+                )
+                relations[pair] = .ambiguous(
+                    comparison.reasons + [
+                        try reason(
+                            "same-source-structural-divergence",
+                            "Both structural digests changed within the same SourceUnit, so an edited occurrence cannot be ruled out."
+                        )
+                    ],
+                    comparison.basis
+                )
                 candidateEdges[candidateIndex].insert(detectionIndex)
                 detectionEdges[detectionIndex].insert(candidateIndex)
             }
@@ -172,9 +187,9 @@ struct Pair: Hashable, Comparable {
 
 enum PairRelation {
     case none
-    case supported([LifecycleReason])
-    case ambiguous([LifecycleReason])
-    case unverified([LifecycleReason])
+    case supported([LifecycleReason], SemanticComparisonBasis)
+    case ambiguous([LifecycleReason], SemanticComparisonBasis)
+    case unverified([LifecycleReason], SemanticComparisonBasis)
 
     var isCredible: Bool {
         if case .none = self { return false }
@@ -184,7 +199,14 @@ enum PairRelation {
     var reasons: [LifecycleReason] {
         switch self {
         case .none: []
-        case .supported(let reasons), .ambiguous(let reasons), .unverified(let reasons): reasons
+        case .supported(let reasons, _), .ambiguous(let reasons, _), .unverified(let reasons, _): reasons
+        }
+    }
+
+    var semanticComparison: SemanticComparisonBasis {
+        switch self {
+        case .supported(_, let basis), .ambiguous(_, let basis), .unverified(_, let basis): basis
+        case .none: preconditionFailure("A non-credible relation has no Semantic Comparison Basis.")
         }
     }
 

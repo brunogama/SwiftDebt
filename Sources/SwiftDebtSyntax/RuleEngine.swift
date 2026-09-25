@@ -7,6 +7,7 @@ public enum RuleEngineError: Error, Equatable, Sendable, CustomStringConvertible
     case noRulesSelected
     case duplicateRuleIdentity(RuleIdentity)
     case duplicateSourcePath(SourcePath)
+    case invalidCompatibilityDeclaration(RuleIdentity, String)
 
     public var description: String {
         switch self {
@@ -16,6 +17,8 @@ public enum RuleEngineError: Error, Equatable, Sendable, CustomStringConvertible
             "Duplicate rule identity: \(identity)"
         case .duplicateSourcePath(let sourcePath):
             "Duplicate normalized source path: \(sourcePath)"
+        case .invalidCompatibilityDeclaration(let identity, let reason):
+            "Invalid Semantic Revision compatibility for \(identity): \(reason)"
         }
     }
 }
@@ -102,10 +105,31 @@ public struct RuleEngine {
                 metadata: ruleType.metadata,
                 contract: ruleType.contract
             )
+            try validateCompatibility(of: descriptor)
             guard identities.insert(descriptor.identity).inserted else {
                 throw RuleEngineError.duplicateRuleIdentity(descriptor.identity)
             }
             return RegisteredRule(rule: rule, descriptor: descriptor)
+        }
+    }
+
+    private func validateCompatibility(of descriptor: RuleDescriptor) throws {
+        let declarations = descriptor.contract.compatibilityDeclarations
+        guard Set(declarations.map(\.fromRevision)).count == declarations.count else {
+            throw RuleEngineError.invalidCompatibilityDeclaration(
+                descriptor.identity,
+                "each prior Semantic Revision may have only one declaration."
+            )
+        }
+        guard
+            declarations.allSatisfy({
+                $0.fromRevision.rawValue < descriptor.semanticRevision.rawValue
+            })
+        else {
+            throw RuleEngineError.invalidCompatibilityDeclaration(
+                descriptor.identity,
+                "a declaration must point from an earlier revision into the current revision."
+            )
         }
     }
 

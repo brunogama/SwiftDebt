@@ -77,7 +77,7 @@ public struct IntroductionHistoryEvidence: Codable, Equatable, Sendable {
     }
 }
 
-public struct IntroductionConclusion: Codable, Equatable, Sendable {
+public struct IntroductionConclusion: Equatable, Sendable {
     public let findingID: FindingID
     public let attempt: UInt
     public let kind: IntroductionConclusionKind
@@ -85,6 +85,7 @@ public struct IntroductionConclusion: Codable, Equatable, Sendable {
     public let earliestPositiveRevision: GitRevisionID?
     public let reasons: [LifecycleReason]
     public let evidence: IntroductionHistoryEvidence
+    public let semanticComparisons: [SemanticComparisonBasis]
 
     package init(
         findingID: FindingID,
@@ -93,7 +94,8 @@ public struct IntroductionConclusion: Codable, Equatable, Sendable {
         exactRevision: GitRevisionID?,
         earliestPositiveRevision: GitRevisionID?,
         reasons: [LifecycleReason],
-        evidence: IntroductionHistoryEvidence
+        evidence: IntroductionHistoryEvidence,
+        semanticComparisons: [SemanticComparisonBasis]
     ) {
         self.findingID = findingID
         self.attempt = attempt
@@ -102,5 +104,62 @@ public struct IntroductionConclusion: Codable, Equatable, Sendable {
         self.earliestPositiveRevision = earliestPositiveRevision
         self.reasons = reasons.sorted(by: lifecycleReasonOrder)
         self.evidence = evidence
+        self.semanticComparisons = uniqueSemanticComparisons(semanticComparisons)
+    }
+}
+
+extension IntroductionConclusion: Codable {
+    private enum CodingKeys: String, CodingKey {
+        case findingID
+        case attempt
+        case kind
+        case exactRevision
+        case earliestPositiveRevision
+        case reasons
+        case evidence
+        case semanticComparisons
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        let comparisons =
+            try values.decodeIfPresent(
+                [SemanticComparisonBasis].self,
+                forKey: .semanticComparisons
+            ) ?? []
+        guard comparisons == uniqueSemanticComparisons(comparisons) else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .semanticComparisons,
+                in: values,
+                debugDescription: "Semantic comparison evidence must be unique and canonical."
+            )
+        }
+        self.init(
+            findingID: try values.decode(FindingID.self, forKey: .findingID),
+            attempt: try values.decode(UInt.self, forKey: .attempt),
+            kind: try values.decode(IntroductionConclusionKind.self, forKey: .kind),
+            exactRevision: try values.decodeIfPresent(GitRevisionID.self, forKey: .exactRevision),
+            earliestPositiveRevision: try values.decodeIfPresent(
+                GitRevisionID.self,
+                forKey: .earliestPositiveRevision
+            ),
+            reasons: try values.decode([LifecycleReason].self, forKey: .reasons),
+            evidence: try values.decode(IntroductionHistoryEvidence.self, forKey: .evidence),
+            semanticComparisons: comparisons
+        )
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var values = encoder.container(keyedBy: CodingKeys.self)
+        try values.encode(findingID, forKey: .findingID)
+        try values.encode(attempt, forKey: .attempt)
+        try values.encode(kind, forKey: .kind)
+        try values.encodeIfPresent(exactRevision, forKey: .exactRevision)
+        try values.encodeIfPresent(earliestPositiveRevision, forKey: .earliestPositiveRevision)
+        try values.encode(reasons, forKey: .reasons)
+        try values.encode(evidence, forKey: .evidence)
+        if !semanticComparisons.isEmpty {
+            try values.encode(semanticComparisons, forKey: .semanticComparisons)
+        }
     }
 }

@@ -61,6 +61,33 @@ struct RuleIdentityTests {
         #expect(descriptor.semanticRevision == .initial)
     }
 
+    @Test("Semantic compatibility declarations are canonical claim-specific values")
+    func semanticCompatibilityDeclarationValidation() throws {
+        let declaration = try #require(
+            SemanticCompatibilityDeclaration(
+                fromRevision: .initial,
+                supportedClaims: [.continuity, .absence, .continuity],
+                rationale: "Revision 2 preserves both lifecycle interpretations."
+            )
+        )
+
+        #expect(declaration.supportedClaims == [.absence, .continuity])
+        #expect(
+            SemanticCompatibilityDeclaration(
+                fromRevision: .initial,
+                supportedClaims: [],
+                rationale: "No claim."
+            ) == nil
+        )
+        #expect(
+            SemanticCompatibilityDeclaration(
+                fromRevision: .initial,
+                supportedClaims: [.continuity],
+                rationale: " informal "
+            ) == nil
+        )
+    }
+
     @Test("Source paths normalize safe relative components")
     func sourcePathNormalization() throws {
         let path = try SourcePath("./Sources//Feature/../Feature/Input.swift")

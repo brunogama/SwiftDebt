@@ -45,7 +45,8 @@ struct IntroductionConclusionEvaluator {
                 exactRevision: nil,
                 earliestPositiveRevision: nil,
                 reasons: unique(reasons),
-                evidence: evidence
+                evidence: evidence,
+                semanticComparisons: []
             )
         }
 
@@ -55,9 +56,9 @@ struct IntroductionConclusionEvaluator {
             openingSnapshot: openingSnapshot,
             rule: finding.rule
         )
-        let traced: TraceResult
+        var traced: TraceResult
         switch startAssessment {
-        case .present:
+        case .present(let comparison):
             traced = try trace(
                 start,
                 records: records,
@@ -67,7 +68,10 @@ struct IntroductionConclusionEvaluator {
                 rule: finding.rule,
                 visited: []
             )
-        case .absent:
+            traced.semanticComparisons = uniqueSemanticComparisons(
+                traced.semanticComparisons + [comparison]
+            )
+        case .absent(let comparison):
             traced = TraceResult(
                 kind: .unavailable,
                 exactRevision: nil,
@@ -77,17 +81,37 @@ struct IntroductionConclusionEvaluator {
                         code: "opening-positive-not-reproduced",
                         message: "Committed history did not reproduce the Finding at its First Observation revision."
                     )
-                ]
+                ],
+                semanticComparisons: [comparison]
             )
-        case .incomplete(let reasons):
+        case .incomplete(let reasons, let comparisons):
             traced = TraceResult(
                 kind: .unavailable,
                 exactRevision: nil,
                 earliestPositiveRevision: nil,
-                reasons: reasons
+                reasons: reasons,
+                semanticComparisons: comparisons
             )
         }
 
+        return try conclusion(
+            finding: finding,
+            attempt: attempt,
+            evidence: evidence,
+            openingSnapshot: openingSnapshot,
+            startRecord: startRecord,
+            traced: traced
+        )
+    }
+
+    private func conclusion(
+        finding: Finding,
+        attempt: UInt,
+        evidence: IntroductionHistoryEvidence,
+        openingSnapshot: ObservationSnapshot,
+        startRecord: IntroductionHistoryRevision,
+        traced: TraceResult
+    ) throws -> IntroductionConclusion {
         var blockers = try globalBlockers(openingSnapshot: openingSnapshot, evidence: evidence)
         if let startObservation = startRecord.observation,
             sourceDigest(of: startObservation) != sourceDigest(of: openingSnapshot)
@@ -116,7 +140,8 @@ struct IntroductionConclusionEvaluator {
             exactRevision: exactRevision,
             earliestPositiveRevision: traced.earliestPositiveRevision,
             reasons: unique(traced.reasons + blockers),
-            evidence: evidence
+            evidence: evidence,
+            semanticComparisons: traced.semanticComparisons
         )
     }
 
@@ -144,9 +169,9 @@ struct IntroductionConclusionEvaluator {
 }
 
 enum RevisionAssessment {
-    case present
-    case absent
-    case incomplete([LifecycleReason])
+    case present(SemanticComparisonBasis)
+    case absent(SemanticComparisonBasis)
+    case incomplete([LifecycleReason], semanticComparisons: [SemanticComparisonBasis])
 }
 
 struct TraceResult {
@@ -154,4 +179,5 @@ struct TraceResult {
     var exactRevision: GitRevisionID?
     var earliestPositiveRevision: GitRevisionID?
     var reasons: [LifecycleReason]
+    var semanticComparisons: [SemanticComparisonBasis]
 }

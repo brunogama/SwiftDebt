@@ -33,6 +33,9 @@ extension LifecycleArtifact {
                 for detection in reconciliation.newDetections {
                     try requireOpening(of: detection, snapshotID: snapshot.id)
                 }
+                for finding in reconciliation.absentFindings {
+                    try requireAbsence(of: finding, snapshot: snapshot)
+                }
             }
         }
     }
@@ -66,10 +69,59 @@ extension LifecycleArtifact {
         case .opened, .resolved, .unverified, .continuityAmbiguous:
             detectionID = nil
         }
-        guard detectionID == match.currentDetection.id else {
+        guard detectionID == match.currentDetection.id,
+            event.semanticComparisons == [match.semanticComparison]
+        else {
             throw LifecycleContractError.invalidArtifact(
                 "Finding \(match.finding.id) did not record its uniquely matched Detection."
             )
+        }
+    }
+
+    private func requireAbsence(of priorFinding: Finding, snapshot: ObservationSnapshot) throws {
+        guard let finding = findings.first(where: { $0.id == priorFinding.id }) else {
+            throw LifecycleContractError.invalidArtifact(
+                "Finding \(priorFinding.id) is missing from its absence assessment."
+            )
+        }
+        let event = finding.events.first(where: { $0.snapshotID == snapshot.id })
+        guard priorFinding.lifecycleState == .open else {
+            guard event == nil else {
+                throw LifecycleContractError.invalidArtifact(
+                    "Resolved Finding \(priorFinding.id) cannot append uncertain absence evidence."
+                )
+            }
+            return
+        }
+
+        let assessment = try ResolutionCoverageEvaluator().assess(
+            finding: priorFinding,
+            snapshot: snapshot,
+            artifact: self
+        )
+        switch assessment {
+        case .verified(let atomicIDs, let reasons, let comparisons):
+            guard let event,
+                case .resolved(let evidence) = event.transition,
+                evidence.priorSnapshotID == priorFinding.firstObservationSnapshotID,
+                evidence.coveredAtomicObservationIDs == atomicIDs,
+                evidence.reasons == reasons,
+                event.semanticComparisons == comparisons
+            else {
+                throw LifecycleContractError.invalidArtifact(
+                    "Finding \(priorFinding.id) is missing its verified absence evidence."
+                )
+            }
+        case .unverified(let reasons, let comparisons):
+            guard let event,
+                case .unverified(let persistedReasons) = event.transition,
+                persistedReasons == reasons,
+                event.semanticComparisons == comparisons
+            else {
+                throw LifecycleContractError.invalidArtifact(
+                    "Finding \(priorFinding.id) has incomplete absence blockers."
+                )
+            }
         }
     }
 
@@ -114,14 +166,17 @@ extension LifecycleArtifact {
             case .continuityAmbiguous(let evidence) where group.isAmbiguous:
                 guard evidence.currentDetectionIDs == detectionIDs,
                     evidence.candidateFindingIDs == candidateIDs,
-                    evidence.reasons == group.reasons
+                    evidence.reasons == group.reasons,
+                    event.semanticComparisons == group.semanticComparisons
                 else {
                     throw LifecycleContractError.invalidArtifact(
                         "Finding \(candidateID) has incomplete continuity ambiguity evidence."
                     )
                 }
             case .unverified(let reasons) where !group.isAmbiguous:
-                guard reasons == group.reasons else {
+                guard reasons == group.reasons,
+                    event.semanticComparisons == group.semanticComparisons
+                else {
                     throw LifecycleContractError.invalidArtifact(
                         "Finding \(candidateID) has incomplete comparability blockers."
                     )

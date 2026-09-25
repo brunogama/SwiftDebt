@@ -92,7 +92,7 @@ The analyze-to-artifact path records:
 | Source content identity | SHA-256 over a length-framed, sorted encoding of the exact `SourceUnit` path, module, and content values used by both engines. |
 | Git source identity | Full validated `HEAD` commit ID, clean or modified state, and the source content digest. Git state is captured immediately before and after the one source read. |
 | Observation scope | Repository only for a directory analysis rooted at the Git repository root with no configured exclusions and no skipped symbolic links; otherwise partial with reasons. |
-| Configuration fingerprint | Versioned SHA-256 over source selection kind, effective exclusions, maximum file size, and the exact Rule Identities and Semantic Revisions emitted by R1. |
+| Configuration fingerprint | Versioned SHA-256 over source selection kind, effective exclusions, maximum file size, and the exact selected Rule Identities. Semantic rule contracts are bound separately into the snapshot identity. |
 | Capability availability | `syntax-analysis` available. Parse and rule failures remain explicit source and Atomic Observation outcomes rather than unavailable capability claims. |
 | Engine identity | The schema-2 report engine version produced by the same analysis run. |
 | Snapshot graph | Existing edge for an exact retry, or one clean single-parent Git edge to the unique persisted snapshot of that parent revision. The parent does not need to remain a graph head. |
@@ -133,6 +133,25 @@ Continuity reconciliation builds a bipartite candidate graph per Rule Identity. 
 Path, line, column, message, Git rename data, and source similarity never establish identity by themselves. A SourceUnit path is used only to retain an unresolved candidate after both structural digests change and no stronger edge exists. In particular, same-location reuse cannot continue a Finding, and an identical declaration deleted from one file then added to another stays unresolved unless Git corroborates the direct-parent rename. A uniquely supported match after Verified Resolution records `reopened` and preserves the earlier resolution event.
 
 The existing schema-2 report models and renderers are unchanged. Structural evidence flows only through R1's in-memory `Detection` and the independently identified lifecycle artifact.
+
+## Semantic comparability
+
+---
+
+`RuleContract` owns directional, claim-specific compatibility declarations. A destination Semantic Revision may declare that one earlier revision supports `continuity`, `absence`, or both. `RuleEngine` rejects duplicate sources and declarations that do not point from an earlier revision into the destination revision. Lifecycle callers cannot add declarations through the public `SnapshotRule` initializer; the authoritative snapshot conversion copies them from the engine-produced `AnalysisSnapshot`.
+
+Different Semantic Revisions remain incomparable by default. A declaration relaxes only the revision check for its listed claims. Configuration fingerprints and engine versions must still match, both source identities must support comparison, and capability sets must match with every capability available. Resolution and exact introduction also keep their independent repository-scope and committed-observation requirements.
+
+Every continuation, resolution, reopening, and Introduction Conclusion persists an immutable `SemanticComparisonBasis` containing:
+
+- the claim and compatible or blocked decision;
+- both snapshot IDs and full selected rule contracts;
+- both configuration fingerprints, capability sets, source identities, scopes, and engine versions; and
+- the exact destination-owned declaration when one applies.
+
+Artifact validation recomputes each decision and the lifecycle outcome from those persisted dimensions. Removing or altering a basis causes decode to fail closed. Explanations render the direction, claim, decision, snapshot pair, configuration pair, engine pair, and declaration rationale.
+
+The lifecycle configuration digest is versioned independently from Semantic Revision. This permits an exact effective-configuration match across rule revisions while the snapshot ID continues to bind the complete selected Semantic Revisions and compatibility declarations. Existing schema-2 analysis and report bytes remain unchanged.
 
 ## Verified absence
 
@@ -187,7 +206,7 @@ All implemented acceptance tests use the real R1 `RuleEngine`, the public lifecy
 | AT-10 | Direct | Complete comparable repository coverage resolves direct-child Git deletion with other sources or with no remaining Swift SourceUnit. The persisted proof retains the selected rules, deletion edge, complete relocation coverage, and committed absence. Deletion evidence also survives an intermediate partial observation. |
 | AT-11 | Direct | The same direct-child deletion analyzed only through its containing directory stays open and unverified because relocation coverage is incomplete. |
 | AT-12 | Direct | An undeclared Semantic Revision change blocks continuity and resolution. |
-| AT-13 | Open | Directional compatibility declarations are not modeled. |
+| AT-13 | Direct | A rule-owned revision-2 declaration permits revision-1-to-2 continuity while absence, the reverse direction, and undeclared revision changes remain blocked. Real CLI explanations and persisted Introduction Conclusions expose the exact decision basis. |
 | AT-14 | Direct | A real three-revision CLI fixture opens, resolves, and uniquely reopens the same Finding while retaining all three events. |
 | AT-15 | Direct | A post-resolution Detection in another file, with different subject and declaration structure and no Git rename edge, opens a separate Finding and leaves the original resolved. |
 | AT-16 | Direct | A real linear Git fixture persists the detected child and verified-absent parent, then reports the child as exact. |
@@ -211,7 +230,7 @@ The current slice completes the first-observation, line-move, corroborated file-
 
 - rule-specific evidence that can safely distinguish copied or semantically edited occurrences beyond the conservative structural anchor;
 - cross-file continuity without a direct-parent Git rename, which remains unresolved rather than inferred from identical code;
-- directional semantic and configuration compatibility declarations;
+- directional effective-configuration compatibility beyond exact fingerprint equality;
 - historical configuration reproduction beyond the default directory selection and maximum-file-size input;
 - archived cross-file introduction continuity with persisted Git rename corroboration;
 - complete human and machine audit parity;

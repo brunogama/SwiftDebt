@@ -37,7 +37,7 @@ enum LifecycleCanonicalDigest {
         maximumFileBytes: Int
     ) throws -> LifecycleDigest {
         var input = LifecycleDigestInput()
-        input.append("swiftdebt-lifecycle-configuration-v1")
+        input.append("swiftdebt-lifecycle-configuration-v2")
         input.append("source-discovery-policy-v1")
         input.append(selectionKind.rawValue)
         input.append(maximumFileBytes.description)
@@ -49,7 +49,6 @@ enum LifecycleCanonicalDigest {
         input.append(UInt64(rules.count))
         for rule in rules {
             input.append(rule.identity.description)
-            input.append(rule.semanticRevision.rawValue.description)
         }
         return try LifecycleDigest(value: input.hexDigest())
     }
@@ -58,6 +57,7 @@ enum LifecycleCanonicalDigest {
         sourceIdentity: SnapshotSourceIdentity,
         scope: ObservationScope,
         configuration: LifecycleDigest,
+        rules: [RuleDescriptor],
         capabilities: [SnapshotCapability],
         engineVersion: String,
         sourceSelection: SourceSelectionEvidence? = nil,
@@ -65,11 +65,24 @@ enum LifecycleCanonicalDigest {
         sourceDeletions: [SourceDeletionEvidence] = []
     ) throws -> SnapshotID {
         var input = LifecycleDigestInput()
-        input.append("swiftdebt-lifecycle-snapshot-id-v1")
+        input.append("swiftdebt-lifecycle-snapshot-id-v2")
         append(sourceIdentity, to: &input)
         append(scope, to: &input)
         input.append(configuration.algorithm.rawValue)
         input.append(configuration.value)
+        let orderedRules = rules.sorted { $0.identity.description < $1.identity.description }
+        input.append(UInt64(orderedRules.count))
+        for rule in orderedRules {
+            input.append(rule.identity.description)
+            input.append(rule.semanticRevision.rawValue.description)
+            input.append(UInt64(rule.contract.compatibilityDeclarations.count))
+            for declaration in rule.contract.compatibilityDeclarations {
+                input.append(declaration.fromRevision.rawValue.description)
+                input.append(UInt64(declaration.supportedClaims.count))
+                for claim in declaration.supportedClaims { input.append(claim.rawValue) }
+                input.append(declaration.rationale)
+            }
+        }
         input.append(engineVersion)
         input.append(UInt64(capabilities.count))
         for capability in capabilities.sorted(by: { $0.name < $1.name }) {

@@ -104,6 +104,21 @@ struct RuleEngineTests {
         )
     }
 
+    @Test("RuleEngine rejects compatibility that does not point forward")
+    func invalidSemanticCompatibilityIsRejectedAtRegistration() {
+        let expected = RuleEngineError.invalidCompatibilityDeclaration(
+            InvalidCompatibilityDirectionRule.identity,
+            "a declaration must point from an earlier revision into the current revision."
+        )
+
+        #expect(throws: expected) {
+            try RuleEngine().analyze(
+                [SourceUnit(path: "Input.swift", content: "let value = 1")],
+                using: InvalidCompatibilityDirectionRule()
+            )
+        }
+    }
+
     @Test("Force try reports only try! at the exclamation mark")
     func forceTryLocationsAndConditionalBranches() throws {
         let source = SourceUnit(

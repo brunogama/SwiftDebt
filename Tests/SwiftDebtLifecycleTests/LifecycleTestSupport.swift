@@ -50,6 +50,23 @@ struct LifecycleRuleV2: DebtRule {
     }
 }
 
+struct LifecycleRuleV2ContinuityCompatible: DebtRule {
+    static let identity = LifecycleRuleV1.identity
+    static let metadata = LifecycleRuleV1.metadata
+    static let contract = RuleContract(
+        semanticRevision: revisionTwo,
+        semantics: "Preserves the v1 Detection meaning while changing other rule behavior.",
+        rationale: "Exercises directional, claim-specific Semantic Revision compatibility.",
+        compatibilityDeclarations: [continuityOnlyCompatibility]
+    )
+
+    let mode: TestRuleMode
+
+    func detect(in context: AnalysisContext, emit: DetectionEmitter) throws {
+        try emitFixtureDetections(mode: mode, context: context, emit: emit)
+    }
+}
+
 struct AlwaysFailingRule: DebtRule {
     static let identity = RuleIdentity(
         namespace: RuleNamespace(validated: "swiftdebt.test"),
@@ -81,6 +98,19 @@ private let revisionTwo: SemanticRevision = {
         preconditionFailure("Two is a valid Semantic Revision.")
     }
     return revision
+}()
+
+private let continuityOnlyCompatibility: SemanticCompatibilityDeclaration = {
+    guard
+        let declaration = SemanticCompatibilityDeclaration(
+            fromRevision: .initial,
+            supportedClaims: [.continuity],
+            rationale: "Revision 2 preserves positive Detection identity from revision 1."
+        )
+    else {
+        preconditionFailure("The fixture compatibility declaration is valid.")
+    }
+    return declaration
 }()
 
 private func emitFixtureDetections(

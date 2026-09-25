@@ -45,6 +45,9 @@ extension LifecycleReadService {
             for event in projection.finding.events {
                 lines.append("\(event.snapshotID.rawValue) \(event.transition.kind.rawValue)")
                 lines += reasons(for: event.transition).map { "  \($0.code): \($0.message)" }
+                for comparison in event.semanticComparisons {
+                    lines += renderSemanticComparison(comparison)
+                }
             }
         }
         for unresolved in report.unresolvedDetections {
@@ -71,6 +74,9 @@ extension LifecycleReadService {
                 lines.append("History frontier: \(frontier)")
             }
             lines += conclusion.reasons.map { "  \($0.code): \($0.message)" }
+            for comparison in conclusion.semanticComparisons {
+                lines += renderSemanticComparison(comparison)
+            }
         }
         return lines.joined(separator: "\n") + "\n"
     }
@@ -104,6 +110,13 @@ extension LifecycleReadService {
         }
         lines += snapshot.rules.map {
             "Selected rule: \($0.identity) semantic-revision=\($0.semanticRevision.rawValue)"
+        }
+        lines += snapshot.rules.flatMap { rule in
+            rule.compatibilityDeclarations.map { declaration in
+                "Semantic compatibility: \(rule.identity) revisions="
+                    + "\(declaration.fromRevision.rawValue)->\(rule.semanticRevision.rawValue) "
+                    + "claims=\(declaration.supportedClaims.map(\.rawValue).joined(separator: ","))"
+            }
         }
         lines += snapshot.provenance.sourceRenames.map {
             "Renamed SourceUnit: \($0.priorSourcePath.rawValue) -> \($0.currentSourcePath.rawValue) "
@@ -164,5 +177,27 @@ extension LifecycleReadService {
         case .unavailable:
             return "Introduction: unavailable"
         }
+    }
+
+    private func renderSemanticComparison(_ comparison: SemanticComparisonBasis) -> [String] {
+        var lines = [
+            "  Semantic comparison: \(comparison.claim.rawValue) revisions="
+                + "\(comparison.priorRule.semanticRevision.rawValue)->"
+                + "\(comparison.currentRule.semanticRevision.rawValue) "
+                + comparison.decision.rawValue,
+            "    Snapshots: \(comparison.priorSnapshotID.rawValue) -> "
+                + comparison.currentSnapshotID.rawValue,
+            "    Configuration: \(comparison.priorConfigurationFingerprint.value) -> "
+                + comparison.currentConfigurationFingerprint.value,
+            "    Engine: \(comparison.priorEngineVersion) -> \(comparison.currentEngineVersion)",
+        ]
+        if let declaration = comparison.compatibilityDeclaration {
+            lines.append(
+                "    Declaration: claims="
+                    + declaration.supportedClaims.map(\.rawValue).joined(separator: ",")
+                    + " rationale=\(declaration.rationale)"
+            )
+        }
+        return lines
     }
 }
