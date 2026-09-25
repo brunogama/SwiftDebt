@@ -5,12 +5,18 @@ public enum RepositoryAnalysisFailure: Error, Equatable, Sendable, CustomStringC
     case duplicateSourcePath(String)
     case emptyModule(String)
     case noSources
+    case sourceFileBudgetExceeded(selected: Int, limit: Int)
+    case sourceByteBudgetExceeded(selected: Int, limit: Int)
 
     public var description: String {
         switch self {
         case .duplicateSourcePath(let path): "Duplicate normalized repository source path: \(path)"
         case .emptyModule(let path): "Repository source module is empty for \(path)."
         case .noSources: "Repository analysis requires at least one Swift source."
+        case .sourceFileBudgetExceeded(let selected, let limit):
+            "Repository analysis selected \(selected) source files, exceeding the configured limit of \(limit)."
+        case .sourceByteBudgetExceeded(let selected, let limit):
+            "Repository analysis selected \(selected) UTF-8 bytes, exceeding the configured limit of \(limit)."
         }
     }
 }
@@ -24,32 +30,29 @@ public struct RepositoryAnalyzer: Sendable {
         versionControl: RepositoryVersionControlIdentity? = nil
     ) throws -> RepositoryEvidenceReport {
         let selected = try select(sources)
-        let digest = try sourceDigest(selected)
-        var inheritedIssues: [RepositoryEvidenceIssue] = []
+        guard selected.count <= configuration.maximumSourceFiles else {
+            throw RepositoryAnalysisFailure.sourceFileBudgetExceeded(
+                selected: selected.count,
+                limit: configuration.maximumSourceFiles
+            )
+        }
         let byteCount = selected.reduce(into: 0) { total, source in
             let (next, overflow) = total.addingReportingOverflow(source.content.utf8.count)
             total = overflow ? Int.max : next
         }
-        if selected.count > configuration.maximumSourceFiles {
-            inheritedIssues.append(
-                try RepositoryEvidenceIssue(
-                    code: "source-file-budget-exceeded",
-                    message:
-                        "Repository analysis selected \(selected.count) files, exceeding the configured limit of \(configuration.maximumSourceFiles)."
-                )
+        guard byteCount <= configuration.maximumTotalSourceBytes else {
+            throw RepositoryAnalysisFailure.sourceByteBudgetExceeded(
+                selected: byteCount,
+                limit: configuration.maximumTotalSourceBytes
             )
         }
-        if byteCount > configuration.maximumTotalSourceBytes {
-            inheritedIssues.append(
-                try RepositoryEvidenceIssue(
-                    code: "source-byte-budget-exceeded",
-                    message:
-                        "Repository analysis selected \(byteCount) UTF-8 bytes, exceeding the configured limit of \(configuration.maximumTotalSourceBytes)."
-                )
-            )
-        }
+        let digest = try sourceDigest(selected)
 
-        let facts = inheritedIssues.isEmpty ? RepositorySyntaxExtractor().extract(selected) : RepositorySyntaxFacts()
+        let facts = RepositorySyntaxExtractor().extract(
+            selected,
+            maximumAnalysisUnitsPerRule: configuration.maximumAnalysisUnitsPerRule
+        )
+        var inheritedIssues: [RepositoryEvidenceIssue] = []
         let parseErrorCount = facts.diagnostics.count { $0.severity == .error }
         if parseErrorCount > 0 {
             inheritedIssues.append(

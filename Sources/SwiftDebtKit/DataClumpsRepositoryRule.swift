@@ -2,7 +2,7 @@ import SwiftDebtCore
 
 struct DataClumpsRepositoryRule {
     static let identity = "swiftdebt.refactoring.data-clumps"
-    static let semanticRevision: UInt = 1
+    static let semanticRevision: UInt = 2
     static let name = "Data Clumps"
     static let predicate =
         "A closed group of at least the configured number of identical local-name and normalized-type elements occurs in at least the configured number of parameter or property units."
@@ -21,7 +21,7 @@ struct DataClumpsRepositoryRule {
                 try RepositoryEvidenceIssue(
                     code: "analysis-unit-budget-exceeded",
                     message:
-                        "Data Clumps selected \(units.count) units, exceeding the configured limit of \(configuration.maximumAnalysisUnitsPerRule)."
+                        "Data Clumps selected more than the configured limit of \(configuration.maximumAnalysisUnitsPerRule) units."
                 )
             )
             return try result(detections: [], issues: issues)
@@ -83,20 +83,37 @@ struct DataClumpsRepositoryRule {
         maximumComparisons: Int
     ) throws -> [DataClumpGroup] {
         var budget = DataClumpComparisonBudget(limit: maximumComparisons)
-        var candidates = Set<[DataClumpElement]>()
         guard units.count >= minimumOccurrences else { return [] }
-        for firstIndex in 0..<units.count {
-            for secondIndex in (firstIndex + 1)..<units.count {
+
+        // Every closed itemset is the intersection of one or more units. Build
+        // that closure lattice incrementally so minimum occurrence thresholds
+        // greater than two do not depend on a qualifying pairwise seed.
+        var knownCandidates = Set<[DataClumpElement]>()
+        var candidates: [[DataClumpElement]] = []
+        for unit in units {
+            let candidate = unit.elements.sorted()
+            guard candidate.count >= minimumElements else { continue }
+            if knownCandidates.insert(candidate).inserted {
+                candidates.append(candidate)
+            }
+        }
+        var candidateIndex = 0
+        while candidateIndex < candidates.count {
+            let candidate = Set(candidates[candidateIndex])
+            candidateIndex += 1
+            for unit in units {
                 try budget.consume()
-                let overlap = units[firstIndex].elements.intersection(units[secondIndex].elements).sorted()
-                if overlap.count >= minimumElements {
-                    candidates.insert(overlap)
+                let overlap = candidate.intersection(unit.elements)
+                guard overlap.count >= minimumElements else { continue }
+                let normalized = overlap.sorted()
+                if knownCandidates.insert(normalized).inserted {
+                    candidates.append(normalized)
                 }
             }
         }
 
-        var closed: [[DataClumpElement]: [Int]] = [:]
-        for candidate in candidates.sorted(by: elementListOrder) {
+        var groups: [DataClumpGroup] = []
+        for candidate in candidates {
             let candidateSet = Set(candidate)
             var support: [Int] = []
             for index in units.indices {
@@ -111,15 +128,12 @@ struct DataClumpsRepositoryRule {
                 try budget.consume()
                 closure.formIntersection(units[index].elements)
             }
-            if closure.count >= minimumElements {
-                // A closure contains its candidate, so both have the same supporting units.
-                closed[closure.sorted()] = support
+            if closure == candidateSet {
+                groups.append(DataClumpGroup(elements: candidate, unitIndices: support))
             }
         }
 
-        return closed.map { elements, support in
-            DataClumpGroup(elements: elements, unitIndices: support)
-        }.sorted(by: groupOrder)
+        return groups.sorted(by: groupOrder)
     }
 
     private func detection(
@@ -133,7 +147,7 @@ struct DataClumpsRepositoryRule {
         let values = group.elements.map(\.displayValue)
         let fingerprint = try detectionFingerprint(
             ruleIdentity: Self.identity,
-            values: values,
+            values: group.elements.map(\.fingerprintValue),
             units: compared
         )
         let refactoring =
@@ -187,9 +201,5 @@ struct DataClumpsRepositoryRule {
         let right = rhs.elements.map(\.displayValue).joined(separator: "|")
         if left != right { return left < right }
         return lhs.unitIndices.lexicographicallyPrecedes(rhs.unitIndices)
-    }
-
-    private func elementListOrder(_ lhs: [DataClumpElement], _ rhs: [DataClumpElement]) -> Bool {
-        lhs.lexicographicallyPrecedes(rhs)
     }
 }

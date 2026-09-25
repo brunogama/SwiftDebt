@@ -88,9 +88,18 @@ public struct AnalysisService: Sendable {
             ruleAnalysisSnapshot = nil
         }
         let repositoryEvidenceReport = try request.repositoryEvidenceOutputPath.map { _ in
-            try RepositoryAnalyzer().analyze(
+            let generatedPaths = [
+                request.outputPath,
+                request.repositoryEvidenceOutputPath,
+                request.profileOutputPath,
+                request.stampPath,
+            ].compactMap { $0 }.map { URL(fileURLWithPath: $0) }
+            return try RepositoryAnalyzer().analyze(
                 sources,
-                versionControl: RepositoryVersionControlInspector().identity(at: root)
+                versionControl: RepositoryVersionControlInspector().identity(
+                    at: root,
+                    excluding: generatedPaths
+                )
             )
         }
         let report = try await Analyzer().analyze(

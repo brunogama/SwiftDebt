@@ -57,7 +57,9 @@ do not gain repository fields.
 ### Data Clumps
 
 A parameter/property element is the exact pair of its local identifier and its
-formatting-independent SwiftSyntax token sequence for the declared type.
+formatting-independent SwiftSyntax token sequence for the declared type. Token
+boundaries remain part of the canonical key, so `some P` and `someP` are
+different types in this syntax-only comparison.
 Defaults do not participate. Unnamed parameters and properties without an
 explicit type do not participate.
 
@@ -65,7 +67,9 @@ A Detection requires a closed group of at least three compatible elements that
 occurs in at least two declaration units. Supported units in this slice are
 function, method, initializer, and subscript parameter lists plus directly
 declared instance-property groups in nominal types. The analyzer compares all
-supported units across the selected source snapshot.
+supported units across the selected source snapshot. Closure enumeration
+intersects arbitrary numbers of units, and every set comparison consumes the
+configured comparison budget before it runs.
 
 The evidence remains syntax-only. Equal type spelling is compatible evidence;
 different aliases that resolve to the same type are outside this slice. Equal
@@ -86,6 +90,9 @@ Bodies do not participate in the dispatch-shape key. Order remains significant
 because pattern and `where` matching can be order-sensitive. Switches containing
 conditional-compilation case elements make this rule incomplete because this
 syntax-only slice does not select an active compilation branch.
+
+Canonical discriminator and case-label keys retain token boundaries. For
+example, `case let value` and `case letvalue` cannot share a dispatch-shape key.
 
 The discriminator is explicitly syntactic. The rule does not claim that two
 equal spellings have compiler-resolved identity.
@@ -111,6 +118,18 @@ and CLI surfaces:
 7. The simultaneous schema 2 CLI JSON contains no repository evidence fields.
 8. `swift build --build-tests && swift test` passes, or every unrelated existing
    failure is recorded exactly.
+
+Decoded schema 1 artifacts recompute rule completion, capability, selector,
+snapshot-digest, ordering, and summary invariants before callers can use
+`isComplete` or `provesAbsence`. An empty rule list and contradictory complete
+outcome are invalid artifacts rather than vacuous proof.
+
+Requested output paths are excluded from Git working-tree provenance. This
+keeps repeated CLI runs byte-identical when the prior sidecar is otherwise the
+only untracked change. Source count and byte limits fail before snapshot
+hashing because a bounded run cannot truthfully publish a full content digest.
+Fact limits are applied during extraction; the extractor retains at most one
+unit beyond a configured per-rule limit so it can report exhaustion.
 
 ---
 

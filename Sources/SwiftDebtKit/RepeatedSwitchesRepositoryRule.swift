@@ -2,7 +2,7 @@ import SwiftDebtCore
 
 struct RepeatedSwitchesRepositoryRule {
     static let identity = "swiftdebt.refactoring.repeated-switches"
-    static let semanticRevision: UInt = 1
+    static let semanticRevision: UInt = 2
     static let name = "Repeated Switches"
     static let predicate =
         "At least the configured number of switches in one textual module/type scope have the same simple discriminator and ordered normalized case-label shape."
@@ -31,7 +31,7 @@ struct RepeatedSwitchesRepositoryRule {
                 try RepositoryEvidenceIssue(
                     code: "analysis-unit-budget-exceeded",
                     message:
-                        "Repeated Switches selected \(units.count) units, exceeding the configured limit of \(configuration.maximumAnalysisUnitsPerRule)."
+                        "Repeated Switches selected more than the configured limit of \(configuration.maximumAnalysisUnitsPerRule) units."
                 )
             )
             return try result(detections: [], issues: issues)
@@ -91,7 +91,7 @@ struct RepeatedSwitchesRepositoryRule {
     ) throws -> RepositoryDetection {
         let compared = occurrences.map(\.comparedUnit).sorted(by: comparedUnitOrder)
         let primary = compared[0].location
-        let values = [key.scope, key.discriminator] + key.caseShape
+        let values = [key.scope, key.discriminator.canonicalValue] + key.caseShape.map(\.canonicalValue)
         let fingerprint = try detectionFingerprint(
             ruleIdentity: Self.identity,
             values: values,
@@ -106,13 +106,13 @@ struct RepeatedSwitchesRepositoryRule {
             ),
             RepositoryObservedFact(
                 kind: "discriminator",
-                value: key.discriminator,
+                value: key.discriminator.displayValue,
                 evidenceClass: .structural,
                 locations: compared.map(\.location)
             ),
             RepositoryObservedFact(
                 kind: "ordered-case-shape",
-                value: key.caseShape.joined(separator: " | "),
+                value: key.caseShape.map(\.displayValue).joined(separator: " | "),
                 evidenceClass: .structural,
                 locations: compared.map(\.location)
             ),
@@ -128,7 +128,7 @@ struct RepeatedSwitchesRepositoryRule {
             title: Self.name,
             primaryLocation: primary,
             summary:
-                "The same \(key.caseShape.count)-branch switch shape recurs \(compared.count) times for \(key.discriminator).",
+                "The same \(key.caseShape.count)-branch switch shape recurs \(compared.count) times for \(key.discriminator.displayValue).",
             explanation: RepositoryDetectionExplanation(
                 predicate:
                     "Observed \(compared.count) switches with the same simple discriminator and ordered case labels; required at least \(configuration.minimumRepeatedSwitchOccurrences).",
@@ -161,8 +161,8 @@ struct RepeatedSwitchesRepositoryRule {
 
 private struct RepeatedSwitchKey: Hashable {
     let scope: String
-    let discriminator: String
-    let caseShape: [String]
+    let discriminator: NormalizedTokenSequence
+    let caseShape: [NormalizedTokenSequence]
 }
 
 private struct RepeatedSwitchGroup {

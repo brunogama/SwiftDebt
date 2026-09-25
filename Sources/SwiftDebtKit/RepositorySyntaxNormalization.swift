@@ -1,17 +1,47 @@
 import SwiftSyntax
 
+struct NormalizedTokenSequence: Hashable, Comparable, Sendable {
+    let tokens: [String]
+
+    var canonicalValue: String {
+        tokens.map { "\($0.utf8.count):\($0)" }.joined()
+    }
+
+    var displayValue: String {
+        guard let first = tokens.first else { return "" }
+        return tokens.dropFirst().reduce(first) { result, token in
+            let separator = needsTokenSeparator(result.last, token.first) ? " " : ""
+            return result + separator + token
+        }
+    }
+
+    static func < (lhs: Self, rhs: Self) -> Bool {
+        lhs.tokens.lexicographicallyPrecedes(rhs.tokens)
+    }
+
+    private func needsTokenSeparator(_ left: Character?, _ right: Character?) -> Bool {
+        guard let left, let right else { return false }
+        if left.isLetter || left.isNumber || left == "_" {
+            return right.isLetter || right.isNumber || right == "_"
+        }
+        let operatorCharacters = "/=-+!*%<>&|^?~"
+        return operatorCharacters.contains(left) && operatorCharacters.contains(right)
+    }
+}
+
 func normalizedIdentifier(_ value: String) -> String {
     value.hasPrefix("`") && value.hasSuffix("`") ? String(value.dropFirst().dropLast()) : value
 }
 
-func normalizedTokens(_ node: some SyntaxProtocol) -> String {
-    node.tokens(viewMode: .sourceAccurate)
-        .filter { $0.presence == .present }
-        .map(\.text)
-        .joined()
+func normalizedTokens(_ node: some SyntaxProtocol) -> NormalizedTokenSequence {
+    NormalizedTokenSequence(
+        tokens: node.tokens(viewMode: .sourceAccurate)
+            .filter { $0.presence == .present }
+            .map(\.text)
+    )
 }
 
-func simpleDiscriminator(_ expression: ExprSyntax) -> String? {
+func simpleDiscriminator(_ expression: ExprSyntax) -> NormalizedTokenSequence? {
     if expression.is(DeclReferenceExprSyntax.self) {
         return normalizedTokens(expression)
     }
@@ -37,7 +67,7 @@ func nominalScope(of node: Syntax, module: String) -> String {
         } else if let value = current.as(ActorDeclSyntax.self) {
             names.insert(normalizedIdentifier(value.name.text), at: 0)
         } else if let value = current.as(ExtensionDeclSyntax.self) {
-            names.insert(normalizedTokens(value.extendedType), at: 0)
+            names.insert(normalizedTokens(value.extendedType).displayValue, at: 0)
         }
         parent = current.parent
     }

@@ -2,7 +2,7 @@
   "diagnostics" : [
 
   ],
-  "generator" : "SwiftDebt 0.7.3",
+  "generator" : "SwiftDebt 0.8.0",
   "reportKind" : "swiftdebt-repository-evidence",
   "rules" : [
     {
@@ -116,7 +116,7 @@
           "selector" : {
             "evidenceFingerprint" : {
               "algorithm" : "sha256",
-              "value" : "23fa31ec8a2488fc30422f19f8352b9f448fb98731410d741d41f74de7ff7889"
+              "value" : "83090f8685a87c985903bd6019be2800dd7a6090158259b118d6f8706a4a4e23"
             },
             "location" : {
               "column" : 1,
@@ -124,7 +124,7 @@
               "line" : 1
             },
             "ruleIdentity" : "swiftdebt.refactoring.data-clumps",
-            "semanticRevision" : 1,
+            "semanticRevision" : 2,
             "snapshotDigest" : {
               "algorithm" : "sha256",
               "value" : "477a60411ee25fc0ce5a5a68162c1bff32efdcabb52c827f31bdd9c27cee77a5"
@@ -141,7 +141,7 @@
       "predicate" : "A closed group of at least the configured number of identical local-name and normalized-type elements occurs in at least the configured number of parameter or property units.",
       "qualification" : "Research",
       "ruleIdentity" : "swiftdebt.refactoring.data-clumps",
-      "semanticRevision" : 1
+      "semanticRevision" : 2
     },
     {
       "capabilities" : [
@@ -251,7 +251,7 @@
           "selector" : {
             "evidenceFingerprint" : {
               "algorithm" : "sha256",
-              "value" : "dfca0edb3a7bdf3431b66b495fb4555483c3c57b560ee52d0050c20d7942e24c"
+              "value" : "044c968ef7e85ff75513cd7a7e5a36cb8f9359d2a66ebb6096559fe665f5f74a"
             },
             "location" : {
               "column" : 9,
@@ -259,7 +259,7 @@
               "line" : 5
             },
             "ruleIdentity" : "swiftdebt.refactoring.repeated-switches",
-            "semanticRevision" : 1,
+            "semanticRevision" : 2,
             "snapshotDigest" : {
               "algorithm" : "sha256",
               "value" : "477a60411ee25fc0ce5a5a68162c1bff32efdcabb52c827f31bdd9c27cee77a5"
@@ -276,7 +276,7 @@
       "predicate" : "At least the configured number of switches in one textual module/type scope have the same simple discriminator and ordered normalized case-label shape.",
       "qualification" : "Research",
       "ruleIdentity" : "swiftdebt.refactoring.repeated-switches",
-      "semanticRevision" : 1
+      "semanticRevision" : 2
     }
   ],
   "schemaVersion" : 1,

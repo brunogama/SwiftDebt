@@ -2,14 +2,15 @@ import SwiftDebtCore
 
 struct DataClumpElement: Hashable, Comparable, Sendable {
     let name: String
-    let normalizedType: String
+    let normalizedType: NormalizedTokenSequence
 
     static func < (lhs: DataClumpElement, rhs: DataClumpElement) -> Bool {
         if lhs.name != rhs.name { return lhs.name < rhs.name }
         return lhs.normalizedType < rhs.normalizedType
     }
 
-    var displayValue: String { "\(name): \(normalizedType)" }
+    var displayValue: String { "\(name): \(normalizedType.displayValue)" }
+    var fingerprintValue: String { "\(name):\(normalizedType.canonicalValue)" }
 }
 
 struct DataClumpUnit: Sendable {
@@ -25,8 +26,8 @@ struct DataClumpUnit: Sendable {
 
 struct RepeatedSwitchUnit: Sendable {
     let scope: String
-    let discriminator: String
-    let caseShape: [String]
+    let discriminator: NormalizedTokenSequence
+    let caseShape: [NormalizedTokenSequence]
     let displayName: String
     let location: SwiftDebtCore.SourceLocation
 

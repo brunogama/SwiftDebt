@@ -4,8 +4,13 @@ import SwiftParserDiagnostics
 import SwiftSyntax
 
 struct RepositorySyntaxExtractor {
-    func extract(_ sources: [SourceUnit]) -> RepositorySyntaxFacts {
+    func extract(
+        _ sources: [SourceUnit],
+        maximumAnalysisUnitsPerRule: Int = .max
+    ) -> RepositorySyntaxFacts {
         var result = RepositorySyntaxFacts()
+        let materializationLimit =
+            maximumAnalysisUnitsPerRule == .max ? Int.max : maximumAnalysisUnitsPerRule + 1
         for source in sources {
             let tree = Parser.parse(source: source.content)
             let converter = SourceLocationConverter(fileName: source.path, tree: tree)
@@ -24,7 +29,12 @@ struct RepositorySyntaxExtractor {
             result.diagnostics += diagnostics
             guard !diagnostics.contains(where: { $0.severity == .error }) else { continue }
 
-            let visitor = RepositoryFactVisitor(source: source, converter: converter)
+            let visitor = RepositoryFactVisitor(
+                source: source,
+                converter: converter,
+                maximumDataClumpUnits: max(0, materializationLimit - result.dataClumpUnits.count),
+                maximumRepeatedSwitchUnits: max(0, materializationLimit - result.repeatedSwitchUnits.count)
+            )
             visitor.walk(tree)
             result.dataClumpUnits += visitor.dataClumpUnits
             result.repeatedSwitchUnits += visitor.repeatedSwitchUnits
@@ -41,13 +51,22 @@ struct RepositorySyntaxExtractor {
 private final class RepositoryFactVisitor: SyntaxVisitor {
     let source: SourceUnit
     let converter: SourceLocationConverter
+    let maximumDataClumpUnits: Int
+    let maximumRepeatedSwitchUnits: Int
     var dataClumpUnits: [DataClumpUnit] = []
     var repeatedSwitchUnits: [RepeatedSwitchUnit] = []
     var conditionalSwitchLocations: [SwiftDebtCore.SourceLocation] = []
 
-    init(source: SourceUnit, converter: SourceLocationConverter) {
+    init(
+        source: SourceUnit,
+        converter: SourceLocationConverter,
+        maximumDataClumpUnits: Int,
+        maximumRepeatedSwitchUnits: Int
+    ) {
         self.source = source
         self.converter = converter
+        self.maximumDataClumpUnits = maximumDataClumpUnits
+        self.maximumRepeatedSwitchUnits = maximumRepeatedSwitchUnits
         super.init(viewMode: .sourceAccurate)
     }
 
@@ -97,8 +116,9 @@ private final class RepositoryFactVisitor: SyntaxVisitor {
     }
 
     override func visit(_ node: SwitchExprSyntax) -> SyntaxVisitorContinueKind {
+        guard repeatedSwitchUnits.count < maximumRepeatedSwitchUnits else { return .visitChildren }
         let location = sourceLocation(node)
-        var labels: [String] = []
+        var labels: [NormalizedTokenSequence] = []
         for element in node.cases {
             switch element {
             case .switchCase(let switchCase):
@@ -117,7 +137,7 @@ private final class RepositoryFactVisitor: SyntaxVisitor {
                 scope: scope,
                 discriminator: discriminator,
                 caseShape: labels,
-                displayName: "switch \(discriminator) in \(scope)",
+                displayName: "switch \(discriminator.displayValue) in \(scope)",
                 location: location
             )
         )
@@ -130,6 +150,7 @@ private final class RepositoryFactVisitor: SyntaxVisitor {
         name: String,
         kind: RepositoryAnalysisUnitKind
     ) {
+        guard dataClumpUnits.count < maximumDataClumpUnits else { return }
         let elements = Set(parameters.compactMap(parameterElement))
         guard !elements.isEmpty else { return }
         let owner = nominalScope(of: declaration, module: source.module)
@@ -144,6 +165,7 @@ private final class RepositoryFactVisitor: SyntaxVisitor {
     }
 
     private func addPropertyUnit(_ members: MemberBlockSyntax, declaration: Syntax, name: String) {
+        guard dataClumpUnits.count < maximumDataClumpUnits else { return }
         guard !hasCallableAncestor(declaration) else { return }
         var elements = Set<DataClumpElement>()
         for member in members.members {
@@ -175,11 +197,13 @@ private final class RepositoryFactVisitor: SyntaxVisitor {
         let token = parameter.secondName ?? parameter.firstName
         let name = normalizedIdentifier(token.text)
         guard name != "_" else { return nil }
-        let type =
-            normalizedTokens(parameter.attributes)
-            + normalizedTokens(parameter.modifiers)
-            + normalizedTokens(parameter.type)
-            + (parameter.ellipsis?.text ?? "")
+        var typeTokens = normalizedTokens(parameter.attributes).tokens
+        typeTokens += normalizedTokens(parameter.modifiers).tokens
+        typeTokens += normalizedTokens(parameter.type).tokens
+        if let ellipsis = parameter.ellipsis?.text {
+            typeTokens.append(ellipsis)
+        }
+        let type = NormalizedTokenSequence(tokens: typeTokens)
         return DataClumpElement(name: name, normalizedType: type)
     }
 

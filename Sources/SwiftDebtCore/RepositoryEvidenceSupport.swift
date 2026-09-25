@@ -1,5 +1,3 @@
-import Foundation
-
 public enum RepositoryEvidenceContractError: Error, Equatable, Sendable, CustomStringConvertible {
     case invalidConfiguration(String)
     case invalidDigest(String)
@@ -74,10 +72,10 @@ public struct RepositoryEvidenceIssue: Codable, Equatable, Hashable, Sendable {
     public let message: String
 
     package init(code: String, message: String) throws {
-        guard !code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        guard hasRepositoryEvidenceContent(code) else {
             throw RepositoryEvidenceContractError.emptyIssueCode
         }
-        guard !message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        guard hasRepositoryEvidenceContent(message) else {
             throw RepositoryEvidenceContractError.emptyIssueMessage
         }
         self.code = code
@@ -114,7 +112,7 @@ public struct RepositoryVersionControlIdentity: Codable, Equatable, Sendable {
     public let workingTreeState: RepositoryWorkingTreeState
 
     public init(revision: String, workingTreeState: RepositoryWorkingTreeState) throws {
-        guard !revision.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        guard hasRepositoryEvidenceContent(revision) else {
             throw RepositoryEvidenceContractError.emptyRevision
         }
         self.revision = revision
@@ -139,6 +137,11 @@ public struct RepositoryVersionControlIdentity: Codable, Equatable, Sendable {
             )
         }
     }
+}
+
+func hasRepositoryEvidenceContent(_ value: String) -> Bool {
+    value.contains { !$0.isWhitespace }
+        && !value.unicodeScalars.contains { $0.value < 32 || $0.value == 127 }
 }
 
 public struct RepositoryProviderIdentity: Codable, Equatable, Hashable, Sendable {

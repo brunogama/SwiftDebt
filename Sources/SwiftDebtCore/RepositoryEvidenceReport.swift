@@ -31,7 +31,7 @@ public enum RepositoryRuleQualification: String, Codable, Sendable {
     case research = "Research"
 }
 
-public struct RepositoryRuleEvidence: Codable, Equatable, Sendable {
+public struct RepositoryRuleEvidence: Equatable, Sendable {
     public let ruleIdentity: String
     public let semanticRevision: UInt
     public let name: String
@@ -65,10 +65,14 @@ public struct RepositoryRuleEvidence: Codable, Equatable, Sendable {
     }
 
     public var provesAbsence: Bool {
-        completionState == .complete
+        semanticRevision > 0
+            && completionState == .complete
+            && !capabilities.isEmpty
             && capabilities.allSatisfy { $0.state == .available }
             && detections.isEmpty
+            && issues.isEmpty
     }
+
 }
 
 public struct RepositoryEvidenceSummary: Codable, Equatable, Sendable {
@@ -93,7 +97,7 @@ public struct RepositoryEvidenceSummary: Codable, Equatable, Sendable {
     }
 }
 
-public struct RepositoryEvidenceReport: Codable, Equatable, Sendable {
+public struct RepositoryEvidenceReport: Equatable, Sendable {
     public let schemaVersion: Int
     public let reportKind: String
     public let generator: String
@@ -119,7 +123,7 @@ public struct RepositoryEvidenceReport: Codable, Equatable, Sendable {
     }
 
     public var isComplete: Bool {
-        rules.allSatisfy { $0.completionState == .complete }
+        !rules.isEmpty && rules.allSatisfy { $0.completionState == .complete }
     }
 
     public var detections: [RepositoryDetection] {
@@ -130,40 +134,4 @@ public struct RepositoryEvidenceReport: Codable, Equatable, Sendable {
         detections.first { $0.selector == selector }
     }
 
-    private enum CodingKeys: String, CodingKey {
-        case schemaVersion
-        case reportKind
-        case generator
-        case snapshot
-        case rules
-        case diagnostics
-        case summary
-    }
-
-    public init(from decoder: any Decoder) throws {
-        let values = try decoder.container(keyedBy: CodingKeys.self)
-        let schemaVersion = try values.decode(Int.self, forKey: .schemaVersion)
-        guard schemaVersion == RepositoryEvidenceReportSchema.currentVersion else {
-            throw DecodingError.dataCorruptedError(
-                forKey: .schemaVersion,
-                in: values,
-                debugDescription: RepositoryEvidenceContractError.unsupportedSchemaVersion(schemaVersion).description
-            )
-        }
-        let reportKind = try values.decode(String.self, forKey: .reportKind)
-        guard reportKind == RepositoryEvidenceReportSchema.reportKind else {
-            throw DecodingError.dataCorruptedError(
-                forKey: .reportKind,
-                in: values,
-                debugDescription: RepositoryEvidenceContractError.unsupportedReportKind(reportKind).description
-            )
-        }
-        self.schemaVersion = schemaVersion
-        self.reportKind = reportKind
-        generator = try values.decode(String.self, forKey: .generator)
-        snapshot = try values.decode(RepositorySnapshotIdentity.self, forKey: .snapshot)
-        rules = try values.decode([RepositoryRuleEvidence].self, forKey: .rules)
-        diagnostics = try values.decode([AnalysisDiagnostic].self, forKey: .diagnostics)
-        summary = try values.decode(RepositoryEvidenceSummary.self, forKey: .summary)
-    }
 }

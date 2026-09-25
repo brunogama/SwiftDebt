@@ -63,6 +63,34 @@ struct RepositoryAnalysisCLIWorkflowTests {
         #expect(!result.stdout.contains("data-clumps"))
     }
 
+    @Test("Repeated CLI runs exclude their sidecar from Git provenance")
+    func repeatedCLIRunsKeepGitProvenanceStable() throws {
+        let fixture = try makeFixtureCopy()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        try runGitFixture(["init"], root: fixture.root)
+        try runGitFixture(["config", "user.name", "Test User"], root: fixture.root)
+        try runGitFixture(["config", "user.email", "test@example.test"], root: fixture.root)
+        try runGitFixture(["add", "input"], root: fixture.root)
+        try runGitFixture(["commit", "-m", "fixture"], root: fixture.root)
+
+        let first = try runSwiftDebt([
+            "analyze", fixture.root.path, "--jobs", "1", "--repository-evidence", fixture.sidecar.path,
+        ])
+        let firstBytes = try Data(contentsOf: fixture.sidecar)
+        let firstReport = try JSONDecoder().decode(RepositoryEvidenceReport.self, from: firstBytes)
+        let second = try runSwiftDebt([
+            "analyze", fixture.root.path, "--jobs", "1", "--repository-evidence", fixture.sidecar.path,
+        ])
+        let secondBytes = try Data(contentsOf: fixture.sidecar)
+        let secondReport = try JSONDecoder().decode(RepositoryEvidenceReport.self, from: secondBytes)
+
+        #expect(first.status == 0)
+        #expect(second.status == 0)
+        #expect(firstReport.snapshot.versionControl?.workingTreeState == .clean)
+        #expect(secondReport.snapshot.versionControl?.workingTreeState == .clean)
+        #expect(firstBytes == secondBytes)
+    }
+
     @Test("Incomplete repository evidence exits two and never claims absence")
     func incompleteCLIOutcome() throws {
         let fixture = try makeFixtureCopy(named: "Conditional")
