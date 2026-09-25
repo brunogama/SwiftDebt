@@ -6,13 +6,15 @@ public struct ObservedDetection: Equatable, Sendable {
     public let severity: RuleSeverity
     public let location: SnapshotLocation
     public let message: String
+    public let structuralEvidence: DetectionStructuralEvidence?
 
     public init(
         id: DetectionID,
         rule: SnapshotRule,
         severity: RuleSeverity,
         location: SnapshotLocation,
-        message: String
+        message: String,
+        structuralEvidence: DetectionStructuralEvidence? = nil
     ) throws {
         guard hasLifecycleContent(message) else {
             throw LifecycleContractError.invalidSnapshot("Detection messages must be nonblank single lines.")
@@ -22,6 +24,7 @@ public struct ObservedDetection: Equatable, Sendable {
         self.severity = severity
         self.location = location
         self.message = message
+        self.structuralEvidence = structuralEvidence
     }
 }
 
@@ -32,6 +35,7 @@ extension ObservedDetection: Codable {
         case severity
         case location
         case message
+        case structuralEvidence
     }
 
     public init(from decoder: any Decoder) throws {
@@ -50,7 +54,11 @@ extension ObservedDetection: Codable {
                 rule: values.decode(SnapshotRule.self, forKey: .rule),
                 severity: severity,
                 location: values.decode(SnapshotLocation.self, forKey: .location),
-                message: values.decode(String.self, forKey: .message)
+                message: values.decode(String.self, forKey: .message),
+                structuralEvidence: values.decodeIfPresent(
+                    DetectionStructuralEvidence.self,
+                    forKey: .structuralEvidence
+                )
             )
         } catch {
             throw DecodingError.dataCorruptedError(
@@ -68,6 +76,7 @@ extension ObservedDetection: Codable {
         try values.encode(severity.rawValue, forKey: .severity)
         try values.encode(location, forKey: .location)
         try values.encode(message, forKey: .message)
+        try values.encodeIfPresent(structuralEvidence, forKey: .structuralEvidence)
     }
 }
 

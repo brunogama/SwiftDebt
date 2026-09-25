@@ -156,8 +156,8 @@ public struct RuleEngine {
                 descriptor: descriptor
             )
         }
-        let emitter = DetectionEmitter { node, message in
-            buffer.record(node: node, message: message)
+        let emitter = DetectionEmitter { node, continuitySubject, message in
+            buffer.record(node: node, continuitySubject: continuitySubject, message: message)
         }
 
         do {
@@ -206,6 +206,9 @@ public struct RuleEngine {
         descriptor: RuleDescriptor
     ) throws -> Detection {
         guard proposal.node.root.id == tree.id else { throw InvalidEmission.foreignNode }
+        guard proposal.continuitySubject.root.id == tree.id else {
+            throw InvalidEmission.foreignContinuitySubject
+        }
         guard proposal.node.firstToken(viewMode: .sourceAccurate) != nil else {
             throw InvalidEmission.missingLocation
         }
@@ -223,7 +226,10 @@ public struct RuleEngine {
                 line: sourceLocation.line,
                 column: sourceLocation.column
             ),
-            message: proposal.message
+            message: proposal.message,
+            structuralEvidence: try DetectionStructuralEvidenceFactory.make(
+                subject: proposal.continuitySubject
+            )
         )
     }
 
@@ -256,6 +262,7 @@ private struct SelectedSource {
 
 private struct EmissionProposal {
     let node: Syntax
+    let continuitySubject: Syntax
     let message: String
 }
 
@@ -269,10 +276,18 @@ private final class EmissionBuffer {
         self.validate = validate
     }
 
-    func record(node: Syntax, message: String) {
+    func record(node: Syntax, continuitySubject: Syntax, message: String) {
         guard isOpen, invalidReason == nil else { return }
         do {
-            detections.append(try validate(EmissionProposal(node: node, message: message)))
+            detections.append(
+                try validate(
+                    EmissionProposal(
+                        node: node,
+                        continuitySubject: continuitySubject,
+                        message: message
+                    )
+                )
+            )
         } catch {
             detections.removeAll(keepingCapacity: false)
             invalidReason = String(describing: error)
@@ -293,6 +308,7 @@ private enum BufferedEmissions {
 
 private enum InvalidEmission: Error, CustomStringConvertible {
     case foreignNode
+    case foreignContinuitySubject
     case invalidMessage
     case missingLocation
 
@@ -300,6 +316,8 @@ private enum InvalidEmission: Error, CustomStringConvertible {
         switch self {
         case .foreignNode:
             "node does not belong to the current source tree"
+        case .foreignContinuitySubject:
+            "continuity subject does not belong to the current source tree"
         case .invalidMessage:
             "message must be a nonempty single line without surrounding whitespace"
         case .missingLocation:

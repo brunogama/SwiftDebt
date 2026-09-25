@@ -71,7 +71,7 @@ private final class ActorStateAcrossAwaitVisitor: SyntaxVisitor {
                 return collector.evidence
             }
 
-            for index in evidence.indices where !evidence[index].awaitTokens.isEmpty {
+            for index in evidence.indices where !evidence[index].awaitExpressions.isEmpty {
                 let before = evidence[..<index].reduce(into: Set<String>()) {
                     $0.formUnion($1.accessedProperties)
                 }
@@ -80,9 +80,10 @@ private final class ActorStateAcrossAwaitVisitor: SyntaxVisitor {
                 }
                 guard !before.isDisjoint(with: after) else { continue }
 
-                for token in evidence[index].awaitTokens {
+                for awaitExpression in evidence[index].awaitExpressions {
                     emit(
-                        at: token,
+                        at: awaitExpression.awaitKeyword,
+                        continuitySubject: awaitExpression,
                         message:
                             "This actor method accesses mutable state on both sides of await; review assumptions that interleaving could change."
                     )
@@ -108,7 +109,7 @@ private final class ActorStateAcrossAwaitVisitor: SyntaxVisitor {
 
 private struct ActorStatementEvidence {
     var accessedProperties: Set<String> = []
-    var awaitTokens: [TokenSyntax] = []
+    var awaitExpressions: [AwaitExprSyntax] = []
 }
 
 private final class ActorStatementEvidenceCollector: SyntaxVisitor {
@@ -131,7 +132,7 @@ private final class ActorStatementEvidenceCollector: SyntaxVisitor {
     }
 
     override func visit(_ node: AwaitExprSyntax) -> SyntaxVisitorContinueKind {
-        evidence.awaitTokens.append(node.awaitKeyword)
+        evidence.awaitExpressions.append(node)
         return .visitChildren
     }
 

@@ -20,13 +20,13 @@ struct LifecycleCLIWorkflowTests {
         let original = try makeObservation(
             id: "cli-original",
             sequence: 1,
-            rules: [LifecycleRuleV1(mode: .committed(1))]
+            rules: [LifecycleRuleV1(mode: .repeated(1))]
         )
         let ambiguous = try makeObservation(
             id: "cli-ambiguous",
             sequence: 2,
             predecessor: "cli-original",
-            rules: [LifecycleRuleV1(mode: .committed(2))]
+            rules: [LifecycleRuleV1(mode: .repeated(2))]
         )
         _ = try store.ingest(original)
         _ = try store.ingest(ambiguous)
@@ -50,8 +50,8 @@ struct LifecycleCLIWorkflowTests {
             "lifecycle", "explain", fixture.url.path, findingID.rawValue,
         ])
         #expect(explanation.status == 0)
-        #expect(explanation.standardOutput.contains("continuity-evidence-unavailable"))
-        #expect(explanation.standardOutput.contains("no predecessor was selected"))
+        #expect(explanation.standardOutput.contains("structural-assignment-not-unique"))
+        #expect(explanation.standardOutput.contains("more than one predecessor or successor"))
 
         let inspection = try runLifecycleCLI([
             "lifecycle", "snapshot", fixture.url.path, ambiguous.id.rawValue,

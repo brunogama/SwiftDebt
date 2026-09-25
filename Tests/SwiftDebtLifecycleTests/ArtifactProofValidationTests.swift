@@ -62,7 +62,7 @@ struct ArtifactProofValidationTests {
             makeObservation(
                 id: "candidate-root",
                 sequence: 1,
-                rules: [LifecycleRuleV1(mode: .committed(1))]
+                rules: [LifecycleRuleV1(mode: .repeated(1))]
             )
         )
         _ = try store.ingest(
@@ -70,7 +70,7 @@ struct ArtifactProofValidationTests {
                 id: "candidate-child",
                 sequence: 2,
                 predecessor: "candidate-root",
-                rules: [LifecycleRuleV1(mode: .committed(1))]
+                rules: [LifecycleRuleV1(mode: .repeated(2))]
             )
         )
 
@@ -108,6 +108,61 @@ struct ArtifactProofValidationTests {
         root["findings"] = []
         try lifecycleJSONData(root).write(to: fixture.url, options: .atomic)
 
+        #expect(throws: LifecycleStoreError.self) { try store.load() }
+    }
+
+    @Test("A persisted observation cannot select one successor from a copied anchor")
+    func nonUniqueObservedEventIsRejected() throws {
+        let fixture = try TemporaryLifecycleArtifact()
+        let store = LifecycleArtifactStore(artifactURL: fixture.url)
+        let prior = try makeObservation(
+            id: "unique-proof-root",
+            sequence: 1,
+            rules: [LifecycleRuleV1(mode: .repeated(1))]
+        )
+        let copied = try makeObservation(
+            id: "unique-proof-copy",
+            sequence: 2,
+            predecessor: "unique-proof-root",
+            rules: [LifecycleRuleV1(mode: .repeated(2))]
+        )
+        _ = try store.ingest(prior)
+        _ = try store.ingest(copied)
+
+        var root = try artifactJSONObject(at: fixture.url)
+        var findings = try #require(root["findings"] as? [[String: Any]])
+        var finding = try #require(findings.first)
+        var events = try #require(finding["events"] as? [[String: Any]])
+        var currentEvent = try #require(events.last)
+        let currentDetectionID = try #require(copied.detections.first?.id.rawValue)
+        let currentAtomicID = try #require(copied.atomicObservations.first?.id.rawValue)
+        let priorDetectionID = try #require(prior.detections.first?.id.rawValue)
+        currentEvent["transition"] = [
+            "kind": "observed",
+            "continuity": [
+                "currentDetection": [
+                    "detectionID": currentDetectionID,
+                    "atomicObservationID": currentAtomicID,
+                ],
+                "priorSnapshotID": prior.id.rawValue,
+                "priorDetectionID": priorDetectionID,
+                "reasons": [
+                    [
+                        "code": "structural-anchor-match",
+                        "message": "The engine-derived normalized subject and enclosing declaration match.",
+                    ]
+                ],
+            ],
+        ]
+        events[events.count - 1] = currentEvent
+        finding["events"] = events
+        findings[0] = finding
+        root["findings"] = findings
+        var unresolved = try #require(root["unresolvedDetections"] as? [[String: Any]])
+        unresolved.removeAll { $0["detectionID"] as? String == currentDetectionID }
+        root["unresolvedDetections"] = unresolved
+
+        try lifecycleJSONData(root).write(to: fixture.url, options: .atomic)
         #expect(throws: LifecycleStoreError.self) { try store.load() }
     }
 }

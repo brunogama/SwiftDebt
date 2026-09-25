@@ -35,19 +35,20 @@ private final class ForceCastVisitor: SyntaxVisitor {
     }
 
     override func visit(_ node: AsExprSyntax) -> SyntaxVisitorContinueKind {
-        report(node.questionOrExclamationMark)
+        report(node.questionOrExclamationMark, subject: node)
         return .visitChildren
     }
 
     override func visit(_ node: UnresolvedAsExprSyntax) -> SyntaxVisitorContinueKind {
-        report(node.questionOrExclamationMark)
+        report(node.questionOrExclamationMark, subject: node)
         return .visitChildren
     }
 
-    private func report(_ marker: TokenSyntax?) {
+    private func report<Subject: SyntaxProtocol>(_ marker: TokenSyntax?, subject: Subject) {
         guard let marker, marker.tokenKind == .exclamationMark else { return }
         emit(
             at: marker,
+            continuitySubject: subject,
             message:
                 "This forced cast traps if the value has a different runtime type; use a checked cast or explicit invariant."
         )

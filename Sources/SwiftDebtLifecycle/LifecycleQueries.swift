@@ -21,11 +21,12 @@ public struct LifecycleInventoryReport: Codable, Equatable, Sendable {
         self.schemaVersion = 1
         self.reportKind = "swiftdebt-lifecycle-inventory"
         self.findings = try artifact.findings.map { finding in
-            guard let snapshot = artifact.snapshot(id: finding.firstObservationSnapshotID),
-                let detection = snapshot.detection(id: finding.openingDetectionID)
+            let reference = finding.latestDetectionReference
+            guard let snapshot = artifact.snapshot(id: reference.snapshotID),
+                let detection = snapshot.detection(id: reference.detectionID)
             else {
                 throw LifecycleContractError.invalidArtifact(
-                    "Finding \(finding.id) has no opening Detection."
+                    "Finding \(finding.id) has no latest observed Detection."
                 )
             }
             return FindingSummary(

@@ -39,6 +39,7 @@ private final class ForceTryVisitor: SyntaxVisitor {
         if let marker = node.questionOrExclamationMark, marker.tokenKind == .exclamationMark {
             emit(
                 at: marker,
+                continuitySubject: node,
                 message: "This try! traps if the expression throws; handle or propagate the error."
             )
         }

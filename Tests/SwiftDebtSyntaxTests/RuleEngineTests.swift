@@ -1,3 +1,4 @@
+import Foundation
 import SwiftDebtCore
 import Testing
 
@@ -5,6 +6,14 @@ import Testing
 
 @Suite("Rule engine transactions")
 struct RuleEngineTests {
+    @Test("Structural digest uses canonical SHA-256")
+    func structuralSHA256() {
+        #expect(
+            StructuralSHA256.hexDigest(Data("abc".utf8))
+                == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+        )
+    }
+
     @Test("Analysis snapshot groups selected source provenance and results")
     func analysisSnapshotProvenance() throws {
         let snapshot = try RuleEngine().analyze(
@@ -127,6 +136,67 @@ struct RuleEngineTests {
             }
         )
         #expect(ForceTryRule.contract.semantics.contains("all #if branches"))
+    }
+
+    @Test("Structural evidence ignores trivia and distinguishes subject and declaration edits")
+    func structuralContinuityEvidence() throws {
+        let original = try forceTryDetection(
+            """
+            func load() throws -> Int { 1 }
+            func reload() throws -> Int { 2 }
+            func run() {
+                _ = try! load()
+            }
+            """
+        )
+        let shifted = try forceTryDetection(
+            """
+            func load() throws -> Int { 1 }
+            func reload() throws -> Int { 2 }
+
+            // Trivia and absolute location do not define continuity.
+            func run() {
+                _ = try! load()
+            }
+            """
+        )
+        let editedSubject = try forceTryDetection(
+            """
+            func load() throws -> Int { 1 }
+            func reload() throws -> Int { 2 }
+            func run() {
+                _ = try! reload()
+            }
+            """
+        )
+        let differentDeclaration = try forceTryDetection(
+            """
+            func load() throws -> Int { 1 }
+            func reload() throws -> Int { 2 }
+            func replacement() {
+                _ = try! reload()
+            }
+            """
+        )
+
+        #expect(original.structuralEvidence == shifted.structuralEvidence)
+        #expect(original.location != shifted.location)
+        #expect(
+            original.structuralEvidence.subjectDigest
+                != editedSubject.structuralEvidence.subjectDigest
+        )
+        #expect(
+            original.structuralEvidence.enclosingDeclarationDigest
+                == editedSubject.structuralEvidence.enclosingDeclarationDigest
+        )
+        #expect(
+            editedSubject.structuralEvidence.subjectDigest
+                == differentDeclaration.structuralEvidence.subjectDigest
+        )
+        #expect(
+            editedSubject.structuralEvidence.enclosingDeclarationDigest
+                != differentDeclaration.structuralEvidence.enclosingDeclarationDigest
+        )
     }
 
     @Test("A clean committed execution alone proves absence")
@@ -258,5 +328,13 @@ struct RuleEngineTests {
         #expect(recorder.path?.rawValue == "Sources/Feature/Input.swift")
         #expect(result.sourcePath.rawValue == "Sources/Feature/Input.swift")
         #expect(result.provesAbsence)
+    }
+
+    private func forceTryDetection(_ content: String) throws -> Detection {
+        let result = try RuleEngine().analyze(
+            SourceUnit(path: "Sources/Input.swift", content: content),
+            using: ForceTryRule()
+        )
+        return try #require(committedDetections(result).first)
     }
 }

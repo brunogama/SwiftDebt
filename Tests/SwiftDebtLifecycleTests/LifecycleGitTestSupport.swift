@@ -29,6 +29,12 @@ final class TemporaryLifecycleGitRepository {
         return try gitOutput(["rev-parse", "HEAD"]).trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    func commitAll(message: String) throws -> String {
+        try runGit(["add", "-A"])
+        try runGit(["commit", "-m", message])
+        return try gitOutput(["rev-parse", "HEAD"]).trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     func write(source: String) throws {
         try writeFile(relativePath: "Sources/Input.swift", content: source)
     }
@@ -40,6 +46,10 @@ final class TemporaryLifecycleGitRepository {
             withIntermediateDirectories: true
         )
         try content.write(to: fileURL, atomically: true, encoding: .utf8)
+    }
+
+    func removeFile(relativePath: String) throws {
+        try FileManager.default.removeItem(at: repository.appendingPathComponent(relativePath))
     }
 
     func runGit(_ arguments: [String]) throws {

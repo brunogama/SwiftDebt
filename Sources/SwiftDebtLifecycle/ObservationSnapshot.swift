@@ -191,5 +191,19 @@ extension SnapshotProvenance {
                 "Capability names must be nonblank, unique, and canonically ordered."
             )
         }
+        guard sourceRenames == sourceRenames.sorted(by: sourceRenameOrder),
+            Set(sourceRenames.map(\.priorSourcePath)).count == sourceRenames.count,
+            Set(sourceRenames.map(\.currentSourcePath)).count == sourceRenames.count
+        else {
+            throw LifecycleContractError.invalidSnapshot(
+                "Source rename evidence must be unique and canonically ordered."
+            )
+        }
+        if !sourceRenames.isEmpty, case .git = sourceIdentity {
+            return
+        }
+        guard sourceRenames.isEmpty else {
+            throw LifecycleContractError.invalidSnapshot("Source rename evidence requires Git source identity.")
+        }
     }
 }

@@ -45,7 +45,8 @@ enum LifecycleCanonicalDigest {
         scope: ObservationScope,
         configuration: LifecycleDigest,
         capabilities: [SnapshotCapability],
-        engineVersion: String
+        engineVersion: String,
+        sourceRenames: [SourceRenameEvidence] = []
     ) throws -> SnapshotID {
         var input = LifecycleDigestInput()
         input.append("swiftdebt-lifecycle-snapshot-id-v1")
@@ -67,6 +68,12 @@ enum LifecycleCanonicalDigest {
                 input.append("ambiguous")
                 append(reason, to: &input)
             }
+        }
+        input.append(UInt64(sourceRenames.count))
+        for rename in sourceRenames.sorted(by: sourceRenameOrder) {
+            input.append(rename.priorSourcePath.rawValue)
+            input.append(rename.currentSourcePath.rawValue)
+            input.append(rename.similarityPercentage.description)
         }
         return try SnapshotID("snapshot-\(input.hexDigest())")
     }

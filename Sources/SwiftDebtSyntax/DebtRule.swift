@@ -20,14 +20,24 @@ public struct AnalysisContext {
 }
 
 public struct DetectionEmitter {
-    private let record: (Syntax, String) -> Void
+    private let record: (Syntax, Syntax, String) -> Void
 
-    package init(record: @escaping (Syntax, String) -> Void) {
+    package init(record: @escaping (Syntax, Syntax, String) -> Void) {
         self.record = record
     }
 
     public func callAsFunction<Node: SyntaxProtocol>(at node: Node, message: String) {
-        record(Syntax(node), message)
+        record(Syntax(node), Syntax(node), message)
+    }
+
+    /// Emits at `node` while letting the engine derive structural evidence from
+    /// the wider syntax construct whose continued presence the rule observes.
+    public func callAsFunction<Location: SyntaxProtocol, Subject: SyntaxProtocol>(
+        at node: Location,
+        continuitySubject: Subject,
+        message: String
+    ) {
+        record(Syntax(node), Syntax(continuitySubject), message)
     }
 }
 

@@ -3,7 +3,7 @@ extension LifecycleArtifact {
         snapshots: [SnapshotID: ObservationSnapshot],
         processed: Set<SnapshotID>
     ) throws {
-        var openingCounts: [DetectionDispositionKey: Int] = [:]
+        var observedCounts: [DetectionDispositionKey: Int] = [:]
         for finding in findings {
             guard let firstEvent = finding.events.first,
                 case .opened(let evidence) = firstEvent.transition,
@@ -11,8 +11,24 @@ extension LifecycleArtifact {
             else {
                 throw LifecycleContractError.invalidArtifact("A Finding has no opening Detection disposition.")
             }
-            let key = DetectionDispositionKey(snapshotID: firstEvent.snapshotID, detectionID: evidence.detectionID)
-            openingCounts[key, default: 0] += 1
+            observedCounts[
+                DetectionDispositionKey(snapshotID: firstEvent.snapshotID, detectionID: evidence.detectionID),
+                default: 0
+            ] += 1
+            for event in finding.events.dropFirst() {
+                switch event.transition {
+                case .observed(let continuation), .reopened(let continuation):
+                    observedCounts[
+                        DetectionDispositionKey(
+                            snapshotID: event.snapshotID,
+                            detectionID: continuation.currentDetection.detectionID
+                        ),
+                        default: 0
+                    ] += 1
+                case .opened, .resolved, .unverified, .continuityAmbiguous:
+                    break
+                }
+            }
             try validateOpeningEligibility(
                 finding: finding,
                 openingSnapshot: openingSnapshot,
@@ -34,13 +50,14 @@ extension LifecycleArtifact {
             guard let snapshot = snapshots[snapshotID] else { continue }
             for detection in snapshot.detections {
                 let key = DetectionDispositionKey(snapshotID: snapshotID, detectionID: detection.id)
-                guard openingCounts[key, default: 0] + unresolvedCounts[key, default: 0] == 1 else {
+                guard observedCounts[key, default: 0] + unresolvedCounts[key, default: 0] == 1 else {
                     throw LifecycleContractError.invalidArtifact(
-                        "Detection \(detection.id) must be opened or unresolved exactly once."
+                        "Detection \(detection.id) must be observed or unresolved exactly once."
                     )
                 }
             }
         }
+        try validateReconciliationProjection(snapshots: snapshots, processed: processed)
     }
 
     private func validateOpeningEligibility(
@@ -48,18 +65,27 @@ extension LifecycleArtifact {
         openingSnapshot: ObservationSnapshot,
         snapshots: [SnapshotID: ObservationSnapshot]
     ) throws {
+        guard let openingDetection = openingSnapshot.detection(id: finding.openingDetectionID) else {
+            throw LifecycleContractError.invalidArtifact("Finding \(finding.id) has no opening Detection.")
+        }
         let openingSequence = openingSnapshot.provenance.lineage.sequence
-        let hasEarlierCandidate = findings.contains { candidate in
+        let priorFindings = try findings.compactMap { candidate -> Finding? in
             guard candidate.id != finding.id,
                 candidate.lineageID == finding.lineageID,
-                candidate.rule.identity == finding.rule.identity,
-                let candidateSnapshot = snapshots[candidate.firstObservationSnapshotID]
-            else { return false }
-            return candidateSnapshot.provenance.lineage.sequence < openingSequence
+                candidate.rule.identity == finding.rule.identity
+            else { return nil }
+            return try candidate.version(before: openingSequence, snapshots: snapshots)
         }
-        guard !hasEarlierCandidate else {
+        guard !priorFindings.isEmpty else { return }
+        let reconciliation = try ContinuityReconciler().reconcile(
+            findings: priorFindings,
+            detections: [openingDetection],
+            snapshot: openingSnapshot,
+            artifact: self
+        )
+        guard reconciliation.newDetections.map(\.id) == [openingDetection.id] else {
             throw LifecycleContractError.invalidArtifact(
-                "Finding \(finding.id) opened despite an earlier continuity candidate."
+                "Finding \(finding.id) opened despite a credible continuity candidate."
             )
         }
     }
@@ -73,26 +99,52 @@ extension LifecycleArtifact {
         else {
             throw LifecycleContractError.invalidArtifact("Finding \(finding.id) has no processed lineage head.")
         }
-        let firstSequence = firstSnapshot.provenance.lineage.sequence
-        let resolvedSequence = finding.events.first(where: {
-            if case .resolved = $0.transition { return true }
-            return false
-        }).flatMap { snapshots[$0.snapshotID]?.provenance.lineage.sequence }
-        let requiredEnd = resolvedSequence ?? head.sequence
-        let actual = Set(
-            finding.events.compactMap { event -> UInt? in
-                guard let sequence = snapshots[event.snapshotID]?.provenance.lineage.sequence,
-                    sequence <= requiredEnd
-                else { return nil }
-                return sequence
+        let eventsBySequence = try Dictionary(
+            uniqueKeysWithValues: finding.events.map { event in
+                guard let sequence = snapshots[event.snapshotID]?.provenance.lineage.sequence else {
+                    throw LifecycleContractError.invalidArtifact("Finding \(finding.id) references a missing snapshot.")
+                }
+                return (sequence, event)
+            })
+        var state = FindingLifecycleState.open
+        for sequence in firstSnapshot.provenance.lineage.sequence...head.sequence {
+            let event = eventsBySequence[sequence]
+            if state == .open, event == nil {
+                throw LifecycleContractError.invalidArtifact(
+                    "Finding \(finding.id) is missing lifecycle evidence while open at sequence \(sequence)."
+                )
             }
-        )
-        let expected = Set(firstSequence...requiredEnd)
-        guard actual == expected else {
-            throw LifecycleContractError.invalidArtifact(
-                "Finding \(finding.id) is missing required lifecycle events before resolution."
-            )
+            guard let event else { continue }
+            switch event.transition {
+            case .opened, .observed, .unverified, .continuityAmbiguous:
+                break
+            case .resolved:
+                state = .resolved
+            case .reopened:
+                state = .open
+            }
         }
+    }
+}
+
+extension Finding {
+    func version(
+        before sequence: UInt,
+        snapshots: [SnapshotID: ObservationSnapshot]
+    ) throws -> Finding? {
+        let priorEvents = events.filter { event in
+            guard let eventSequence = snapshots[event.snapshotID]?.provenance.lineage.sequence else {
+                return false
+            }
+            return eventSequence < sequence
+        }
+        guard !priorEvents.isEmpty else { return nil }
+        return try Finding(
+            id: id,
+            lineageID: lineageID,
+            rule: rule,
+            events: priorEvents
+        )
     }
 }
 

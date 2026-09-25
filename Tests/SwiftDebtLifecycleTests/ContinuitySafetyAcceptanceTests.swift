@@ -18,6 +18,7 @@ struct ContinuitySafetyAcceptanceTests {
         )
         let later = try makeObservation(
             id: "resolved-later", sequence: 3, predecessor: "resolved-absence",
+            source: "var first = 1\nlet second = 2\n",
             rules: [LifecycleRuleV1(mode: .committed(1))]
         )
 
@@ -31,6 +32,10 @@ struct ContinuitySafetyAcceptanceTests {
         #expect(finding.evidenceState == .verifiedAbsent)
         #expect(finding.events.map(\.transition.kind) == [.opened, .resolved])
         #expect(artifact.unresolvedDetections.count == 1)
+        #expect(
+            artifact.unresolvedDetections.first?.reasons.map(\.code)
+                == ["same-source-structural-divergence"]
+        )
 
         var mutableFinding = finding
         let originalEvents = mutableFinding.events
@@ -56,13 +61,13 @@ struct ContinuitySafetyAcceptanceTests {
         let original = try makeObservation(
             id: "copy-original",
             sequence: 1,
-            rules: [LifecycleRuleV1(mode: .committed(1))]
+            rules: [LifecycleRuleV1(mode: .repeated(1))]
         )
         let copied = try makeObservation(
             id: "copy-successors",
             sequence: 2,
             predecessor: "copy-original",
-            rules: [LifecycleRuleV1(mode: .committed(2))]
+            rules: [LifecycleRuleV1(mode: .repeated(2))]
         )
 
         _ = try store.ingest(original)
@@ -84,13 +89,13 @@ struct ContinuitySafetyAcceptanceTests {
         let originals = try makeObservation(
             id: "merge-originals",
             sequence: 1,
-            rules: [LifecycleRuleV1(mode: .committed(2))]
+            rules: [LifecycleRuleV1(mode: .repeated(2))]
         )
         let collapsed = try makeObservation(
             id: "merge-successor",
             sequence: 2,
             predecessor: "merge-originals",
-            rules: [LifecycleRuleV1(mode: .committed(1))]
+            rules: [LifecycleRuleV1(mode: .repeated(1))]
         )
 
         _ = try store.ingest(originals)
@@ -145,6 +150,7 @@ struct ContinuitySafetyAcceptanceTests {
             id: "location-reused",
             sequence: 2,
             predecessor: "location-prior",
+            source: "var first = 1\nlet second = 2\n",
             rules: [LifecycleRuleV1(mode: .committed(1))]
         )
         let priorLocation = try #require(prior.detections.first?.location)
@@ -154,12 +160,16 @@ struct ContinuitySafetyAcceptanceTests {
         _ = try store.ingest(prior)
         _ = try store.ingest(unrelated)
         let artifact = try store.load()
-        let finding = try #require(artifact.findings.first)
+        let originalFinding = try #require(
+            artifact.findings.first { $0.firstObservationSnapshotID == prior.id }
+        )
+        let unresolved = try #require(artifact.unresolvedDetections.first)
 
         #expect(artifact.findings.count == 1)
         #expect(artifact.unresolvedDetections.count == 1)
-        #expect(finding.events.map(\.transition.kind) == [.opened, .continuityAmbiguous])
-        #expect(finding.openingDetectionID == prior.detections.first?.id)
-        #expect(artifact.unresolvedDetections.first?.detectionID == unrelated.detections.first?.id)
+        #expect(originalFinding.events.map(\.transition.kind) == [.opened, .continuityAmbiguous])
+        #expect(originalFinding.openingDetectionID == prior.detections.first?.id)
+        #expect(unresolved.detectionID == unrelated.detections.first?.id)
+        #expect(unresolved.reasons.map(\.code) == ["same-source-structural-divergence"])
     }
 }

@@ -22,6 +22,25 @@ public struct DetectionEvidence: Codable, Equatable, Sendable {
     }
 }
 
+public struct MatchedContinuityEvidence: Codable, Equatable, Sendable {
+    public let currentDetection: DetectionEvidence
+    public let priorSnapshotID: SnapshotID
+    public let priorDetectionID: DetectionID
+    public let reasons: [LifecycleReason]
+
+    public init(
+        currentDetection: DetectionEvidence,
+        priorSnapshotID: SnapshotID,
+        priorDetectionID: DetectionID,
+        reasons: [LifecycleReason]
+    ) {
+        self.currentDetection = currentDetection
+        self.priorSnapshotID = priorSnapshotID
+        self.priorDetectionID = priorDetectionID
+        self.reasons = reasons.sorted(by: lifecycleReasonOrder)
+    }
+}
+
 public struct ResolutionEvidence: Codable, Equatable, Sendable {
     public let priorSnapshotID: SnapshotID
     public let coveredAtomicObservationIDs: [AtomicObservationID]
@@ -56,13 +75,17 @@ public struct ContinuityAmbiguityEvidence: Codable, Equatable, Sendable {
 
 public enum LifecycleTransition: Equatable, Sendable {
     case opened(DetectionEvidence)
+    case observed(MatchedContinuityEvidence)
     case resolved(ResolutionEvidence)
+    case reopened(MatchedContinuityEvidence)
     case unverified([LifecycleReason])
     case continuityAmbiguous(ContinuityAmbiguityEvidence)
 
     public enum Kind: String, Codable, Sendable {
         case opened
+        case observed
         case resolved
+        case reopened
         case unverified
         case continuityAmbiguous = "continuity-ambiguous"
     }
@@ -70,7 +93,9 @@ public enum LifecycleTransition: Equatable, Sendable {
     public var kind: Kind {
         switch self {
         case .opened: .opened
+        case .observed: .observed
         case .resolved: .resolved
+        case .reopened: .reopened
         case .unverified: .unverified
         case .continuityAmbiguous: .continuityAmbiguous
         }
@@ -81,6 +106,7 @@ extension LifecycleTransition: Codable {
     private enum CodingKeys: String, CodingKey {
         case kind
         case detection
+        case continuity
         case resolution
         case reasons
         case ambiguity
@@ -91,8 +117,12 @@ extension LifecycleTransition: Codable {
         switch try values.decode(Kind.self, forKey: .kind) {
         case .opened:
             self = .opened(try values.decode(DetectionEvidence.self, forKey: .detection))
+        case .observed:
+            self = .observed(try values.decode(MatchedContinuityEvidence.self, forKey: .continuity))
         case .resolved:
             self = .resolved(try values.decode(ResolutionEvidence.self, forKey: .resolution))
+        case .reopened:
+            self = .reopened(try values.decode(MatchedContinuityEvidence.self, forKey: .continuity))
         case .unverified:
             let reasons = try values.decode([LifecycleReason].self, forKey: .reasons)
             guard !reasons.isEmpty else {
@@ -116,8 +146,12 @@ extension LifecycleTransition: Codable {
         switch self {
         case .opened(let evidence):
             try values.encode(evidence, forKey: .detection)
+        case .observed(let evidence):
+            try values.encode(evidence, forKey: .continuity)
         case .resolved(let evidence):
             try values.encode(evidence, forKey: .resolution)
+        case .reopened(let evidence):
+            try values.encode(evidence, forKey: .continuity)
         case .unverified(let reasons):
             try values.encode(reasons.sorted(by: lifecycleReasonOrder), forKey: .reasons)
         case .continuityAmbiguous(let evidence):

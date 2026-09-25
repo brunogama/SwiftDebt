@@ -78,6 +78,23 @@ struct ProvenanceContractTests {
         #expect(throws: LifecycleStoreError.self) { try store.load() }
     }
 
+    @Test("Source rename evidence requires Git's default detection threshold")
+    func sourceRenameSimilarityFailsClosed() throws {
+        let invalid = Data(
+            """
+            {
+              "priorSourcePath": "Sources/Old.swift",
+              "currentSourcePath": "Sources/New.swift",
+              "similarityPercentage": 49
+            }
+            """.utf8
+        )
+
+        #expect(throws: (any Error).self) {
+            try JSONDecoder().decode(SourceRenameEvidence.self, from: invalid)
+        }
+    }
+
     @Test("Unknown source identity cannot verify resolution")
     func unavailableSourceIdentityLeavesFindingUnverified() throws {
         let reason = try LifecycleReason(
