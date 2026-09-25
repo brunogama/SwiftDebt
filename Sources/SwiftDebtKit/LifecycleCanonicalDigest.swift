@@ -60,7 +60,9 @@ enum LifecycleCanonicalDigest {
         configuration: LifecycleDigest,
         capabilities: [SnapshotCapability],
         engineVersion: String,
-        sourceRenames: [SourceRenameEvidence] = []
+        sourceSelection: SourceSelectionEvidence? = nil,
+        sourceRenames: [SourceRenameEvidence] = [],
+        sourceDeletions: [SourceDeletionEvidence] = []
     ) throws -> SnapshotID {
         var input = LifecycleDigestInput()
         input.append("swiftdebt-lifecycle-snapshot-id-v1")
@@ -83,11 +85,27 @@ enum LifecycleCanonicalDigest {
                 append(reason, to: &input)
             }
         }
+        if let sourceSelection {
+            input.append("source-selection-v1")
+            input.append(sourceSelection.kind.rawValue)
+            input.append(sourceSelection.repositoryRelativeRoot?.rawValue ?? ".")
+            input.append(UInt64(sourceSelection.excludedPathPrefixes.count))
+            for exclusion in sourceSelection.excludedPathPrefixes {
+                input.append(exclusion.rawValue)
+            }
+        }
         input.append(UInt64(sourceRenames.count))
         for rename in sourceRenames.sorted(by: sourceRenameOrder) {
             input.append(rename.priorSourcePath.rawValue)
             input.append(rename.currentSourcePath.rawValue)
             input.append(rename.similarityPercentage.description)
+        }
+        if !sourceDeletions.isEmpty {
+            input.append("source-deletions-v1")
+            input.append(UInt64(sourceDeletions.count))
+            for deletion in sourceDeletions.sorted(by: sourceDeletionOrder) {
+                input.append(deletion.priorSourcePath.rawValue)
+            }
         }
         return try SnapshotID("snapshot-\(input.hexDigest())")
     }

@@ -60,6 +60,18 @@ public struct ObservationSnapshot: Codable, Equatable, Sendable {
         }
 
         let sourcePaths = Set(sources.map(\.sourcePath))
+        if let selection = provenance.sourceSelection {
+            let repositoryPaths = Set(sources.map { selection.repositoryPath(for: $0.sourcePath) })
+            guard
+                provenance.sourceDeletions.allSatisfy({
+                    !repositoryPaths.contains($0.priorSourcePath.rawValue)
+                })
+            else {
+                throw LifecycleContractError.invalidSnapshot(
+                    "A Git-deleted SourceUnit cannot remain in the selected source set."
+                )
+            }
+        }
         guard atomicObservations.allSatisfy({ sourcePaths.contains($0.sourcePath) }) else {
             throw LifecycleContractError.invalidSnapshot("Atomic Observations must reference selected SourceUnits.")
         }
@@ -169,41 +181,6 @@ public struct ObservationSnapshot: Codable, Equatable, Sendable {
                 in: values,
                 debugDescription: String(describing: error)
             )
-        }
-    }
-}
-
-extension SnapshotProvenance {
-    func validate() throws {
-        guard hasLifecycleContent(engineVersion) else {
-            throw LifecycleContractError.invalidSnapshot("Engine version must be nonblank.")
-        }
-        guard lineage.sequence > 0,
-            (lineage.sequence == 1) == (lineage.predecessorSnapshotID == nil)
-        else {
-            throw LifecycleContractError.invalidSnapshot("Invalid lineage position.")
-        }
-        guard Set(capabilities.map(\.name)).count == capabilities.count,
-            capabilities == capabilities.sorted(by: { $0.name < $1.name }),
-            capabilities.allSatisfy({ hasLifecycleContent($0.name) })
-        else {
-            throw LifecycleContractError.invalidSnapshot(
-                "Capability names must be nonblank, unique, and canonically ordered."
-            )
-        }
-        guard sourceRenames == sourceRenames.sorted(by: sourceRenameOrder),
-            Set(sourceRenames.map(\.priorSourcePath)).count == sourceRenames.count,
-            Set(sourceRenames.map(\.currentSourcePath)).count == sourceRenames.count
-        else {
-            throw LifecycleContractError.invalidSnapshot(
-                "Source rename evidence must be unique and canonically ordered."
-            )
-        }
-        if !sourceRenames.isEmpty, case .git = sourceIdentity {
-            return
-        }
-        guard sourceRenames.isEmpty else {
-            throw LifecycleContractError.invalidSnapshot("Source rename evidence requires Git source identity.")
         }
     }
 }

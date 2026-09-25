@@ -148,6 +148,11 @@ The reducer and artifact decoder both recompute a resolution proof. A resolution
 - the covered Atomic Observation IDs are exhaustive and exact; and
 - no same-rule Detection or Unresolved Detection remains for the Finding in that snapshot.
 
+Git-backed snapshots also persist the engine's repository-relative source selection and direct-parent
+Swift SourceUnit rename and deletion evidence. A partial selection records the affected prior source as
+out of scope and cannot verify resolution. A deletion can support resolution only when the current
+snapshot has complete comparable repository coverage of the eligible successor search space.
+
 A tampered resolution that points at an existing failed or unrelated Atomic Observation is rejected. Unknown schemas, invalid digests, broken Detection or candidate Finding references, inconsistent lineage order, and malformed parse outcomes also fail closed.
 
 ## Acceptance status
@@ -166,9 +171,9 @@ All implemented acceptance tests use the real R1 `RuleEngine`, the public lifecy
 | AT-6 | Direct | A real CLI fixture collapses two structurally identical prior Findings into one current Detection; both Findings remain open and the complete candidate set is persisted. |
 | AT-7 | Direct | Complete comparable committed absence creates an audited resolution, including a real clean direct-child Git CLI run. |
 | AT-8 | Direct | A real parse failure records not-executed atomics and blocks resolution. |
-| AT-9 | Open | No prior-Finding changed-files exclusion fixture. |
-| AT-10 | Open | Eligible relocation coverage for deletion is not modeled. |
-| AT-11 | Open | Directory-only deletion coverage is not modeled. |
+| AT-9 | Direct | A real CLI/Git fixture explicitly excludes the prior SourceUnit; the Finding stays open and records the exact selection gap and incomplete relocation coverage. Changed-files manifest coverage remains open. |
+| AT-10 | Direct | A direct-child Git deletion plus complete comparable repository coverage resolves the Finding and persists deletion, complete relocation coverage, and committed absence evidence. |
+| AT-11 | Direct | The same direct-child deletion analyzed only through its containing directory stays open and unverified because relocation coverage is incomplete. |
 | AT-12 | Direct | An undeclared Semantic Revision change blocks continuity and resolution. |
 | AT-13 | Open | Directional compatibility declarations are not modeled. |
 | AT-14 | Direct | A real three-revision CLI fixture opens, resolves, and uniquely reopens the same Finding while retaining all three events. |
@@ -194,8 +199,8 @@ The current slice completes the first-observation, line-move, corroborated file-
 
 - rule-specific evidence that can safely distinguish copied or semantically edited occurrences beyond the conservative structural anchor;
 - cross-file continuity without a direct-parent Git rename, which remains unresolved rather than inferred from identical code;
-- a real incomplete changed-files CLI observation between first observation and resolution;
-- explicit selection and exclusion coverage for moves and deletions;
+- a real changed-files manifest observation; explicit exclusion and directory-scope observations are covered;
+- relocation evidence spanning more than one observed Git edge before complete repository coverage;
 - directional semantic and configuration compatibility declarations;
 - historical configuration reproduction beyond the default directory selection and maximum-file-size input;
 - archived cross-file introduction continuity with persisted Git rename corroboration;

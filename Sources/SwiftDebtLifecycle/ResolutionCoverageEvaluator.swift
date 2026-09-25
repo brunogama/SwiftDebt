@@ -28,6 +28,12 @@ struct ResolutionCoverageEvaluator {
                 )
             )
         }
+        let relocation = try assessRelocation(
+            finding: finding,
+            snapshot: snapshot,
+            artifact: artifact
+        )
+        blockers += relocation.blockers
         if !firstSnapshot.provenance.sourceIdentity.supportsComparison
             || !snapshot.provenance.sourceIdentity.supportsComparison
         {
@@ -118,13 +124,13 @@ struct ResolutionCoverageEvaluator {
         }
         return .verified(
             atomicObservationIDs: comparable.map(\.id).sorted { $0.rawValue < $1.rawValue },
-            reasons: [
+            reasons: ([
                 try LifecycleReason(
                     code: "complete-comparable-absence",
                     message: "Complete repository scope committed every comparable "
                         + "Atomic Observation with zero Detections."
                 )
-            ]
+            ] + relocation.proofReasons).sorted(by: lifecycleReasonOrder)
         )
     }
 

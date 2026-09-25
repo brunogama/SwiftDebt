@@ -49,7 +49,8 @@ extension LifecycleIntroductionService {
             workingTreeState: .clean,
             parentRevisions: parents,
             statusDigest: emptyStatusDigest,
-            sourceRenames: []
+            sourceRenames: [],
+            sourceDeletions: []
         )
         let capture = try LifecycleAnalysisCapture(
             selection: selection,
@@ -66,7 +67,10 @@ extension LifecycleIntroductionService {
             scope: capture.scope,
             configuration: configuration,
             capabilities: capabilities,
-            engineVersion: SwiftDebtRelease.version
+            engineVersion: SwiftDebtRelease.version,
+            sourceSelection: capture.sourceSelection,
+            sourceRenames: capture.sourceRenames,
+            sourceDeletions: capture.sourceDeletions
         )
         return try ObservationSnapshot(
             id: snapshotID,
@@ -79,7 +83,10 @@ extension LifecycleIntroductionService {
                 lineage: try LineagePosition(
                     lineageID: LineageID("history-\(revision.rawValue)"),
                     sequence: 1
-                )
+                ),
+                sourceSelection: capture.sourceSelection,
+                sourceRenames: capture.sourceRenames,
+                sourceDeletions: capture.sourceDeletions
             ),
             analysis: analysis
         )
