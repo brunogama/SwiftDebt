@@ -132,14 +132,17 @@ extension LifecycleReadService {
                     + "claims=\(declaration.supportedClaims.map(\.rawValue).joined(separator: ","))"
             }
         }
-        lines += snapshot.rules.flatMap { rule in
-            rule.configurationCompatibilityDeclarations.map { declaration in
-                "Configuration compatibility: \(rule.identity) revisions="
-                    + "\(declaration.fromRevision.rawValue)->\(rule.semanticRevision.rawValue) "
-                    + "claims=\(declaration.supportedClaims.map(\.rawValue).joined(separator: ",")) "
-                    + "conditions=\(declaration.conditions.map(\.rawValue).joined(separator: ",")) "
-                    + "test=\(declaration.testEvidence.identifier) "
-                    + "test-summary=\(declaration.testEvidence.summary)"
+        for rule in snapshot.rules {
+            for declaration in rule.configurationCompatibilityDeclarations {
+                let claims = declaration.supportedClaims.map(\.rawValue).joined(separator: ",")
+                let conditions = declaration.conditions.map(\.rawValue).joined(separator: ",")
+                let revisions = "\(declaration.fromRevision.rawValue)->\(rule.semanticRevision.rawValue)"
+                let test = declaration.testEvidence
+                lines.append(
+                    "Configuration compatibility: \(rule.identity) revisions=\(revisions) "
+                        + "claims=\(claims) conditions=\(conditions) "
+                        + "test=\(test.identifier) test-summary=\(test.summary)"
+                )
             }
         }
         lines += snapshot.provenance.sourceRenames.map {
