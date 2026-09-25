@@ -38,6 +38,7 @@ private final class EmptyCatchVisitor: SyntaxVisitor {
         guard node.body.statements.isEmpty else { return .visitChildren }
         emit(
             at: node.catchKeyword,
+            continuitySubject: node,
             message: "This catch clause has an empty body and discards the error; handle or propagate it."
         )
         return .visitChildren

@@ -79,6 +79,13 @@ extension LifecycleArtifact {
             else {
                 throw LifecycleContractError.invalidArtifact("An opened event has a broken Detection reference.")
             }
+        case .observed(let evidence), .reopened(let evidence):
+            try validateMatchedContinuity(
+                evidence,
+                finding: finding,
+                snapshot: snapshot,
+                findings: findings
+            )
         case .resolved(let evidence):
             let assessment = try ResolutionCoverageEvaluator().assess(
                 finding: finding,
@@ -116,6 +123,7 @@ extension LifecycleArtifact {
             }
         }
     }
+
 }
 
 extension AtomicObservationOutcome {

@@ -7,6 +7,7 @@ import SwiftSyntax
 
 enum TestRuleMode: Sendable {
     case committed(Int)
+    case repeated(Int)
     case failed
 }
 
@@ -90,6 +91,12 @@ private func emitFixtureDetections(
     switch mode {
     case .failed:
         throw FixtureRuleError.deliberate
+    case .repeated(let count):
+        let tokens = Array(context.sourceFile.tokens(viewMode: .sourceAccurate))
+        guard let token = tokens.first else { throw FixtureRuleError.insufficientTokens }
+        for index in 0..<count {
+            emit(at: token, message: "Lifecycle repeated fixture Detection \(index + 1).")
+        }
     case .committed(let count):
         let tokens = Array(context.sourceFile.tokens(viewMode: .sourceAccurate))
         guard tokens.count >= count else { throw FixtureRuleError.insufficientTokens }

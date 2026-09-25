@@ -41,7 +41,8 @@ extension ObservationSnapshot {
                                 line: detection.location.line,
                                 column: detection.location.column
                             ),
-                            message: detection.message
+                            message: detection.message,
+                            structuralEvidence: detection.structuralEvidence
                         )
                     )
                 }

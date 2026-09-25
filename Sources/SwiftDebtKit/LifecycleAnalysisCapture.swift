@@ -15,6 +15,7 @@ struct LifecycleAnalysisCapture: Sendable {
     let selectionKind: LifecycleSelectionKind
     let exclusions: [String]
     let maximumFileBytes: Int
+    let sourceRenames: [SourceRenameEvidence]
 
     init(
         selection: SourceDiscovery.Selection,
@@ -33,6 +34,12 @@ struct LifecycleAnalysisCapture: Sendable {
         self.selectionKind = selection.kind
         self.exclusions = Self.normalized(exclusions)
         self.maximumFileBytes = maximumFileBytes
+        switch gitAfterRead {
+        case .available(_, _, _, _, _, let sourceRenames):
+            self.sourceRenames = sourceRenames
+        case .unavailable:
+            self.sourceRenames = []
+        }
         self.scope = try Self.scope(
             selection: selection,
             exclusions: exclusions,
@@ -62,7 +69,7 @@ struct LifecycleAnalysisCapture: Sendable {
             limitations.append("source directories were skipped by discovery policy")
         }
         switch gitSnapshot {
-        case .available(let repositoryRoot, _, _, _, _):
+        case .available(let repositoryRoot, _, _, _, _, _):
             if repositoryRoot != selection.root.path {
                 limitations.append("the analysis root is below the Git repository root")
             }

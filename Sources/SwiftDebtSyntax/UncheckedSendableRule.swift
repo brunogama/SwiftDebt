@@ -44,6 +44,7 @@ private final class UncheckedSendableVisitor: SyntaxVisitor {
 
         emit(
             at: unchecked.atSign,
+            continuitySubject: node,
             message:
                 "This @unchecked Sendable conformance disables compiler enforcement; review the type's thread-safety assumptions."
         )

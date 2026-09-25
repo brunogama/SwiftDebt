@@ -16,19 +16,22 @@ public struct Detection: Equatable, Sendable {
     public let severity: RuleSeverity
     public let location: DetectionLocation
     public let message: String
+    public let structuralEvidence: DetectionStructuralEvidence
 
     package init(
         ruleIdentity: RuleIdentity,
         semanticRevision: SemanticRevision,
         severity: RuleSeverity,
         location: DetectionLocation,
-        message: String
+        message: String,
+        structuralEvidence: DetectionStructuralEvidence
     ) {
         self.ruleIdentity = ruleIdentity
         self.semanticRevision = semanticRevision
         self.severity = severity
         self.location = location
         self.message = message
+        self.structuralEvidence = structuralEvidence
     }
 }
 

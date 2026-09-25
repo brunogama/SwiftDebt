@@ -29,7 +29,11 @@ public struct GlobalDataRule: DebtRule {
             guard let declaration = statement.item.as(VariableDeclSyntax.self),
                 declaration.bindingSpecifier.tokenKind == .keyword(.var)
             else { continue }
-            emit(at: declaration.bindingSpecifier, message: "A mutable variable is declared at file scope.")
+            emit(
+                at: declaration.bindingSpecifier,
+                continuitySubject: declaration.bindings,
+                message: "A mutable variable is declared at file scope."
+            )
         }
     }
 }

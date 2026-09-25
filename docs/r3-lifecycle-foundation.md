@@ -43,6 +43,8 @@ swift-debt analyze PATH --lifecycle-artifact ARTIFACT
 
 The public snapshot conversion accepts only an R1 `AnalysisSnapshot`; raw arrays of sources, atomics, and Detections are package scoped. A lifecycle caller can therefore attach provenance to engine-owned observations, but it cannot use the public initializer to fabricate a canonical Detection.
 
+Structural evidence and direct-parent source rename evidence also have package-scoped construction. `RuleEngine` derives the former from validated syntax, and the CLI analysis service derives the latter from Git. Neither is accepted as a caller-provided continuity key.
+
 Provenance remains a trusted integration input for direct library callers. A syntactically valid digest alone does not prove that an external caller computed it from the analyzed checkout. The CLI path closes that gap for command-line ingestion by constructing provenance inside `AnalysisService` and exposing only the artifact destination.
 
 The lifecycle query commands remain read-only:
@@ -70,6 +72,7 @@ The analyze-to-artifact path records:
 | Capability availability | `syntax-analysis` available. Parse and rule failures remain explicit source and Atomic Observation outcomes rather than unavailable capability claims. |
 | Engine identity | The schema-2 report engine version produced by the same analysis run. |
 | Lineage | Existing position for an exact retry, or the unique clean single-parent Git successor of one clean artifact head. |
+| Source rename evidence | Canonical Git rename edges between the direct parent and current revision, captured from the same clean repository state. |
 
 The Git cleanliness check excludes only untracked or ignored lifecycle artifacts, lock files, and exact `--output`, `--profile-output`, and `--stamp` paths requested for that run when they are inside the repository. A Git-tracked output remains visible to provenance. Directory discovery also omits the requested generated stamp SourceUnit. These rules prevent ordinary SwiftDebt outputs from changing the source state it records without hiding tracked or unrelated changes, which continue to block successor claims.
 
@@ -81,19 +84,29 @@ The local SHA-256 implementation exists because the current R2 digest helper val
 
 ---
 
-R1 `Detection` currently records Rule Identity, Semantic Revision, severity, location, and message. It does not carry an engine-owned normalized subject identity, enclosing declaration identity, or a rule-specific continuity contract.
+`RuleEngine` now attaches versioned `DetectionStructuralEvidence` at the R1 emission boundary. A rule supplies the validated SwiftSyntax construct that represents the detected subject. The engine computes:
 
-Path, line, column, message, and an unvalidated caller key cannot establish historical identity. This slice therefore applies these rules:
+- a SHA-256 digest over the subject's source-accurate token sequence, excluding trivia and absolute location; and
+- a SHA-256 digest over the ordered enclosing declaration kinds and header tokens.
+
+The package-scoped evidence initializer prevents lifecycle clients from supplying a continuity key. The persisted `ObservedDetection` field is optional so artifacts written by the preceding lifecycle slice still decode. Missing or differently versioned evidence remains ambiguous.
+
+Continuity reconciliation builds a bipartite candidate graph per Rule Identity. It makes an automatic assignment only when one prior Finding and one current Detection are each other's only supported edge. Every other connected component remains unresolved with its complete candidate set.
 
 | Current evidence | Result |
 | --- | --- |
-| Detection with no prior same-lineage Finding for its Rule Identity | Open a Finding. |
-| Detection with one or more prior same-lineage candidates | Keep it as an Unresolved Detection and record ambiguity or semantic incomparability. |
-| Same path, line, and column as a prior Detection | Treat location as insufficient and leave continuity unresolved. |
-| No Detection under incomplete or incomparable coverage | Keep the prior lifecycle state and append an unverified event. |
-| No Detection under verified complete comparable coverage | Resolve an open Finding. |
+| Exact subject and declaration digest on the same SourceUnit path | Supported continuity; a changed line or column is recorded as move evidence. |
+| Exact digests across SourceUnit paths plus the matching direct-parent Git rename edge | Supported continuity with both structural and Git evidence. |
+| Exact digests across paths without that Git edge | Unresolved with `cross-file-move-uncorroborated`. |
+| Same declaration but changed subject, or same subject in a changed declaration | Unresolved as a partial structural candidate. |
+| One candidate has multiple successors, or multiple candidates share a successor | Unresolved with `structural-assignment-not-unique`. |
+| Both digests differ in the same SourceUnit, and neither side has a stronger edge | Unresolved with `same-source-structural-divergence`; an edited occurrence cannot be ruled out. |
+| Both digests differ across SourceUnit paths without a Git rename edge | No structural predecessor; a current Detection can open a new Finding. |
+| Semantic, configuration, capability, or source identity is incomparable | Unverified; no continuity or absence conclusion is made. |
 
-This prevents false moves, renames, copies, splits, merges, and reopens. It also means AT-3, AT-4, and AT-14 cannot pass until R1 emits sufficient engine-owned structural evidence and R3 defines unique assignment rules for that evidence.
+Path, line, column, message, Git rename data, and source similarity never establish identity by themselves. A SourceUnit path is used only to retain an unresolved candidate after both structural digests change and no stronger edge exists. In particular, same-location reuse cannot continue a Finding, and an identical declaration deleted from one file then added to another stays unresolved unless Git corroborates the direct-parent rename. A uniquely supported match after Verified Resolution records `reopened` and preserves the earlier resolution event.
+
+The existing schema-2 report models and renderers are unchanged. Structural evidence flows only through R1's in-memory `Detection` and the independently identified lifecycle artifact.
 
 ## Verified absence
 
@@ -125,10 +138,10 @@ All implemented acceptance tests use the real R1 `RuleEngine`, the public lifecy
 | --- | --- | --- |
 | AT-1 | Direct | A committed Detection opens while another Atomic Observation fails. |
 | AT-2 | Direct | Committed zero proves pair-level absence without implying repository Resolution Coverage. |
-| AT-3 | Open | No engine-owned structural identity for a moved Detection. |
-| AT-4 | Open | No declaration identity or rename reconciliation contract. |
-| AT-5 | Partial | One-to-many cardinality stays ambiguous, but the fixture does not copy a declaration into two files. |
-| AT-6 | Direct | Two prior Findings and one current Detection remain ambiguous. |
+| AT-3 | Direct | A real CLI/Git fixture inserts comments, preserves one Finding ID, records the new location, and explains the structural match and location move. |
+| AT-4 | Direct | A real `git mv` fixture preserves one Finding only when exact structural evidence and the direct-parent Git rename edge agree; explanation lists both. |
+| AT-5 | Direct | A real CLI fixture copies an anchored declaration into two files; both current Detections stay visible and unresolved, and the prior Finding remains open. |
+| AT-6 | Direct | A real CLI fixture collapses two structurally identical prior Findings into one current Detection; both Findings remain open and the complete candidate set is persisted. |
 | AT-7 | Direct | Complete comparable committed absence creates an audited resolution, including a real clean direct-child Git CLI run. |
 | AT-8 | Direct | A real parse failure records not-executed atomics and blocks resolution. |
 | AT-9 | Open | No prior-Finding changed-files exclusion fixture. |
@@ -136,25 +149,25 @@ All implemented acceptance tests use the real R1 `RuleEngine`, the public lifecy
 | AT-11 | Open | Directory-only deletion coverage is not modeled. |
 | AT-12 | Direct | An undeclared Semantic Revision change blocks continuity and resolution. |
 | AT-13 | Open | Directional compatibility declarations are not modeled. |
-| AT-14 | Open | Unique supported reopen is not available without continuity evidence. |
-| AT-15 | Open | Post-resolution new occurrence classification is not implemented. |
+| AT-14 | Direct | A real three-revision CLI fixture opens, resolves, and uniquely reopens the same Finding while retaining all three events. |
+| AT-15 | Direct | A post-resolution Detection in another file, with different subject and declaration structure and no Git rename edge, opens a separate Finding and leaves the original resolved. |
 | AT-16 to AT-20 | Open | Git introduction inference is not implemented. |
 | AT-21 | Partial | Reverse arrival and divergent library fixtures preserve source order; the CLI accepts only a verified direct Git parent and rejects dirty, merge, or disconnected successors. Real divergent Git lineages in one artifact remain open. |
 | AT-22 | Partial | Retry and reverse-arrival replay preserve canonical bytes, and real CLI replay is byte-identical; concurrent replay and interruption injection remain open. |
-| AT-23 | Partial | Persisted human and JSON queries expose blockers and CLI snapshot inspection shows derived Git, configuration, capability, engine, and scope provenance; full candidate parity and audit export remain open. |
+| AT-23 | Partial | Persisted human and JSON queries expose blockers; ambiguity records complete candidate Finding IDs and Detection IDs; CLI snapshot inspection shows derived Git, configuration, capability, engine, scope, and rename provenance. Full human/machine audit parity remains open. |
 | AT-24 | Direct | Unknown schema, broken references, reference-valid false resolution proof, and invalid candidate references fail closed. |
 | AT-25 | Direct | A real CLI fixture compares schema-2 stdout byte for byte with lifecycle disabled and verifies `--fail-on-violation` keeps status 1 while retrying the same lifecycle snapshot without mutation. |
 | AT-26 | Partial | Capability provenance is validated and unavailable capability cannot support decoded resolution; a real optional-provider run remains open. |
-| AT-27 | Direct | Exact path, line, and column reuse remains unresolved and does not continue the Finding. |
+| AT-27 | Direct | A real CLI fixture reuses the exact path, line, and column after resolution with different subject and declaration structure; the old Finding retains its Verified Resolution and the current Detection remains separately unresolved. An edited subject in the same declaration also stays unresolved. |
 
 ## Remaining product gaps
 
 ---
 
-The current slice completes the first-observation, clean direct-child resolution, replay, and persisted inspection portions of UJ-1. It does not complete the full journey. The missing pieces are:
+The current slice completes the first-observation, line-move, corroborated file-rename, recurrence, clean direct-child resolution, replay, and persisted inspection portions of UJ-1. It does not complete the full journey. The missing pieces are:
 
-- engine-owned structural continuity evidence and unique assignment;
-- observed-again, moved, reopened, and new-after-resolution transitions;
+- rule-specific evidence that can safely distinguish copied or semantically edited occurrences beyond the conservative structural anchor;
+- cross-file continuity without a direct-parent Git rename, which remains unresolved rather than inferred from identical code;
 - a real incomplete changed-files CLI observation between first observation and resolution;
 - explicit selection and exclusion coverage for moves and deletions;
 - directional semantic and configuration compatibility declarations;
@@ -162,3 +175,5 @@ The current slice completes the first-observation, clean direct-child resolution
 - complete human and machine audit parity;
 - concurrent replay and interrupted-write fault injection; and
 - measured artifact and query performance budgets.
+
+The structural evidence code currently contains a local SHA-256 implementation. R2's `RepositorySHA256` exists on a separate unmerged branch, so consolidation remains an integration task rather than a dependency on unpublished code.

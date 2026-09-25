@@ -24,6 +24,7 @@ public struct Finding: Codable, Equatable, Sendable {
     public var lifecycleState: FindingLifecycleState {
         events.reduce(.open) { state, event in
             if case .resolved = event.transition { return .resolved }
+            if case .reopened = event.transition { return .open }
             return state
         }
     }
@@ -31,7 +32,7 @@ public struct Finding: Codable, Equatable, Sendable {
     public var evidenceState: FindingEvidenceState {
         guard let event = events.last else { return .unverified }
         switch event.transition {
-        case .opened: return .observed
+        case .opened, .observed, .reopened: return .observed
         case .resolved: return .verifiedAbsent
         case .unverified: return .unverified
         case .continuityAmbiguous: return .continuityAmbiguous
@@ -43,6 +44,20 @@ public struct Finding: Codable, Equatable, Sendable {
             preconditionFailure("Validated Findings always start with an opened event.")
         }
         return evidence.detectionID
+    }
+
+    package var latestDetectionReference: (snapshotID: SnapshotID, detectionID: DetectionID) {
+        for event in events.reversed() {
+            switch event.transition {
+            case .opened(let evidence):
+                return (event.snapshotID, evidence.detectionID)
+            case .observed(let evidence), .reopened(let evidence):
+                return (event.snapshotID, evidence.currentDetection.detectionID)
+            case .resolved, .unverified, .continuityAmbiguous:
+                continue
+            }
+        }
+        preconditionFailure("Validated Findings always contain an observational event.")
     }
 
     mutating func append(_ event: LifecycleEvent) throws {
@@ -68,11 +83,20 @@ public struct Finding: Codable, Equatable, Sendable {
             switch event.transition {
             case .opened:
                 throw LifecycleContractError.invalidArtifact("Finding \(id) has more than one opened event.")
+            case .observed:
+                guard state == .open else {
+                    throw LifecycleContractError.invalidArtifact("Finding \(id) is observed while resolved.")
+                }
             case .resolved:
                 guard state == .open else {
                     throw LifecycleContractError.invalidArtifact("Finding \(id) resolves more than once.")
                 }
                 state = .resolved
+            case .reopened:
+                guard state == .resolved else {
+                    throw LifecycleContractError.invalidArtifact("Finding \(id) reopens while already open.")
+                }
+                state = .open
             case .unverified, .continuityAmbiguous:
                 guard state == .open else {
                     throw LifecycleContractError.invalidArtifact(

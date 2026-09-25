@@ -94,6 +94,7 @@ extension LifecycleReadService {
     private func reasons(for transition: LifecycleTransition) -> [LifecycleReason] {
         switch transition {
         case .opened: []
+        case .observed(let evidence), .reopened(let evidence): evidence.reasons
         case .resolved(let evidence): evidence.reasons
         case .unverified(let reasons): reasons
         case .continuityAmbiguous(let evidence): evidence.reasons

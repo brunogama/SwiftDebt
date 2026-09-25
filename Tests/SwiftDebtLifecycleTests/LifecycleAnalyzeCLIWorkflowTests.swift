@@ -29,6 +29,34 @@ struct LifecycleAnalyzeCLIWorkflowTests {
         #expect(observedRevision.rawValue == revision)
     }
 
+    @Test("AT-3 comments move a Detection while preserving its Finding")
+    func lineMovePreservesFinding() throws {
+        let fixture = try TemporaryLifecycleGitRepository()
+        _ = try fixture.commit(source: Self.lineMoveOriginalSource, message: "add forced try")
+        #expect(try analyze(fixture).status == 0)
+        let originalArtifact = try LifecycleArtifactStore(artifactURL: fixture.artifact).load()
+        let originalFinding = try #require(originalArtifact.findings.first)
+        let originalLocation = try #require(originalArtifact.snapshots.first?.detections.first?.location)
+
+        _ = try fixture.commit(source: Self.lineMoveShiftedSource, message: "insert comments")
+        #expect(try analyze(fixture).status == 0)
+        let movedArtifact = try LifecycleArtifactStore(artifactURL: fixture.artifact).load()
+        let finding = try #require(movedArtifact.findings.first)
+
+        #expect(movedArtifact.findings.count == 1)
+        #expect(movedArtifact.unresolvedDetections.isEmpty)
+        #expect(finding.id == originalFinding.id)
+        #expect(finding.lifecycleState == .open)
+        #expect(finding.evidenceState == .observed)
+        #expect(finding.events.map(\.transition.kind.rawValue) == ["opened", "observed"])
+        let movedLocation = try #require(movedArtifact.snapshots.last?.detections.first?.location)
+        #expect(movedLocation.sourcePath == originalLocation.sourcePath)
+        #expect(movedLocation.line > originalLocation.line)
+        let explanation = try explainLifecycle(finding.id.rawValue, fixture: fixture)
+        #expect(explanation.standardOutput.contains("structural-anchor-match"))
+        #expect(explanation.standardOutput.contains("source-location-moved"))
+    }
+
     @Test("Real Git analyses persist authoritative provenance, resolve, and replay exactly")
     func analyzePersistsAndReplaysLifecycle() throws {
         let fixture = try TemporaryLifecycleGitRepository()
@@ -292,5 +320,21 @@ struct LifecycleAnalyzeCLIWorkflowTests {
     private static let resolvedSource = """
         func load() throws -> Int { 1 }
         func run() { _ = try? load() }
+        """
+
+    private static let lineMoveOriginalSource = """
+        func load() throws -> Int { 1 }
+        func run() {
+            _ = try! load()
+        }
+        """
+
+    private static let lineMoveShiftedSource = """
+        func load() throws -> Int { 1 }
+        // The comments intentionally move the Detection without changing its structure.
+        // Structural continuity must ignore trivia and absolute location.
+        func run() {
+            _ = try! load()
+        }
         """
 }

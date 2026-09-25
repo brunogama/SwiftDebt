@@ -44,6 +44,7 @@ private final class NonisolatedUnsafeActorMemberVisitor: SyntaxVisitor {
 
         emit(
             at: detail,
+            continuitySubject: node,
             message:
                 "This nonisolated(unsafe) actor member opts out of static isolation checking; review its synchronization assumptions."
         )

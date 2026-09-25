@@ -9,25 +9,38 @@ extension LifecycleReducer {
 
         for identity in identities {
             let candidates = priorFindings.filter { $0.rule.identity == identity }
-            let currentDetections = snapshot.detections.filter { $0.rule.identity == identity }
+            let detections = snapshot.detections.filter { $0.rule.identity == identity }
             if candidates.isEmpty {
-                for detection in currentDetections {
+                for detection in detections {
                     try openFinding(for: detection, snapshot: snapshot, artifact: &artifact)
                 }
                 continue
             }
-            if currentDetections.isEmpty {
+            if detections.isEmpty {
                 for candidate in candidates {
                     try recordAbsence(for: candidate, snapshot: snapshot, artifact: &artifact)
                 }
                 continue
             }
-            try recordUnresolvedContinuity(
-                candidates: candidates,
-                detections: currentDetections,
+
+            let reconciliation = try ContinuityReconciler().reconcile(
+                findings: candidates,
+                detections: detections,
                 snapshot: snapshot,
-                artifact: &artifact
+                artifact: artifact
             )
+            for match in reconciliation.matches {
+                try record(match: match, snapshot: snapshot, artifact: &artifact)
+            }
+            for group in reconciliation.unresolvedGroups {
+                try record(group: group, snapshot: snapshot, artifact: &artifact)
+            }
+            for detection in reconciliation.newDetections {
+                try openFinding(for: detection, snapshot: snapshot, artifact: &artifact)
+            }
+            for finding in reconciliation.absentFindings {
+                try recordAbsence(for: finding, snapshot: snapshot, artifact: &artifact)
+            }
         }
     }
 
@@ -36,16 +49,12 @@ extension LifecycleReducer {
         snapshot: ObservationSnapshot,
         artifact: inout LifecycleArtifact
     ) throws {
-        guard let atomic = snapshot.atomicObservations.first(where: { $0.outcome.references(detection.id) }) else {
-            throw LifecycleContractError.invalidSnapshot("Detection \(detection.id) has no Atomic Observation.")
-        }
+        let evidence = try detectionEvidence(for: detection, snapshot: snapshot)
         let findingID = try FindingID("finding:\(snapshot.id.rawValue):\(detection.id.rawValue)")
         let event = LifecycleEvent(
             id: try LifecycleEventID("event:\(findingID.rawValue):opened"),
             snapshotID: snapshot.id,
-            transition: .opened(
-                DetectionEvidence(detectionID: detection.id, atomicObservationID: atomic.id)
-            )
+            transition: .opened(evidence)
         )
         artifact.findings.append(
             try Finding(
@@ -57,57 +66,87 @@ extension LifecycleReducer {
         )
     }
 
-    private func recordUnresolvedContinuity(
-        candidates: [Finding],
-        detections: [ObservedDetection],
+    private func record(
+        match: ContinuityMatch,
         snapshot: ObservationSnapshot,
         artifact: inout LifecycleArtifact
     ) throws {
-        let candidateIDs = candidates.map(\.id).sorted { $0.rawValue < $1.rawValue }
-        let detectionIDs = detections.map(\.id).sorted { $0.rawValue < $1.rawValue }
-        let sameRevisionExists = candidates.contains { candidate in
-            detections.contains { $0.rule.semanticRevision == candidate.rule.semanticRevision }
+        guard let index = artifact.findings.firstIndex(where: { $0.id == match.finding.id }) else {
+            return
         }
-        let reason = try LifecycleReason(
-            code: sameRevisionExists ? "continuity-evidence-unavailable" : "semantic-revision-incomparable",
-            message: sameRevisionExists
-                ? "R1 Detection has no engine-owned structural identity evidence, so no predecessor was selected."
-                : "The current and prior Semantic Revisions have no compatibility declaration."
+        let evidence = MatchedContinuityEvidence(
+            currentDetection: try detectionEvidence(for: match.currentDetection, snapshot: snapshot),
+            priorSnapshotID: match.priorSnapshot.id,
+            priorDetectionID: match.priorDetection.id,
+            reasons: match.reasons
         )
+        let transition: LifecycleTransition =
+            match.finding.lifecycleState == .resolved ? .reopened(evidence) : .observed(evidence)
+        try artifact.findings[index].append(
+            LifecycleEvent(
+                id: try eventID(
+                    findingID: match.finding.id,
+                    snapshotID: snapshot.id,
+                    kind: transition.kind
+                ),
+                snapshotID: snapshot.id,
+                transition: transition
+            )
+        )
+    }
 
-        for candidate in candidates {
-            guard let index = artifact.findings.firstIndex(where: { $0.id == candidate.id }) else { continue }
-            guard candidate.lifecycleState == .open else { continue }
-            let transition: LifecycleTransition
-            if detections.contains(where: { $0.rule.semanticRevision == candidate.rule.semanticRevision }) {
-                transition = .continuityAmbiguous(
+    private func record(
+        group: ContinuityUnresolvedGroup,
+        snapshot: ObservationSnapshot,
+        artifact: inout LifecycleArtifact
+    ) throws {
+        let candidateIDs = group.findings.map(\.id)
+        let detectionIDs = group.detections.map(\.id)
+        for finding in group.findings {
+            guard finding.lifecycleState == .open else { continue }
+            guard let index = artifact.findings.firstIndex(where: { $0.id == finding.id }) else { continue }
+            let transition: LifecycleTransition =
+                group.isAmbiguous
+                ? .continuityAmbiguous(
                     ContinuityAmbiguityEvidence(
                         currentDetectionIDs: detectionIDs,
                         candidateFindingIDs: candidateIDs,
-                        reasons: [reason]
+                        reasons: group.reasons
                     )
                 )
-            } else {
-                transition = .unverified([reason])
-            }
+                : .unverified(group.reasons)
             try artifact.findings[index].append(
                 LifecycleEvent(
-                    id: try eventID(findingID: candidate.id, snapshotID: snapshot.id, kind: transition.kind),
+                    id: try eventID(
+                        findingID: finding.id,
+                        snapshotID: snapshot.id,
+                        kind: transition.kind
+                    ),
                     snapshotID: snapshot.id,
                     transition: transition
                 )
             )
         }
-        for detection in detections {
+        for detection in group.detections {
             artifact.unresolvedDetections.append(
                 UnresolvedDetection(
                     snapshotID: snapshot.id,
                     detectionID: detection.id,
                     candidateFindingIDs: candidateIDs,
-                    reasons: [reason]
+                    reasons: group.reasons
                 )
             )
         }
+    }
+
+    private func detectionEvidence(
+        for detection: ObservedDetection,
+        snapshot: ObservationSnapshot
+    ) throws -> DetectionEvidence {
+        guard let atomic = snapshot.atomicObservations.first(where: { $0.outcome.references(detection.id) }) else {
+            throw LifecycleContractError.invalidSnapshot("Detection \(detection.id) has no Atomic Observation.")
+        }
+        return DetectionEvidence(detectionID: detection.id, atomicObservationID: atomic.id)
     }
 
     private func recordAbsence(

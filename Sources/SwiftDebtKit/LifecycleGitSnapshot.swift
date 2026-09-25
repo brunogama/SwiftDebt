@@ -1,4 +1,5 @@
 import Foundation
+import SwiftDebtCore
 import SwiftDebtLifecycle
 
 enum LifecycleGitSnapshot: Equatable, Sendable {
@@ -7,13 +8,14 @@ enum LifecycleGitSnapshot: Equatable, Sendable {
         revision: GitRevisionID,
         workingTreeState: SourceWorkingTreeState,
         parentRevisions: [GitRevisionID],
-        statusDigest: String
+        statusDigest: String,
+        sourceRenames: [SourceRenameEvidence]
     )
     case unavailable
 
     func sourceIdentity(contentDigest: LifecycleDigest) -> SnapshotSourceIdentity {
         switch self {
-        case .available(_, let revision, let state, _, _):
+        case .available(_, let revision, let state, _, _, _):
             .git(revision: revision, workingTreeState: state, contentDigest: contentDigest)
         case .unavailable:
             .contentDigest(contentDigest)
@@ -61,12 +63,14 @@ struct LifecycleGitSnapshotProvider: Sendable {
             repositoryRoot: repositoryURL
         )
         let status = try require(statusArguments, root: repositoryURL)
+        let sourceRenames = try parentRenames(parents: parents, root: repositoryURL)
         return .available(
             repositoryRoot: repositoryURL.path,
             revision: revision,
             workingTreeState: status.isEmpty ? .clean : .modified,
             parentRevisions: parents,
-            statusDigest: LifecycleSHA256.hexDigest(Data(status.utf8))
+            statusDigest: LifecycleSHA256.hexDigest(Data(status.utf8)),
+            sourceRenames: sourceRenames
         )
     }
 
@@ -81,6 +85,36 @@ struct LifecycleGitSnapshotProvider: Sendable {
             if parent.path == directory.path || parent.path.isEmpty { return false }
             directory = parent
         }
+    }
+
+    private func parentRenames(parents: [GitRevisionID], root: URL) throws -> [SourceRenameEvidence] {
+        guard parents.count == 1, let parent = parents.first else { return [] }
+        let output = try require(
+            [
+                "diff", "--name-status", "-z", "--find-renames", "--diff-filter=R",
+                parent.rawValue, "HEAD", "--",
+            ],
+            root: root
+        )
+        let fields = output.split(separator: "\0", omittingEmptySubsequences: true).map(String.init)
+        guard fields.count.isMultiple(of: 3) else {
+            throw LifecycleAnalysisError.gitInspectionFailed("Git returned malformed rename evidence.")
+        }
+        var renames: [SourceRenameEvidence] = []
+        for index in stride(from: 0, to: fields.count, by: 3) {
+            let status = fields[index]
+            guard status.first == "R", let similarity = Int(status.dropFirst()) else {
+                throw LifecycleAnalysisError.gitInspectionFailed("Git returned malformed rename status \(status).")
+            }
+            renames.append(
+                try SourceRenameEvidence(
+                    priorSourcePath: SourcePath(fields[index + 1]),
+                    currentSourcePath: SourcePath(fields[index + 2]),
+                    similarityPercentage: similarity
+                )
+            )
+        }
+        return renames.sorted(by: sourceRenameOrder)
     }
 
     private func statusArguments(excluding outputURLs: [URL], repositoryRoot: URL) throws -> [String] {

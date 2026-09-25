@@ -27,6 +27,7 @@ public struct SnapshotProvenance: Codable, Equatable, Sendable {
     public let capabilities: [SnapshotCapability]
     public let engineVersion: String
     public let lineage: LineagePosition
+    public let sourceRenames: [SourceRenameEvidence]
 
     public init(
         sourceIdentity: SnapshotSourceIdentity,
@@ -34,7 +35,8 @@ public struct SnapshotProvenance: Codable, Equatable, Sendable {
         configurationFingerprint: LifecycleDigest,
         capabilities: [SnapshotCapability] = [],
         engineVersion: String,
-        lineage: LineagePosition
+        lineage: LineagePosition,
+        sourceRenames: [SourceRenameEvidence] = []
     ) throws {
         guard hasLifecycleContent(engineVersion) else {
             throw LifecycleContractError.invalidSnapshot(
@@ -45,11 +47,59 @@ public struct SnapshotProvenance: Codable, Equatable, Sendable {
         guard Set(sortedCapabilities.map(\.name)).count == sortedCapabilities.count else {
             throw LifecycleContractError.invalidSnapshot("Capability names must be unique.")
         }
+        let sortedRenames = sourceRenames.sorted(by: sourceRenameOrder)
+        guard Set(sortedRenames.map(\.priorSourcePath)).count == sortedRenames.count,
+            Set(sortedRenames.map(\.currentSourcePath)).count == sortedRenames.count
+        else {
+            throw LifecycleContractError.invalidSnapshot(
+                "Git rename evidence must map unique prior and current SourceUnit paths."
+            )
+        }
+        if !sortedRenames.isEmpty, case .git = sourceIdentity {
+            // Git provenance may carry direct-parent rename evidence.
+        } else if !sortedRenames.isEmpty {
+            throw LifecycleContractError.invalidSnapshot("Source rename evidence requires Git source identity.")
+        }
         self.sourceIdentity = sourceIdentity
         self.scope = scope
         self.configurationFingerprint = configurationFingerprint
         self.capabilities = sortedCapabilities
         self.engineVersion = engineVersion
         self.lineage = lineage
+        self.sourceRenames = sortedRenames
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case sourceIdentity
+        case scope
+        case configurationFingerprint
+        case capabilities
+        case engineVersion
+        case lineage
+        case sourceRenames
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        do {
+            try self.init(
+                sourceIdentity: values.decode(SnapshotSourceIdentity.self, forKey: .sourceIdentity),
+                scope: values.decode(ObservationScope.self, forKey: .scope),
+                configurationFingerprint: values.decode(LifecycleDigest.self, forKey: .configurationFingerprint),
+                capabilities: values.decode([SnapshotCapability].self, forKey: .capabilities),
+                engineVersion: values.decode(String.self, forKey: .engineVersion),
+                lineage: values.decode(LineagePosition.self, forKey: .lineage),
+                sourceRenames: values.decodeIfPresent(
+                    [SourceRenameEvidence].self,
+                    forKey: .sourceRenames
+                ) ?? []
+            )
+        } catch {
+            throw DecodingError.dataCorruptedError(
+                forKey: .sourceIdentity,
+                in: values,
+                debugDescription: String(describing: error)
+            )
+        }
     }
 }
