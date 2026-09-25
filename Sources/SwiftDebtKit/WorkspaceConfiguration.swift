@@ -184,6 +184,9 @@ public struct AnalysisRequest: Sendable {
     public let maximumFileBytes: Int?
     public let lifecycleArtifactPath: String?
     public let repositoryEvidenceOutputPath: String?
+    public let repositoryCachePath: String?
+    public let repositoryCacheReportOutputPath: String?
+    public let repositoryCacheMode: RepositorySyntaxCacheMode
 
     public init(
         path: String = ".", manifestPath: String? = nil, configurationPath: String? = nil,
@@ -196,7 +199,10 @@ public struct AnalysisRequest: Sendable {
         pluginEvidenceLimitations: Bool = false,
         maximumFileBytes: Int? = nil,
         lifecycleArtifactPath: String? = nil,
-        repositoryEvidenceOutputPath: String? = nil
+        repositoryEvidenceOutputPath: String? = nil,
+        repositoryCachePath: String? = nil,
+        repositoryCacheReportOutputPath: String? = nil,
+        repositoryCacheMode: RepositorySyntaxCacheMode = .reuse
     ) {
         self.path = path
         self.manifestPath = manifestPath
@@ -220,6 +226,9 @@ public struct AnalysisRequest: Sendable {
         self.maximumFileBytes = maximumFileBytes
         self.lifecycleArtifactPath = lifecycleArtifactPath
         self.repositoryEvidenceOutputPath = repositoryEvidenceOutputPath
+        self.repositoryCachePath = repositoryCachePath
+        self.repositoryCacheReportOutputPath = repositoryCacheReportOutputPath
+        self.repositoryCacheMode = repositoryCacheMode
     }
 }
 
@@ -234,6 +243,7 @@ public struct AnalysisRunResult: Sendable {
     public let ruleAnalysisSnapshot: AnalysisSnapshot?
     public let lifecycleReduction: LifecycleReduction?
     public let repositoryEvidenceReport: RepositoryEvidenceReport?
+    public let repositorySyntaxCacheReport: RepositorySyntaxCacheReport?
 
     public init(
         report: AnalysisReport,
@@ -243,7 +253,8 @@ public struct AnalysisRunResult: Sendable {
         profile: AnalysisProfile? = nil,
         ruleAnalysisSnapshot: AnalysisSnapshot? = nil,
         lifecycleReduction: LifecycleReduction? = nil,
-        repositoryEvidenceReport: RepositoryEvidenceReport? = nil
+        repositoryEvidenceReport: RepositoryEvidenceReport? = nil,
+        repositorySyntaxCacheReport: RepositorySyntaxCacheReport? = nil
     ) {
         self.report = report
         self.standardOutput = standardOutput
@@ -253,5 +264,6 @@ public struct AnalysisRunResult: Sendable {
         self.ruleAnalysisSnapshot = ruleAnalysisSnapshot
         self.lifecycleReduction = lifecycleReduction
         self.repositoryEvidenceReport = repositoryEvidenceReport
+        self.repositorySyntaxCacheReport = repositorySyntaxCacheReport
     }
 }

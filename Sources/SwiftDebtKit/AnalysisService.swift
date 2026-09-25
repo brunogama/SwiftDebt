@@ -12,14 +12,24 @@ public struct AnalysisService: Sendable {
         let profiler = request.profileOutputPath == nil ? nil : AnalysisProfiler()
         let discovery = SourceDiscovery()
         let lifecycleArtifactURL = try lifecycleArtifactURL(for: request.lifecycleArtifactPath)
-        let generatedOutputURLs = generatedOutputURLs(
-            for: request,
-            lifecycleArtifactURL: lifecycleArtifactURL
-        )
-        let (root, configurationURL, configuration, options, selection, sources, lifecycleCapture) = try {
+        let (
+            root,
+            configurationURL,
+            configuration,
+            options,
+            selection,
+            sources,
+            lifecycleCapture,
+            generatedOutputURLs
+        ) = try {
             profiler?.begin(.discovery)
             defer { profiler?.end(.discovery) }
             let root = try discovery.root(for: request)
+            let generatedOutputURLs = try self.generatedOutputURLs(
+                for: request,
+                lifecycleArtifactURL: lifecycleArtifactURL,
+                repositoryRoot: root
+            )
             let configurationURL =
                 request.configurationPath.map { URL(fileURLWithPath: $0) }
                 ?? root.appendingPathComponent(".swift-debt.json")
@@ -77,25 +87,89 @@ public struct AnalysisService: Sendable {
             } else {
                 lifecycleCapture = nil
             }
-            return (root, configurationURL, configuration, options, selection, sources, lifecycleCapture)
+            return (
+                root,
+                configurationURL,
+                configuration,
+                options,
+                selection,
+                sources,
+                lifecycleCapture,
+                generatedOutputURLs
+            )
         }()
         let format = request.format ?? configuration.format
         let failOnViolation = request.failOnViolation || configuration.failOnViolation
+        let lcovURL = resolvedInputURL(request.lcovPath ?? configuration.lcovPath, root: root)
+        let repositoryCachePolicy = try repositoryCachePolicy(for: request, root: root)
+        var protectedPaths = Set(selection.entries.map { filesystemPathIdentity(URL(fileURLWithPath: $0.path)) })
+        protectedPaths.insert(filesystemPathIdentity(configurationURL))
+        if let manifest = request.manifestPath {
+            protectedPaths.insert(filesystemPathIdentity(URL(fileURLWithPath: manifest)))
+        }
+        if let lcovURL {
+            protectedPaths.insert(filesystemPathIdentity(lcovURL))
+        }
+        if let lifecycleArtifactURL {
+            let lifecycleArtifactIdentity = filesystemPathIdentity(lifecycleArtifactURL)
+            var isDirectory: ObjCBool = false
+            let artifactExists = FileManager.default.fileExists(
+                atPath: lifecycleArtifactURL.path,
+                isDirectory: &isDirectory
+            )
+            guard !protectedPaths.contains(lifecycleArtifactIdentity),
+                lifecycleArtifactURL.pathExtension.lowercased() != "swift",
+                !artifactExists || !isDirectory.boolValue
+            else {
+                throw LifecycleAnalysisError.invalidArtifactPath
+            }
+            protectedPaths.insert(lifecycleArtifactIdentity)
+        }
+        let reportURL = try reserveOutput(
+            request.outputPath,
+            role: "report",
+            protectedPaths: &protectedPaths
+        )
+        let repositoryURL = try reserveOutput(
+            request.repositoryEvidenceOutputPath,
+            role: "repository evidence",
+            protectedPaths: &protectedPaths
+        )
+        let profileURL = try reserveOutput(
+            profiler == nil ? nil : request.profileOutputPath,
+            role: "profile",
+            protectedPaths: &protectedPaths
+        )
+        let repositoryCacheReportURL = try reserveOutput(
+            request.repositoryCacheReportOutputPath,
+            role: "repository cache report",
+            protectedPaths: &protectedPaths
+        )
+        if let repositoryCacheURL = repositoryCachePolicy.storageURL {
+            _ = try reserveOutput(
+                repositoryCacheURL.path,
+                role: "repository cache",
+                protectedPaths: &protectedPaths
+            )
+        }
         let ruleAnalysisSnapshot: AnalysisSnapshot?
         if format == .text || failOnViolation || lifecycleArtifactURL != nil {
             ruleAnalysisSnapshot = try RuleEngine().analyze(sources, using: BuiltInRuleCatalog.all)
         } else {
             ruleAnalysisSnapshot = nil
         }
-        let repositoryEvidenceReport = try request.repositoryEvidenceOutputPath.map { _ in
-            return try RepositoryAnalyzer().analyze(
+        let repositoryAnalysis = try request.repositoryEvidenceOutputPath.map { _ in
+            try RepositoryAnalyzer().analyze(
                 sources,
                 versionControl: RepositoryVersionControlInspector().identity(
                     at: root,
                     excluding: generatedOutputURLs
-                )
+                ),
+                cachePolicy: repositoryCachePolicy
             )
         }
+        let repositoryEvidenceReport = repositoryAnalysis?.evidenceReport
+        let repositorySyntaxCacheReport = repositoryAnalysis?.cacheReport
         let report = try await Analyzer().analyze(
             sources,
             options: options,
@@ -106,7 +180,6 @@ public struct AnalysisService: Sendable {
         let debtOptions =
             request.debtAnalysisOptions ?? configuration.debtAnalysis
             ?? (request.enableDebtAnalysis || configuration.debtValidation != nil ? DebtAnalysisOptions() : nil)
-        let lcovURL = resolvedInputURL(request.lcovPath ?? configuration.lcovPath, root: root)
         let rankedDebtAnalysis = makeRankedDebtAnalysis(
             report: report,
             root: root,
@@ -146,51 +219,19 @@ public struct AnalysisService: Sendable {
             let base = try ReportRenderer().render(report, format: format, root: root.path)
             return format == .diagnostics ? base + debtValidationDiagnostics : base
         }()
-        var protectedPaths = Set(selection.entries.map { filesystemPathIdentity(URL(fileURLWithPath: $0.path)) })
-        protectedPaths.insert(filesystemPathIdentity(configurationURL))
-        if let manifest = request.manifestPath {
-            protectedPaths.insert(filesystemPathIdentity(URL(fileURLWithPath: manifest)))
-        }
-        if let lcovURL {
-            protectedPaths.insert(filesystemPathIdentity(lcovURL))
-        }
-        if let lifecycleArtifactURL {
-            let lifecycleArtifactIdentity = filesystemPathIdentity(lifecycleArtifactURL)
-            var isDirectory: ObjCBool = false
-            let artifactExists = FileManager.default.fileExists(
-                atPath: lifecycleArtifactURL.path,
-                isDirectory: &isDirectory
-            )
-            guard !protectedPaths.contains(lifecycleArtifactIdentity),
-                lifecycleArtifactURL.pathExtension.lowercased() != "swift",
-                !artifactExists || !isDirectory.boolValue
-            else {
-                throw LifecycleAnalysisError.invalidArtifactPath
-            }
-            protectedPaths.insert(lifecycleArtifactIdentity)
-        }
         let profile = profiler?.profile()
         let repositoryRendered = try repositoryEvidenceReport.map { try RepositoryEvidenceRenderer().json($0) }
-        let reportURL = try reserveOutput(
-            request.outputPath,
-            role: "report",
-            protectedPaths: &protectedPaths
-        )
-        let repositoryURL = try reserveOutput(
-            request.repositoryEvidenceOutputPath,
-            role: "repository evidence",
-            protectedPaths: &protectedPaths
-        )
-        let profileURL = try reserveOutput(
-            profile == nil ? nil : request.profileOutputPath,
-            role: "profile",
-            protectedPaths: &protectedPaths
-        )
+        let repositoryCacheRendered = try repositorySyntaxCacheReport.map {
+            try RepositorySyntaxCacheRenderer().json($0)
+        }
         if let reportURL {
             try write(rendered, to: reportURL)
         }
         if let repositoryURL, let repositoryRendered {
             try write(repositoryRendered, to: repositoryURL)
+        }
+        if let repositoryCacheReportURL, let repositoryCacheRendered {
+            try write(repositoryCacheRendered, to: repositoryCacheReportURL)
         }
         if let profileURL, let profile {
             let encoder = JSONEncoder()
@@ -246,7 +287,8 @@ public struct AnalysisService: Sendable {
             profile: profile,
             ruleAnalysisSnapshot: ruleAnalysisSnapshot,
             lifecycleReduction: lifecycleReduction,
-            repositoryEvidenceReport: repositoryEvidenceReport
+            repositoryEvidenceReport: repositoryEvidenceReport,
+            repositorySyntaxCacheReport: repositorySyntaxCacheReport
         )
     }
 
@@ -258,10 +300,39 @@ public struct AnalysisService: Sendable {
         return URL(fileURLWithPath: path).standardizedFileURL.resolvingSymlinksInPath()
     }
 
+    private func repositoryCachePolicy(
+        for request: AnalysisRequest,
+        root: URL
+    ) throws -> RepositorySyntaxCachePolicy {
+        guard request.repositoryEvidenceOutputPath != nil else {
+            guard request.repositoryCachePath == nil,
+                request.repositoryCacheReportOutputPath == nil,
+                request.repositoryCacheMode == .reuse
+            else {
+                throw WorkspaceError("Repository cache options require repository evidence output")
+            }
+            return .disabled
+        }
+        if request.repositoryCacheMode == .disabled {
+            guard request.repositoryCachePath == nil else {
+                throw WorkspaceError("A repository cache path cannot be used while the cache is disabled")
+            }
+            return .disabled
+        }
+        let url: URL
+        if let path = request.repositoryCachePath {
+            url = URL(fileURLWithPath: path).standardizedFileURL.resolvingSymlinksInPath()
+        } else {
+            url = try RepositorySyntaxCacheStore.defaultURL(repositoryRoot: root)
+        }
+        return request.repositoryCacheMode == .rebuild ? .rebuild(url) : .reuse(url)
+    }
+
     private func generatedOutputURLs(
         for request: AnalysisRequest,
-        lifecycleArtifactURL: URL?
-    ) -> [URL] {
+        lifecycleArtifactURL: URL?,
+        repositoryRoot: URL
+    ) throws -> [URL] {
         var urls: [URL] = []
         if let lifecycleArtifactURL {
             urls.append(lifecycleArtifactURL)
@@ -270,11 +341,19 @@ public struct AnalysisService: Sendable {
         for path in [
             request.outputPath,
             request.repositoryEvidenceOutputPath,
+            request.repositoryCachePath,
+            request.repositoryCacheReportOutputPath,
             request.profileOutputPath,
             request.stampPath,
         ] {
             guard let path, !path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { continue }
             urls.append(URL(fileURLWithPath: path).standardizedFileURL.resolvingSymlinksInPath())
+        }
+        if request.repositoryEvidenceOutputPath != nil,
+            request.repositoryCachePath == nil,
+            request.repositoryCacheMode != .disabled
+        {
+            urls.append(try RepositorySyntaxCacheStore.defaultURL(repositoryRoot: repositoryRoot))
         }
         return urls
     }

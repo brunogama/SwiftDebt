@@ -36,12 +36,14 @@ extension CLIOptions {
         var literal = false
         var quiet = false
         var pluginEvidenceLimitations = false
+        var rebuildRepositoryCache = false
+        var disableRepositoryCache = false
         var index = 0
         let valuedOptions: Set<String> = [
             "--config", "--format", "--output", "--profile-output", "--jobs", "--manifest", "--stamp", "--exclude",
             "--lcov", "--coverage", "--preset", "--aggregation", "--top", "--head", "--tail", "--min-score",
             "--min-priority", "--category", "--level", "--max-score", "--debt-reference-time", "--max-file-bytes",
-            "--repository-evidence",
+            "--repository-evidence", "--repository-cache", "--repository-cache-report",
         ]
         while index < arguments.count {
             let argument = arguments[index]
@@ -70,6 +72,16 @@ extension CLIOptions {
             if !literal && argument == "--plugin-evidence-limitations" {
                 guard !pluginEvidenceLimitations else { throw CLIError("Duplicate --plugin-evidence-limitations") }
                 pluginEvidenceLimitations = true
+                continue
+            }
+            if !literal && argument == "--rebuild-repository-cache" {
+                guard !rebuildRepositoryCache else { throw CLIError("Duplicate --rebuild-repository-cache") }
+                rebuildRepositoryCache = true
+                continue
+            }
+            if !literal && argument == "--no-repository-cache" {
+                guard !disableRepositoryCache else { throw CLIError("Duplicate --no-repository-cache") }
+                disableRepositoryCache = true
                 continue
             }
             if !literal && argument.hasPrefix("-") {
@@ -111,6 +123,22 @@ extension CLIOptions {
         if values["--manifest"] != nil && path != nil {
             throw CLIError("Use either an input path or --manifest, not both")
         }
+        let repositoryEvidenceEnabled = values["--repository-evidence"] != nil
+        let cacheOptionsUsed =
+            values["--repository-cache"] != nil
+            || values["--repository-cache-report"] != nil
+            || rebuildRepositoryCache || disableRepositoryCache
+        if cacheOptionsUsed && !repositoryEvidenceEnabled {
+            throw CLIError("Repository cache options require --repository-evidence")
+        }
+        if rebuildRepositoryCache && disableRepositoryCache {
+            throw CLIError("Use either --rebuild-repository-cache or --no-repository-cache, not both")
+        }
+        if disableRepositoryCache && values["--repository-cache"] != nil {
+            throw CLIError("--repository-cache cannot be combined with --no-repository-cache")
+        }
+        let repositoryCacheMode: RepositorySyntaxCacheMode =
+            disableRepositoryCache ? .disabled : (rebuildRepositoryCache ? .rebuild : .reuse)
         if !validates, values["--max-score"] != nil { throw CLIError("--max-score is only valid for debt validate") }
         let format = try debtFormat(values["--format"], validates: validates)
         let jobs = try optionalInteger(values["--jobs"], named: "--jobs", range: 1...64)
@@ -157,7 +185,10 @@ extension CLIOptions {
             profileOutputPath: values["--profile-output"],
             pluginEvidenceLimitations: pluginEvidenceLimitations,
             maximumFileBytes: maximumFileBytes,
-            repositoryEvidenceOutputPath: values["--repository-evidence"]
+            repositoryEvidenceOutputPath: values["--repository-evidence"],
+            repositoryCachePath: values["--repository-cache"],
+            repositoryCacheReportOutputPath: values["--repository-cache-report"],
+            repositoryCacheMode: repositoryCacheMode
         )
         let maxScore = try optionalScore(values["--max-score"], named: "--max-score")
         if validates, maxScore == nil { throw CLIError("Missing required --max-score for debt validate") }

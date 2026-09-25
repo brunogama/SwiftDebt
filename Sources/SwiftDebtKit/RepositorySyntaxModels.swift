@@ -1,6 +1,6 @@
 import SwiftDebtCore
 
-struct DataClumpElement: Hashable, Comparable, Sendable {
+struct DataClumpElement: Codable, Hashable, Comparable, Sendable {
     let name: String
     let normalizedType: NormalizedTokenSequence
 
@@ -12,7 +12,7 @@ struct DataClumpElement: Hashable, Comparable, Sendable {
     var displayValue: String { "\(name): \(normalizedType.displayValue)" }
 }
 
-struct DataClumpUnit: Sendable {
+struct DataClumpUnit: Codable, Equatable, Sendable {
     let kind: RepositoryAnalysisUnitKind
     let displayName: String
     let location: SwiftDebtCore.SourceLocation
@@ -21,9 +21,49 @@ struct DataClumpUnit: Sendable {
     var comparedUnit: RepositoryComparedUnit {
         RepositoryComparedUnit(kind: kind, displayName: displayName, location: location)
     }
+
+    private enum CodingKeys: String, CodingKey {
+        case kind, displayName, location, elements
+    }
+
+    init(
+        kind: RepositoryAnalysisUnitKind,
+        displayName: String,
+        location: SwiftDebtCore.SourceLocation,
+        elements: Set<DataClumpElement>
+    ) {
+        self.kind = kind
+        self.displayName = displayName
+        self.location = location
+        self.elements = elements
+    }
+
+    init(from decoder: any Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        kind = try values.decode(RepositoryAnalysisUnitKind.self, forKey: .kind)
+        displayName = try values.decode(String.self, forKey: .displayName)
+        location = try values.decode(SwiftDebtCore.SourceLocation.self, forKey: .location)
+        let decoded = try values.decode([DataClumpElement].self, forKey: .elements)
+        guard Set(decoded).count == decoded.count, decoded == decoded.sorted() else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .elements,
+                in: values,
+                debugDescription: "Data Clump elements must be unique and canonically ordered."
+            )
+        }
+        elements = Set(decoded)
+    }
+
+    func encode(to encoder: any Encoder) throws {
+        var values = encoder.container(keyedBy: CodingKeys.self)
+        try values.encode(kind, forKey: .kind)
+        try values.encode(displayName, forKey: .displayName)
+        try values.encode(location, forKey: .location)
+        try values.encode(elements.sorted(), forKey: .elements)
+    }
 }
 
-struct RepeatedSwitchUnit: Sendable {
+struct RepeatedSwitchUnit: Codable, Equatable, Sendable {
     let scope: String
     let discriminator: NormalizedTokenSequence
     let caseShape: [NormalizedTokenSequence]
@@ -35,11 +75,25 @@ struct RepeatedSwitchUnit: Sendable {
     }
 }
 
-struct RepositorySyntaxFacts: Sendable {
+struct RepositorySyntaxFacts: Codable, Equatable, Sendable {
     var dataClumpUnits: [DataClumpUnit] = []
     var repeatedSwitchUnits: [RepeatedSwitchUnit] = []
     var conditionalSwitchLocations: [SwiftDebtCore.SourceLocation] = []
     var diagnostics: [AnalysisDiagnostic] = []
+
+    mutating func append(_ other: Self) {
+        dataClumpUnits += other.dataClumpUnits
+        repeatedSwitchUnits += other.repeatedSwitchUnits
+        conditionalSwitchLocations += other.conditionalSwitchLocations
+        diagnostics += other.diagnostics
+    }
+
+    mutating func sortCanonical() {
+        dataClumpUnits.sort(by: dataClumpUnitOrder)
+        repeatedSwitchUnits.sort(by: repeatedSwitchUnitOrder)
+        conditionalSwitchLocations.sort(by: sourceLocationOrder)
+        diagnostics.sort(by: diagnosticOrder)
+    }
 }
 
 func sourceLocationOrder(
