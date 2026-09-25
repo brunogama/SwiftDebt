@@ -16,13 +16,13 @@ public struct Analyzer: Sendable {
 
     package func analyze(
         _ sources: [SourceUnit], options: AnalysisOptions = .init(), jobs: Int = 1,
-        phaseSink: (any AnalysisPhaseSink)?
+        phaseSink: (any AnalysisPhaseSink)?, allowsEmptySources: Bool = false
     ) async throws -> AnalysisReport {
         try options.validate()
         guard (1...64).contains(jobs) else {
             throw AnalysisFailure.invalidConfiguration("jobs must be between 1 and 64")
         }
-        guard !sources.isEmpty else { throw AnalysisFailure.noSources }
+        guard allowsEmptySources || !sources.isEmpty else { throw AnalysisFailure.noSources }
         guard Set(sources.map(\.path)).count == sources.count,
             sources.allSatisfy({ !$0.path.isEmpty && !$0.module.isEmpty })
         else {
@@ -61,6 +61,11 @@ public struct Analyzer: Sendable {
             }
         }()
         try Task.checkCancellation()
-        return try MetricsCalculator().analyze(parsed, options: options, phaseSink: phaseSink)
+        return try MetricsCalculator().analyze(
+            parsed,
+            options: options,
+            phaseSink: phaseSink,
+            allowsEmptySources: allowsEmptySources
+        )
     }
 }

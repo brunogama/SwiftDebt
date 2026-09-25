@@ -89,7 +89,6 @@ public struct AnalysisSnapshot: Equatable, Sendable {
     public var isComplete: Bool {
         guard
             !ruleDescriptors.isEmpty,
-            !selectedSourcePaths.isEmpty,
             Set(ruleDescriptors.map(\.identity)).count == ruleDescriptors.count,
             Set(selectedSourcePaths).count == selectedSourcePaths.count
         else { return false }

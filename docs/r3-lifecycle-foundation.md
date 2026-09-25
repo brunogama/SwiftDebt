@@ -143,7 +143,8 @@ The reducer and artifact decoder both recompute a resolution proof. A resolution
 - both source identities are available;
 - effective configuration, engine version, and capability sets are comparable;
 - every declared capability is available;
-- the exact Rule Identity and Semantic Revision has an Atomic Observation for every selected SourceUnit;
+- the selected Rule Identity and Semantic Revision is persisted even when the eligible SourceUnit set is empty;
+- that exact rule has an Atomic Observation for every selected SourceUnit;
 - every covered Atomic Observation committed zero Detections;
 - the covered Atomic Observation IDs are exhaustive and exact; and
 - no same-rule Detection or Unresolved Detection remains for the Finding in that snapshot.
@@ -152,6 +153,13 @@ Git-backed snapshots also persist the engine's repository-relative source select
 Swift SourceUnit rename and deletion evidence. A partial selection records the affected prior source as
 out of scope and cannot verify resolution. A deletion can support resolution only when the current
 snapshot has complete comparable repository coverage of the eligible successor search space.
+Resolution follows the persisted predecessor chain, so an observed sequence of Git rename or deletion
+edges remains part of the later proof. A real CLI fixture covers two consecutive renames, partial
+observations at both edges, and final complete repository coverage.
+Lifecycle-enabled analysis can persist that proof after the sole Swift SourceUnit is deleted: the
+schema-2 report contains zero input files, while the Observation Snapshot retains the selected rules
+and an empty rule by SourceUnit product. Analysis without lifecycle ingestion keeps the existing
+no-sources failure.
 
 A tampered resolution that points at an existing failed or unrelated Atomic Observation is rejected. Unknown schemas, invalid digests, broken Detection or candidate Finding references, inconsistent lineage order, and malformed parse outcomes also fail closed.
 
@@ -171,8 +179,8 @@ All implemented acceptance tests use the real R1 `RuleEngine`, the public lifecy
 | AT-6 | Direct | A real CLI fixture collapses two structurally identical prior Findings into one current Detection; both Findings remain open and the complete candidate set is persisted. |
 | AT-7 | Direct | Complete comparable committed absence creates an audited resolution, including a real clean direct-child Git CLI run. |
 | AT-8 | Direct | A real parse failure records not-executed atomics and blocks resolution. |
-| AT-9 | Direct | A real CLI/Git fixture explicitly excludes the prior SourceUnit; the Finding stays open and records the exact selection gap and incomplete relocation coverage. Changed-files manifest coverage remains open. |
-| AT-10 | Direct | A direct-child Git deletion plus complete comparable repository coverage resolves the Finding and persists deletion, complete relocation coverage, and committed absence evidence. |
+| AT-9 | Direct | Real CLI/Git fixtures explicitly exclude the prior SourceUnit and select only another changed file through a manifest. Both keep the Finding open and record the exact selection gap and incomplete relocation coverage. |
+| AT-10 | Direct | Complete comparable repository coverage resolves direct-child Git deletion with other sources or with no remaining Swift SourceUnit. The persisted proof retains the selected rules, deletion edge, complete relocation coverage, and committed absence. Deletion evidence also survives an intermediate partial observation. |
 | AT-11 | Direct | The same direct-child deletion analyzed only through its containing directory stays open and unverified because relocation coverage is incomplete. |
 | AT-12 | Direct | An undeclared Semantic Revision change blocks continuity and resolution. |
 | AT-13 | Open | Directional compatibility declarations are not modeled. |
@@ -185,7 +193,7 @@ All implemented acceptance tests use the real R1 `RuleEngine`, the public lifecy
 | AT-20 | Direct | Real dirty-worktree and shallow-clone fixtures retain First Observation and block exact attribution with specific reasons. |
 | AT-21 | Partial | Reverse arrival and divergent library fixtures preserve source order; the CLI accepts only a verified direct Git parent and rejects dirty, merge, or disconnected successors. Real divergent Git lineages in one artifact remain open. |
 | AT-22 | Partial | Retry and reverse-arrival replay preserve canonical bytes, and real CLI replay is byte-identical; concurrent replay and interruption injection remain open. |
-| AT-23 | Partial | Persisted human and JSON queries expose blockers; ambiguity records complete candidate Finding IDs and Detection IDs; CLI snapshot inspection shows derived Git, configuration, capability, engine, scope, and rename provenance. Full human/machine audit parity remains open. |
+| AT-23 | Partial | Persisted human and JSON queries expose blockers; real CLI tests prove text and JSON parity for every ambiguity candidate and blocker and for unverified reasons. CLI snapshot inspection shows derived Git, configuration, capability, engine, scope, selected-rule, and rename provenance. Full human/machine audit parity remains open. |
 | AT-24 | Direct | Unknown schema, broken references, reference-valid false resolution proof, and invalid candidate references fail closed. |
 | AT-25 | Direct | A real CLI fixture compares schema-2 stdout byte for byte with lifecycle disabled and verifies `--fail-on-violation` keeps status 1 while retrying the same lifecycle snapshot without mutation. |
 | AT-26 | Partial | Capability provenance is validated and unavailable capability cannot support decoded resolution; a real optional-provider run remains open. |
@@ -195,12 +203,10 @@ All implemented acceptance tests use the real R1 `RuleEngine`, the public lifecy
 
 ---
 
-The current slice completes the first-observation, line-move, corroborated file-rename, recurrence, clean direct-child resolution, replay, and persisted inspection portions of UJ-1. It does not complete the full journey. The missing pieces are:
+The current slice completes the first-observation, line-move, corroborated file-rename, recurrence, changed-files boundary, multi-edge relocation coverage, clean deletion resolution, replay, and persisted inspection portions of UJ-1. It does not complete the full journey. The missing pieces are:
 
 - rule-specific evidence that can safely distinguish copied or semantically edited occurrences beyond the conservative structural anchor;
 - cross-file continuity without a direct-parent Git rename, which remains unresolved rather than inferred from identical code;
-- a real changed-files manifest observation; explicit exclusion and directory-scope observations are covered;
-- relocation evidence spanning more than one observed Git edge before complete repository coverage;
 - directional semantic and configuration compatibility declarations;
 - historical configuration reproduction beyond the default directory selection and maximum-file-size input;
 - archived cross-file introduction continuity with persisted Git rename corroboration;

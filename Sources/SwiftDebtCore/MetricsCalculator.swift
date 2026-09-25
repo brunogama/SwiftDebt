@@ -9,10 +9,13 @@ package struct MetricsCalculator {
     }
 
     package func analyze(
-        _ parsed: [ParsedSource], options: AnalysisOptions, phaseSink: (any AnalysisPhaseSink)? = nil
+        _ parsed: [ParsedSource],
+        options: AnalysisOptions,
+        phaseSink: (any AnalysisPhaseSink)? = nil,
+        allowsEmptySources: Bool = false
     ) throws -> AnalysisReport {
         try options.validate()
-        guard !parsed.isEmpty else { throw AnalysisFailure.noSources }
+        guard allowsEmptySources || !parsed.isEmpty else { throw AnalysisFailure.noSources }
         phaseSink?.begin(.structuralEvidence)
         let files = parsed.filter(\.isValid).sorted { $0.path < $1.path }
         var diagnostics = parsed.flatMap { file -> [AnalysisDiagnostic] in

@@ -87,13 +87,24 @@ extension LifecycleArtifact {
                 findings: findings
             )
         case .resolved(let evidence):
+            guard let eventIndex = finding.events.firstIndex(where: { $0.snapshotID == snapshot.id }) else {
+                throw LifecycleContractError.invalidArtifact(
+                    "A resolved event is missing from its Finding history."
+                )
+            }
+            let findingAtResolution = try Finding(
+                id: finding.id,
+                lineageID: finding.lineageID,
+                rule: finding.rule,
+                events: Array(finding.events[...eventIndex])
+            )
             let assessment = try ResolutionCoverageEvaluator().assess(
-                finding: finding,
+                finding: findingAtResolution,
                 snapshot: snapshot,
                 artifact: self
             )
             guard case .verified(let expectedAtomicIDs, let expectedReasons) = assessment,
-                evidence.priorSnapshotID == finding.firstObservationSnapshotID,
+                evidence.priorSnapshotID == findingAtResolution.firstObservationSnapshotID,
                 evidence.coveredAtomicObservationIDs == expectedAtomicIDs,
                 evidence.reasons == expectedReasons
             else {

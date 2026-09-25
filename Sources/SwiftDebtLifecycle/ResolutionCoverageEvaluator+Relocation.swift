@@ -5,6 +5,12 @@ struct ResolutionRelocationAssessment {
     let proofReasons: [LifecycleReason]
 }
 
+private struct ResolutionSourceTrace {
+    let currentPath: SourcePath
+    let isDeleted: Bool
+    let reasons: [LifecycleReason]
+}
+
 extension ResolutionCoverageEvaluator {
     func assessRelocation(
         finding: Finding,
@@ -23,55 +29,51 @@ extension ResolutionCoverageEvaluator {
             for: priorDetection.location.sourcePath,
             selection: priorSnapshot.provenance.sourceSelection
         )
-        let deletion = snapshot.provenance.sourceDeletions.first {
-            $0.priorSourcePath == priorPath
-        }
-        let rename = snapshot.provenance.sourceRenames.first {
-            $0.priorSourcePath == priorPath
-        }
-        let sourceChangeReason = try sourceChangeReason(
-            deletion: deletion,
-            rename: rename
+        let trace = try sourceTrace(
+            from: priorPath,
+            after: priorSnapshot,
+            through: snapshot,
+            artifact: artifact
         )
 
         guard !snapshot.provenance.scope.isCompleteRepository else {
-            guard let sourceChangeReason else {
+            guard !trace.reasons.isEmpty else {
                 return ResolutionRelocationAssessment(blockers: [], proofReasons: [])
             }
             return ResolutionRelocationAssessment(
                 blockers: [],
-                proofReasons: [
-                    sourceChangeReason,
+                proofReasons: trace.reasons + [
                     try LifecycleReason(
                         code: "complete-relocation-coverage",
                         message: "Repository scope covered every eligible successor SourceUnit after "
                             + "\(priorPath.rawValue) changed location or was deleted."
-                    ),
+                    )
                 ]
             )
         }
 
-        var blockers: [LifecycleReason] = []
-        if let sourceChangeReason {
-            blockers.append(sourceChangeReason)
-        } else if snapshot.provenance.sourceSelection?.explicitlyExcludes(priorPath) == true {
+        var blockers = trace.reasons
+        if !trace.isDeleted,
+            snapshot.provenance.sourceSelection?.explicitlyExcludes(trace.currentPath) == true
+        {
             blockers.append(
                 try LifecycleReason(
                     code: "prior-source-out-of-scope",
                     message: "The engine-recorded source selection explicitly excluded the prior SourceUnit "
-                        + "\(priorPath.rawValue)."
+                        + "\(trace.currentPath.rawValue)."
                 )
             )
-        } else if let selection = snapshot.provenance.sourceSelection,
+        } else if !trace.isDeleted,
+            let selection = snapshot.provenance.sourceSelection,
             !selection.includes(
-                priorPath,
+                trace.currentPath,
                 selectedRepositoryPaths: selectedRepositoryPaths(in: snapshot)
             )
         {
             blockers.append(
                 try LifecycleReason(
                     code: "prior-source-out-of-scope",
-                    message: "The prior SourceUnit \(priorPath.rawValue) is outside the current selected scope."
+                    message: "The prior SourceUnit \(trace.currentPath.rawValue) is outside the current selected scope."
                 )
             )
         }
@@ -82,6 +84,89 @@ extension ResolutionCoverageEvaluator {
             )
         )
         return ResolutionRelocationAssessment(blockers: blockers, proofReasons: [])
+    }
+
+    private func sourceTrace(
+        from priorPath: SourcePath,
+        after priorSnapshot: ObservationSnapshot,
+        through currentSnapshot: ObservationSnapshot,
+        artifact: LifecycleArtifact
+    ) throws -> ResolutionSourceTrace {
+        let successors = try lineageSuccessors(
+            after: priorSnapshot,
+            through: currentSnapshot,
+            artifact: artifact
+        )
+        var currentPath = priorPath
+        var renameEdges: [(SnapshotID, SourceRenameEvidence)] = []
+        var deletionEdge: (SnapshotID, SourceDeletionEvidence)?
+        for successor in successors {
+            if let deletion = successor.provenance.sourceDeletions.first(where: {
+                $0.priorSourcePath == currentPath
+            }) {
+                deletionEdge = (successor.id, deletion)
+                break
+            }
+            if let rename = successor.provenance.sourceRenames.first(where: {
+                $0.priorSourcePath == currentPath
+            }) {
+                renameEdges.append((successor.id, rename))
+                currentPath = rename.currentSourcePath
+            }
+        }
+
+        var reasons: [LifecycleReason] = []
+        if !renameEdges.isEmpty {
+            let path = ([priorPath.rawValue] + renameEdges.map { $0.1.currentSourcePath.rawValue })
+                .joined(separator: " -> ")
+            let snapshots = renameEdges.map { $0.0.rawValue }.joined(separator: ", ")
+            reasons.append(
+                try LifecycleReason(
+                    code: "source-relocated",
+                    message: "Git recorded SourceUnit relocation \(path) on direct-parent edges "
+                        + "represented by snapshots \(snapshots)."
+                )
+            )
+        }
+        if let deletionEdge {
+            reasons.append(
+                try LifecycleReason(
+                    code: "source-deleted",
+                    message: "Git recorded deletion of prior SourceUnit "
+                        + "\(deletionEdge.1.priorSourcePath.rawValue) on the direct-parent edge represented by "
+                        + "snapshot \(deletionEdge.0.rawValue)."
+                )
+            )
+        }
+        return ResolutionSourceTrace(
+            currentPath: currentPath,
+            isDeleted: deletionEdge != nil,
+            reasons: reasons
+        )
+    }
+
+    private func lineageSuccessors(
+        after priorSnapshot: ObservationSnapshot,
+        through currentSnapshot: ObservationSnapshot,
+        artifact: LifecycleArtifact
+    ) throws -> [ObservationSnapshot] {
+        var reversed: [ObservationSnapshot] = []
+        var cursor = currentSnapshot
+        var visited: Set<SnapshotID> = []
+        while cursor.id != priorSnapshot.id {
+            guard visited.insert(cursor.id).inserted,
+                cursor.provenance.lineage.lineageID == priorSnapshot.provenance.lineage.lineageID,
+                let predecessorID = cursor.provenance.lineage.predecessorSnapshotID,
+                let predecessor = artifact.snapshot(id: predecessorID)
+            else {
+                throw LifecycleContractError.invalidArtifact(
+                    "Resolution evidence does not form one ordered lineage from the latest Detection."
+                )
+            }
+            reversed.append(cursor)
+            cursor = predecessor
+        }
+        return reversed.reversed()
     }
 
     private func selectedRepositoryPaths(in snapshot: ObservationSnapshot) -> Set<String> {
@@ -95,26 +180,5 @@ extension ResolutionCoverageEvaluator {
     ) throws -> SourcePath {
         guard let selection else { return selectedPath }
         return try SourcePath(selection.repositoryPath(for: selectedPath))
-    }
-
-    private func sourceChangeReason(
-        deletion: SourceDeletionEvidence?,
-        rename: SourceRenameEvidence?
-    ) throws -> LifecycleReason? {
-        if let deletion {
-            return try LifecycleReason(
-                code: "source-deleted",
-                message: "Git recorded deletion of prior SourceUnit \(deletion.priorSourcePath.rawValue) "
-                    + "on the direct parent edge."
-            )
-        }
-        if let rename {
-            return try LifecycleReason(
-                code: "source-relocated",
-                message: "Git recorded relocation of prior SourceUnit \(rename.priorSourcePath.rawValue) to "
-                    + "\(rename.currentSourcePath.rawValue) on the direct parent edge."
-            )
-        }
-        return nil
     }
 }
