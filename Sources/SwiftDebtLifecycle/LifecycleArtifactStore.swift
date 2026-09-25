@@ -57,6 +57,54 @@ public struct LifecycleArtifactStore: Sendable {
         try ingestLocked(buildSnapshot)
     }
 
+    package func recordIntroduction(
+        _ evidence: IntroductionHistoryEvidence,
+        for findingID: FindingID
+    ) throws -> IntroductionRecording {
+        try withExclusiveLock {
+            let artifact = try load()
+            guard let finding = artifact.finding(id: findingID) else {
+                throw LifecycleContractError.missingFinding(findingID.rawValue)
+            }
+            if let existing = artifact.introductionConclusions(for: findingID)
+                .first(where: { $0.evidence == evidence })
+            {
+                return IntroductionRecording(
+                    artifact: artifact,
+                    conclusion: existing,
+                    status: .alreadyPresent
+                )
+            }
+
+            let attempt = UInt(artifact.introductionConclusions(for: findingID).count + 1)
+            let conclusion = try IntroductionConclusionEvaluator().make(
+                finding: finding,
+                attempt: attempt,
+                evidence: evidence,
+                artifact: artifact
+            )
+            var conclusions = artifact.introductionConclusions
+            conclusions.append(conclusion)
+            let updated = try LifecycleArtifact(
+                schemaVersion: artifact.schemaVersion,
+                reportKind: artifact.reportKind,
+                generatorVersion: artifact.generatorVersion,
+                snapshots: artifact.snapshots,
+                findings: artifact.findings,
+                unresolvedDetections: artifact.unresolvedDetections,
+                processedSnapshotIDs: artifact.processedSnapshotIDs,
+                lineageHeads: artifact.lineageHeads,
+                introductionConclusions: conclusions
+            )
+            try write(updated)
+            return IntroductionRecording(
+                artifact: updated,
+                conclusion: conclusion,
+                status: .accepted
+            )
+        }
+    }
+
     private func ingestLocked(
         _ buildSnapshot: (LifecycleArtifact?) throws -> ObservationSnapshot
     ) throws -> LifecycleReduction {
@@ -111,5 +159,26 @@ public struct LifecycleArtifactStore: Sendable {
 
     private func systemErrorDescription() -> String {
         String(cString: strerror(errno))
+    }
+}
+
+public enum IntroductionRecordingStatus: String, Codable, Equatable, Sendable {
+    case accepted
+    case alreadyPresent = "already-present"
+}
+
+public struct IntroductionRecording: Equatable, Sendable {
+    public let artifact: LifecycleArtifact
+    public let conclusion: IntroductionConclusion
+    public let status: IntroductionRecordingStatus
+
+    public init(
+        artifact: LifecycleArtifact,
+        conclusion: IntroductionConclusion,
+        status: IntroductionRecordingStatus
+    ) {
+        self.artifact = artifact
+        self.conclusion = conclusion
+        self.status = status
     }
 }

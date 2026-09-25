@@ -15,6 +15,10 @@ extension LifecycleReadService {
                 "\(finding.id.rawValue) \(finding.lifecycleState.rawValue) \(finding.evidenceState.rawValue) "
                     + "\(finding.rule.identity) \(location.sourcePath.rawValue):\(location.line):\(location.column)"
             )
+            lines.append("  First Observation: \(finding.firstObservationSnapshotID.rawValue)")
+            if let introduction = finding.introductionConclusion {
+                lines.append("  \(renderIntroduction(introduction))")
+            }
         }
         for unresolved in report.unresolvedDetections {
             let candidates = unresolved.candidateFindingIDs.map(\.rawValue).joined(separator: ",")
@@ -32,6 +36,7 @@ extension LifecycleReadService {
             "Finding \(report.finding.id.rawValue)",
             "State: \(report.finding.lifecycleState.rawValue)",
             "Evidence: \(report.finding.evidenceState.rawValue)",
+            "First Observation: \(report.finding.firstObservationSnapshotID.rawValue)",
         ]
         for event in report.finding.events {
             lines.append("\(event.snapshotID.rawValue) \(event.transition.kind.rawValue)")
@@ -40,6 +45,25 @@ extension LifecycleReadService {
         for unresolved in report.unresolvedDetections {
             lines.append("Unresolved Detection \(unresolved.detectionID.rawValue)")
             lines += unresolved.reasons.map { "  \($0.code): \($0.message)" }
+        }
+        for conclusion in report.introductionConclusions {
+            lines.append(renderIntroduction(conclusion))
+            lines.append("History budget: \(conclusion.evidence.boundary.maximumRevisions) revisions")
+            lines.append(
+                "History boundary: head=\(conclusion.evidence.boundary.repositoryHeadRevision.rawValue) "
+                    + "state=\(conclusion.evidence.boundary.workingTreeState.rawValue) "
+                    + "shallow=\(conclusion.evidence.boundary.isShallow)"
+            )
+            for revision in conclusion.evidence.revisions {
+                let parents = revision.parentRevisions.map(\.rawValue).joined(separator: ",")
+                let state = revision.observation == nil ? "unavailable" : "observed"
+                lines.append("History revision \(revision.revision.rawValue): \(state) parents=\(parents)")
+            }
+            if !conclusion.evidence.boundary.frontierRevisions.isEmpty {
+                let frontier = conclusion.evidence.boundary.frontierRevisions.map(\.rawValue).joined(separator: ",")
+                lines.append("History frontier: \(frontier)")
+            }
+            lines += conclusion.reasons.map { "  \($0.code): \($0.message)" }
         }
         return lines.joined(separator: "\n") + "\n"
     }
@@ -98,6 +122,18 @@ extension LifecycleReadService {
         case .resolved(let evidence): evidence.reasons
         case .unverified(let reasons): reasons
         case .continuityAmbiguous(let evidence): evidence.reasons
+        }
+    }
+
+    private func renderIntroduction(_ conclusion: IntroductionConclusion) -> String {
+        switch conclusion.kind {
+        case .exact:
+            return "Introduction: exact \(conclusion.exactRevision?.rawValue ?? "invalid")"
+        case .bounded:
+            let revision = conclusion.earliestPositiveRevision?.rawValue ?? "unknown"
+            return "Introduction: bounded earliest-positive=\(revision)"
+        case .unavailable:
+            return "Introduction: unavailable"
         }
     }
 }

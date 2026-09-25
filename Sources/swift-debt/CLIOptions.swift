@@ -34,6 +34,9 @@ struct CLIOptions {
                swift-debt lifecycle inventory ARTIFACT [--format text|json]
                swift-debt lifecycle explain ARTIFACT FINDING_ID [--format text|json]
                swift-debt lifecycle snapshot ARTIFACT SNAPSHOT_ID [--format text|json]
+               swift-debt lifecycle infer-introduction ARTIFACT FINDING_ID
+                   --repository PATH --max-revisions INTEGER [--max-file-bytes INTEGER]
+                   [--format text|json]
                swift-debt --help
                swift-debt --version
 
