@@ -87,6 +87,12 @@ public struct AnalysisService: Sendable {
         } else {
             ruleAnalysisSnapshot = nil
         }
+        let repositoryEvidenceReport = try request.repositoryEvidenceOutputPath.map { _ in
+            try RepositoryAnalyzer().analyze(
+                sources,
+                versionControl: RepositoryVersionControlInspector().identity(at: root)
+            )
+        }
         let report = try await Analyzer().analyze(
             sources, options: options, jobs: request.jobs ?? configuration.jobs, phaseSink: profiler)
         let debtOptions =
@@ -117,9 +123,16 @@ public struct AnalysisService: Sendable {
                     rankedDebtAnalysis, format: format, graph: report.dependencyGraph)
             }
             if let ruleAnalysisSnapshot, format == .text {
-                let complete = report.complete && ruleAnalysisSnapshot.isComplete
+                let complete =
+                    report.complete && ruleAnalysisSnapshot.isComplete
+                    && (repositoryEvidenceReport?.isComplete ?? true)
                 let base = ReportRenderer().renderText(report, complete: complete)
-                return base + "\n" + RuleAnalysisRenderer().render(ruleAnalysisSnapshot)
+                let rules = RuleAnalysisRenderer().render(ruleAnalysisSnapshot)
+                let repository =
+                    repositoryEvidenceReport.map {
+                        "\n" + RepositoryEvidenceRenderer().text($0)
+                    } ?? ""
+                return base + "\n" + rules + repository
             }
             let base = try ReportRenderer().render(report, format: format, root: root.path)
             return format == .diagnostics ? base + debtValidationDiagnostics : base
@@ -142,36 +155,45 @@ public struct AnalysisService: Sendable {
             }
             protectedPaths.insert(lifecycleArtifactURL.path)
         }
-        if let output = request.outputPath {
-            let url = URL(fileURLWithPath: output).standardizedFileURL.resolvingSymlinksInPath()
-            guard !protectedPaths.contains(url.path), url.pathExtension != "swift" else {
-                throw WorkspaceError(
-                    "Refusing to overwrite a source, configuration, manifest, or Swift file with a report")
-            }
-            try write(rendered, to: url)
-            protectedPaths.insert(url.path)
-        }
         let profile = profiler?.profile()
-        if let profileOutput = request.profileOutputPath, let profile {
-            let url = URL(fileURLWithPath: profileOutput).standardizedFileURL.resolvingSymlinksInPath()
-            guard !protectedPaths.contains(url.path), url.pathExtension != "swift" else {
-                throw WorkspaceError(
-                    "Refusing to overwrite a source, configuration, manifest, report, or Swift file with a profile")
-            }
+        let repositoryRendered = try repositoryEvidenceReport.map { try RepositoryEvidenceRenderer().json($0) }
+        let reportURL = try reserveOutput(
+            request.outputPath,
+            role: "report",
+            protectedPaths: &protectedPaths
+        )
+        let repositoryURL = try reserveOutput(
+            request.repositoryEvidenceOutputPath,
+            role: "repository evidence",
+            protectedPaths: &protectedPaths
+        )
+        let profileURL = try reserveOutput(
+            profile == nil ? nil : request.profileOutputPath,
+            role: "profile",
+            protectedPaths: &protectedPaths
+        )
+        if let reportURL {
+            try write(rendered, to: reportURL)
+        }
+        if let repositoryURL, let repositoryRendered {
+            try write(repositoryRendered, to: repositoryURL)
+        }
+        if let profileURL, let profile {
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
             let data = try encoder.encode(profile)
             try FileManager.default.createDirectory(
-                at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try data.write(to: url, options: .atomic)
-            protectedPaths.insert(url.path)
+                at: profileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try data.write(to: profileURL, options: .atomic)
         }
         let debtValidationFailed = debtValidationFailed(configuration.debtValidation, analysis: rankedDebtAnalysis)
         let ruleAnalysisIncomplete = ruleAnalysisSnapshot.map { !$0.isComplete } ?? false
+        let repositoryAnalysisIncomplete = repositoryEvidenceReport.map { !$0.isComplete } ?? false
         let status: Int32 =
-            !report.complete || ruleAnalysisIncomplete
+            !report.complete || ruleAnalysisIncomplete || repositoryAnalysisIncomplete
             ? 2
-            : ((failOnViolation && (report.hasViolations || !(ruleAnalysisSnapshot?.detections.isEmpty ?? true)))
+            : ((failOnViolation
+                && (report.hasViolations || !(ruleAnalysisSnapshot?.detections.isEmpty ?? true)))
                 || debtValidationFailed ? 1 : 0)
         if let stamp = request.stampPath, status == 0 {
             let url = URL(fileURLWithPath: stamp).standardizedFileURL.resolvingSymlinksInPath()
@@ -207,7 +229,8 @@ public struct AnalysisService: Sendable {
             rankedDebtAnalysis: rankedDebtAnalysis,
             profile: profile,
             ruleAnalysisSnapshot: ruleAnalysisSnapshot,
-            lifecycleReduction: lifecycleReduction
+            lifecycleReduction: lifecycleReduction,
+            repositoryEvidenceReport: repositoryEvidenceReport
         )
     }
 
@@ -228,7 +251,12 @@ public struct AnalysisService: Sendable {
             urls.append(lifecycleArtifactURL)
             urls.append(URL(fileURLWithPath: lifecycleArtifactURL.path + ".lock"))
         }
-        for path in [request.outputPath, request.profileOutputPath, request.stampPath] {
+        for path in [
+            request.outputPath,
+            request.repositoryEvidenceOutputPath,
+            request.profileOutputPath,
+            request.stampPath,
+        ] {
             guard let path, !path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { continue }
             urls.append(URL(fileURLWithPath: path).standardizedFileURL.resolvingSymlinksInPath())
         }
@@ -378,5 +406,21 @@ public struct AnalysisService: Sendable {
     private func write(_ content: String, to url: URL) throws {
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try content.write(to: url, atomically: true, encoding: .utf8)
+    }
+
+    private func reserveOutput(
+        _ path: String?,
+        role: String,
+        protectedPaths: inout Set<String>
+    ) throws -> URL? {
+        guard let path else { return nil }
+        let url = URL(fileURLWithPath: path).standardizedFileURL.resolvingSymlinksInPath()
+        guard !protectedPaths.contains(url.path), url.pathExtension != "swift" else {
+            throw WorkspaceError(
+                "Refusing to overwrite a source, configuration, manifest, another output, or Swift file with \(role)"
+            )
+        }
+        protectedPaths.insert(url.path)
+        return url
     }
 }

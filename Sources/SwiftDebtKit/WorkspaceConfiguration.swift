@@ -183,6 +183,7 @@ public struct AnalysisRequest: Sendable {
     public let pluginEvidenceLimitations: Bool
     public let maximumFileBytes: Int?
     public let lifecycleArtifactPath: String?
+    public let repositoryEvidenceOutputPath: String?
 
     public init(
         path: String = ".", manifestPath: String? = nil, configurationPath: String? = nil,
@@ -194,7 +195,8 @@ public struct AnalysisRequest: Sendable {
         profileOutputPath: String? = nil,
         pluginEvidenceLimitations: Bool = false,
         maximumFileBytes: Int? = nil,
-        lifecycleArtifactPath: String? = nil
+        lifecycleArtifactPath: String? = nil,
+        repositoryEvidenceOutputPath: String? = nil
     ) {
         self.path = path
         self.manifestPath = manifestPath
@@ -217,6 +219,7 @@ public struct AnalysisRequest: Sendable {
         self.pluginEvidenceLimitations = pluginEvidenceLimitations
         self.maximumFileBytes = maximumFileBytes
         self.lifecycleArtifactPath = lifecycleArtifactPath
+        self.repositoryEvidenceOutputPath = repositoryEvidenceOutputPath
     }
 }
 
@@ -230,6 +233,7 @@ public struct AnalysisRunResult: Sendable {
     public let profile: AnalysisProfile?
     public let ruleAnalysisSnapshot: AnalysisSnapshot?
     public let lifecycleReduction: LifecycleReduction?
+    public let repositoryEvidenceReport: RepositoryEvidenceReport?
 
     public init(
         report: AnalysisReport,
@@ -238,7 +242,8 @@ public struct AnalysisRunResult: Sendable {
         rankedDebtAnalysis: RankedDebtAnalysis? = nil,
         profile: AnalysisProfile? = nil,
         ruleAnalysisSnapshot: AnalysisSnapshot? = nil,
-        lifecycleReduction: LifecycleReduction? = nil
+        lifecycleReduction: LifecycleReduction? = nil,
+        repositoryEvidenceReport: RepositoryEvidenceReport? = nil
     ) {
         self.report = report
         self.standardOutput = standardOutput
@@ -247,5 +252,6 @@ public struct AnalysisRunResult: Sendable {
         self.profile = profile
         self.ruleAnalysisSnapshot = ruleAnalysisSnapshot
         self.lifecycleReduction = lifecycleReduction
+        self.repositoryEvidenceReport = repositoryEvidenceReport
     }
 }

@@ -39,7 +39,15 @@ let package = Package(
         .target(
             name: "SwiftDebtKit",
             // The composition root converts engine-owned rule results into persisted lifecycle observations.
-            dependencies: ["SwiftDebtCore", "SwiftDebtSyntax", "SwiftDebtReporting", "SwiftDebtLifecycle"],
+            dependencies: [
+                "SwiftDebtCore",
+                "SwiftDebtSyntax",
+                "SwiftDebtReporting",
+                "SwiftDebtLifecycle",
+                .product(name: "SwiftSyntax", package: "swift-syntax"),
+                .product(name: "SwiftParser", package: "swift-syntax"),
+                .product(name: "SwiftParserDiagnostics", package: "swift-syntax"),
+            ],
             // Keep the catalog in the target for ordinary DocC and Swift Package Index builds.
             resources: [.copy("SwiftDebtKit.docc")]
         ),
@@ -69,6 +77,7 @@ let package = Package(
         .testTarget(
             name: "SwiftDebtKitTests",
             dependencies: ["SwiftDebtCore", "SwiftDebtKit", "SwiftDebtReporting"],
+            exclude: ["Fixtures/RepositoryAnalysis"],
             resources: [.process("Fixtures")]
         ),
         .testTarget(

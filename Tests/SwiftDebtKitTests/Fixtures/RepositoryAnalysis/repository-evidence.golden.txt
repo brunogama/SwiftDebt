@@ -1,0 +1,32 @@
+REPOSITORY EVIDENCE (EXPERIMENTAL)
+Status: complete | rules: 2 | files: 3 | detections: 2
+Snapshot: sha256:477a60411ee25fc0ce5a5a68162c1bff32efdcabb52c827f31bdd9c27cee77a5
+Detections describe only this analyzed source snapshot and are not durable Findings or lifecycle state.
+Rule: swiftdebt.refactoring.data-clumps@1 | Data Clumps | qualification: Research | outcome: complete
+  Capability [exact-data-clump-enumeration]: available via SwiftSyntax 602.0.0
+Models.swift:1:1: warning: [swiftdebt.refactoring.data-clumps@1] 3 compatible elements recur across 3 declaration units.
+  Predicate: Observed 3 shared elements in 3 units; required at least 3 elements in 2 units.
+  Evidence [structural/shared-elements]: countryCode: String, customerID: String, postalCode: String
+  Evidence [metric/occurrence-count]: 3
+  Compared units:
+    - nominal-properties Workspace.DeliveryAddress at Models.swift:1:1
+    - function-parameters Workspace.scheduleDelivery at Operations.swift:1:1
+    - function-parameters Workspace.quoteDelivery at Operations.swift:9:1
+  Limitation: Type compatibility is exact normalized syntax, not compiler-resolved type identity.
+  Limitation: Equal names and type spellings can represent unrelated concepts in different binding contexts.
+  Change: Introduce a parameter object or value type that owns this repeated group.
+  Read: https://brunogama.github.io/SwiftDebt/documentation/swiftdebtkit/dataclumps
+Rule: swiftdebt.refactoring.repeated-switches@1 | Repeated Switches | qualification: Research | outcome: complete
+  Capability [exact-repeated-switch-enumeration]: available via SwiftSyntax 602.0.0
+Switches.swift:5:9: warning: [swiftdebt.refactoring.repeated-switches@1] The same 2-branch switch shape recurs 2 times for mode.
+  Predicate: Observed 2 switches with the same simple discriminator and ordered case labels; required at least 2.
+  Evidence [syntax/textual-scope]: Workspace.FulfillmentCoordinator
+  Evidence [structural/discriminator]: mode
+  Evidence [structural/ordered-case-shape]: case.pickup: | case.delivery:
+  Compared units:
+    - switch-statement switch mode in Workspace.FulfillmentCoordinator at Switches.swift:5:9
+    - switch-statement switch mode in Workspace.FulfillmentCoordinator at Switches.swift:14:9
+  Limitation: Discriminator identity is exact syntax within a textual module/type scope, not compiler name binding.
+  Limitation: Case bodies do not participate in the dispatch-shape key.
+  Change: Centralize the dispatch or replace the repeated type/code distinction with polymorphic behavior.
+  Read: https://brunogama.github.io/SwiftDebt/documentation/swiftdebtkit/repeatedswitches

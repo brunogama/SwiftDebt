@@ -47,6 +47,7 @@ struct CLIOptions {
           --output PATH                  Write a report atomically instead of stdout.
           --profile-output PATH          Write machine-readable phase profiling JSON.
           --lifecycle-artifact PATH      Append an engine-owned Observation Snapshot to this artifact.
+          --repository-evidence PATH     Run experimental repository smells and write the schema 1 sidecar.
           --name NAME                    Performance budget name.
           --max-wall-clock-regression PERCENT
                                          Maximum accepted wall-clock regression.
@@ -120,7 +121,7 @@ struct CLIOptions {
         let valuedOptions: Set<String> = [
             "--config", "--format", "--output", "--profile-output", "--type-scope", "--scoring", "--jobs",
             "--manifest", "--stamp", "--exclude", "--threshold", "--lcov", "--debt-reference-time",
-            "--max-file-bytes", "--lifecycle-artifact",
+            "--max-file-bytes", "--lifecycle-artifact", "--repository-evidence",
         ]
         while index < arguments.count {
             let argument = arguments[index]
@@ -228,7 +229,8 @@ struct CLIOptions {
                 profileOutputPath: values["--profile-output"],
                 pluginEvidenceLimitations: pluginEvidenceLimitations,
                 maximumFileBytes: maximumFileBytes,
-                lifecycleArtifactPath: values["--lifecycle-artifact"]
+                lifecycleArtifactPath: values["--lifecycle-artifact"],
+                repositoryEvidenceOutputPath: values["--repository-evidence"]
             ),
             interactiveDebt: interactiveDebt
         )

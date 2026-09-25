@@ -29,6 +29,19 @@ Run the analyzer with a bounded parser job count and write a deterministic JSON 
   --output swift-debt.json
 ```
 
+Opt into the experimental R2 repository rules with a separate schema 1
+evidence artifact:
+
+```sh
+.build/release/swift-debt analyze /path/to/project \
+  --repository-evidence .swift-debt/repository-evidence.json
+```
+
+Text output explains repository Detections inline. `--format json` remains the
+released syntax-only schema 2 and writes repository evidence only to the named
+sidecar. Data Clumps and Repeated Switches remain Research until the published
+R2 qualification gates pass.
+
 Use `text`, `json`, `csv`, `html`, or `diagnostics` for metric reports. Add a `.swift-debt.json` file at the analysis root, or pass `--config`, when you need repeatable exclusions, thresholds, or scoring settings.
 
 ---
