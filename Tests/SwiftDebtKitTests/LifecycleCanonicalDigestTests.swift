@@ -36,5 +36,10 @@ struct LifecycleCanonicalDigestTests {
                 SourceUnit(path: "Sources/Renamed.swift", module: first.module, content: first.content), second,
             ]) != digest
         )
+        #expect(
+            try LifecycleCanonicalDigest.sourceUnits([
+                SourceUnit(path: first.path, module: "OtherModule", content: first.content), second,
+            ]) != digest
+        )
     }
 }

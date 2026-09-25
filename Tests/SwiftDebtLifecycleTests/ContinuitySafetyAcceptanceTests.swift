@@ -3,6 +3,35 @@ import Testing
 
 @Suite("R3 conservative continuity acceptance")
 struct ContinuitySafetyAcceptanceTests {
+    @Test("A resolved Finding keeps verified absence when a later Detection is unresolved")
+    func resolvedFindingDoesNotReceiveAmbiguousEvent() throws {
+        let fixture = try TemporaryLifecycleArtifact()
+        let store = LifecycleArtifactStore(artifactURL: fixture.url)
+        let first = try makeObservation(
+            id: "resolved-prior", sequence: 1,
+            rules: [LifecycleRuleV1(mode: .committed(1))]
+        )
+        let absent = try makeObservation(
+            id: "resolved-absence", sequence: 2, predecessor: "resolved-prior",
+            rules: [LifecycleRuleV1(mode: .committed(0))]
+        )
+        let later = try makeObservation(
+            id: "resolved-later", sequence: 3, predecessor: "resolved-absence",
+            rules: [LifecycleRuleV1(mode: .committed(1))]
+        )
+
+        _ = try store.ingest(first)
+        _ = try store.ingest(absent)
+        _ = try store.ingest(later)
+        let artifact = try store.load()
+        let finding = try #require(artifact.findings.first)
+
+        #expect(finding.lifecycleState == .resolved)
+        #expect(finding.evidenceState == .verifiedAbsent)
+        #expect(finding.events.map(\.transition.kind) == [.opened, .resolved])
+        #expect(artifact.unresolvedDetections.count == 1)
+    }
+
     @Test("AT-5 one prior Detection copied to two successors remains ambiguous")
     func oneToManyRemainsAmbiguous() throws {
         let fixture = try TemporaryLifecycleArtifact()

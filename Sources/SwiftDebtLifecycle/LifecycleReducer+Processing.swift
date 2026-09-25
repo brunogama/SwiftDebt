@@ -77,6 +77,7 @@ extension LifecycleReducer {
 
         for candidate in candidates {
             guard let index = artifact.findings.firstIndex(where: { $0.id == candidate.id }) else { continue }
+            guard candidate.lifecycleState == .open else { continue }
             let transition: LifecycleTransition
             if detections.contains(where: { $0.rule.semanticRevision == candidate.rule.semanticRevision }) {
                 transition = .continuityAmbiguous(
@@ -138,6 +139,7 @@ extension LifecycleReducer {
                 )
             )
         case .unverified(let reasons):
+            guard finding.lifecycleState == .open else { return }
             let transition = LifecycleTransition.unverified(reasons)
             try artifact.findings[index].append(
                 LifecycleEvent(

@@ -57,6 +57,10 @@ struct LifecycleAnalysisCapture: Sendable {
         }
         if !exclusions.isEmpty { limitations.append("configured exclusions narrowed source coverage") }
         if selection.skippedSymbolicLinks { limitations.append("symbolic-link entries were not followed") }
+        if selection.skippedPackageManifest { limitations.append("Package.swift was excluded from source coverage") }
+        if selection.skippedSourceDirectories {
+            limitations.append("source directories were skipped by discovery policy")
+        }
         switch gitSnapshot {
         case .available(let repositoryRoot, _, _, _, _):
             if repositoryRoot != selection.root.path {

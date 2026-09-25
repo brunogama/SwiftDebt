@@ -47,19 +47,16 @@ final class TemporaryLifecycleGitRepository {
     }
 
     func gitOutput(_ arguments: [String]) throws -> String {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = ["git", "-C", repository.path] + arguments
-        let output = Pipe()
-        process.standardOutput = output
-        process.standardError = output
-        try process.run()
-        process.waitUntilExit()
-        let data = output.fileHandleForReading.readDataToEndOfFile()
-        guard process.terminationStatus == 0 else {
-            throw LifecycleGitFixtureError(message: String(decoding: data, as: UTF8.self))
+        let result = try runLifecycleProcess(
+            executable: URL(fileURLWithPath: "/usr/bin/env"),
+            arguments: ["git", "-C", repository.path] + arguments,
+            directory: repository,
+            mergeStandardError: true
+        )
+        guard result.status == 0 else {
+            throw LifecycleGitFixtureError(message: result.standardOutput)
         }
-        return String(decoding: data, as: UTF8.self)
+        return result.standardOutput
     }
 }
 

@@ -4,6 +4,15 @@ import Testing
 
 @Suite("R3 read-only CLI acceptance")
 struct LifecycleCLIWorkflowTests {
+    @Test("Lifecycle CLI rejects duplicate format options")
+    func duplicateFormatFails() throws {
+        let result = try runLifecycleCLI([
+            "lifecycle", "inventory", "missing.json", "--format", "text", "--format=json",
+        ])
+        #expect(result.status == 2)
+        #expect(result.standardError.contains("Duplicate option: --format"))
+    }
+
     @Test("Persisted lifecycle artifact supports inventory, explanation, and snapshot inspection")
     func readOnlyCommandsInspectPersistedEvidence() throws {
         let fixture = try TemporaryLifecycleArtifact()

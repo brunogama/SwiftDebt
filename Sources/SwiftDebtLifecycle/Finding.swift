@@ -69,7 +69,11 @@ public struct Finding: Codable, Equatable, Sendable {
                 }
                 state = .resolved
             case .unverified, .continuityAmbiguous:
-                break
+                guard state == .open else {
+                    throw LifecycleContractError.invalidArtifact(
+                        "Finding \(id) cannot add uncertain evidence after verified resolution."
+                    )
+                }
             }
         }
     }

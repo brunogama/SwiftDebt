@@ -34,6 +34,7 @@ extension CLIOptions {
         }
         var positional: [String] = []
         var format = LifecycleReadFormat.text
+        var sawFormat = false
         var index = 1
         var literal = false
         while index < arguments.count {
@@ -44,20 +45,24 @@ extension CLIOptions {
                 continue
             }
             if !literal && argument.hasPrefix("--format=") {
+                guard !sawFormat else { throw CLIError("Duplicate option: --format") }
                 let value = String(argument.dropFirst("--format=".count))
                 guard let parsed = LifecycleReadFormat(rawValue: value) else {
                     throw CLIError("Invalid lifecycle format: \(value)")
                 }
                 format = parsed
+                sawFormat = true
                 continue
             }
             if !literal && argument == "--format" {
+                guard !sawFormat else { throw CLIError("Duplicate option: --format") }
                 guard index < arguments.count,
                     let parsed = LifecycleReadFormat(rawValue: arguments[index])
                 else {
                     throw CLIError("Lifecycle format must be text or json")
                 }
                 format = parsed
+                sawFormat = true
                 index += 1
                 continue
             }

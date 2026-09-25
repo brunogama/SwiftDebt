@@ -73,6 +73,11 @@ struct LifecycleObservationIngestor: Sendable {
             return existing.provenance.lineage
         }
         guard let artifact, !artifact.snapshots.isEmpty else {
+            if case .available(_, _, let state, _, _) = gitSnapshot, state != .clean {
+                throw LifecycleAnalysisError.unorderedSnapshot(
+                    "a dirty working tree cannot seed an extendable lifecycle lineage."
+                )
+            }
             return try LineagePosition(
                 lineageID: LineageID("lineage-\(snapshotID.rawValue.dropFirst("snapshot-".count))"),
                 sequence: 1

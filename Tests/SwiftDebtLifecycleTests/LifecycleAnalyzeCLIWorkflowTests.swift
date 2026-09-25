@@ -105,6 +105,43 @@ struct LifecycleAnalyzeCLIWorkflowTests {
         #expect(try Data(contentsOf: fixture.artifact) == original)
     }
 
+    @Test("A dirty initial Git snapshot cannot seed an unextendable lineage")
+    func dirtyInitialSnapshotFailsClosed() throws {
+        let fixture = try TemporaryLifecycleGitRepository()
+        _ = try fixture.commit(source: Self.detectedSource, message: "add forced try")
+        try fixture.write(source: Self.resolvedSource)
+
+        let result = try analyze(fixture)
+
+        #expect(result.status == 2)
+        #expect(result.standardError.contains("dirty working tree cannot seed"))
+        #expect(!FileManager.default.fileExists(atPath: fixture.artifact.path))
+    }
+
+    @Test("A skipped Package.swift makes repository coverage partial")
+    func skippedPackageManifestDoesNotProveResolution() throws {
+        let fixture = try TemporaryLifecycleGitRepository()
+        try fixture.writeFile(relativePath: "Package.swift", content: "let omitted = try! load()\n")
+        try fixture.runGit(["add", "Package.swift"])
+        _ = try fixture.commit(source: Self.detectedSource, message: "add sources")
+
+        #expect(try analyze(fixture).status == 0)
+        let initial = try LifecycleArtifactStore(artifactURL: fixture.artifact).load()
+        let scope = try #require(initial.snapshots.first?.provenance.scope)
+        guard case .partial(let reason) = scope else {
+            Issue.record("Expected partial scope when Package.swift is skipped")
+            return
+        }
+        #expect(reason.message.contains("Package.swift"))
+
+        _ = try fixture.commit(source: Self.resolvedSource, message: "remove source violation")
+        #expect(try analyze(fixture).status == 0)
+        let artifact = try LifecycleArtifactStore(artifactURL: fixture.artifact).load()
+        let finding = try #require(artifact.findings.first)
+        #expect(finding.lifecycleState == .open)
+        #expect(finding.evidenceState == .unverified)
+    }
+
     @Test("A tracked report output remains visible to Git provenance")
     func trackedOutputIsNotExcluded() throws {
         let fixture = try TemporaryLifecycleGitRepository()

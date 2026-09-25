@@ -16,6 +16,8 @@ struct SourceDiscovery {
         let entries: [SourceManifest.Entry]
         let kind: LifecycleSelectionKind
         let skippedSymbolicLinks: Bool
+        let skippedPackageManifest: Bool
+        let skippedSourceDirectories: Bool
     }
     private let ignoredDirectories: Set<String> = [
         ".git", ".build", ".swiftpm", "Pods", "Carthage", "node_modules", ".swift-debt",
@@ -58,7 +60,9 @@ struct SourceDiscovery {
                 root: root,
                 entries: entries.sorted { $0.path < $1.path },
                 kind: .manifest,
-                skippedSymbolicLinks: false
+                skippedSymbolicLinks: false,
+                skippedPackageManifest: false,
+                skippedSourceDirectories: false
             )
         }
         let input = URL(fileURLWithPath: request.path).standardizedFileURL
@@ -71,7 +75,12 @@ struct SourceDiscovery {
             let entries =
                 isExcluded(relativePath(input, root: root), excludes: excludes)
                 ? [] : [SourceManifest.Entry(path: input.path, module: "Workspace")]
-            return Selection(root: root, entries: entries, kind: .file, skippedSymbolicLinks: false)
+            return Selection(
+                root: root, entries: entries, kind: .file,
+                skippedSymbolicLinks: false,
+                skippedPackageManifest: false,
+                skippedSourceDirectories: false
+            )
         }
         var enumerationError: (any Error)?
         guard
@@ -86,6 +95,8 @@ struct SourceDiscovery {
         else { throw WorkspaceError("Unable to enumerate \(root.path)") }
         var entries: [SourceManifest.Entry] = []
         var skippedSymbolicLinks = false
+        var skippedPackageManifest = false
+        var skippedSourceDirectories = false
         let stampPath = request.stampPath.map {
             canonicalPath(URL(fileURLWithPath: $0).standardizedFileURL.resolvingSymlinksInPath())
         }
@@ -97,6 +108,9 @@ struct SourceDiscovery {
                 continue
             }
             if values.isDirectory == true && ignoredDirectories.contains(url.lastPathComponent) {
+                if ![".git", ".swiftpm", ".swift-debt"].contains(url.lastPathComponent) {
+                    skippedSourceDirectories = true
+                }
                 enumerator.skipDescendants()
                 continue
             }
@@ -104,8 +118,11 @@ struct SourceDiscovery {
                 enumerator.skipDescendants()
                 continue
             }
-            guard values.isRegularFile == true, url.pathExtension == "swift", url.lastPathComponent != "Package.swift"
-            else { continue }
+            guard values.isRegularFile == true, url.pathExtension == "swift" else { continue }
+            if url.lastPathComponent == "Package.swift" {
+                skippedPackageManifest = true
+                continue
+            }
             if let stampPath, canonicalPath(url) == stampPath { continue }
             entries.append(SourceManifest.Entry(path: url.path, module: "Workspace"))
         }
@@ -114,7 +131,9 @@ struct SourceDiscovery {
             root: root,
             entries: entries.sorted { $0.path < $1.path },
             kind: .directory,
-            skippedSymbolicLinks: skippedSymbolicLinks
+            skippedSymbolicLinks: skippedSymbolicLinks,
+            skippedPackageManifest: skippedPackageManifest,
+            skippedSourceDirectories: skippedSourceDirectories
         )
     }
 

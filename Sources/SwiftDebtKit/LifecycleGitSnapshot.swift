@@ -35,9 +35,18 @@ struct LifecycleGitSnapshotProvider: Sendable {
 
     func capture(root: URL, excludingGeneratedOutputs outputURLs: [URL]) throws -> LifecycleGitSnapshot {
         let topLevel = run(["rev-parse", "--show-toplevel"], root: root)
-        guard topLevel.exitCode == 0, !topLevel.timedOut else { return .unavailable }
+        guard topLevel.exitCode == 0, !topLevel.timedOut else {
+            if !topLevel.timedOut, topLevel.exitCode == 128,
+                topLevel.stderr.contains("not a git repository")
+            {
+                return .unavailable
+            }
+            throw LifecycleAnalysisError.gitInspectionFailed(diagnosticText(topLevel))
+        }
         let repositoryRoot = topLevel.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !repositoryRoot.isEmpty else { return .unavailable }
+        guard !repositoryRoot.isEmpty else {
+            throw LifecycleAnalysisError.gitInspectionFailed("Git returned an empty repository root.")
+        }
         let repositoryURL = URL(fileURLWithPath: repositoryRoot).standardizedFileURL.resolvingSymlinksInPath()
 
         let revisionResult = try require(["rev-parse", "--verify", "HEAD^{commit}"], root: repositoryURL)

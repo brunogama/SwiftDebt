@@ -8,20 +8,15 @@ struct LifecycleCLIRunResult {
 }
 
 func runLifecycleCLI(_ arguments: [String]) throws -> LifecycleCLIRunResult {
-    let process = Process()
-    process.executableURL = try lifecycleExecutableURL()
-    process.arguments = arguments
-    process.currentDirectoryURL = repositoryRoot
-    let standardOutput = Pipe()
-    let standardError = Pipe()
-    process.standardOutput = standardOutput
-    process.standardError = standardError
-    try process.run()
-    process.waitUntilExit()
+    let result = try runLifecycleProcess(
+        executable: lifecycleExecutableURL(),
+        arguments: arguments,
+        directory: repositoryRoot
+    )
     return LifecycleCLIRunResult(
-        status: process.terminationStatus,
-        standardOutput: String(decoding: standardOutput.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self),
-        standardError: String(decoding: standardError.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+        status: result.status,
+        standardOutput: result.standardOutput,
+        standardError: result.standardError
     )
 }
 
@@ -31,7 +26,12 @@ private let repositoryRoot = URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent()
 
 private func lifecycleExecutableURL() throws -> URL {
-    let direct = repositoryRoot.appendingPathComponent(".build/debug/swift-debt")
+    #if DEBUG
+        let configuration = "debug"
+    #else
+        let configuration = "release"
+    #endif
+    let direct = repositoryRoot.appendingPathComponent(".build/\(configuration)/swift-debt")
     if FileManager.default.isExecutableFile(atPath: direct.path) { return direct }
     let build = repositoryRoot.appendingPathComponent(".build")
     guard let enumerator = FileManager.default.enumerator(at: build, includingPropertiesForKeys: nil) else {
@@ -40,7 +40,7 @@ private func lifecycleExecutableURL() throws -> URL {
     let matches = enumerator.compactMap { item -> URL? in
         guard let url = item as? URL,
             url.lastPathComponent == "swift-debt",
-            url.path.contains("/debug/"),
+            url.path.contains("/\(configuration)/"),
             FileManager.default.isExecutableFile(atPath: url.path)
         else { return nil }
         return url

@@ -12,7 +12,7 @@ let package = Package(
     ],
     products: [
         .executable(name: "swift-debt", targets: ["swift-debt"]),
-        .library(name: "SwiftDebtKit", targets: ["SwiftDebtKit", "SwiftDebtCore"]),
+        .library(name: "SwiftDebtKit", targets: ["SwiftDebtKit", "SwiftDebtCore", "SwiftDebtLifecycle"]),
         .library(name: "SwiftDebtLifecycle", targets: ["SwiftDebtLifecycle"]),
         .plugin(name: "SwiftDebtCommandPlugin", targets: ["SwiftDebtCommandPlugin"]),
         .plugin(name: "SwiftDebtBuildPlugin", targets: ["SwiftDebtBuildPlugin"]),
