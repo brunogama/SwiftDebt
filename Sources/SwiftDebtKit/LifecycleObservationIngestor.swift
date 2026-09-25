@@ -44,7 +44,9 @@ struct LifecycleObservationIngestor: Sendable {
             configuration: configuration,
             capabilities: capabilities,
             engineVersion: engineVersion,
-            sourceRenames: capture.sourceRenames
+            sourceSelection: capture.sourceSelection,
+            sourceRenames: capture.sourceRenames,
+            sourceDeletions: capture.sourceDeletions
         )
         let store = LifecycleArtifactStore(artifactURL: artifactURL, generatorVersion: engineVersion)
         return try store.ingest { artifact in
@@ -62,7 +64,9 @@ struct LifecycleObservationIngestor: Sendable {
                     capabilities: capabilities,
                     engineVersion: engineVersion,
                     lineage: lineage,
-                    sourceRenames: capture.sourceRenames
+                    sourceSelection: capture.sourceSelection,
+                    sourceRenames: capture.sourceRenames,
+                    sourceDeletions: capture.sourceDeletions
                 ),
                 analysis: analysis
             )
@@ -78,7 +82,7 @@ struct LifecycleObservationIngestor: Sendable {
             return existing.provenance.lineage
         }
         guard let artifact, !artifact.snapshots.isEmpty else {
-            if case .available(_, _, let state, _, _, _) = gitSnapshot, state != .clean {
+            if case .available(_, _, let state, _, _, _, _) = gitSnapshot, state != .clean {
                 throw LifecycleAnalysisError.unorderedSnapshot(
                     "a dirty working tree cannot seed an extendable lifecycle lineage."
                 )
@@ -89,7 +93,7 @@ struct LifecycleObservationIngestor: Sendable {
             )
         }
 
-        guard case .available(_, let revision, let state, let parents, _, _) = gitSnapshot else {
+        guard case .available(_, let revision, let state, let parents, _, _, _) = gitSnapshot else {
             throw LifecycleAnalysisError.unorderedSnapshot(
                 "a non-Git successor has no engine-validated predecessor relationship."
             )

@@ -15,6 +15,12 @@ extension ObservationSnapshot {
             }
             return lhs.sourcePath.rawValue < rhs.sourcePath.rawValue
         }
+        let rules = analysis.ruleDescriptors.map {
+            SnapshotRule(
+                identity: $0.identity,
+                semanticRevision: $0.semanticRevision
+            )
+        }
 
         var observedDetections: [ObservedDetection] = []
         var atomicObservations: [AtomicObservation] = []
@@ -84,6 +90,7 @@ extension ObservationSnapshot {
         try self.init(
             id: id,
             provenance: provenance,
+            rules: rules,
             sources: sources,
             atomicObservations: atomicObservations,
             detections: observedDetections

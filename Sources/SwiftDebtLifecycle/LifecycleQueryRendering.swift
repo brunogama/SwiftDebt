@@ -44,6 +44,8 @@ extension LifecycleReadService {
         }
         for unresolved in report.unresolvedDetections {
             lines.append("Unresolved Detection \(unresolved.detectionID.rawValue)")
+            let candidates = unresolved.candidateFindingIDs.map(\.rawValue).joined(separator: ", ")
+            lines.append("  Candidate Findings: \(candidates)")
             lines += unresolved.reasons.map { "  \($0.code): \($0.message)" }
         }
         for conclusion in report.introductionConclusions {
@@ -80,8 +82,27 @@ extension LifecycleReadService {
             "Atomic observations complete: \(snapshot.isAtomicallyComplete)",
             "Repository absence supported: \(snapshot.supportsRepositoryAbsence)",
         ]
+        if let selection = snapshot.provenance.sourceSelection {
+            lines.append(
+                "Source selection: \(selection.kind.rawValue) root="
+                    + (selection.repositoryRelativeRoot?.rawValue ?? ".")
+            )
+            lines += selection.excludedPathPrefixes.map {
+                "Excluded source prefix: \($0.rawValue)"
+            }
+        }
         lines += snapshot.provenance.capabilities.map {
             "Capability \($0.name): \(renderCapabilityState($0.state))"
+        }
+        lines += snapshot.rules.map {
+            "Selected rule: \($0.identity) semantic-revision=\($0.semanticRevision.rawValue)"
+        }
+        lines += snapshot.provenance.sourceRenames.map {
+            "Renamed SourceUnit: \($0.priorSourcePath.rawValue) -> \($0.currentSourcePath.rawValue) "
+                + "(\($0.similarityPercentage)%)"
+        }
+        lines += snapshot.provenance.sourceDeletions.map {
+            "Deleted SourceUnit: \($0.priorSourcePath.rawValue)"
         }
         lines += snapshot.atomicObservations.map {
             "\($0.rule.identity) \($0.sourcePath.rawValue) \($0.outcome.kind.rawValue)"

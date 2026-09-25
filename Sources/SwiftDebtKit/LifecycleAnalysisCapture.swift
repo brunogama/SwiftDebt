@@ -15,7 +15,9 @@ struct LifecycleAnalysisCapture: Sendable {
     let selectionKind: LifecycleSelectionKind
     let exclusions: [String]
     let maximumFileBytes: Int
+    let sourceSelection: SourceSelectionEvidence?
     let sourceRenames: [SourceRenameEvidence]
+    let sourceDeletions: [SourceDeletionEvidence]
 
     init(
         selection: SourceDiscovery.Selection,
@@ -34,11 +36,18 @@ struct LifecycleAnalysisCapture: Sendable {
         self.selectionKind = selection.kind
         self.exclusions = Self.normalized(exclusions)
         self.maximumFileBytes = maximumFileBytes
+        self.sourceSelection = try Self.sourceSelection(
+            selection: selection,
+            exclusions: exclusions,
+            gitSnapshot: gitAfterRead
+        )
         switch gitAfterRead {
-        case .available(_, _, _, _, _, let sourceRenames):
+        case .available(_, _, _, _, _, let sourceRenames, let sourceDeletions):
             self.sourceRenames = sourceRenames
+            self.sourceDeletions = sourceDeletions
         case .unavailable:
             self.sourceRenames = []
+            self.sourceDeletions = []
         }
         self.scope = try Self.scope(
             selection: selection,
@@ -49,6 +58,50 @@ struct LifecycleAnalysisCapture: Sendable {
 
     private static func normalized(_ exclusions: [String]) -> [String] {
         Set(exclusions.map { $0.hasSuffix("/") ? String($0.dropLast()) : $0 }).sorted()
+    }
+
+    private static func sourceSelection(
+        selection: SourceDiscovery.Selection,
+        exclusions: [String],
+        gitSnapshot: LifecycleGitSnapshot
+    ) throws -> SourceSelectionEvidence? {
+        guard case .available(let repositoryRoot, _, _, _, _, _, _) = gitSnapshot else {
+            return nil
+        }
+        let repositoryURL = URL(fileURLWithPath: repositoryRoot).standardizedFileURL.resolvingSymlinksInPath()
+        let selectionRoot = selection.root.standardizedFileURL.resolvingSymlinksInPath()
+        guard isWithin(selectionRoot, root: repositoryURL) else {
+            throw LifecycleAnalysisError.gitInspectionFailed(
+                "The selected source root is outside the captured Git repository."
+            )
+        }
+        let relativeRoot: SourcePath? =
+            selectionRoot.path == repositoryURL.path
+            ? nil
+            : try SourcePath(relativePath(selectionRoot, root: repositoryURL))
+        let canonicalExclusions = normalized(exclusions).compactMap { exclusion -> SourcePath? in
+            guard let path = try? SourcePath(exclusion), path.rawValue == exclusion else {
+                return nil
+            }
+            return path
+        }
+        let exclusionPaths = try canonicalExclusions.map { exclusion -> SourcePath in
+            let path =
+                relativeRoot.map { $0.rawValue + "/" + exclusion.rawValue }
+                ?? exclusion.rawValue
+            return try SourcePath(path)
+        }
+        let kind: SourceSelectionKind =
+            switch selection.kind {
+            case .directory: .directory
+            case .file: .file
+            case .manifest: .manifest
+            }
+        return try SourceSelectionEvidence(
+            kind: kind,
+            repositoryRelativeRoot: relativeRoot,
+            excludedPathPrefixes: exclusionPaths
+        )
     }
 
     private static func scope(
@@ -69,7 +122,7 @@ struct LifecycleAnalysisCapture: Sendable {
             limitations.append("source directories were skipped by discovery policy")
         }
         switch gitSnapshot {
-        case .available(let repositoryRoot, _, _, _, _, _):
+        case .available(let repositoryRoot, _, _, _, _, _, _):
             if repositoryRoot != selection.root.path {
                 limitations.append("the analysis root is below the Git repository root")
             }

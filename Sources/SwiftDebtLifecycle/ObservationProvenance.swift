@@ -27,7 +27,9 @@ public struct SnapshotProvenance: Codable, Equatable, Sendable {
     public let capabilities: [SnapshotCapability]
     public let engineVersion: String
     public let lineage: LineagePosition
+    public let sourceSelection: SourceSelectionEvidence?
     public let sourceRenames: [SourceRenameEvidence]
+    public let sourceDeletions: [SourceDeletionEvidence]
 
     public init(
         sourceIdentity: SnapshotSourceIdentity,
@@ -36,7 +38,9 @@ public struct SnapshotProvenance: Codable, Equatable, Sendable {
         capabilities: [SnapshotCapability] = [],
         engineVersion: String,
         lineage: LineagePosition,
-        sourceRenames: [SourceRenameEvidence] = []
+        sourceSelection: SourceSelectionEvidence? = nil,
+        sourceRenames: [SourceRenameEvidence] = [],
+        sourceDeletions: [SourceDeletionEvidence] = []
     ) throws {
         guard hasLifecycleContent(engineVersion) else {
             throw LifecycleContractError.invalidSnapshot(
@@ -48,6 +52,7 @@ public struct SnapshotProvenance: Codable, Equatable, Sendable {
             throw LifecycleContractError.invalidSnapshot("Capability names must be unique.")
         }
         let sortedRenames = sourceRenames.sorted(by: sourceRenameOrder)
+        let sortedDeletions = sourceDeletions.sorted(by: sourceDeletionOrder)
         guard Set(sortedRenames.map(\.priorSourcePath)).count == sortedRenames.count,
             Set(sortedRenames.map(\.currentSourcePath)).count == sortedRenames.count
         else {
@@ -55,10 +60,26 @@ public struct SnapshotProvenance: Codable, Equatable, Sendable {
                 "Git rename evidence must map unique prior and current SourceUnit paths."
             )
         }
-        if !sortedRenames.isEmpty, case .git = sourceIdentity {
-            // Git provenance may carry direct-parent rename evidence.
-        } else if !sortedRenames.isEmpty {
-            throw LifecycleContractError.invalidSnapshot("Source rename evidence requires Git source identity.")
+        guard Set(sortedDeletions.map(\.priorSourcePath)).count == sortedDeletions.count else {
+            throw LifecycleContractError.invalidSnapshot(
+                "Git deletion evidence must reference unique prior SourceUnit paths."
+            )
+        }
+        guard
+            Set(sortedRenames.map(\.priorSourcePath)).isDisjoint(
+                with: Set(sortedDeletions.map(\.priorSourcePath))
+            )
+        else {
+            throw LifecycleContractError.invalidSnapshot(
+                "A prior SourceUnit cannot be both renamed and deleted by one Git edge."
+            )
+        }
+        if !sortedRenames.isEmpty || !sortedDeletions.isEmpty {
+            guard case .git = sourceIdentity else {
+                throw LifecycleContractError.invalidSnapshot(
+                    "Source rename and deletion evidence require Git source identity."
+                )
+            }
         }
         self.sourceIdentity = sourceIdentity
         self.scope = scope
@@ -66,7 +87,9 @@ public struct SnapshotProvenance: Codable, Equatable, Sendable {
         self.capabilities = sortedCapabilities
         self.engineVersion = engineVersion
         self.lineage = lineage
+        self.sourceSelection = sourceSelection
         self.sourceRenames = sortedRenames
+        self.sourceDeletions = sortedDeletions
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -76,7 +99,9 @@ public struct SnapshotProvenance: Codable, Equatable, Sendable {
         case capabilities
         case engineVersion
         case lineage
+        case sourceSelection
         case sourceRenames
+        case sourceDeletions
     }
 
     public init(from decoder: any Decoder) throws {
@@ -89,9 +114,17 @@ public struct SnapshotProvenance: Codable, Equatable, Sendable {
                 capabilities: values.decode([SnapshotCapability].self, forKey: .capabilities),
                 engineVersion: values.decode(String.self, forKey: .engineVersion),
                 lineage: values.decode(LineagePosition.self, forKey: .lineage),
+                sourceSelection: values.decodeIfPresent(
+                    SourceSelectionEvidence.self,
+                    forKey: .sourceSelection
+                ),
                 sourceRenames: values.decodeIfPresent(
                     [SourceRenameEvidence].self,
                     forKey: .sourceRenames
+                ) ?? [],
+                sourceDeletions: values.decodeIfPresent(
+                    [SourceDeletionEvidence].self,
+                    forKey: .sourceDeletions
                 ) ?? []
             )
         } catch {

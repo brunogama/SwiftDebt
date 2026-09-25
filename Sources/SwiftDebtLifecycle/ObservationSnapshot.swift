@@ -3,6 +3,7 @@ import SwiftDebtCore
 public struct ObservationSnapshot: Codable, Equatable, Sendable {
     public let id: SnapshotID
     public let provenance: SnapshotProvenance
+    public let rules: [SnapshotRule]
     public let sources: [SourceObservation]
     public let atomicObservations: [AtomicObservation]
     public let detections: [ObservedDetection]
@@ -10,12 +11,14 @@ public struct ObservationSnapshot: Codable, Equatable, Sendable {
     package init(
         id: SnapshotID,
         provenance: SnapshotProvenance,
+        rules: [SnapshotRule],
         sources: [SourceObservation],
         atomicObservations: [AtomicObservation],
         detections: [ObservedDetection]
     ) throws {
         self.id = id
         self.provenance = provenance
+        self.rules = rules.sorted(by: Self.ruleOrder)
         self.sources = sources.sorted { $0.sourcePath.rawValue < $1.sourcePath.rawValue }
         self.atomicObservations = atomicObservations.sorted(by: Self.atomicOrder)
         self.detections = detections.sorted { $0.id.rawValue < $1.id.rawValue }
@@ -40,14 +43,16 @@ public struct ObservationSnapshot: Codable, Equatable, Sendable {
 
     private func validate() throws {
         try provenance.validate()
-        guard !sources.isEmpty else {
-            throw LifecycleContractError.invalidSnapshot("At least one SourceUnit is required.")
+        guard !rules.isEmpty else {
+            throw LifecycleContractError.invalidSnapshot("At least one rule must be selected.")
+        }
+        guard Set(rules.map(\.identity)).count == rules.count else {
+            throw LifecycleContractError.invalidSnapshot(
+                "Selected rules must have unique Rule Identities."
+            )
         }
         guard Set(sources.map(\.sourcePath)).count == sources.count else {
             throw LifecycleContractError.invalidSnapshot("SourceUnit paths must be unique.")
-        }
-        guard !atomicObservations.isEmpty else {
-            throw LifecycleContractError.invalidSnapshot("At least one Atomic Observation is required.")
         }
         guard Set(atomicObservations.map(\.id)).count == atomicObservations.count else {
             throw LifecycleContractError.invalidSnapshot("Atomic Observation IDs must be unique.")
@@ -60,10 +65,21 @@ public struct ObservationSnapshot: Codable, Equatable, Sendable {
         }
 
         let sourcePaths = Set(sources.map(\.sourcePath))
+        if let selection = provenance.sourceSelection {
+            let repositoryPaths = Set(sources.map { selection.repositoryPath(for: $0.sourcePath) })
+            guard
+                provenance.sourceDeletions.allSatisfy({
+                    !repositoryPaths.contains($0.priorSourcePath.rawValue)
+                })
+            else {
+                throw LifecycleContractError.invalidSnapshot(
+                    "A Git-deleted SourceUnit cannot remain in the selected source set."
+                )
+            }
+        }
         guard atomicObservations.allSatisfy({ sourcePaths.contains($0.sourcePath) }) else {
             throw LifecycleContractError.invalidSnapshot("Atomic Observations must reference selected SourceUnits.")
         }
-        let rules = Set(atomicObservations.map(\.rule))
         let expectedKeys = Set(
             rules.flatMap { rule in
                 sourcePaths.map { AtomicObservationKey(rule: rule, sourcePath: $0) }
@@ -145,65 +161,11 @@ public struct ObservationSnapshot: Codable, Equatable, Sendable {
         return lhs.sourcePath.rawValue < rhs.sourcePath.rawValue
     }
 
-    private enum CodingKeys: String, CodingKey {
-        case id
-        case provenance
-        case sources
-        case atomicObservations
-        case detections
+    private static func ruleOrder(_ lhs: SnapshotRule, _ rhs: SnapshotRule) -> Bool {
+        if lhs.identity.description != rhs.identity.description {
+            return lhs.identity.description < rhs.identity.description
+        }
+        return lhs.semanticRevision.rawValue < rhs.semanticRevision.rawValue
     }
 
-    public init(from decoder: any Decoder) throws {
-        let values = try decoder.container(keyedBy: CodingKeys.self)
-        do {
-            try self.init(
-                id: values.decode(SnapshotID.self, forKey: .id),
-                provenance: values.decode(SnapshotProvenance.self, forKey: .provenance),
-                sources: values.decode([SourceObservation].self, forKey: .sources),
-                atomicObservations: values.decode([AtomicObservation].self, forKey: .atomicObservations),
-                detections: values.decode([ObservedDetection].self, forKey: .detections)
-            )
-        } catch {
-            throw DecodingError.dataCorruptedError(
-                forKey: .id,
-                in: values,
-                debugDescription: String(describing: error)
-            )
-        }
-    }
-}
-
-extension SnapshotProvenance {
-    func validate() throws {
-        guard hasLifecycleContent(engineVersion) else {
-            throw LifecycleContractError.invalidSnapshot("Engine version must be nonblank.")
-        }
-        guard lineage.sequence > 0,
-            (lineage.sequence == 1) == (lineage.predecessorSnapshotID == nil)
-        else {
-            throw LifecycleContractError.invalidSnapshot("Invalid lineage position.")
-        }
-        guard Set(capabilities.map(\.name)).count == capabilities.count,
-            capabilities == capabilities.sorted(by: { $0.name < $1.name }),
-            capabilities.allSatisfy({ hasLifecycleContent($0.name) })
-        else {
-            throw LifecycleContractError.invalidSnapshot(
-                "Capability names must be nonblank, unique, and canonically ordered."
-            )
-        }
-        guard sourceRenames == sourceRenames.sorted(by: sourceRenameOrder),
-            Set(sourceRenames.map(\.priorSourcePath)).count == sourceRenames.count,
-            Set(sourceRenames.map(\.currentSourcePath)).count == sourceRenames.count
-        else {
-            throw LifecycleContractError.invalidSnapshot(
-                "Source rename evidence must be unique and canonically ordered."
-            )
-        }
-        if !sourceRenames.isEmpty, case .git = sourceIdentity {
-            return
-        }
-        guard sourceRenames.isEmpty else {
-            throw LifecycleContractError.invalidSnapshot("Source rename evidence requires Git source identity.")
-        }
-    }
 }

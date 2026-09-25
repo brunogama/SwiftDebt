@@ -9,13 +9,14 @@ enum LifecycleGitSnapshot: Equatable, Sendable {
         workingTreeState: SourceWorkingTreeState,
         parentRevisions: [GitRevisionID],
         statusDigest: String,
-        sourceRenames: [SourceRenameEvidence]
+        sourceRenames: [SourceRenameEvidence],
+        sourceDeletions: [SourceDeletionEvidence]
     )
     case unavailable
 
     func sourceIdentity(contentDigest: LifecycleDigest) -> SnapshotSourceIdentity {
         switch self {
-        case .available(_, let revision, let state, _, _, _):
+        case .available(_, let revision, let state, _, _, _, _):
             .git(revision: revision, workingTreeState: state, contentDigest: contentDigest)
         case .unavailable:
             .contentDigest(contentDigest)
@@ -64,13 +65,15 @@ struct LifecycleGitSnapshotProvider: Sendable {
         )
         let status = try require(statusArguments, root: repositoryURL)
         let sourceRenames = try parentRenames(parents: parents, root: repositoryURL)
+        let sourceDeletions = try parentDeletions(parents: parents, root: repositoryURL)
         return .available(
             repositoryRoot: repositoryURL.path,
             revision: revision,
             workingTreeState: status.isEmpty ? .clean : .modified,
             parentRevisions: parents,
             statusDigest: LifecycleSHA256.hexDigest(Data(status.utf8)),
-            sourceRenames: sourceRenames
+            sourceRenames: sourceRenames,
+            sourceDeletions: sourceDeletions
         )
     }
 
@@ -115,6 +118,34 @@ struct LifecycleGitSnapshotProvider: Sendable {
             )
         }
         return renames.sorted(by: sourceRenameOrder)
+    }
+
+    private func parentDeletions(parents: [GitRevisionID], root: URL) throws -> [SourceDeletionEvidence] {
+        guard parents.count == 1, let parent = parents.first else { return [] }
+        let output = try require(
+            [
+                "diff", "--name-status", "-z", "--find-renames", "--diff-filter=D",
+                parent.rawValue, "HEAD", "--",
+            ],
+            root: root
+        )
+        let fields = output.split(separator: "\0", omittingEmptySubsequences: true).map(String.init)
+        guard fields.count.isMultiple(of: 2) else {
+            throw LifecycleAnalysisError.gitInspectionFailed("Git returned malformed deletion evidence.")
+        }
+        var deletions: [SourceDeletionEvidence] = []
+        for index in stride(from: 0, to: fields.count, by: 2) {
+            guard fields[index] == "D" else {
+                throw LifecycleAnalysisError.gitInspectionFailed(
+                    "Git returned malformed deletion status \(fields[index])."
+                )
+            }
+            guard fields[index + 1].hasSuffix(".swift") else { continue }
+            deletions.append(
+                try SourceDeletionEvidence(priorSourcePath: SourcePath(fields[index + 1]))
+            )
+        }
+        return deletions.sorted(by: sourceDeletionOrder)
     }
 
     private func statusArguments(excluding outputURLs: [URL], repositoryRoot: URL) throws -> [String] {

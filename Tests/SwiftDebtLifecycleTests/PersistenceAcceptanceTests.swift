@@ -84,6 +84,27 @@ struct PersistenceAcceptanceTests {
         #expect(second.artifact.findings.flatMap(\.events).count == 2)
     }
 
+    @Test("Schema-1 snapshots derive selected rules from legacy Atomic Observations")
+    func snapshotsWithoutSelectedRulesRemainReadable() throws {
+        let fixture = try TemporaryLifecycleArtifact()
+        let store = LifecycleArtifactStore(artifactURL: fixture.url)
+        let snapshot = try makeObservation(
+            id: "legacy-rules-root",
+            sequence: 1,
+            rules: [LifecycleRuleV1(mode: .committed(1))]
+        )
+        _ = try store.ingest(snapshot)
+
+        var root = try artifactJSONObject(at: fixture.url)
+        var snapshots = try #require(root["snapshots"] as? [[String: Any]])
+        snapshots[0].removeValue(forKey: "rules")
+        root["snapshots"] = snapshots
+        try lifecycleJSONData(root).write(to: fixture.url, options: .atomic)
+
+        let loaded = try store.load()
+        #expect(loaded.snapshot(id: snapshot.id)?.rules == snapshot.rules)
+    }
+
     @Test("AT-24 unknown schema and broken references fail closed")
     func unreadableArtifactsAreRejectedWithoutReplacement() throws {
         let fixture = try TemporaryLifecycleArtifact()

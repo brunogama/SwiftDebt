@@ -28,6 +28,12 @@ struct ResolutionCoverageEvaluator {
                 )
             )
         }
+        let relocation = try assessRelocation(
+            finding: finding,
+            snapshot: snapshot,
+            artifact: artifact
+        )
+        blockers += relocation.blockers
         if !firstSnapshot.provenance.sourceIdentity.supportsComparison
             || !snapshot.provenance.sourceIdentity.supportsComparison
         {
@@ -73,13 +79,14 @@ struct ResolutionCoverageEvaluator {
             )
         }
 
-        let sameIdentity = snapshot.atomicObservations.filter { $0.rule.identity == finding.rule.identity }
-        let comparable = sameIdentity.filter { $0.rule == finding.rule }
-        if comparable.isEmpty {
+        let sameIdentityRules = snapshot.rules.filter { $0.identity == finding.rule.identity }
+        let hasComparableRule = sameIdentityRules.contains(finding.rule)
+        let comparable = snapshot.atomicObservations.filter { $0.rule == finding.rule }
+        if !hasComparableRule {
             blockers.append(
                 try LifecycleReason(
-                    code: sameIdentity.isEmpty ? "rule-omitted" : "semantic-revision-incomparable",
-                    message: sameIdentity.isEmpty
+                    code: sameIdentityRules.isEmpty ? "rule-omitted" : "semantic-revision-incomparable",
+                    message: sameIdentityRules.isEmpty
                         ? "The later snapshot omitted the Finding's rule."
                         : "The later snapshot has no compatible Semantic Revision."
                 )
@@ -118,13 +125,13 @@ struct ResolutionCoverageEvaluator {
         }
         return .verified(
             atomicObservationIDs: comparable.map(\.id).sorted { $0.rawValue < $1.rawValue },
-            reasons: [
+            reasons: ([
                 try LifecycleReason(
                     code: "complete-comparable-absence",
                     message: "Complete repository scope committed every comparable "
                         + "Atomic Observation with zero Detections."
                 )
-            ]
+            ] + relocation.proofReasons).sorted(by: lifecycleReasonOrder)
         )
     }
 

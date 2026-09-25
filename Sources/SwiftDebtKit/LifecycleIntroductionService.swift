@@ -66,6 +66,7 @@ public struct LifecycleIntroductionService: Sendable {
                 let workingTreeState,
                 _,
                 let statusDigest,
+                _,
                 _
             ) = gitSnapshot
         else {

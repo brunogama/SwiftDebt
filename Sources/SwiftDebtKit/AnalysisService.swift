@@ -97,7 +97,12 @@ public struct AnalysisService: Sendable {
             )
         }
         let report = try await Analyzer().analyze(
-            sources, options: options, jobs: request.jobs ?? configuration.jobs, phaseSink: profiler)
+            sources,
+            options: options,
+            jobs: request.jobs ?? configuration.jobs,
+            phaseSink: profiler,
+            allowsEmptySources: lifecycleArtifactURL != nil
+        )
         let debtOptions =
             request.debtAnalysisOptions ?? configuration.debtAnalysis
             ?? (request.enableDebtAnalysis || configuration.debtValidation != nil ? DebtAnalysisOptions() : nil)
