@@ -16,8 +16,12 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+from typing import Callable
 
-from r3_lifecycle_benchmark_support import PADDING_LINES, artifact_info, commit, fixture
+from r3_lifecycle_benchmark_support import (
+    PADDING_LINES, artifact_info, commit, fixture, largest_artifact_bytes,
+    validate_explanation, validate_incremental_artifact, validate_inventory,
+)
 
 TIERS = {"small": 10, "medium": 100, "large": 1_000}
 FIXTURE_VERSION = 1
@@ -39,16 +43,19 @@ def command(argv: list[str], *, cwd: Path | None = None, capture: bool = False) 
     return result.stdout.decode() if capture else ""
 
 
-def measured(argv: list[str]) -> dict[str, float | int]:
+def measured(
+    argv: list[str], *, validate_output: Callable[[str], None] | None = None
+) -> dict[str, float | int]:
     time_flag = "-l" if sys.platform == "darwin" else "-v"
     started = time.monotonic_ns()
     process = subprocess.Popen(
         ["/usr/bin/time", time_flag, *argv],
         env={**os.environ, "LC_ALL": "C"}, stdin=subprocess.DEVNULL,
-        stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, start_new_session=True,
+        stdout=subprocess.PIPE if validate_output else subprocess.DEVNULL,
+        stderr=subprocess.PIPE, start_new_session=True,
     )
     try:
-        _, stderr = process.communicate(timeout=COMMAND_TIMEOUT_SECONDS)
+        stdout, stderr = process.communicate(timeout=COMMAND_TIMEOUT_SECONDS)
     except subprocess.TimeoutExpired as error:
         try:
             os.killpg(process.pid, signal.SIGKILL)
@@ -60,6 +67,8 @@ def measured(argv: list[str]) -> dict[str, float | int]:
     output = stderr.decode(errors="replace")
     if process.returncode:
         raise RuntimeError(f"exit {process.returncode}: {' '.join(argv)}\n{output[-4000:]}")
+    if validate_output:
+        validate_output(stdout.decode("utf-8"))
     pattern = (r"(?m)^\s*(\d+)\s+maximum resident set size\s*$" if sys.platform == "darwin"
                else r"(?mi)^\s*Maximum resident set size \(kbytes\):\s*(\d+)\s*$")
     match = re.search(pattern, output)
@@ -128,12 +137,17 @@ def run_tier(binary: Path, source_count: int, runs: int, warmups: int) -> dict[s
                 raise RuntimeError("identical replay changed lifecycle artifact bytes")
             if index >= warmups:
                 samples["replay"].append(sample)
-        for name, arguments in (
-            ("inventory", [str(binary), "lifecycle", "inventory", str(artifact), "--format", "json"]),
-            ("explain", [str(binary), "lifecycle", "explain", str(artifact), finding_id, "--format", "json"]),
+        cold_snapshot_id = json.loads(cold_bytes)["snapshots"][0]["id"]
+        for name, arguments, validator in (
+            ("inventory", [str(binary), "lifecycle", "inventory", str(artifact), "--format", "json"],
+             lambda output: validate_inventory(output, findings, cold_snapshot_id)),
+            ("explain", [str(binary), "lifecycle", "explain", str(artifact), finding_id, "--format", "json"],
+             lambda output: validate_explanation(output, findings[0], cold_snapshot_id)),
         ):
             for index in range(warmups + runs):
-                sample = measured(arguments)
+                sample = measured(arguments, validate_output=validator)
+                if artifact.read_bytes() != cold_bytes:
+                    raise RuntimeError(f"{name} changed lifecycle artifact bytes")
                 if index >= warmups:
                     samples[name].append(sample)
         introduction = [str(binary), "lifecycle", "infer-introduction", str(artifact), finding_id,
@@ -159,11 +173,11 @@ def run_tier(binary: Path, source_count: int, runs: int, warmups: int) -> dict[s
         for index in range(warmups + runs):
             artifact.write_bytes(cold_bytes)
             sample = measured(analyze)
+            incremental_bytes = artifact.read_bytes()
             incremental_info = artifact_info(artifact)
+            validate_incremental_artifact(cold_bytes, incremental_bytes, source_count)
             if index >= warmups:
                 samples["incremental"].append(sample)
-        if incremental_info["snapshots"] != 2 or incremental_info["findings"] != source_count:
-            raise RuntimeError("incremental analysis did not preserve all Finding identities")
         return {
             "sourceFiles": source_count, "sourceLines": source_count * (PADDING_LINES + 2),
             "gitRevisions": {"absent": absent_revision, "detected": detected_revision,
@@ -217,7 +231,8 @@ def main() -> int:
         failures = []
         for tier_name, tier in result["tiers"].items():
             allowed = budgets["tiers"][tier_name]
-            if tier["incrementalArtifact"]["bytes"] > allowed["maximumArtifactBytes"]:
+            artifact_bytes = largest_artifact_bytes(tier)
+            if artifact_bytes > allowed["maximumArtifactBytes"]:
                 failures.append(f"{tier_name}: artifact exceeds byte limit")
             for name, metrics in tier["operations"].items():
                 if metrics["medianWallSeconds"] > allowed["maximumMedianWallSeconds"][name]:

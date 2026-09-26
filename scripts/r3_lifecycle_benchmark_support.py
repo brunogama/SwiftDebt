@@ -76,3 +76,60 @@ def artifact_info(path: Path) -> dict[str, object]:
         "introductionConclusions": len(document.get("introductionConclusions", [])),
         "eventKinds": kinds,
     }
+
+
+def validate_inventory(output: str, findings: list[dict], snapshot_id: str) -> None:
+    report = json.loads(output)
+    expected_ids = {finding["id"] for finding in findings}
+    reported = report.get("findings", [])
+    if (report.get("reportKind") != "swiftdebt-lifecycle-inventory"
+            or report.get("headSnapshotIDs") != [snapshot_id]
+            or len(reported) != len(findings)
+            or {finding.get("id") for finding in reported} != expected_ids
+            or report.get("unresolvedDetections") != []
+            or any(finding.get("lifecycleState") != "open"
+                   or finding.get("evidenceState") != "observed" for finding in reported)):
+        raise RuntimeError("inventory JSON did not describe the expected open Findings")
+
+
+def validate_explanation(output: str, finding: dict, snapshot_id: str) -> None:
+    report = json.loads(output)
+    reported = report.get("finding", {})
+    projections = report.get("projections", [])
+    if (report.get("reportKind") != "swiftdebt-lifecycle-finding-explanation"
+            or reported.get("id") != finding["id"]
+            or reported.get("events") != finding["events"]
+            or len(projections) != 1
+            or projections[0].get("snapshotID") != snapshot_id
+            or projections[0].get("finding", {}).get("id") != finding["id"]
+            or {snapshot.get("id") for snapshot in report.get("supportingSnapshots", [])}
+               != {snapshot_id}
+            or report.get("unresolvedDetections") != []):
+        raise RuntimeError("explanation JSON did not describe the selected Finding")
+
+
+def validate_incremental_artifact(cold_bytes: bytes, incremental_bytes: bytes, source_count: int) -> None:
+    cold = json.loads(cold_bytes)
+    incremental = json.loads(incremental_bytes)
+    old_findings = cold["findings"]
+    findings = incremental["findings"]
+    old_ids = {finding["id"] for finding in old_findings}
+    new_ids = {finding["id"] for finding in findings}
+    snapshots = incremental["snapshots"]
+    if (len(old_findings) != source_count or len(findings) != source_count
+            or len(new_ids) != source_count or new_ids != old_ids
+            or len(snapshots) != 2
+            or incremental["unresolvedDetections"] != []
+            or any([event["transition"]["kind"] for event in finding["events"]]
+                   != ["opened", "observed"] for finding in findings)):
+        raise RuntimeError("incremental analysis did not preserve uniquely observed Finding continuity")
+    shifted = [detection for detection in snapshots[-1]["detections"]
+               if detection["location"]["sourcePath"] == "Sources/File00000.swift"
+               and detection["rule"]["id"] == "force-try"]
+    if len(shifted) != 1 or shifted[0]["location"]["line"] != 3:
+        raise RuntimeError("incremental analysis did not observe the shifted ForceTry Detection")
+
+
+def largest_artifact_bytes(tier: dict) -> int:
+    return max(tier[name]["bytes"] for name in
+               ("coldArtifact", "incrementalArtifact", "introductionArtifact"))
