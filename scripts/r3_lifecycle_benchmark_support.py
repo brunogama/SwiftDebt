@@ -157,7 +157,8 @@ def validate_incremental_profile(profile_json: str, incremental_bytes: bytes, so
             or record["newFindings"] != 0
             or record["unresolvedDetections"] != len(artifact["unresolvedDetections"])
             or record["ambiguousGroups"] != 0
-            or not source_count <= record["crediblePairs"] <= record["evaluatedPairs"]
+            or record["evaluatedPairs"] != source_count * source_count
+            or record["crediblePairs"] != source_count
             or not 0 < record["reconciliationElapsedNanoseconds"]
             <= record["processingElapsedNanoseconds"]):
         raise RuntimeError("incremental profile does not match observed Finding continuity")

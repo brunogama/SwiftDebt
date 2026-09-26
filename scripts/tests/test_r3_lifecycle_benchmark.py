@@ -104,6 +104,7 @@ class R3LifecycleBenchmarkValidationTests(unittest.TestCase):
         )
         for key, value in (
             ("snapshotID", "wrong-snapshot"), ("candidates", 0),
+            ("evaluatedPairs", 999), ("crediblePairs", 999),
             ("uniqueContinuities", 0), ("reconciliationElapsedNanoseconds", 0),
         ):
             changed = dict(record, **{key: value})
