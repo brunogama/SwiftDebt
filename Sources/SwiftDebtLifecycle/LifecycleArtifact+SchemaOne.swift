@@ -71,9 +71,13 @@ extension LifecycleArtifact {
         processed: [SnapshotID],
         heads: [LineageHead]
     ) throws {
+        guard Set(snapshots.map(\.id)).count == snapshots.count,
+            Set(processed).count == processed.count
+        else {
+            throw LifecycleContractError.invalidArtifact("Schema 1 snapshot references are invalid.")
+        }
         let snapshotByID = Dictionary(uniqueKeysWithValues: snapshots.map { ($0.id, $0) })
-        guard snapshotByID.count == snapshots.count,
-            Set(processed).count == processed.count,
+        guard
             processed.allSatisfy({ snapshotByID[$0] != nil })
         else {
             throw LifecycleContractError.invalidArtifact("Schema 1 snapshot references are invalid.")
