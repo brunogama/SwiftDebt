@@ -181,6 +181,7 @@ def run_cli_sample(
         measured["comparableRepositoryCacheReportSHA256"] = (
             comparable_cache_report_sha256(activity)
         )
+        storage = activity["storage"]
         measured["repositoryCacheActivity"] = {
             "reportKind": activity["reportKind"],
             "schemaVersion": activity["schemaVersion"],
@@ -188,7 +189,13 @@ def run_cli_sample(
             "mode": activity["mode"],
             "disposition": activity["disposition"],
             "compatibility": activity["compatibility"],
-            "storage": activity["storage"],
+            "storage": {
+                "location": storage.get("location"),
+                "dataClasses": storage["dataClasses"],
+                "byteCount": storage["byteCount"],
+                "contentDigest": storage.get("contentDigest"),
+                "writePerformed": storage["writePerformed"],
+            },
             "selectedSourceCount": activity["selectedSourceCount"],
             "reusedSourceCount": activity["reusedSourceCount"],
             "recomputedSourceCount": activity["recomputedSourceCount"],

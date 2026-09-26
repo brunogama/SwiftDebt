@@ -64,6 +64,9 @@ def fake_cli_source(scenario, configuration, cache_compatibility):
         ],
         "networkRequestCount": expectation["networkRequestCount"],
     }
+    if expectation["mode"] == "disabled":
+        cache_activity["storage"].pop("location")
+        cache_activity["storage"].pop("contentDigest")
     return f"""#!/usr/bin/env python3
 import json
 import sys
