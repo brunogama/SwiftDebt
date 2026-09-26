@@ -126,6 +126,15 @@ public enum AtomicObservationOutcome: Equatable, Sendable {
         guard case .committed(let detectionIDs) = self else { return false }
         return detectionIDs.isEmpty
     }
+
+    var recordedReason: LifecycleReason? {
+        switch self {
+        case .committed:
+            nil
+        case .unsupported(let reason), .failed(let reason), .excluded(let reason), .notExecuted(let reason):
+            reason
+        }
+    }
 }
 
 extension AtomicObservationOutcome: Codable {

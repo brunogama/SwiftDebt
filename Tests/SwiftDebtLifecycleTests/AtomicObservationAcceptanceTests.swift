@@ -119,6 +119,6 @@ struct AtomicObservationAcceptanceTests {
             Issue.record("Expected an unverified event")
             return
         }
-        #expect(reasons.map(\.code) == ["atomic-observation-not-executed"])
+        #expect(reasons.map(\.code) == ["source-parse-failed"])
     }
 }

@@ -77,13 +77,17 @@ struct ResolutionCoverageEvaluator {
             comparable = []
         }
         for observation in comparable where !observation.outcome.provesAbsence {
-            blockers.append(
-                try LifecycleReason(
-                    code: "atomic-observation-\(observation.outcome.kind.rawValue)",
-                    message: "\(observation.rule.identity) did not prove absence for "
-                        + "\(observation.sourcePath.rawValue)."
+            if let reason = observation.outcome.recordedReason {
+                blockers.append(reason)
+            } else {
+                blockers.append(
+                    try LifecycleReason(
+                        code: "atomic-observation-\(observation.outcome.kind.rawValue)",
+                        message: "\(observation.rule.identity) did not prove absence for "
+                            + "\(observation.sourcePath.rawValue)."
+                    )
                 )
-            )
+            }
         }
         if snapshot.detections.contains(where: { $0.rule.identity == finding.rule.identity }) {
             blockers.append(
