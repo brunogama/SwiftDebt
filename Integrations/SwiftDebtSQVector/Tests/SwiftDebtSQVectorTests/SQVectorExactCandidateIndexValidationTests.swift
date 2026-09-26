@@ -29,14 +29,6 @@
                         value: String(repeating: "c", count: 64)
                     )
                 ),
-                try makeIdentity(
-                    sqVectorPackage: makeSQVectorPackageIdentity(version: "test-version-2")
-                ),
-                try makeIdentity(
-                    sqVectorPackage: makeSQVectorPackageIdentity(
-                        revision: String(repeating: "d", count: 40)
-                    )
-                ),
             ]
 
             for expected in incompatible {
@@ -68,6 +60,7 @@
             let reopened = try await SQVectorExactCandidateIndex.open(at: url, identity: identity)
             #expect(reopened.identity.providerVersion == .unavailable)
             #expect(reopened.identity.modelRevision == .unavailable)
+            #expect(reopened.identity.sqVectorPackage == .pinned)
             try await reopened.close()
         }
 
@@ -78,16 +71,6 @@
             }
             #expect(throws: LocalCandidateIndexError.emptyIdentityField(.modelRevision)) {
                 _ = try makeIdentity(modelRevision: .available(""))
-            }
-            #expect(
-                throws: LocalCandidateIndexError.emptyIdentityField(.sqVectorPackageVersion)
-            ) {
-                _ = try makeSQVectorPackageIdentity(version: " ")
-            }
-            #expect(
-                throws: LocalCandidateIndexError.invalidSQVectorPackageRevision("main")
-            ) {
-                _ = try makeSQVectorPackageIdentity(revision: "main")
             }
             #expect(
                 throws: LocalCandidateIndexError.invalidSourceSnapshotDigest("not-a-digest")

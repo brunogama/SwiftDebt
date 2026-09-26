@@ -53,8 +53,7 @@ public struct LocalCandidateIndexIdentity: Codable, Equatable, Sendable {
         dimensions: Int,
         metric: LocalCandidateDistanceMetric,
         projectionRevision: String,
-        sourceSnapshotDigest: LocalCandidateSourceSnapshotDigest,
-        sqVectorPackage: SQVectorPackageIdentity
+        sourceSnapshotDigest: LocalCandidateSourceSnapshotDigest
     ) throws {
         self.init(
             schemaVersion: Self.currentSchemaVersion,
@@ -67,7 +66,7 @@ public struct LocalCandidateIndexIdentity: Codable, Equatable, Sendable {
             metric: metric,
             projectionRevision: projectionRevision,
             sourceSnapshotDigest: sourceSnapshotDigest,
-            sqVectorPackage: sqVectorPackage
+            sqVectorPackage: .pinned
         )
         try validate()
     }

@@ -25,7 +25,8 @@
                                 projection_revision TEXT NOT NULL,
                                 source_snapshot_digest_algorithm TEXT NOT NULL,
                                 source_snapshot_digest_value TEXT NOT NULL,
-                                sqvector_package_version TEXT NOT NULL,
+                                sqvector_package_version_state TEXT NOT NULL,
+                                sqvector_package_version_value TEXT,
                                 sqvector_package_revision TEXT NOT NULL
                             )
                             """),
@@ -105,9 +106,10 @@
                         projection_revision,
                         source_snapshot_digest_algorithm,
                         source_snapshot_digest_value,
-                        sqvector_package_version,
+                        sqvector_package_version_state,
+                        sqvector_package_version_value,
                         sqvector_package_revision
-                    ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                 arguments: [
                     .integer(Int64(identity.schemaVersion)),
@@ -123,7 +125,8 @@
                     .text(identity.projectionRevision),
                     .text(identity.sourceSnapshotDigest.algorithm.rawValue),
                     .text(identity.sourceSnapshotDigest.value),
-                    .text(identity.sqVectorPackage.version),
+                    .text(identity.sqVectorPackage.version.storageState),
+                    identity.sqVectorPackage.version.storageValue.map { .text($0) } ?? .null,
                     .text(identity.sqVectorPackage.revision),
                 ]
             )
@@ -155,7 +158,9 @@
                     rawValue: digestAlgorithmValue
                 ),
                 let digestValue = row["source_snapshot_digest_value"]?.stringValue,
-                let sqVectorPackageVersion = row["sqvector_package_version"]?.stringValue,
+                let sqVectorPackageVersionState = row[
+                    "sqvector_package_version_state"
+                ]?.stringValue,
                 let sqVectorPackageRevision = row["sqvector_package_revision"]?.stringValue
             else {
                 throw LocalCandidateIndexError.corruptStorage
@@ -171,6 +176,10 @@
             let sourceSnapshotDigest = try LocalCandidateSourceSnapshotDigest(
                 algorithm: digestAlgorithm,
                 value: digestValue
+            )
+            let sqVectorPackageVersion = try versionIdentity(
+                state: sqVectorPackageVersionState,
+                value: row["sqvector_package_version_value"]?.stringValue
             )
             let sqVectorPackage = try SQVectorPackageIdentity(
                 version: sqVectorPackageVersion,

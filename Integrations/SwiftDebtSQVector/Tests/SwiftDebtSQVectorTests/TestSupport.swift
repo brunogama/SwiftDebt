@@ -10,8 +10,7 @@ func makeIdentity(
     dimensions: Int = 2,
     metric: LocalCandidateDistanceMetric = .cosine,
     projectionRevision: String = "projection-v1",
-    sourceSnapshotDigest: LocalCandidateSourceSnapshotDigest? = nil,
-    sqVectorPackage: SQVectorPackageIdentity? = nil
+    sourceSnapshotDigest: LocalCandidateSourceSnapshotDigest? = nil
 ) throws -> LocalCandidateIndexIdentity {
     try LocalCandidateIndexIdentity(
         namespace: namespace,
@@ -22,8 +21,7 @@ func makeIdentity(
         dimensions: dimensions,
         metric: metric,
         projectionRevision: projectionRevision,
-        sourceSnapshotDigest: sourceSnapshotDigest ?? makeSourceSnapshotDigest(),
-        sqVectorPackage: sqVectorPackage ?? makeSQVectorPackageIdentity()
+        sourceSnapshotDigest: sourceSnapshotDigest ?? makeSourceSnapshotDigest()
     )
 }
 
@@ -34,8 +32,8 @@ func makeSourceSnapshotDigest(
 }
 
 func makeSQVectorPackageIdentity(
-    version: String = "test-version-1",
-    revision: String = String(repeating: "b", count: 40)
+    version: LocalCandidateVersionIdentity = .unavailable,
+    revision: String = SQVectorPackageIdentity.pinned.revision
 ) throws -> SQVectorPackageIdentity {
     try SQVectorPackageIdentity(version: version, revision: revision)
 }

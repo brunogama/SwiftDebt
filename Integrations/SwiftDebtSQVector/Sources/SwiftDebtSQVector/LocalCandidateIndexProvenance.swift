@@ -25,18 +25,29 @@ public struct LocalCandidateSourceSnapshotDigest: Codable, Equatable, Sendable {
 }
 
 public struct SQVectorPackageIdentity: Codable, Equatable, Sendable {
-    public let version: String
+    public static let pinned = Self(
+        version: .unavailable,
+        validatedRevision: "aafd9ae601826112978127c7cb611c94ab8a2e06"
+    )
+
+    public let version: LocalCandidateVersionIdentity
     public let revision: String
 
-    public init(version: String, revision: String) throws {
-        guard !version.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            throw LocalCandidateIndexError.emptyIdentityField(.sqVectorPackageVersion)
-        }
+    public init(version: LocalCandidateVersionIdentity, revision: String) throws {
+        try version.validate(field: .sqVectorPackageVersion)
         guard isHexadecimal(revision, allowedLengths: [40, 64]) else {
             throw LocalCandidateIndexError.invalidSQVectorPackageRevision(revision)
         }
         self.version = version
         self.revision = revision.lowercased()
+    }
+
+    private init(
+        version: LocalCandidateVersionIdentity,
+        validatedRevision: String
+    ) {
+        self.version = version
+        revision = validatedRevision
     }
 }
 

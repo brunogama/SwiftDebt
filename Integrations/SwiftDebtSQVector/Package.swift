@@ -15,7 +15,10 @@ let package = Package(
     ],
     dependencies: [
         .package(name: "SwiftDebt", path: "../.."),
-        .package(path: "../../.vendor/sqvector-swift/Packages/SQVector"),
+        .package(
+            url: "https://github.com/brunogama/sqvector-swift.git",
+            revision: "aafd9ae601826112978127c7cb611c94ab8a2e06"
+        ),
     ],
     targets: [
         .target(
@@ -24,7 +27,7 @@ let package = Package(
                 .product(name: "SwiftDebtKit", package: "SwiftDebt"),
                 .product(
                     name: "SQVectorStatic",
-                    package: "SQVector",
+                    package: "sqvector-swift",
                     condition: .when(platforms: [.macOS, .iOS])
                 ),
             ]
@@ -35,7 +38,7 @@ let package = Package(
                 "SwiftDebtSQVector",
                 .product(
                     name: "SQVectorStatic",
-                    package: "SQVector",
+                    package: "sqvector-swift",
                     condition: .when(platforms: [.macOS, .iOS])
                 ),
             ]
