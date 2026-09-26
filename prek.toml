@@ -67,6 +67,7 @@ id = "check-yaml"
 [[repos.hooks]]
 id = "check-added-large-files"
 args = ["--maxkb=1000"]
+exclude = "^benchmarks/r2-release/evidence/2026-09-25-m4-max/calibration\\.v1\\.json$"
 
 [[repos.hooks]]
 id = "check-merge-conflict"

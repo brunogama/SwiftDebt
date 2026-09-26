@@ -178,6 +178,39 @@ class R2ReleaseBenchmarkTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "must be a measured pass"):
             validate_calibration(self.manifest, manifest_path, failed)
 
+    def test_checked_in_calibration_recomputes_and_rejects_corruption(self):
+        manifest_path = REPOSITORY_ROOT / "benchmarks/r2-release/manifest.v1.json"
+        artifact_path = (
+            REPOSITORY_ROOT
+            / "benchmarks/r2-release/evidence/2026-09-25-m4-max/calibration.v1.json"
+        )
+        artifact_bytes = artifact_path.read_bytes()
+        self.assertEqual(
+            hashlib.sha256(artifact_bytes).hexdigest(),
+            "a6c778c32b45501b4bb0b24142223811d89d94487ded47d1b45656492b7de09b",
+        )
+        artifact = json.loads(artifact_bytes)
+
+        validate_calibration(self.manifest, manifest_path, artifact)
+
+        sample = artifact["scenarios"][0]["rawSamples"][0]
+        original_wall_clock = sample["wallClockMilliseconds"]
+        sample["wallClockMilliseconds"] += 1
+        with self.assertRaisesRegex(RuntimeError, "does not recompute"):
+            validate_calibration(self.manifest, manifest_path, artifact)
+        sample["wallClockMilliseconds"] = original_wall_clock
+
+        wall_budget = artifact["scenarios"][0]["budget"]["wallClock"]
+        original_limit = wall_budget["relativeLimitPercent"]
+        wall_budget["relativeLimitPercent"] = original_limit + 1
+        with self.assertRaisesRegex(RuntimeError, "does not recompute"):
+            validate_calibration(self.manifest, manifest_path, artifact)
+        wall_budget["relativeLimitPercent"] = original_limit
+
+        artifact["releaseQualification"] = "complete"
+        with self.assertRaisesRegex(RuntimeError, "cannot claim complete"):
+            validate_calibration(self.manifest, manifest_path, artifact)
+
     def test_atomic_artifact_write_never_exposes_partial_final_path(self):
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary) / "calibration.json"

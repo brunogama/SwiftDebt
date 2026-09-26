@@ -19,16 +19,42 @@ independent reviewer gates remain open.
 | `../../scripts/r2_benchmark_cache.py` | Explicit cache-state preparation and exact activity validation. |
 | `../../scripts/r2_benchmark_scenarios.py` | Scenario sampling, fixed limits, and induced-regression proof. |
 | `../../scripts/validate_r2_release_calibration.py` | Recompute and validate a checked-in artifact without claiming live host reproduction. |
+| `evidence/2026-09-25-m4-max/calibration.v1.json` | Valid compact-retention calibration with raw samples, aggregates, load observations, limits, and induced-regression proofs. |
 | `evidence/2026-09-25-m4-max/moderate-load-invalid.v1.json` | Preserved raw artifact from the first invalid calibration. |
-| `evidence/2026-09-25-m4-max/README.md` | Historical result, interruption evidence, and current rerun requirements. |
+| `evidence/2026-09-25-m4-max/README.md` | Valid result, historical invalid attempts, interpretation, and rerun requirements. |
 
 `manifest.v1.json` is authored source configuration. Calibration JSON is
-generated atomically by the runner and must not be edited by hand. The valid
-`calibration.v1.json` path remains absent until a complete run passes.
+generated atomically by the runner and must not be edited by hand. The current
+artifact has SHA-256
+`a6c778c32b45501b4bb0b24142223811d89d94487ded47d1b45656492b7de09b`.
 
 The branch commit named `test(performance): preserve initial R2 calibration`
 retains the exact historical manifest and invalid artifact before the cache
 harness update. The invalid artifact also records that manifest's SHA-256.
+
+---
+
+## Measured artifact
+
+The compact-retention calibration ran from harness commit
+`fa495f461289040d32a759ba28a220b2e8d0aa1f`. The candidate package inputs
+`Package.swift`, `Package.resolved`, and `Sources` matched the manifest's pinned
+candidate commit `4b9db979e7dc0f870d00f6cae9dcab37528bffb4`; the runner rejected any
+tracked or untracked source difference. The frozen R1 reference remains
+`54516ae9385dabd09969d9f02a8f51b6cea2b0e1`.
+
+The artifact is a `measured-pass`: all 15 scenarios completed five warmups, 30
+measurements, and five induced-regression runs; output, cache activity, wall,
+RSS, and host-load checks passed; and the real exhaustion command exited 2 with
+`comparison-budget-exceeded`. Release qualification remains `incomplete`.
+Repository-only ceilings remain `proposed-for-review`, and the blocked index,
+embedding, ANN, and independent accuracy gates are not inferred from these
+samples.
+
+CI validates the checked-in raw samples, aggregates, limits, and verdicts by
+recomputation. It does not rerun host timings because the hosted runner does not
+reproduce the frozen M4 Max environment. Live calibration on the frozen host
+remains a local release requirement.
 
 ---
 
@@ -138,14 +164,24 @@ comparison. Those ceilings remain pending review even after a measured run.
 ## Reproduce
 
 Build exact reference and candidate source trees with the manifest's toolchain.
-Both binaries use the same bounded release-build command:
+After this benchmark-only branch is rebased, use a detached candidate checkout
+at the manifest pin rather than treating the newer integration tree as the
+measured candidate:
+
+```sh
+git worktree add --detach /tmp/swiftdebt-r2-candidate \
+  4b9db979e7dc0f870d00f6cae9dcab37528bffb4
+```
+
+Both binaries use the same bounded release-build command. Run it in the
+reference checkout and for the detached candidate with `--package-path`:
 
 ```sh
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
-  swift build -c release --jobs 2
+  swift build --package-path /tmp/swiftdebt-r2-candidate -c release --jobs 2
 ```
 
-Run calibration from the candidate checkout only after the shared SwiftPM and
+Run the harness from the benchmark checkout only after the shared SwiftPM and
 CLI lane is free and the host is quiet:
 
 ```sh
@@ -154,8 +190,8 @@ python3 scripts/run_r2_release_benchmarks.py \
   --manifest benchmarks/r2-release/manifest.v1.json \
   --reference-root /Users/bruno/Developer/SwiftSCMA-r1-benchmark \
   --reference-binary /Users/bruno/Developer/SwiftSCMA-r1-benchmark/.build/release/swift-debt \
-  --candidate-root "$PWD" \
-  --candidate-binary .build/release/swift-debt \
+  --candidate-root /tmp/swiftdebt-r2-candidate \
+  --candidate-binary /tmp/swiftdebt-r2-candidate/.build/release/swift-debt \
   --work-directory /tmp/swiftdebt-r2-calibration-$(git rev-parse --short HEAD) \
   --output benchmarks/r2-release/evidence/2026-09-25-m4-max/calibration.v1.json
 ```
@@ -171,14 +207,14 @@ passes unexpectedly, or the exhaustion proof is absent.
 
 | Requirement | State | Evidence or blocker |
 |---|---|---|
-| Similarity-disabled cold wall and RSS | Harness ready, calibration pending | Paired R1/R2 samples at all three scale points. |
-| Raw samples, median, p95, and per-scenario floor | Harness ready, calibration pending | Generated only after a complete valid run. |
-| Deterministic report and repository evidence | Harness ready, calibration pending | Raw report and sidecar SHA-256 equality across measured runs. |
-| Explicit cache disabled and cold states | Harness ready, calibration pending | Exact activity, retained-state, and zero-network assertions. |
-| Unchanged warm syntax facts | Harness ready, calibration pending | All sources reused and cache bytes unchanged. |
-| Standard one-file syntax-fact edit | Harness ready, calibration pending | One changed source and exact invalidation activity. |
+| Similarity-disabled cold wall and RSS | Measured pass; limit approval pending | Paired R1/R2 samples pass at all three scale points under proposed limits. |
+| Raw samples, median, p95, and per-scenario floor | Measured pass | The generated artifact records all raw samples and recomputable aggregates. |
+| Deterministic report and repository evidence | Measured pass | Raw report and sidecar SHA-256 equality across all measured runs. |
+| Explicit cache disabled and cold states | Measured pass; ceilings proposed | Exact activity, retained state, and zero-network assertions at three scales. |
+| Unchanged warm syntax facts | Measured pass; ceilings proposed | All sources reused and cache bytes unchanged at three scales. |
+| Standard one-file syntax-fact edit | Measured pass; ceilings proposed | One changed source and exact invalidation activity at three scales. |
 | Reprojection and re-embedding counts | Blocked | The cache stores syntax facts; embedding and projection operation telemetry is unavailable. |
-| Comparison-budget exhaustion | Harness ready, calibration pending | Real CLI exit 2 and `comparison-budget-exceeded` sidecar issue. |
+| Comparison-budget exhaustion | Measured pass | Real CLI exit 2 and `comparison-budget-exceeded` sidecar issue. |
 | SQVector exact-index latency, RSS, size, candidates | Blocked | `SQVectorStatic` is pin-consumable at `aafd9ae601826112978127c7cb611c94ab8a2e06`, but the SwiftDebt adapter is unmerged and no frozen index scenario or raw release evidence exists. |
 | ANN recall and latency | Blocked | No qualified ANN implementation is available. |
 | Accuracy and independent labels | Outside this artifact | PR #62 remains provisional pending two named qualified reviewers. |

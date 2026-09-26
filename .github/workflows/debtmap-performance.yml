@@ -37,6 +37,12 @@ jobs:
       - name: Verify R2 release benchmark harness
         run: python3 -m unittest discover -s scripts/tests -p 'test_release_r2_benchmark*.py'
 
+      - name: Validate checked-in R2 calibration artifact (not live benchmarking)
+        run: |
+          python3 scripts/validate_r2_release_calibration.py \
+            --manifest benchmarks/r2-release/manifest.v1.json \
+            --artifact benchmarks/r2-release/evidence/2026-09-25-m4-max/calibration.v1.json
+
       - name: Build candidate and reference analyzers
         shell: bash
         run: |
