@@ -105,7 +105,7 @@ struct PersistenceAcceptanceTests {
         #expect(loaded.snapshot(id: snapshot.id)?.rules == snapshot.rules)
     }
 
-    @Test("Schema 1 lifecycle artifacts migrate in memory and write schema 2 only after accepted ingestion")
+    @Test("Schema 1 lifecycle artifacts migrate in memory and write schema 3 only after accepted ingestion")
     func schemaOneLifecycleMigrationIsStrictAndAtomic() throws {
         let fixture = try TemporaryLifecycleArtifact()
         let store = LifecycleArtifactStore(artifactURL: fixture.url)
@@ -128,6 +128,7 @@ struct PersistenceAcceptanceTests {
         var schemaOne = try artifactJSONObject(at: fixture.url)
         schemaOne["schemaVersion"] = 1
         schemaOne.removeValue(forKey: "snapshotParentEdges")
+        schemaOne.removeValue(forKey: "legacyProcessedSnapshotIDs")
         schemaOne["lineageHeads"] = try jsonObject(schemaTwo.lineageHeads)
         var findings = try #require(schemaOne["findings"] as? [[String: Any]])
         for findingIndex in findings.indices {
@@ -135,6 +136,8 @@ struct PersistenceAcceptanceTests {
             var events = try #require(finding["events"] as? [[String: Any]])
             for eventIndex in events.indices {
                 events[eventIndex].removeValue(forKey: "basisEventIDs")
+                events[eventIndex].removeValue(forKey: "evidenceContract")
+                events[eventIndex].removeValue(forKey: "semanticComparisons")
             }
             finding["events"] = events
             findings[findingIndex] = finding
@@ -144,10 +147,11 @@ struct PersistenceAcceptanceTests {
         try schemaOneBytes.write(to: fixture.url, options: .atomic)
 
         let migrated = try store.load()
-        #expect(migrated.schemaVersion == 2)
+        #expect(migrated.schemaVersion == 3)
         #expect(migrated.findings.first?.id == findingID)
         #expect(migrated.findings.first?.events.map(\.id) == schemaTwo.findings.first?.events.map(\.id))
         #expect(migrated.findings.first?.events.map(\.transition.kind) == [.opened, .resolved])
+        #expect(migrated.findings.first?.events.map(\.evidenceContract) == [.legacySchemaTwo, .legacySchemaTwo])
         #expect(try Data(contentsOf: fixture.url) == schemaOneBytes)
 
         let thirdSnapshot = try makeObservation(
@@ -158,12 +162,16 @@ struct PersistenceAcceptanceTests {
         )
         #expect(try store.ingest(thirdSnapshot).status == .accepted)
         let persisted = try artifactJSONObject(at: fixture.url)
-        #expect(persisted["schemaVersion"] as? Int == 2)
+        #expect(persisted["schemaVersion"] as? Int == 3)
         #expect(persisted["snapshotParentEdges"] != nil)
         #expect(persisted["lineageHeads"] == nil)
         #expect(
             try store.load().findings.first?.events.map(\.transition.kind)
                 == [.opened, .resolved, .reopened]
+        )
+        #expect(
+            try store.load().findings.first?.events.map(\.evidenceContract)
+                == [.legacySchemaTwo, .legacySchemaTwo, .semanticComparisonV1]
         )
     }
 
@@ -181,12 +189,14 @@ struct PersistenceAcceptanceTests {
         var schemaOne = try artifactJSONObject(at: fixture.url)
         schemaOne["schemaVersion"] = 1
         schemaOne.removeValue(forKey: "snapshotParentEdges")
+        schemaOne.removeValue(forKey: "legacyProcessedSnapshotIDs")
         var heads = try #require(try jsonObject(artifact.lineageHeads) as? [[String: Any]])
         heads[0]["snapshotID"] = "missing-snapshot"
         schemaOne["lineageHeads"] = heads
         var findings = try #require(schemaOne["findings"] as? [[String: Any]])
         var events = try #require(findings[0]["events"] as? [[String: Any]])
         events[0].removeValue(forKey: "basisEventIDs")
+        events[0].removeValue(forKey: "evidenceContract")
         findings[0]["events"] = events
         schemaOne["findings"] = findings
         let corruptBytes = try lifecycleJSONData(schemaOne)

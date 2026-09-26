@@ -46,6 +46,7 @@ extension LifecycleArtifact {
             try validate(
                 event.transition,
                 semanticComparisons: event.semanticComparisons,
+                evidenceContract: event.evidenceContract,
                 finding: projection.finding,
                 snapshot: snapshot,
                 findings: findings
@@ -97,6 +98,7 @@ extension LifecycleArtifact {
     private func validate(
         _ transition: LifecycleTransition,
         semanticComparisons: [SemanticComparisonBasis],
+        evidenceContract: LifecycleEvidenceContract,
         finding: Finding,
         snapshot: ObservationSnapshot,
         findings: [FindingID: Finding]
@@ -117,10 +119,27 @@ extension LifecycleArtifact {
             try validateMatchedContinuity(
                 evidence,
                 semanticComparisons: semanticComparisons,
+                evidenceContract: evidenceContract,
                 finding: finding,
                 snapshot: snapshot
             )
         case .resolved(let evidence):
+            if evidenceContract == .legacySchemaTwo {
+                let assessment = try LegacyResolutionCoverageEvaluator().assess(
+                    finding: finding,
+                    snapshot: snapshot,
+                    artifact: self
+                )
+                guard case .verified(let atomicIDs, let reasons) = assessment,
+                    evidence.priorSnapshotID == finding.firstObservationSnapshotID,
+                    evidence.coveredAtomicObservationIDs == atomicIDs,
+                    evidence.reasons == reasons,
+                    semanticComparisons.isEmpty
+                else {
+                    throw LifecycleContractError.invalidArtifact("Legacy resolution evidence is invalid.")
+                }
+                break
+            }
             let assessment = try ResolutionCoverageEvaluator().assess(
                 finding: finding,
                 snapshot: snapshot,
@@ -142,6 +161,12 @@ extension LifecycleArtifact {
         case .unverified(let reasons):
             guard !reasons.isEmpty else {
                 throw LifecycleContractError.invalidArtifact("An unverified event requires blockers.")
+            }
+            if evidenceContract == .legacySchemaTwo {
+                guard semanticComparisons.isEmpty else {
+                    throw LifecycleContractError.invalidArtifact("Legacy uncertainty cannot assert semantic bases.")
+                }
+                break
             }
             if !snapshot.detections.contains(where: { $0.rule.identity == finding.rule.identity }) {
                 guard let eventIndex = finding.events.firstIndex(where: { $0.snapshotID == snapshot.id }) else {

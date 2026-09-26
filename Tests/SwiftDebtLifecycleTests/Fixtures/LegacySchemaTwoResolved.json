@@ -1,0 +1,624 @@
+{
+  "findings" : [
+    {
+      "events" : [
+        {
+          "basisEventIDs" : [
+
+          ],
+          "id" : "event:finding:snapshot-a8b0bbc670b9562adef51f8b76e386112bda7ce3f5c5271ffd1dbbca28c7a5ef:snapshot-a8b0bbc670b9562adef51f8b76e386112bda7ce3f5c5271ffd1dbbca28c7a5ef:detection:0:opened",
+          "snapshotID" : "snapshot-a8b0bbc670b9562adef51f8b76e386112bda7ce3f5c5271ffd1dbbca28c7a5ef",
+          "transition" : {
+            "detection" : {
+              "atomicObservationID" : "snapshot-a8b0bbc670b9562adef51f8b76e386112bda7ce3f5c5271ffd1dbbca28c7a5ef:atomic:5",
+              "detectionID" : "snapshot-a8b0bbc670b9562adef51f8b76e386112bda7ce3f5c5271ffd1dbbca28c7a5ef:detection:0"
+            },
+            "kind" : "opened"
+          }
+        },
+        {
+          "basisEventIDs" : [
+            "event:finding:snapshot-a8b0bbc670b9562adef51f8b76e386112bda7ce3f5c5271ffd1dbbca28c7a5ef:snapshot-a8b0bbc670b9562adef51f8b76e386112bda7ce3f5c5271ffd1dbbca28c7a5ef:detection:0:opened"
+          ],
+          "id" : "event:finding:snapshot-a8b0bbc670b9562adef51f8b76e386112bda7ce3f5c5271ffd1dbbca28c7a5ef:snapshot-a8b0bbc670b9562adef51f8b76e386112bda7ce3f5c5271ffd1dbbca28c7a5ef:detection:0:snapshot-8b2b324490fa3798711581510245fce0df97e1307feb9f778e5620e32a098349:resolved",
+          "snapshotID" : "snapshot-8b2b324490fa3798711581510245fce0df97e1307feb9f778e5620e32a098349",
+          "transition" : {
+            "kind" : "resolved",
+            "resolution" : {
+              "coveredAtomicObservationIDs" : [
+                "snapshot-8b2b324490fa3798711581510245fce0df97e1307feb9f778e5620e32a098349:atomic:5"
+              ],
+              "priorSnapshotID" : "snapshot-a8b0bbc670b9562adef51f8b76e386112bda7ce3f5c5271ffd1dbbca28c7a5ef",
+              "reasons" : [
+                {
+                  "code" : "complete-comparable-absence",
+                  "message" : "Complete repository scope committed every comparable Atomic Observation with zero Detections."
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "id" : "finding:snapshot-a8b0bbc670b9562adef51f8b76e386112bda7ce3f5c5271ffd1dbbca28c7a5ef:snapshot-a8b0bbc670b9562adef51f8b76e386112bda7ce3f5c5271ffd1dbbca28c7a5ef:detection:0",
+      "lineageID" : "lineage-a8b0bbc670b9562adef51f8b76e386112bda7ce3f5c5271ffd1dbbca28c7a5ef",
+      "rule" : {
+        "id" : "force-try",
+        "namespace" : "swiftdebt",
+        "semanticRevision" : 1
+      }
+    }
+  ],
+  "generatorVersion" : "0.10.0",
+  "introductionConclusions" : [
+
+  ],
+  "processedSnapshotIDs" : [
+    "snapshot-8b2b324490fa3798711581510245fce0df97e1307feb9f778e5620e32a098349",
+    "snapshot-a8b0bbc670b9562adef51f8b76e386112bda7ce3f5c5271ffd1dbbca28c7a5ef"
+  ],
+  "reportKind" : "swiftdebt-lifecycle",
+  "schemaVersion" : 2,
+  "snapshotParentEdges" : [
+    {
+      "basis" : {
+        "kind" : "git-direct-parent",
+        "parentRevision" : "088b25f60c198c2433f1d12cf11fff4f22a1b28c"
+      },
+      "childSnapshotID" : "snapshot-8b2b324490fa3798711581510245fce0df97e1307feb9f778e5620e32a098349",
+      "parentSnapshotID" : "snapshot-a8b0bbc670b9562adef51f8b76e386112bda7ce3f5c5271ffd1dbbca28c7a5ef"
+    }
+  ],
+  "snapshots" : [
+    {
+      "atomicObservations" : [
+        {
+          "id" : "snapshot-a8b0bbc670b9562adef51f8b76e386112bda7ce3f5c5271ffd1dbbca28c7a5ef:atomic:0",
+          "outcome" : {
+            "detectionIDs" : [
+
+            ],
+            "kind" : "committed"
+          },
+          "rule" : {
+            "id" : "empty-catch",
+            "namespace" : "swiftdebt.code-smell",
+            "semanticRevision" : 1
+          },
+          "sourcePath" : "Input.swift"
+        },
+        {
+          "id" : "snapshot-a8b0bbc670b9562adef51f8b76e386112bda7ce3f5c5271ffd1dbbca28c7a5ef:atomic:1",
+          "outcome" : {
+            "detectionIDs" : [
+
+            ],
+            "kind" : "committed"
+          },
+          "rule" : {
+            "id" : "force-cast",
+            "namespace" : "swiftdebt.code-smell",
+            "semanticRevision" : 1
+          },
+          "sourcePath" : "Input.swift"
+        },
+        {
+          "id" : "snapshot-a8b0bbc670b9562adef51f8b76e386112bda7ce3f5c5271ffd1dbbca28c7a5ef:atomic:2",
+          "outcome" : {
+            "detectionIDs" : [
+
+            ],
+            "kind" : "committed"
+          },
+          "rule" : {
+            "id" : "actor-nonisolated-unsafe",
+            "namespace" : "swiftdebt.concurrency",
+            "semanticRevision" : 1
+          },
+          "sourcePath" : "Input.swift"
+        },
+        {
+          "id" : "snapshot-a8b0bbc670b9562adef51f8b76e386112bda7ce3f5c5271ffd1dbbca28c7a5ef:atomic:3",
+          "outcome" : {
+            "detectionIDs" : [
+
+            ],
+            "kind" : "committed"
+          },
+          "rule" : {
+            "id" : "actor-state-across-await",
+            "namespace" : "swiftdebt.concurrency",
+            "semanticRevision" : 1
+          },
+          "sourcePath" : "Input.swift"
+        },
+        {
+          "id" : "snapshot-a8b0bbc670b9562adef51f8b76e386112bda7ce3f5c5271ffd1dbbca28c7a5ef:atomic:4",
+          "outcome" : {
+            "detectionIDs" : [
+
+            ],
+            "kind" : "committed"
+          },
+          "rule" : {
+            "id" : "unchecked-sendable",
+            "namespace" : "swiftdebt.concurrency",
+            "semanticRevision" : 1
+          },
+          "sourcePath" : "Input.swift"
+        },
+        {
+          "id" : "snapshot-a8b0bbc670b9562adef51f8b76e386112bda7ce3f5c5271ffd1dbbca28c7a5ef:atomic:5",
+          "outcome" : {
+            "detectionIDs" : [
+              "snapshot-a8b0bbc670b9562adef51f8b76e386112bda7ce3f5c5271ffd1dbbca28c7a5ef:detection:0"
+            ],
+            "kind" : "committed"
+          },
+          "rule" : {
+            "id" : "force-try",
+            "namespace" : "swiftdebt",
+            "semanticRevision" : 1
+          },
+          "sourcePath" : "Input.swift"
+        },
+        {
+          "id" : "snapshot-a8b0bbc670b9562adef51f8b76e386112bda7ce3f5c5271ffd1dbbca28c7a5ef:atomic:6",
+          "outcome" : {
+            "detectionIDs" : [
+
+            ],
+            "kind" : "committed"
+          },
+          "rule" : {
+            "id" : "global-data",
+            "namespace" : "swiftdebt.refactoring",
+            "semanticRevision" : 1
+          },
+          "sourcePath" : "Input.swift"
+        },
+        {
+          "id" : "snapshot-a8b0bbc670b9562adef51f8b76e386112bda7ce3f5c5271ffd1dbbca28c7a5ef:atomic:7",
+          "outcome" : {
+            "detectionIDs" : [
+
+            ],
+            "kind" : "committed"
+          },
+          "rule" : {
+            "id" : "large-class",
+            "namespace" : "swiftdebt.refactoring",
+            "semanticRevision" : 1
+          },
+          "sourcePath" : "Input.swift"
+        },
+        {
+          "id" : "snapshot-a8b0bbc670b9562adef51f8b76e386112bda7ce3f5c5271ffd1dbbca28c7a5ef:atomic:8",
+          "outcome" : {
+            "detectionIDs" : [
+
+            ],
+            "kind" : "committed"
+          },
+          "rule" : {
+            "id" : "long-function",
+            "namespace" : "swiftdebt.refactoring",
+            "semanticRevision" : 1
+          },
+          "sourcePath" : "Input.swift"
+        },
+        {
+          "id" : "snapshot-a8b0bbc670b9562adef51f8b76e386112bda7ce3f5c5271ffd1dbbca28c7a5ef:atomic:9",
+          "outcome" : {
+            "detectionIDs" : [
+
+            ],
+            "kind" : "committed"
+          },
+          "rule" : {
+            "id" : "long-parameter-list",
+            "namespace" : "swiftdebt.refactoring",
+            "semanticRevision" : 1
+          },
+          "sourcePath" : "Input.swift"
+        }
+      ],
+      "detections" : [
+        {
+          "id" : "snapshot-a8b0bbc670b9562adef51f8b76e386112bda7ce3f5c5271ffd1dbbca28c7a5ef:detection:0",
+          "location" : {
+            "column" : 21,
+            "line" : 2,
+            "sourcePath" : "Input.swift"
+          },
+          "message" : "This try! traps if the expression throws; handle or propagate the error.",
+          "rule" : {
+            "id" : "force-try",
+            "namespace" : "swiftdebt",
+            "semanticRevision" : 1
+          },
+          "severity" : "warning",
+          "structuralEvidence" : {
+            "algorithm" : "swift-syntax-v1",
+            "enclosingDeclarationDigest" : {
+              "algorithm" : "sha256",
+              "value" : "8c2e51e6eb73fc353ebe68bd07cf4e0302a4b1ad295a008bff2a31487de1f262"
+            },
+            "subjectDigest" : {
+              "algorithm" : "sha256",
+              "value" : "e203e6f72170940616f87214452a93dd1819f844b1a6af073afba67e85aa29f4"
+            }
+          }
+        }
+      ],
+      "id" : "snapshot-a8b0bbc670b9562adef51f8b76e386112bda7ce3f5c5271ffd1dbbca28c7a5ef",
+      "provenance" : {
+        "capabilities" : [
+          {
+            "name" : "syntax-analysis",
+            "state" : {
+              "kind" : "available"
+            }
+          }
+        ],
+        "configurationFingerprint" : {
+          "algorithm" : "sha256",
+          "value" : "7345d63ea5e79508f69eed28f5b3d30898684729b813fadebd301bcf92d64f8b"
+        },
+        "engineVersion" : "0.10.0",
+        "lineage" : {
+          "lineageID" : "lineage-a8b0bbc670b9562adef51f8b76e386112bda7ce3f5c5271ffd1dbbca28c7a5ef",
+          "sequence" : 1
+        },
+        "scope" : {
+          "kind" : "repository"
+        },
+        "sourceDeletions" : [
+
+        ],
+        "sourceIdentity" : {
+          "contentDigest" : {
+            "algorithm" : "sha256",
+            "value" : "e39b42deaaa18c93a78bc14bdc7862470cf65756195fb8d2186e1dc7312046a9"
+          },
+          "revision" : "088b25f60c198c2433f1d12cf11fff4f22a1b28c",
+          "state" : "git",
+          "workingTreeState" : "clean"
+        },
+        "sourceRenames" : [
+
+        ],
+        "sourceSelection" : {
+          "excludedPathPrefixes" : [
+
+          ],
+          "kind" : "directory"
+        }
+      },
+      "rules" : [
+        {
+          "id" : "empty-catch",
+          "namespace" : "swiftdebt.code-smell",
+          "semanticRevision" : 1
+        },
+        {
+          "id" : "force-cast",
+          "namespace" : "swiftdebt.code-smell",
+          "semanticRevision" : 1
+        },
+        {
+          "id" : "actor-nonisolated-unsafe",
+          "namespace" : "swiftdebt.concurrency",
+          "semanticRevision" : 1
+        },
+        {
+          "id" : "actor-state-across-await",
+          "namespace" : "swiftdebt.concurrency",
+          "semanticRevision" : 1
+        },
+        {
+          "id" : "unchecked-sendable",
+          "namespace" : "swiftdebt.concurrency",
+          "semanticRevision" : 1
+        },
+        {
+          "id" : "force-try",
+          "namespace" : "swiftdebt",
+          "semanticRevision" : 1
+        },
+        {
+          "id" : "global-data",
+          "namespace" : "swiftdebt.refactoring",
+          "semanticRevision" : 1
+        },
+        {
+          "id" : "large-class",
+          "namespace" : "swiftdebt.refactoring",
+          "semanticRevision" : 1
+        },
+        {
+          "id" : "long-function",
+          "namespace" : "swiftdebt.refactoring",
+          "semanticRevision" : 1
+        },
+        {
+          "id" : "long-parameter-list",
+          "namespace" : "swiftdebt.refactoring",
+          "semanticRevision" : 1
+        }
+      ],
+      "sources" : [
+        {
+          "parseOutcome" : {
+            "kind" : "parsed"
+          },
+          "sourcePath" : "Input.swift"
+        }
+      ]
+    },
+    {
+      "atomicObservations" : [
+        {
+          "id" : "snapshot-8b2b324490fa3798711581510245fce0df97e1307feb9f778e5620e32a098349:atomic:0",
+          "outcome" : {
+            "detectionIDs" : [
+
+            ],
+            "kind" : "committed"
+          },
+          "rule" : {
+            "id" : "empty-catch",
+            "namespace" : "swiftdebt.code-smell",
+            "semanticRevision" : 1
+          },
+          "sourcePath" : "Input.swift"
+        },
+        {
+          "id" : "snapshot-8b2b324490fa3798711581510245fce0df97e1307feb9f778e5620e32a098349:atomic:1",
+          "outcome" : {
+            "detectionIDs" : [
+
+            ],
+            "kind" : "committed"
+          },
+          "rule" : {
+            "id" : "force-cast",
+            "namespace" : "swiftdebt.code-smell",
+            "semanticRevision" : 1
+          },
+          "sourcePath" : "Input.swift"
+        },
+        {
+          "id" : "snapshot-8b2b324490fa3798711581510245fce0df97e1307feb9f778e5620e32a098349:atomic:2",
+          "outcome" : {
+            "detectionIDs" : [
+
+            ],
+            "kind" : "committed"
+          },
+          "rule" : {
+            "id" : "actor-nonisolated-unsafe",
+            "namespace" : "swiftdebt.concurrency",
+            "semanticRevision" : 1
+          },
+          "sourcePath" : "Input.swift"
+        },
+        {
+          "id" : "snapshot-8b2b324490fa3798711581510245fce0df97e1307feb9f778e5620e32a098349:atomic:3",
+          "outcome" : {
+            "detectionIDs" : [
+
+            ],
+            "kind" : "committed"
+          },
+          "rule" : {
+            "id" : "actor-state-across-await",
+            "namespace" : "swiftdebt.concurrency",
+            "semanticRevision" : 1
+          },
+          "sourcePath" : "Input.swift"
+        },
+        {
+          "id" : "snapshot-8b2b324490fa3798711581510245fce0df97e1307feb9f778e5620e32a098349:atomic:4",
+          "outcome" : {
+            "detectionIDs" : [
+
+            ],
+            "kind" : "committed"
+          },
+          "rule" : {
+            "id" : "unchecked-sendable",
+            "namespace" : "swiftdebt.concurrency",
+            "semanticRevision" : 1
+          },
+          "sourcePath" : "Input.swift"
+        },
+        {
+          "id" : "snapshot-8b2b324490fa3798711581510245fce0df97e1307feb9f778e5620e32a098349:atomic:5",
+          "outcome" : {
+            "detectionIDs" : [
+
+            ],
+            "kind" : "committed"
+          },
+          "rule" : {
+            "id" : "force-try",
+            "namespace" : "swiftdebt",
+            "semanticRevision" : 1
+          },
+          "sourcePath" : "Input.swift"
+        },
+        {
+          "id" : "snapshot-8b2b324490fa3798711581510245fce0df97e1307feb9f778e5620e32a098349:atomic:6",
+          "outcome" : {
+            "detectionIDs" : [
+
+            ],
+            "kind" : "committed"
+          },
+          "rule" : {
+            "id" : "global-data",
+            "namespace" : "swiftdebt.refactoring",
+            "semanticRevision" : 1
+          },
+          "sourcePath" : "Input.swift"
+        },
+        {
+          "id" : "snapshot-8b2b324490fa3798711581510245fce0df97e1307feb9f778e5620e32a098349:atomic:7",
+          "outcome" : {
+            "detectionIDs" : [
+
+            ],
+            "kind" : "committed"
+          },
+          "rule" : {
+            "id" : "large-class",
+            "namespace" : "swiftdebt.refactoring",
+            "semanticRevision" : 1
+          },
+          "sourcePath" : "Input.swift"
+        },
+        {
+          "id" : "snapshot-8b2b324490fa3798711581510245fce0df97e1307feb9f778e5620e32a098349:atomic:8",
+          "outcome" : {
+            "detectionIDs" : [
+
+            ],
+            "kind" : "committed"
+          },
+          "rule" : {
+            "id" : "long-function",
+            "namespace" : "swiftdebt.refactoring",
+            "semanticRevision" : 1
+          },
+          "sourcePath" : "Input.swift"
+        },
+        {
+          "id" : "snapshot-8b2b324490fa3798711581510245fce0df97e1307feb9f778e5620e32a098349:atomic:9",
+          "outcome" : {
+            "detectionIDs" : [
+
+            ],
+            "kind" : "committed"
+          },
+          "rule" : {
+            "id" : "long-parameter-list",
+            "namespace" : "swiftdebt.refactoring",
+            "semanticRevision" : 1
+          },
+          "sourcePath" : "Input.swift"
+        }
+      ],
+      "detections" : [
+
+      ],
+      "id" : "snapshot-8b2b324490fa3798711581510245fce0df97e1307feb9f778e5620e32a098349",
+      "provenance" : {
+        "capabilities" : [
+          {
+            "name" : "syntax-analysis",
+            "state" : {
+              "kind" : "available"
+            }
+          }
+        ],
+        "configurationFingerprint" : {
+          "algorithm" : "sha256",
+          "value" : "7345d63ea5e79508f69eed28f5b3d30898684729b813fadebd301bcf92d64f8b"
+        },
+        "engineVersion" : "0.10.0",
+        "lineage" : {
+          "lineageID" : "lineage-a8b0bbc670b9562adef51f8b76e386112bda7ce3f5c5271ffd1dbbca28c7a5ef",
+          "predecessorSnapshotID" : "snapshot-a8b0bbc670b9562adef51f8b76e386112bda7ce3f5c5271ffd1dbbca28c7a5ef",
+          "sequence" : 2
+        },
+        "scope" : {
+          "kind" : "repository"
+        },
+        "sourceDeletions" : [
+
+        ],
+        "sourceIdentity" : {
+          "contentDigest" : {
+            "algorithm" : "sha256",
+            "value" : "92741eaea1fa01efa24a98d431e481f39870066dbfd6000ed7d0a43c77f16516"
+          },
+          "revision" : "bfc7fc8454ce05bba70aa1d88683a1691b41871e",
+          "state" : "git",
+          "workingTreeState" : "clean"
+        },
+        "sourceRenames" : [
+
+        ],
+        "sourceSelection" : {
+          "excludedPathPrefixes" : [
+
+          ],
+          "kind" : "directory"
+        }
+      },
+      "rules" : [
+        {
+          "id" : "empty-catch",
+          "namespace" : "swiftdebt.code-smell",
+          "semanticRevision" : 1
+        },
+        {
+          "id" : "force-cast",
+          "namespace" : "swiftdebt.code-smell",
+          "semanticRevision" : 1
+        },
+        {
+          "id" : "actor-nonisolated-unsafe",
+          "namespace" : "swiftdebt.concurrency",
+          "semanticRevision" : 1
+        },
+        {
+          "id" : "actor-state-across-await",
+          "namespace" : "swiftdebt.concurrency",
+          "semanticRevision" : 1
+        },
+        {
+          "id" : "unchecked-sendable",
+          "namespace" : "swiftdebt.concurrency",
+          "semanticRevision" : 1
+        },
+        {
+          "id" : "force-try",
+          "namespace" : "swiftdebt",
+          "semanticRevision" : 1
+        },
+        {
+          "id" : "global-data",
+          "namespace" : "swiftdebt.refactoring",
+          "semanticRevision" : 1
+        },
+        {
+          "id" : "large-class",
+          "namespace" : "swiftdebt.refactoring",
+          "semanticRevision" : 1
+        },
+        {
+          "id" : "long-function",
+          "namespace" : "swiftdebt.refactoring",
+          "semanticRevision" : 1
+        },
+        {
+          "id" : "long-parameter-list",
+          "namespace" : "swiftdebt.refactoring",
+          "semanticRevision" : 1
+        }
+      ],
+      "sources" : [
+        {
+          "parseOutcome" : {
+            "kind" : "parsed"
+          },
+          "sourcePath" : "Input.swift"
+        }
+      ]
+    }
+  ],
+  "unresolvedDetections" : [
+
+  ]
+}

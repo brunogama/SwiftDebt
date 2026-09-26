@@ -86,6 +86,7 @@ public struct IntroductionConclusion: Equatable, Sendable {
     public let reasons: [LifecycleReason]
     public let evidence: IntroductionHistoryEvidence
     public let semanticComparisons: [SemanticComparisonBasis]
+    public let evidenceContract: LifecycleEvidenceContract
 
     package init(
         findingID: FindingID,
@@ -95,7 +96,8 @@ public struct IntroductionConclusion: Equatable, Sendable {
         earliestPositiveRevision: GitRevisionID?,
         reasons: [LifecycleReason],
         evidence: IntroductionHistoryEvidence,
-        semanticComparisons: [SemanticComparisonBasis]
+        semanticComparisons: [SemanticComparisonBasis],
+        evidenceContract: LifecycleEvidenceContract = .semanticComparisonV1
     ) {
         self.findingID = findingID
         self.attempt = attempt
@@ -105,6 +107,7 @@ public struct IntroductionConclusion: Equatable, Sendable {
         self.reasons = reasons.sorted(by: lifecycleReasonOrder)
         self.evidence = evidence
         self.semanticComparisons = uniqueSemanticComparisons(semanticComparisons)
+        self.evidenceContract = evidenceContract
     }
 }
 
@@ -118,6 +121,7 @@ extension IntroductionConclusion: Codable {
         case reasons
         case evidence
         case semanticComparisons
+        case evidenceContract
     }
 
     public init(from decoder: any Decoder) throws {
@@ -145,7 +149,8 @@ extension IntroductionConclusion: Codable {
             ),
             reasons: try values.decode([LifecycleReason].self, forKey: .reasons),
             evidence: try values.decode(IntroductionHistoryEvidence.self, forKey: .evidence),
-            semanticComparisons: comparisons
+            semanticComparisons: comparisons,
+            evidenceContract: try values.decode(LifecycleEvidenceContract.self, forKey: .evidenceContract)
         )
     }
 
@@ -158,6 +163,7 @@ extension IntroductionConclusion: Codable {
         try values.encodeIfPresent(earliestPositiveRevision, forKey: .earliestPositiveRevision)
         try values.encode(reasons, forKey: .reasons)
         try values.encode(evidence, forKey: .evidence)
+        try values.encode(evidenceContract, forKey: .evidenceContract)
         if !semanticComparisons.isEmpty {
             try values.encode(semanticComparisons, forKey: .semanticComparisons)
         }

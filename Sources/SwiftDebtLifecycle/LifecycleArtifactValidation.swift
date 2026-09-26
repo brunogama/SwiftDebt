@@ -14,9 +14,25 @@ extension LifecycleArtifact {
         guard Set(processedSnapshotIDs).count == processedSnapshotIDs.count else {
             throw LifecycleContractError.invalidArtifact("Processed snapshot IDs must be unique.")
         }
+        guard Set(legacyProcessedSnapshotIDs).count == legacyProcessedSnapshotIDs.count,
+            Set(legacyProcessedSnapshotIDs).isSubset(of: Set(processedSnapshotIDs))
+        else {
+            throw LifecycleContractError.invalidArtifact("Legacy snapshot boundary is invalid.")
+        }
 
         let snapshotByID = Dictionary(uniqueKeysWithValues: snapshots.map { ($0.id, $0) })
         let processed = Set(processedSnapshotIDs)
+        let legacy = Set(legacyProcessedSnapshotIDs)
+        for finding in findings {
+            for event in finding.events {
+                guard (event.evidenceContract == .legacySchemaTwo) == legacy.contains(event.snapshotID),
+                    event.evidenceContract != .legacySchemaTwo || event.semanticComparisons.isEmpty
+                else {
+                    throw LifecycleContractError.invalidArtifact(
+                        "Event evidence contract crosses its migration boundary.")
+                }
+            }
+        }
         try validateSnapshotGraph(snapshotByID: snapshotByID, processed: processed)
         try validateFindings(snapshotByID: snapshotByID, processed: processed)
         try validateIntroductionConclusions()
@@ -31,7 +47,7 @@ extension LifecycleArtifact {
         }
         guard Set(snapshotParentEdges.map(\.childSnapshotID)).count == snapshotParentEdges.count else {
             throw LifecycleContractError.invalidArtifact(
-                "Schema 2 currently supports at most one parent per snapshot; merge nodes are unsupported."
+                "The snapshot graph supports at most one parent per snapshot; merge nodes are unsupported."
             )
         }
         for edge in snapshotParentEdges {

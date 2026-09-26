@@ -22,7 +22,15 @@ extension LifecycleArtifact {
                 )
             }
             for conclusion in conclusions {
-                try evaluator.validate(conclusion, artifact: self)
+                switch conclusion.evidenceContract {
+                case .legacySchemaTwo:
+                    guard conclusion.semanticComparisons.isEmpty else {
+                        throw LifecycleContractError.invalidArtifact("Legacy introduction asserted semantic evidence.")
+                    }
+                    try LegacyIntroductionConclusionEvaluator().validate(conclusion, artifact: self)
+                case .semanticComparisonV1:
+                    try evaluator.validate(conclusion, artifact: self)
+                }
             }
         }
         let findingIDs = Set(findings.map(\.id))

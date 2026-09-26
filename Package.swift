@@ -86,7 +86,8 @@ let package = Package(
         ),
         .testTarget(
             name: "SwiftDebtLifecycleTests",
-            dependencies: ["SwiftDebtCore", "SwiftDebtLifecycle", "SwiftDebtSyntax", "swift-debt"]
+            dependencies: ["SwiftDebtCore", "SwiftDebtLifecycle", "SwiftDebtSyntax", "swift-debt"],
+            resources: [.process("Fixtures")]
         ),
     ],
     swiftLanguageModes: [.v6]

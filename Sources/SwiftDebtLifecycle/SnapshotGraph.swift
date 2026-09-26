@@ -103,7 +103,7 @@ extension LifecycleArtifact {
     }
 
     /// Compatibility projection for callers that previously enumerated linear
-    /// heads. Snapshot IDs are the authoritative lineage selectors in schema 2.
+    /// heads. Snapshot IDs are the authoritative lineage selectors in schema 3.
     public var lineageHeads: [LineageHead] {
         headSnapshotIDs.compactMap { snapshotID in
             guard let snapshot = snapshot(id: snapshotID) else { return nil }

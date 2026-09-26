@@ -27,7 +27,9 @@ let observation = try ObservationSnapshot(
 let result = try LifecycleArtifactStore(artifactURL: artifactURL).ingest(observation)
 ```
 
-The store serializes one schema-versioned `swiftdebt-lifecycle` artifact. Schema 2 persists a snapshot parent graph and per-branch Finding event bases. Ingestion holds an advisory exclusive lock, writes by atomic replacement, orders pending snapshots by their explicit predecessor relationship, and leaves bytes unchanged when the same snapshot is retried. A validated schema 1 artifact migrates in memory without changing its bytes; the next accepted atomic ingestion writes schema 2 while preserving every existing Snapshot, Finding, Detection, and Lifecycle Event ID.
+The store serializes one schema-versioned `swiftdebt-lifecycle` artifact. Schema 3 persists a snapshot parent graph, per-branch Finding event bases, and the evidence contract used for each lifecycle claim. Ingestion holds an advisory exclusive lock, writes by atomic replacement, orders pending snapshots by their explicit predecessor relationship, and leaves bytes unchanged when the same snapshot is retried. Validated schema 1 and schema 2 artifacts migrate in memory without changing their bytes; the next accepted atomic ingestion writes schema 3 while preserving every existing Snapshot, Finding, Detection, Lifecycle Event, and Introduction Conclusion ID. Legacy claims retain their original reasons and are checked under the frozen schema 2 contract. New claims use directional semantic comparison evidence; migration never invents that evidence for an older claim.
+
+The migrated snapshot boundary stays unchanged during later engine ingestions. Validation rejects a new directional claim marked as legacy when its semantic evidence remains present. A lifecycle artifact is a local, editable JSON file, not an authenticated record: a coordinated rewrite of both the legacy boundary and an otherwise legacy-valid claim cannot be distinguished from a genuine migration using the artifact alone. Keep the artifact in reviewed version control when its provenance matters.
 
 The supported CLI write path accepts only an artifact location:
 

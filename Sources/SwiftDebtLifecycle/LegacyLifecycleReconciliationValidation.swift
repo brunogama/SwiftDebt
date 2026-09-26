@@ -1,10 +1,9 @@
 extension LifecycleArtifact {
-    func validateReconciliationProjection(
+    func validateLegacyReconciliationProjection(
         snapshots: [SnapshotID: ObservationSnapshot],
         processed: Set<SnapshotID>
     ) throws {
-        try validateLegacyReconciliationProjection(snapshots: snapshots, processed: processed)
-        for snapshotID in processed where !legacyProcessedSnapshotIDs.contains(snapshotID) {
+        for snapshotID in processed where legacyProcessedSnapshotIDs.contains(snapshotID) {
             guard let snapshot = snapshots[snapshotID] else { continue }
             let priorFindings = try parentFindingProjections(of: snapshotID).map(\.finding)
             let identities = Set(
@@ -17,31 +16,28 @@ extension LifecycleArtifact {
                 guard !detections.isEmpty else { continue }
                 if candidates.isEmpty {
                     for detection in detections {
-                        try requireOpening(of: detection, snapshotID: snapshot.id)
+                        try legacyRequireOpening(of: detection, snapshotID: snapshot.id)
                     }
                     continue
                 }
-                let reconciliation = try ContinuityReconciler().reconcile(
+                let reconciliation = try LegacyContinuityReconciler().reconcile(
                     findings: candidates,
                     detections: detections,
                     snapshot: snapshot,
                     artifact: self
                 )
-                for match in reconciliation.matches { try require(match: match, snapshotID: snapshot.id) }
+                for match in reconciliation.matches { try legacyRequire(match: match, snapshotID: snapshot.id) }
                 for group in reconciliation.unresolvedGroups {
-                    try require(group: group, snapshotID: snapshot.id)
+                    try legacyRequire(group: group, snapshotID: snapshot.id)
                 }
                 for detection in reconciliation.newDetections {
-                    try requireOpening(of: detection, snapshotID: snapshot.id)
-                }
-                for finding in reconciliation.absentFindings {
-                    try requireAbsence(of: finding, snapshot: snapshot)
+                    try legacyRequireOpening(of: detection, snapshotID: snapshot.id)
                 }
             }
         }
     }
 
-    private func requireOpening(of detection: ObservedDetection, snapshotID: SnapshotID) throws {
+    private func legacyRequireOpening(of detection: ObservedDetection, snapshotID: SnapshotID) throws {
         let openings = findings.filter { finding in
             guard let first = finding.events.first, first.snapshotID == snapshotID,
                 case .opened(let evidence) = first.transition
@@ -55,7 +51,7 @@ extension LifecycleArtifact {
         }
     }
 
-    private func require(match: ContinuityMatch, snapshotID: SnapshotID) throws {
+    private func legacyRequire(match: LegacyContinuityMatch, snapshotID: SnapshotID) throws {
         guard let finding = findings.first(where: { $0.id == match.finding.id }),
             let event = finding.events.first(where: { $0.snapshotID == snapshotID })
         else {
@@ -70,63 +66,14 @@ extension LifecycleArtifact {
         case .opened, .resolved, .unverified, .continuityAmbiguous:
             detectionID = nil
         }
-        guard detectionID == match.currentDetection.id,
-            event.semanticComparisons == [match.semanticComparison]
-        else {
+        guard detectionID == match.currentDetection.id else {
             throw LifecycleContractError.invalidArtifact(
                 "Finding \(match.finding.id) did not record its uniquely matched Detection."
             )
         }
     }
 
-    private func requireAbsence(of priorFinding: Finding, snapshot: ObservationSnapshot) throws {
-        guard let finding = findings.first(where: { $0.id == priorFinding.id }) else {
-            throw LifecycleContractError.invalidArtifact(
-                "Finding \(priorFinding.id) is missing from its absence assessment."
-            )
-        }
-        let event = finding.events.first(where: { $0.snapshotID == snapshot.id })
-        guard priorFinding.lifecycleState == .open else {
-            guard event == nil else {
-                throw LifecycleContractError.invalidArtifact(
-                    "Resolved Finding \(priorFinding.id) cannot append uncertain absence evidence."
-                )
-            }
-            return
-        }
-
-        let assessment = try ResolutionCoverageEvaluator().assess(
-            finding: priorFinding,
-            snapshot: snapshot,
-            artifact: self
-        )
-        switch assessment {
-        case .verified(let atomicIDs, let reasons, let comparisons):
-            guard let event,
-                case .resolved(let evidence) = event.transition,
-                evidence.priorSnapshotID == priorFinding.firstObservationSnapshotID,
-                evidence.coveredAtomicObservationIDs == atomicIDs,
-                evidence.reasons == reasons,
-                event.semanticComparisons == comparisons
-            else {
-                throw LifecycleContractError.invalidArtifact(
-                    "Finding \(priorFinding.id) is missing its verified absence evidence."
-                )
-            }
-        case .unverified(let reasons, let comparisons):
-            guard let event,
-                case .unverified(let persistedReasons) = event.transition,
-                persistedReasons == reasons,
-                event.semanticComparisons == comparisons
-            else {
-                throw LifecycleContractError.invalidArtifact(
-                    "Finding \(priorFinding.id) has incomplete absence blockers."
-                )
-            }
-        }
-    }
-
-    private func require(group: ContinuityUnresolvedGroup, snapshotID: SnapshotID) throws {
+    private func legacyRequire(group: LegacyContinuityUnresolvedGroup, snapshotID: SnapshotID) throws {
         let candidateIDs = group.findings.map(\.id).sorted { $0.rawValue < $1.rawValue }
         let detectionIDs = group.detections.map(\.id).sorted { $0.rawValue < $1.rawValue }
         for detectionID in detectionIDs {
@@ -167,17 +114,14 @@ extension LifecycleArtifact {
             case .continuityAmbiguous(let evidence) where group.isAmbiguous:
                 guard evidence.currentDetectionIDs == detectionIDs,
                     evidence.candidateFindingIDs == candidateIDs,
-                    evidence.reasons == group.reasons,
-                    event.semanticComparisons == group.semanticComparisons
+                    evidence.reasons == group.reasons
                 else {
                     throw LifecycleContractError.invalidArtifact(
                         "Finding \(candidateID) has incomplete continuity ambiguity evidence."
                     )
                 }
             case .unverified(let reasons) where !group.isAmbiguous:
-                guard reasons == group.reasons,
-                    event.semanticComparisons == group.semanticComparisons
-                else {
+                guard reasons == group.reasons else {
                     throw LifecycleContractError.invalidArtifact(
                         "Finding \(candidateID) has incomplete comparability blockers."
                     )

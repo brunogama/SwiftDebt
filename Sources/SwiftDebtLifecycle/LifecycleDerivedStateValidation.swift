@@ -71,13 +71,25 @@ extension LifecycleArtifact {
             return candidate.rule.identity == finding.rule.identity ? candidate : nil
         }
         guard !priorFindings.isEmpty else { return }
-        let reconciliation = try ContinuityReconciler().reconcile(
-            findings: priorFindings,
-            detections: [openingDetection],
-            snapshot: openingSnapshot,
-            artifact: self
-        )
-        guard reconciliation.newDetections.map(\.id) == [openingDetection.id] else {
+        let newDetectionIDs: [DetectionID]
+        if legacyProcessedSnapshotIDs.contains(openingSnapshot.id) {
+            let reconciliation = try LegacyContinuityReconciler().reconcile(
+                findings: priorFindings,
+                detections: [openingDetection],
+                snapshot: openingSnapshot,
+                artifact: self
+            )
+            newDetectionIDs = reconciliation.newDetections.map(\.id)
+        } else {
+            let reconciliation = try ContinuityReconciler().reconcile(
+                findings: priorFindings,
+                detections: [openingDetection],
+                snapshot: openingSnapshot,
+                artifact: self
+            )
+            newDetectionIDs = reconciliation.newDetections.map(\.id)
+        }
+        guard newDetectionIDs == [openingDetection.id] else {
             throw LifecycleContractError.invalidArtifact(
                 "Finding \(finding.id) opened despite a credible continuity candidate."
             )

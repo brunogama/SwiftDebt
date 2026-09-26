@@ -94,7 +94,8 @@ public struct LifecycleArtifactStore: Sendable {
                 findings: artifact.findings,
                 unresolvedDetections: artifact.unresolvedDetections,
                 processedSnapshotIDs: artifact.processedSnapshotIDs,
-                introductionConclusions: conclusions
+                introductionConclusions: conclusions,
+                legacyProcessedSnapshotIDs: artifact.legacyProcessedSnapshotIDs
             )
             try write(updated)
             return IntroductionRecording(
