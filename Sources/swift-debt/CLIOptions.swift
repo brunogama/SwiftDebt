@@ -51,6 +51,10 @@ struct CLIOptions {
           --profile-output PATH          Write machine-readable phase profiling JSON.
           --lifecycle-artifact PATH      Append an engine-owned Observation Snapshot to this artifact.
           --repository-evidence PATH     Run experimental repository smells and write the schema 1 sidecar.
+          --repository-cache PATH        Store repository syntax facts at an explicit local path.
+          --repository-cache-report PATH Write the schema 1 cache activity report.
+          --rebuild-repository-cache     Ignore retained syntax facts and atomically replace the cache.
+          --no-repository-cache          Analyze repository smells without reading or writing syntax facts.
           --name NAME                    Performance budget name.
           --max-wall-clock-regression PERCENT
                                          Maximum accepted wall-clock regression.
@@ -121,12 +125,15 @@ struct CLIOptions {
         var strict = false
         var interactiveDebt = false
         var pluginEvidenceLimitations = false
+        var rebuildRepositoryCache = false
+        var disableRepositoryCache = false
         var literal = false
         var index = 0
         let valuedOptions: Set<String> = [
             "--config", "--format", "--output", "--profile-output", "--type-scope", "--scoring", "--jobs",
             "--manifest", "--stamp", "--exclude", "--threshold", "--lcov", "--debt-reference-time",
-            "--max-file-bytes", "--lifecycle-artifact", "--repository-evidence",
+            "--max-file-bytes", "--lifecycle-artifact", "--repository-evidence", "--repository-cache",
+            "--repository-cache-report",
         ]
         while index < arguments.count {
             let argument = arguments[index]
@@ -154,6 +161,16 @@ struct CLIOptions {
             if !literal && argument == "--plugin-evidence-limitations" {
                 guard !pluginEvidenceLimitations else { throw CLIError("Duplicate --plugin-evidence-limitations") }
                 pluginEvidenceLimitations = true
+                continue
+            }
+            if !literal && argument == "--rebuild-repository-cache" {
+                guard !rebuildRepositoryCache else { throw CLIError("Duplicate --rebuild-repository-cache") }
+                rebuildRepositoryCache = true
+                continue
+            }
+            if !literal && argument == "--no-repository-cache" {
+                guard !disableRepositoryCache else { throw CLIError("Duplicate --no-repository-cache") }
+                disableRepositoryCache = true
                 continue
             }
             if !literal && argument.hasPrefix("-") {
@@ -197,6 +214,22 @@ struct CLIOptions {
         if values["--manifest"] != nil && path != nil {
             throw CLIError("Use either an input path or --manifest, not both")
         }
+        let repositoryEvidenceEnabled = values["--repository-evidence"] != nil
+        let cacheOptionsUsed =
+            values["--repository-cache"] != nil
+            || values["--repository-cache-report"] != nil
+            || rebuildRepositoryCache || disableRepositoryCache
+        if cacheOptionsUsed && !repositoryEvidenceEnabled {
+            throw CLIError("Repository cache options require --repository-evidence")
+        }
+        if rebuildRepositoryCache && disableRepositoryCache {
+            throw CLIError("Use either --rebuild-repository-cache or --no-repository-cache, not both")
+        }
+        if disableRepositoryCache && values["--repository-cache"] != nil {
+            throw CLIError("--repository-cache cannot be combined with --no-repository-cache")
+        }
+        let repositoryCacheMode: RepositorySyntaxCacheMode =
+            disableRepositoryCache ? .disabled : (rebuildRepositoryCache ? .rebuild : .reuse)
         let format: ReportFormat? = try decode(values["--format"], named: "format")
         if interactiveDebt {
             if values["--output"] != nil {
@@ -235,7 +268,10 @@ struct CLIOptions {
                 pluginEvidenceLimitations: pluginEvidenceLimitations,
                 maximumFileBytes: maximumFileBytes,
                 lifecycleArtifactPath: values["--lifecycle-artifact"],
-                repositoryEvidenceOutputPath: values["--repository-evidence"]
+                repositoryEvidenceOutputPath: values["--repository-evidence"],
+                repositoryCachePath: values["--repository-cache"],
+                repositoryCacheReportOutputPath: values["--repository-cache-report"],
+                repositoryCacheMode: repositoryCacheMode
             ),
             interactiveDebt: interactiveDebt
         )

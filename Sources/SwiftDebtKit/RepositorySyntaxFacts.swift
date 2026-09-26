@@ -9,43 +9,65 @@ struct RepositorySyntaxExtractor {
         maximumAnalysisUnitsPerRule: Int = .max
     ) -> RepositorySyntaxFacts {
         var result = RepositorySyntaxFacts()
-        let (nextUnitCount, unitCountOverflowed) = maximumAnalysisUnitsPerRule.addingReportingOverflow(1)
-        let materializationLimit = unitCountOverflowed ? Int.max : nextUnitCount
+        var budget = RepositorySyntaxFactBudget(
+            maximumAnalysisUnitsPerRule: maximumAnalysisUnitsPerRule
+        )
         for source in sources {
-            let tree = Parser.parse(source: source.content)
-            let converter = SourceLocationConverter(fileName: source.path, tree: tree)
-            let diagnostics = ParseDiagnosticsGenerator.diagnostics(for: tree).map { diagnostic in
-                let location = converter.location(for: diagnostic.position)
-                return AnalysisDiagnostic(
-                    severity: diagnostic.diagMessage.severity == .error ? .error : .warning,
-                    message: diagnostic.message,
-                    location: SwiftDebtCore.SourceLocation(
-                        file: source.path,
-                        line: location.line,
-                        column: location.column
-                    )
-                )
-            }
-            result.diagnostics += diagnostics
-            guard !diagnostics.contains(where: { $0.severity == .error }) else { continue }
-
-            let materializedSwitchCount =
-                result.repeatedSwitchUnits.count + result.conditionalSwitchLocations.count
-            let visitor = RepositoryFactVisitor(
-                source: source,
-                converter: converter,
-                maximumDataClumpUnits: max(0, materializationLimit - result.dataClumpUnits.count),
-                maximumRepeatedSwitchFacts: max(0, materializationLimit - materializedSwitchCount)
+            let sourceFacts = extract(
+                source,
+                maximumDataClumpUnits: budget.dataClumpUnits,
+                maximumRepeatedSwitchFacts: budget.repeatedSwitchFacts
             )
-            visitor.walk(tree)
-            result.dataClumpUnits += visitor.dataClumpUnits
-            result.repeatedSwitchUnits += visitor.repeatedSwitchUnits
-            result.conditionalSwitchLocations += visitor.conditionalSwitchLocations
+            result.append(sourceFacts)
+            budget = RepositorySyntaxFactBudget(
+                dataClumpUnits: budget.dataClumpUnits - sourceFacts.dataClumpUnits.count,
+                repeatedSwitchFacts:
+                    budget.repeatedSwitchFacts
+                    - sourceFacts.repeatedSwitchUnits.count
+                    - sourceFacts.conditionalSwitchLocations.count
+            )
         }
-        result.dataClumpUnits.sort(by: dataClumpUnitOrder)
-        result.repeatedSwitchUnits.sort(by: repeatedSwitchUnitOrder)
-        result.conditionalSwitchLocations.sort(by: sourceLocationOrder)
-        result.diagnostics.sort(by: diagnosticOrder)
+        result.sortCanonical()
+        return result
+    }
+
+    func extract(
+        _ source: SourceUnit,
+        maximumDataClumpUnits: Int,
+        maximumRepeatedSwitchFacts: Int
+    ) -> RepositorySyntaxFacts {
+        let tree = Parser.parse(source: source.content)
+        let converter = SourceLocationConverter(fileName: source.path, tree: tree)
+        let diagnostics = ParseDiagnosticsGenerator.diagnostics(for: tree).map { diagnostic in
+            let location = converter.location(for: diagnostic.position)
+            return AnalysisDiagnostic(
+                severity: diagnostic.diagMessage.severity == .error ? .error : .warning,
+                message: diagnostic.message,
+                location: SwiftDebtCore.SourceLocation(
+                    file: source.path,
+                    line: location.line,
+                    column: location.column
+                )
+            )
+        }.sorted(by: diagnosticOrder)
+        guard !diagnostics.contains(where: { $0.severity == .error }) else {
+            return RepositorySyntaxFacts(diagnostics: diagnostics)
+        }
+
+        let visitor = RepositoryFactVisitor(
+            source: source,
+            converter: converter,
+            maximumDataClumpUnits: maximumDataClumpUnits,
+            maximumRepeatedSwitchFacts: maximumRepeatedSwitchFacts
+        )
+        visitor.walk(tree)
+        var result = RepositorySyntaxFacts(
+            dataClumpUnits: visitor.dataClumpUnits,
+            repeatedSwitchUnits: visitor.repeatedSwitchUnits,
+            conditionalSwitchLocations: visitor.conditionalSwitchLocations,
+            diagnostics: diagnostics
+        )
+        result.sortCanonical()
         return result
     }
 }

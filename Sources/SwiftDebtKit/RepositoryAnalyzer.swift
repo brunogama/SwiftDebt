@@ -29,6 +29,20 @@ public struct RepositoryAnalyzer: Sendable {
         configuration: RepositoryAnalysisConfiguration = .standard,
         versionControl: RepositoryVersionControlIdentity? = nil
     ) throws -> RepositoryEvidenceReport {
+        try analyze(
+            sources,
+            configuration: configuration,
+            versionControl: versionControl,
+            cachePolicy: .disabled
+        ).evidenceReport
+    }
+
+    public func analyze(
+        _ sources: [SourceUnit],
+        configuration: RepositoryAnalysisConfiguration = .standard,
+        versionControl: RepositoryVersionControlIdentity? = nil,
+        cachePolicy: RepositorySyntaxCachePolicy
+    ) throws -> RepositoryAnalysisResult {
         let selected = try select(sources)
         guard selected.count <= configuration.maximumSourceFiles else {
             throw RepositoryAnalysisFailure.sourceFileBudgetExceeded(
@@ -48,10 +62,13 @@ public struct RepositoryAnalyzer: Sendable {
         }
         let digest = try sourceDigest(selected)
 
-        let facts = RepositorySyntaxExtractor().extract(
-            selected,
-            maximumAnalysisUnitsPerRule: configuration.maximumAnalysisUnitsPerRule
+        let cacheResolution = try RepositorySyntaxFactCache().resolve(
+            sources: selected,
+            sourceSnapshotDigest: digest,
+            configuration: configuration,
+            policy: cachePolicy
         )
+        let facts = cacheResolution.facts
         var inheritedIssues: [RepositoryEvidenceIssue] = []
         let parseErrorCount = facts.diagnostics.count { $0.severity == .error }
         if parseErrorCount > 0 {
@@ -84,19 +101,22 @@ public struct RepositoryAnalyzer: Sendable {
             configuration: configuration,
             versionControl: versionControl
         )
-        return RepositoryEvidenceReport(
-            generator: "SwiftDebt \(SwiftDebtRelease.version)",
-            snapshot: snapshot,
-            rules: rules,
-            diagnostics: facts.diagnostics,
-            summary: RepositoryEvidenceSummary(
-                sourceFileCount: selected.count,
-                completeRuleCount: completeCount,
-                incompleteRuleCount: rules.count - completeCount,
-                detectionCount: rules.flatMap(\.detections).count,
-                currentSnapshotNotice:
-                    "Detections describe only this analyzed source snapshot and are not durable Findings or lifecycle state."
-            )
+        return RepositoryAnalysisResult(
+            evidenceReport: RepositoryEvidenceReport(
+                generator: "SwiftDebt \(SwiftDebtRelease.version)",
+                snapshot: snapshot,
+                rules: rules,
+                diagnostics: facts.diagnostics,
+                summary: RepositoryEvidenceSummary(
+                    sourceFileCount: selected.count,
+                    completeRuleCount: completeCount,
+                    incompleteRuleCount: rules.count - completeCount,
+                    detectionCount: rules.flatMap(\.detections).count,
+                    currentSnapshotNotice:
+                        "Detections describe only this analyzed source snapshot and are not durable Findings or lifecycle state."
+                )
+            ),
+            cacheReport: cacheResolution.report
         )
     }
 

@@ -1,6 +1,6 @@
 import SwiftSyntax
 
-struct NormalizedTokenSequence: Hashable, Comparable, Sendable {
+struct NormalizedTokenSequence: Codable, Hashable, Comparable, Sendable {
     let tokens: [String]
 
     var canonicalValue: String {
