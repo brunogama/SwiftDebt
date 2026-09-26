@@ -247,7 +247,14 @@ def validate_cache_sample(
             },
             "writePerformed": expected["writePerformed"],
         }
-    if activity["storage"] != expected_storage:
+    observed_storage = dict(activity["storage"])
+    observed_storage["location"] = canonical_storage_path(
+        observed_storage.get("location")
+    )
+    expected_storage["location"] = canonical_storage_path(
+        expected_storage.get("location")
+    )
+    if observed_storage != expected_storage:
         raise RuntimeError(
             f"{scenario['id']} cache storage provenance mismatch: "
             f"expected {expected_storage!r}, observed {activity['storage']!r}"
@@ -260,6 +267,12 @@ def validate_cache_sample(
             raise RuntimeError("cache-disabled sample created retained state")
     elif sample.get("cacheStoreSHA256After") is None:
         raise RuntimeError("cache-writing sample did not retain a cache document")
+
+
+def canonical_storage_path(value: str | None) -> str | None:
+    if value is None:
+        return None
+    return str(Path(value).resolve(strict=False))
 
 
 def induced_repository_samples(

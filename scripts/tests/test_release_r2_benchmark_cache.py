@@ -230,6 +230,67 @@ class R2ReleaseBenchmarkCacheTests(unittest.TestCase):
                 self.manifest["repositoryCacheCompatibility"],
             )
 
+        mismatched_storage_path = copy.deepcopy(samples["cold"])
+        mismatched_storage_path["repositoryCacheActivity"]["storage"]["location"] += (
+            ".different"
+        )
+        with self.assertRaisesRegex(RuntimeError, "storage provenance mismatch"):
+            validate_cache_sample(
+                mismatched_storage_path,
+                scenarios["cold"],
+                self.manifest["repositoryConfiguration"],
+                self.manifest["providerIdentities"]["repositorySyntax"],
+                self.manifest["repositoryRules"],
+                self.manifest["repositoryCacheCompatibility"],
+            )
+
+    @unittest.skipUnless(sys.platform == "darwin", "macOS /tmp alias contract")
+    def test_cache_storage_provenance_accepts_macos_tmp_realpath_alias(self):
+        scenario = next(
+            item
+            for item in self.manifest["scenarios"]
+            if item["id"] == "repository-evidence-cold-cache-scale-16"
+        )
+        with tempfile.TemporaryDirectory(dir="/tmp") as temporary:
+            root = Path(temporary)
+            corpus = root / "corpus"
+            generate_scale_corpus(corpus, 16)
+            fake = root / "stateful-swift-debt"
+            fake.write_text(
+                stateful_fake_cli_source(
+                    scenario,
+                    self.manifest["repositoryConfiguration"],
+                    self.manifest["repositoryCacheCompatibility"],
+                ),
+                encoding="utf-8",
+            )
+            fake.chmod(0o755)
+            sample = run_repository_sample(
+                fake,
+                corpus,
+                root / "sample",
+                scenario,
+                self.manifest["repositoryConfiguration"],
+                self.manifest["providerIdentities"]["repositorySyntax"],
+                self.manifest["repositoryRules"],
+                self.manifest["repositoryCacheCompatibility"],
+            )
+            reported_path = sample["repositoryCacheActivity"]["storage"]["location"]
+            sample["expectedCachePath"] = str(
+                Path(sample["expectedCachePath"]).resolve(strict=False)
+            )
+
+            self.assertTrue(reported_path.startswith("/tmp/"))
+            self.assertTrue(sample["expectedCachePath"].startswith("/private/tmp/"))
+            validate_cache_sample(
+                sample,
+                scenario,
+                self.manifest["repositoryConfiguration"],
+                self.manifest["providerIdentities"]["repositorySyntax"],
+                self.manifest["repositoryRules"],
+                self.manifest["repositoryCacheCompatibility"],
+            )
+
     def test_repository_sample_rejects_unexpected_controlled_state_file(self):
         scenario = next(
             item
