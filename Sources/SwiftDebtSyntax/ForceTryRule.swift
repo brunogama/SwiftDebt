@@ -16,7 +16,8 @@ public struct ForceTryRule: DebtRule {
         semantics:
             "Reports every syntactic try! occurrence in a successfully parsed source tree, including all #if branches.",
         rationale:
-            "A force try traps when its expression throws. Syntax-only analysis does not evaluate conditional compilation."
+            "A force try traps when its expression throws. Syntax-only analysis does not evaluate conditional compilation.",
+        configurationCompatibilityDeclarations: [maximumFileBytesCompatibility]
     )
 
     public init() {}
@@ -26,6 +27,27 @@ public struct ForceTryRule: DebtRule {
         visitor.walk(context.sourceFile)
     }
 }
+
+private let maximumFileBytesCompatibility: ConfigurationCompatibilityDeclaration = {
+    guard
+        let testEvidence = CompatibilityTestEvidence(
+            identifier:
+                "EffectiveConfigurationCompatibilityCLIWorkflowTests.nondecreasingMaximumFileBytesSupportsAbsence",
+            summary: "Real Git-backed CLI analyses prove absence only in the tested nondecreasing direction."
+        ),
+        let declaration = ConfigurationCompatibilityDeclaration(
+            fromRevision: .initial,
+            supportedClaims: [.absence],
+            conditions: [.maximumFileBytesNondecreasing],
+            testEvidence: testEvidence,
+            rationale:
+                "A higher file-size ceiling broadens source eligibility without changing ForceTry detection meaning."
+        )
+    else {
+        preconditionFailure("The ForceTry configuration compatibility declaration is valid.")
+    }
+    return declaration
+}()
 
 private final class ForceTryVisitor: SyntaxVisitor {
     private let emit: DetectionEmitter

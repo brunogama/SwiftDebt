@@ -22,12 +22,12 @@ enum LifecycleCanonicalDigest {
         analysis: AnalysisSnapshot,
         capture: LifecycleAnalysisCapture
     ) throws -> LifecycleDigest {
-        try configuration(
+        try effectiveConfiguration(
             analysis: analysis,
             selectionKind: capture.selectionKind,
             exclusions: capture.exclusions,
             maximumFileBytes: capture.maximumFileBytes
-        )
+        ).fingerprint()
     }
 
     static func configuration(
@@ -36,21 +36,44 @@ enum LifecycleCanonicalDigest {
         exclusions: [String],
         maximumFileBytes: Int
     ) throws -> LifecycleDigest {
-        var input = LifecycleDigestInput()
-        input.append("swiftdebt-lifecycle-configuration-v2")
-        input.append("source-discovery-policy-v1")
-        input.append(selectionKind.rawValue)
-        input.append(maximumFileBytes.description)
-        input.append(UInt64(exclusions.count))
-        for exclusion in exclusions { input.append(exclusion) }
-        let rules = analysis.ruleDescriptors.sorted {
-            $0.identity.description < $1.identity.description
-        }
-        input.append(UInt64(rules.count))
-        for rule in rules {
-            input.append(rule.identity.description)
-        }
-        return try LifecycleDigest(value: input.hexDigest())
+        try effectiveConfiguration(
+            analysis: analysis,
+            selectionKind: selectionKind,
+            exclusions: exclusions,
+            maximumFileBytes: maximumFileBytes
+        ).fingerprint()
+    }
+
+    static func effectiveConfiguration(
+        analysis: AnalysisSnapshot,
+        capture: LifecycleAnalysisCapture
+    ) throws -> LifecycleEffectiveConfiguration {
+        try effectiveConfiguration(
+            analysis: analysis,
+            selectionKind: capture.selectionKind,
+            exclusions: capture.exclusions,
+            maximumFileBytes: capture.maximumFileBytes
+        )
+    }
+
+    static func effectiveConfiguration(
+        analysis: AnalysisSnapshot,
+        selectionKind: LifecycleSelectionKind,
+        exclusions: [String],
+        maximumFileBytes: Int
+    ) throws -> LifecycleEffectiveConfiguration {
+        let kind: SourceSelectionKind =
+            switch selectionKind {
+            case .directory: .directory
+            case .file: .file
+            case .manifest: .manifest
+            }
+        return try LifecycleEffectiveConfiguration(
+            sourceSelectionKind: kind,
+            excludedSourcePrefixes: exclusions,
+            maximumFileBytes: maximumFileBytes,
+            selectedRuleIdentities: analysis.ruleDescriptors.map(\.identity)
+        )
     }
 
     static func snapshotID(
@@ -81,6 +104,21 @@ enum LifecycleCanonicalDigest {
                 input.append(UInt64(declaration.supportedClaims.count))
                 for claim in declaration.supportedClaims { input.append(claim.rawValue) }
                 input.append(declaration.rationale)
+            }
+            let configurationDeclarations = rule.contract.configurationCompatibilityDeclarations
+            if !configurationDeclarations.isEmpty {
+                input.append("configuration-compatibility-v1")
+                input.append(UInt64(configurationDeclarations.count))
+                for declaration in configurationDeclarations {
+                    input.append(declaration.fromRevision.rawValue.description)
+                    input.append(UInt64(declaration.supportedClaims.count))
+                    for claim in declaration.supportedClaims { input.append(claim.rawValue) }
+                    input.append(UInt64(declaration.conditions.count))
+                    for condition in declaration.conditions { input.append(condition.rawValue) }
+                    input.append(declaration.testEvidence.identifier)
+                    input.append(declaration.testEvidence.summary)
+                    input.append(declaration.rationale)
+                }
             }
         }
         input.append(engineVersion)

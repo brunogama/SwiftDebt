@@ -420,11 +420,29 @@ public struct AnalysisService: Sendable {
 
     private func merge(evidence: [DebtEvidence], into items: [DebtItem]) -> [DebtItem] {
         guard !evidence.isEmpty else { return items }
+        let itemCountByID = Dictionary(grouping: items, by: \.id).mapValues { $0.count }
         let grouped = Dictionary(grouping: evidence) { evidence in
-            entityID(for: evidence.id)
+            EvidenceTarget(
+                entityID: entityID(for: evidence.id),
+                location: evidence.location
+            )
         }
         return items.map { item in
-            let mergedEvidence = (item.evidence + grouped[item.id, default: []]).sorted { lhs, rhs in
+            let exactTarget = EvidenceTarget(
+                entityID: item.id,
+                location: item.entity.location
+            )
+            var providerEvidence = grouped[exactTarget, default: []]
+            // Current coverage and history providers always identify their entity location.
+            // A future locationless record is safe only when its ID names one item.
+            if itemCountByID[item.id] == 1 {
+                providerEvidence +=
+                    grouped[
+                        EvidenceTarget(entityID: item.id, location: nil),
+                        default: []
+                    ]
+            }
+            let mergedEvidence = (item.evidence + providerEvidence).sorted { lhs, rhs in
                 if lhs.id != rhs.id { return lhs.id < rhs.id }
                 if lhs.kind != rhs.kind { return lhs.kind < rhs.kind }
                 return lhs.rawValue < rhs.rawValue
@@ -436,6 +454,11 @@ public struct AnalysisService: Sendable {
             }
             return lhs.id < rhs.id
         }
+    }
+
+    private struct EvidenceTarget: Hashable {
+        let entityID: String
+        let location: DebtLocation?
     }
 
     private func entityID(for evidenceID: String) -> String {

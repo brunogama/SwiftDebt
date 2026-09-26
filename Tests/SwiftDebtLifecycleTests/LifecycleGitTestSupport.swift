@@ -29,6 +29,27 @@ final class TemporaryLifecycleGitRepository {
         return try gitOutput(["rev-parse", "HEAD"]).trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    func commit(source: String, message: String, date: String) throws -> String {
+        try write(source: source)
+        try runGit(["add", "Sources/Input.swift"])
+        var environment = ProcessInfo.processInfo.environment
+        environment["GIT_AUTHOR_DATE"] = date
+        environment["GIT_COMMITTER_DATE"] = date
+        environment["GIT_AUTHOR_NAME"] = "Lifecycle Test"
+        environment["GIT_AUTHOR_EMAIL"] = "lifecycle@example.test"
+        environment["GIT_COMMITTER_NAME"] = "Lifecycle Test"
+        environment["GIT_COMMITTER_EMAIL"] = "lifecycle@example.test"
+        let result = try runLifecycleProcess(
+            executable: URL(fileURLWithPath: "/usr/bin/env"),
+            arguments: ["git", "-C", repository.path, "-c", "commit.gpgsign=false", "commit", "-m", message],
+            directory: repository,
+            environment: environment,
+            mergeStandardError: true
+        )
+        guard result.status == 0 else { throw LifecycleGitFixtureError(message: result.standardOutput) }
+        return try gitOutput(["rev-parse", "HEAD"]).trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     func commitAll(message: String) throws -> String {
         try runGit(["add", "-A"])
         try runGit(["commit", "-m", message])

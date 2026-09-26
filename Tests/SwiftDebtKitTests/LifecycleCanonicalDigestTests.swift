@@ -81,6 +81,32 @@ struct LifecycleCanonicalDigestTests {
                 compatibilityDeclarations: [declaration]
             )
         )
+        let configurationEvidence = try #require(
+            CompatibilityTestEvidence(
+                identifier: "LifecycleCanonicalDigestTests.semanticContractDigestSeparation",
+                summary: "Proves that snapshot identity binds configuration authority."
+            )
+        )
+        let configurationDeclaration = try #require(
+            ConfigurationCompatibilityDeclaration(
+                fromRevision: .initial,
+                supportedClaims: [.continuity],
+                conditions: [.maximumFileBytesNondecreasing],
+                testEvidence: configurationEvidence,
+                rationale: "Fixture configuration authority."
+            )
+        )
+        let configurationCompatibleRevisionTwo = RuleDescriptor(
+            identity: identity,
+            metadata: metadata,
+            contract: RuleContract(
+                semanticRevision: revisionTwo,
+                semantics: "Revision 2.",
+                rationale: "Fixture.",
+                compatibilityDeclarations: [declaration],
+                configurationCompatibilityDeclarations: [configurationDeclaration]
+            )
+        )
         let firstAnalysis = AnalysisSnapshot(
             ruleDescriptors: [revisionOne],
             selectedSourcePaths: [],
@@ -104,6 +130,10 @@ struct LifecycleCanonicalDigestTests {
             maximumFileBytes: 1_024
         )
         #expect(firstConfiguration == secondConfiguration)
+        #expect(
+            firstConfiguration.value
+                == "2758ec96568f77da2a0dcad5dc0ad4b8ef70e7722f8ce295c917b90d64c453ba"
+        )
 
         let sourceDigest = try LifecycleCanonicalDigest.sourceUnits([
             SourceUnit(path: "Sources/Input.swift", content: "let value = 1\n")
@@ -125,5 +155,14 @@ struct LifecycleCanonicalDigestTests {
             engineVersion: "test-engine"
         )
         #expect(firstSnapshotID != secondSnapshotID)
+        let configurationSnapshotID = try LifecycleCanonicalDigest.snapshotID(
+            sourceIdentity: .contentDigest(sourceDigest),
+            scope: .repository,
+            configuration: secondConfiguration,
+            rules: [configurationCompatibleRevisionTwo],
+            capabilities: [],
+            engineVersion: "test-engine"
+        )
+        #expect(configurationSnapshotID != secondSnapshotID)
     }
 }

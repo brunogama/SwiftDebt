@@ -105,6 +105,20 @@ extension LifecycleReadService {
                 "Excluded source prefix: \($0.rawValue)"
             }
         }
+        if let configuration = snapshot.provenance.effectiveConfiguration {
+            lines.append(
+                "Effective configuration: selection=\(configuration.sourceSelectionKind.rawValue) "
+                    + "maximum-file-bytes=\(configuration.maximumFileBytes)"
+            )
+            lines.append(
+                "Effective configuration exclusions: "
+                    + configuration.excludedSourcePrefixes.joined(separator: ",")
+            )
+            lines.append(
+                "Effective configuration rules: "
+                    + configuration.selectedRuleIdentities.map(\.description).joined(separator: ",")
+            )
+        }
         lines += snapshot.provenance.capabilities.map {
             "Capability \($0.name): \(renderCapabilityState($0.state))"
         }
@@ -116,6 +130,19 @@ extension LifecycleReadService {
                 "Semantic compatibility: \(rule.identity) revisions="
                     + "\(declaration.fromRevision.rawValue)->\(rule.semanticRevision.rawValue) "
                     + "claims=\(declaration.supportedClaims.map(\.rawValue).joined(separator: ","))"
+            }
+        }
+        for rule in snapshot.rules {
+            for declaration in rule.configurationCompatibilityDeclarations {
+                let claims = declaration.supportedClaims.map(\.rawValue).joined(separator: ",")
+                let conditions = declaration.conditions.map(\.rawValue).joined(separator: ",")
+                let revisions = "\(declaration.fromRevision.rawValue)->\(rule.semanticRevision.rawValue)"
+                let test = declaration.testEvidence
+                lines.append(
+                    "Configuration compatibility: \(rule.identity) revisions=\(revisions) "
+                        + "claims=\(claims) conditions=\(conditions) "
+                        + "test=\(test.identifier) test-summary=\(test.summary)"
+                )
             }
         }
         lines += snapshot.provenance.sourceRenames.map {
@@ -195,6 +222,23 @@ extension LifecycleReadService {
             lines.append(
                 "    Declaration: claims="
                     + declaration.supportedClaims.map(\.rawValue).joined(separator: ",")
+                    + " rationale=\(declaration.rationale)"
+            )
+        }
+        if let prior = comparison.priorEffectiveConfiguration,
+            let current = comparison.currentEffectiveConfiguration
+        {
+            lines.append(
+                "    Effective maximum file bytes: \(prior.maximumFileBytes) -> \(current.maximumFileBytes)"
+            )
+        }
+        if let declaration = comparison.configurationCompatibilityDeclaration {
+            lines.append(
+                "    Configuration declaration: claims="
+                    + declaration.supportedClaims.map(\.rawValue).joined(separator: ",")
+                    + " conditions=\(declaration.conditions.map(\.rawValue).joined(separator: ","))"
+                    + " test=\(declaration.testEvidence.identifier)"
+                    + " test-summary=\(declaration.testEvidence.summary)"
                     + " rationale=\(declaration.rationale)"
             )
         }

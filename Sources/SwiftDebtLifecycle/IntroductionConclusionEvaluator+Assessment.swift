@@ -32,20 +32,6 @@ extension IntroductionConclusionEvaluator {
                 semanticComparisons: []
             )
         }
-        guard
-            observation.provenance.configurationFingerprint
-                == openingSnapshot.provenance.configurationFingerprint
-        else {
-            return .incomplete(
-                [
-                    try LifecycleReason(
-                        code: "historical-configuration-incomparable",
-                        message: "Revision \(record.revision.rawValue) used a different analysis configuration."
-                    )
-                ],
-                semanticComparisons: []
-            )
-        }
         guard observation.provenance.engineVersion == openingSnapshot.provenance.engineVersion else {
             return .incomplete(
                 [
