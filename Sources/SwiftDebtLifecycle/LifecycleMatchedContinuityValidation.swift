@@ -2,8 +2,7 @@ extension LifecycleArtifact {
     func validateMatchedContinuity(
         _ evidence: MatchedContinuityEvidence,
         finding: Finding,
-        snapshot: ObservationSnapshot,
-        findings: [FindingID: Finding]
+        snapshot: ObservationSnapshot
     ) throws {
         guard let currentDetection = snapshot.detection(id: evidence.currentDetection.detectionID),
             let currentAtomic = snapshot.atomicObservation(id: evidence.currentDetection.atomicObservationID),
@@ -42,15 +41,9 @@ extension LifecycleArtifact {
             )
         }
 
-        let currentSequence = snapshot.provenance.lineage.sequence
-        let priorFindings = try findings.values.compactMap { candidate -> Finding? in
-            guard candidate.lineageID == finding.lineageID,
-                candidate.rule.identity == finding.rule.identity
-            else { return nil }
-            return try candidate.version(
-                before: currentSequence,
-                snapshots: Dictionary(uniqueKeysWithValues: snapshots.map { ($0.id, $0) })
-            )
+        let priorFindings = try parentFindingProjections(of: snapshot.id).compactMap { projection in
+            let candidate = projection.finding
+            return candidate.rule.identity == finding.rule.identity ? candidate : nil
         }
         let currentDetections = snapshot.detections.filter {
             $0.rule.identity == finding.rule.identity

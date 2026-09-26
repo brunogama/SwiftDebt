@@ -18,6 +18,7 @@ struct ResolutionCoverageEvaluator {
             firstSnapshot: firstSnapshot,
             currentSnapshot: snapshot,
             finding: finding,
+            artifact: artifact,
             blockers: &blockers
         )
         if !snapshot.provenance.scope.isCompleteRepository {
@@ -159,18 +160,17 @@ struct ResolutionCoverageEvaluator {
         firstSnapshot: ObservationSnapshot,
         currentSnapshot: ObservationSnapshot,
         finding: Finding,
+        artifact: LifecycleArtifact,
         blockers: inout [LifecycleReason]
     ) throws {
-        let first = firstSnapshot.provenance.lineage
-        let current = currentSnapshot.provenance.lineage
-        guard first.lineageID == finding.lineageID,
-            current.lineageID == finding.lineageID,
-            current.sequence > first.sequence
+        guard firstSnapshot.id == finding.firstObservationSnapshotID,
+            firstSnapshot.id != currentSnapshot.id,
+            artifact.isAncestor(firstSnapshot.id, of: currentSnapshot.id)
         else {
             blockers.append(
                 try LifecycleReason(
                     code: "lineage-incomparable",
-                    message: "Verified absence requires a later snapshot in the Finding's lineage."
+                    message: "Verified absence requires a later snapshot on the selected snapshot-graph path."
                 )
             )
             return

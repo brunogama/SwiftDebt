@@ -5,11 +5,7 @@ extension LifecycleArtifact {
     ) throws {
         for snapshotID in processed {
             guard let snapshot = snapshots[snapshotID] else { continue }
-            let sequence = snapshot.provenance.lineage.sequence
-            let priorFindings = try findings.compactMap { finding -> Finding? in
-                guard finding.lineageID == snapshot.provenance.lineage.lineageID else { return nil }
-                return try finding.version(before: sequence, snapshots: snapshots)
-            }
+            let priorFindings = try parentFindingProjections(of: snapshotID).map(\.finding)
             let identities = Set(
                 priorFindings.map { $0.rule.identity }
                     + snapshot.detections.map { $0.rule.identity }

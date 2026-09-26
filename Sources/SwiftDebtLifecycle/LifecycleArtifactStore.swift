@@ -48,11 +48,11 @@ public struct LifecycleArtifactStore: Sendable {
     }
 
     public func ingest(_ snapshot: ObservationSnapshot) throws -> LifecycleReduction {
-        try ingestLocked { _ in snapshot }
+        try ingestLocked { _ in .explicit(snapshot) }
     }
 
     package func ingest(
-        buildingSnapshot buildSnapshot: (LifecycleArtifact?) throws -> ObservationSnapshot
+        buildingSnapshot buildSnapshot: (LifecycleArtifact?) throws -> LifecycleSnapshotIngestion
     ) throws -> LifecycleReduction {
         try ingestLocked(buildSnapshot)
     }
@@ -90,10 +90,10 @@ public struct LifecycleArtifactStore: Sendable {
                 reportKind: artifact.reportKind,
                 generatorVersion: artifact.generatorVersion,
                 snapshots: artifact.snapshots,
+                snapshotParentEdges: artifact.snapshotParentEdges,
                 findings: artifact.findings,
                 unresolvedDetections: artifact.unresolvedDetections,
                 processedSnapshotIDs: artifact.processedSnapshotIDs,
-                lineageHeads: artifact.lineageHeads,
                 introductionConclusions: conclusions
             )
             try write(updated)
@@ -106,7 +106,7 @@ public struct LifecycleArtifactStore: Sendable {
     }
 
     private func ingestLocked(
-        _ buildSnapshot: (LifecycleArtifact?) throws -> ObservationSnapshot
+        _ buildSnapshot: (LifecycleArtifact?) throws -> LifecycleSnapshotIngestion
     ) throws -> LifecycleReduction {
         let directory = artifactURL.deletingLastPathComponent()
         do {
@@ -116,9 +116,9 @@ public struct LifecycleArtifactStore: Sendable {
         }
         return try withExclusiveLock {
             let existingArtifact = FileManager.default.fileExists(atPath: artifactURL.path) ? try load() : nil
-            let snapshot = try buildSnapshot(existingArtifact)
+            let input = try buildSnapshot(existingArtifact)
             let artifact = try existingArtifact ?? LifecycleArtifact(generatorVersion: generatorVersion)
-            let reduction = try LifecycleReducer().ingest(snapshot, into: artifact)
+            let reduction = try LifecycleReducer().ingest(input, into: artifact)
             if reduction.status == .accepted {
                 try write(reduction.artifact)
             }

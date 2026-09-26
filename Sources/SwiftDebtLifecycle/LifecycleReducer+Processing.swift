@@ -1,7 +1,6 @@
 extension LifecycleReducer {
     func process(_ snapshot: ObservationSnapshot, artifact: inout LifecycleArtifact) throws {
-        let lineageID = snapshot.provenance.lineage.lineageID
-        let priorFindings = artifact.findings.filter { $0.lineageID == lineageID }
+        let priorFindings = try artifact.parentFindingProjections(of: snapshot.id).map(\.finding)
         let identities = Set(
             priorFindings.map { $0.rule.identity }
                 + snapshot.detections.map { $0.rule.identity }
@@ -54,6 +53,7 @@ extension LifecycleReducer {
         let event = LifecycleEvent(
             id: try LifecycleEventID("event:\(findingID.rawValue):opened"),
             snapshotID: snapshot.id,
+            basisEventIDs: [],
             transition: .opened(evidence)
         )
         artifact.findings.append(
@@ -71,7 +71,9 @@ extension LifecycleReducer {
         snapshot: ObservationSnapshot,
         artifact: inout LifecycleArtifact
     ) throws {
-        guard let index = artifact.findings.firstIndex(where: { $0.id == match.finding.id }) else {
+        guard let index = artifact.findings.firstIndex(where: { $0.id == match.finding.id }),
+            let basisEventID = match.finding.events.last?.id
+        else {
             return
         }
         let evidence = MatchedContinuityEvidence(
@@ -90,6 +92,7 @@ extension LifecycleReducer {
                     kind: transition.kind
                 ),
                 snapshotID: snapshot.id,
+                basisEventIDs: [basisEventID],
                 transition: transition
             )
         )
@@ -104,7 +107,9 @@ extension LifecycleReducer {
         let detectionIDs = group.detections.map(\.id)
         for finding in group.findings {
             guard finding.lifecycleState == .open else { continue }
-            guard let index = artifact.findings.firstIndex(where: { $0.id == finding.id }) else { continue }
+            guard let index = artifact.findings.firstIndex(where: { $0.id == finding.id }),
+                let basisEventID = finding.events.last?.id
+            else { continue }
             let transition: LifecycleTransition =
                 group.isAmbiguous
                 ? .continuityAmbiguous(
@@ -123,6 +128,7 @@ extension LifecycleReducer {
                         kind: transition.kind
                     ),
                     snapshotID: snapshot.id,
+                    basisEventIDs: [basisEventID],
                     transition: transition
                 )
             )
@@ -159,7 +165,9 @@ extension LifecycleReducer {
             snapshot: snapshot,
             artifact: artifact
         )
-        guard let index = artifact.findings.firstIndex(where: { $0.id == finding.id }) else { return }
+        guard let index = artifact.findings.firstIndex(where: { $0.id == finding.id }),
+            let basisEventID = finding.events.last?.id
+        else { return }
         switch assessment {
         case .verified(let atomicObservationIDs, let reasons):
             guard finding.lifecycleState == .open else { return }
@@ -174,6 +182,7 @@ extension LifecycleReducer {
                 LifecycleEvent(
                     id: try eventID(findingID: finding.id, snapshotID: snapshot.id, kind: transition.kind),
                     snapshotID: snapshot.id,
+                    basisEventIDs: [basisEventID],
                     transition: transition
                 )
             )
@@ -184,6 +193,7 @@ extension LifecycleReducer {
                 LifecycleEvent(
                     id: try eventID(findingID: finding.id, snapshotID: snapshot.id, kind: transition.kind),
                     snapshotID: snapshot.id,
+                    basisEventIDs: [basisEventID],
                     transition: transition
                 )
             )

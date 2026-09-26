@@ -31,8 +31,8 @@ struct CLIOptions {
                swift-debt validate-improvement BEFORE_JSON AFTER_JSON [--threshold SCORE] [--output PATH]
                swift-debt explain coverage [path] --lcov PATH [options]
                swift-debt performance-gate BASELINE_JSON CANDIDATE_JSON [options]
-               swift-debt lifecycle inventory ARTIFACT [--format text|json]
-               swift-debt lifecycle explain ARTIFACT FINDING_ID [--format text|json]
+               swift-debt lifecycle inventory ARTIFACT [--head SNAPSHOT_ID] [--format text|json]
+               swift-debt lifecycle explain ARTIFACT FINDING_ID [--head SNAPSHOT_ID] [--format text|json]
                swift-debt lifecycle snapshot ARTIFACT SNAPSHOT_ID [--format text|json]
                swift-debt lifecycle infer-introduction ARTIFACT FINDING_ID
                    --repository PATH --max-revisions INTEGER [--max-file-bytes INTEGER]

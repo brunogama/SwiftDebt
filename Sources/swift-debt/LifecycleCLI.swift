@@ -3,8 +3,13 @@ import SwiftDebtKit
 import SwiftDebtLifecycle
 
 enum LifecycleCLIRequest {
-    case inventory(artifactPath: String, format: LifecycleReadFormat)
-    case explain(artifactPath: String, findingID: FindingID, format: LifecycleReadFormat)
+    case inventory(artifactPath: String, headSnapshotID: SnapshotID?, format: LifecycleReadFormat)
+    case explain(
+        artifactPath: String,
+        findingID: FindingID,
+        headSnapshotID: SnapshotID?,
+        format: LifecycleReadFormat
+    )
     case snapshot(artifactPath: String, snapshotID: SnapshotID, format: LifecycleReadFormat)
     case inferIntroduction(
         artifactPath: String,
@@ -18,12 +23,17 @@ enum LifecycleCLIRequest {
     func run() throws -> String {
         let service = LifecycleReadService()
         switch self {
-        case .inventory(let artifactPath, let format):
-            return try service.inventory(at: URL(fileURLWithPath: artifactPath), format: format)
-        case .explain(let artifactPath, let findingID, let format):
+        case .inventory(let artifactPath, let headSnapshotID, let format):
+            return try service.inventory(
+                at: URL(fileURLWithPath: artifactPath),
+                headSnapshotID: headSnapshotID,
+                format: format
+            )
+        case .explain(let artifactPath, let findingID, let headSnapshotID, let format):
             return try service.explain(
                 findingID: findingID,
                 at: URL(fileURLWithPath: artifactPath),
+                headSnapshotID: headSnapshotID,
                 format: format
             )
         case .snapshot(let artifactPath, let snapshotID, let format):
@@ -66,6 +76,7 @@ extension CLIOptions {
         var positional: [String] = []
         var format = LifecycleReadFormat.text
         var sawFormat = false
+        var headSnapshotID: SnapshotID?
         var index = 1
         var literal = false
         while index < arguments.count {
@@ -97,6 +108,26 @@ extension CLIOptions {
                 index += 1
                 continue
             }
+            if !literal && argument.hasPrefix("--head=") {
+                guard headSnapshotID == nil else { throw CLIError("Duplicate option: --head") }
+                do {
+                    headSnapshotID = try SnapshotID(String(argument.dropFirst("--head=".count)))
+                } catch {
+                    throw CLIError(String(describing: error))
+                }
+                continue
+            }
+            if !literal && argument == "--head" {
+                guard headSnapshotID == nil else { throw CLIError("Duplicate option: --head") }
+                guard index < arguments.count else { throw CLIError("Missing value for --head") }
+                do {
+                    headSnapshotID = try SnapshotID(arguments[index])
+                } catch {
+                    throw CLIError(String(describing: error))
+                }
+                index += 1
+                continue
+            }
             if !literal && argument.hasPrefix("-") {
                 throw CLIError("Unknown lifecycle option: \(argument)")
             }
@@ -106,18 +137,25 @@ extension CLIOptions {
         switch command {
         case "inventory":
             guard positional.count == 1 else {
-                throw CLIError("Usage: swift-debt lifecycle inventory ARTIFACT [--format text|json]")
+                throw CLIError(
+                    "Usage: swift-debt lifecycle inventory ARTIFACT [--head SNAPSHOT_ID] [--format text|json]")
             }
-            return .lifecycle(.inventory(artifactPath: positional[0], format: format))
+            return .lifecycle(
+                .inventory(artifactPath: positional[0], headSnapshotID: headSnapshotID, format: format)
+            )
         case "explain":
             guard positional.count == 2 else {
-                throw CLIError("Usage: swift-debt lifecycle explain ARTIFACT FINDING_ID [--format text|json]")
+                throw CLIError(
+                    "Usage: swift-debt lifecycle explain ARTIFACT FINDING_ID "
+                        + "[--head SNAPSHOT_ID] [--format text|json]"
+                )
             }
             do {
                 return .lifecycle(
                     .explain(
                         artifactPath: positional[0],
                         findingID: try FindingID(positional[1]),
+                        headSnapshotID: headSnapshotID,
                         format: format
                     )
                 )
@@ -125,7 +163,7 @@ extension CLIOptions {
                 throw CLIError(String(describing: error))
             }
         case "snapshot":
-            guard positional.count == 2 else {
+            guard positional.count == 2, headSnapshotID == nil else {
                 throw CLIError("Usage: swift-debt lifecycle snapshot ARTIFACT SNAPSHOT_ID [--format text|json]")
             }
             do {
