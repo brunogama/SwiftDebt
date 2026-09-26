@@ -27,7 +27,7 @@ public struct LocalCandidateSourceSnapshotDigest: Codable, Equatable, Sendable {
 public struct SQVectorPackageIdentity: Codable, Equatable, Sendable {
     public static let pinned = Self(
         version: .unavailable,
-        validatedRevision: "aafd9ae601826112978127c7cb611c94ab8a2e06"
+        validatedRevision: "dffe847b82aadecb6eaf344cbda05a43bb5a4a51"
     )
 
     public let version: LocalCandidateVersionIdentity

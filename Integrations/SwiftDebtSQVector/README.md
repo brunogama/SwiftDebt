@@ -12,7 +12,7 @@ SwiftDebt platforms.
 
 The integration resolves the root package from
 `https://github.com/brunogama/sqvector-swift.git` at the exact immutable
-revision `aafd9ae601826112978127c7cb611c94ab8a2e06`. That revision exposes the
+revision `dffe847b82aadecb6eaf344cbda05a43bb5a4a51`. That revision exposes the
 `SQVectorStatic` product from the repository root; the linked target imports its
 public `SQVector` module. The root also preserves SQVector's existing automatic
 `SwiftSQLiteVec` product.
@@ -102,7 +102,7 @@ names.
 ## Qualification status
 
 This exact-index slice pins SQVector revision
-`aafd9ae601826112978127c7cb611c94ab8a2e06` on the published
+`dffe847b82aadecb6eaf344cbda05a43bb5a4a51` on the published
 `feature/static-product` branch. The manifest and runtime compatibility
 identity use the same revision. The absence of a compatible release tag is
 represented explicitly instead of assigning a fabricated package version.
