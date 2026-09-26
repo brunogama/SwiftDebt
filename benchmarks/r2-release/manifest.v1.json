@@ -126,6 +126,7 @@
     "measuredRuns": 30,
     "inducedRegressionRuns": 5,
     "percentileMethod": "nearest-rank",
+    "noiseFloorSource": "Reference-only wall samples for paired R1/R2 scenarios; candidate calibration samples for R2-only proposed ceilings.",
     "crossVersionReportComparison": "Canonical JSON excluding only engineVersion; raw report SHA-256 and engineVersion remain recorded.",
     "coldStateDefinition": "Each cold sample starts a new CLI process with either --no-repository-cache or an explicit absent cache path and a fresh derived-output directory; five unmeasured warmups precede measured samples, so filesystem pages may be resident.",
     "rawMeasurements": [

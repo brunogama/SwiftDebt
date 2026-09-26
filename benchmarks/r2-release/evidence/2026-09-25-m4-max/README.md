@@ -44,6 +44,11 @@ similarity scenarios also failed the required induced-regression sensitivity
 proof. Those results invalidate the complete run even though other scenarios
 passed.
 
+The historical harness also derived paired short-stage variability from
+candidate-minus-reference deltas. That let candidate variance widen its own
+floor. The current harness uses reference-only samples, and no result from this
+artifact supplies a current release budget.
+
 | Scenario | Baseline p95 ms | Candidate p95 ms | Applied floor ms | Max 1m load | Induced proof | Result |
 |---|---:|---:|---:|---:|---|---|
 | Similarity disabled, 16 files | 87.49 | 104.58 | 102.44 | 10.36 | Fail | Invalid |

@@ -102,6 +102,13 @@ class R2ReleaseBenchmarkTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "nearest-rank"):
             validate_manifest(wrong_percentile)
 
+        candidate_derived_floor = copy.deepcopy(self.manifest)
+        candidate_derived_floor["measurement"]["noiseFloorSource"] = (
+            "paired candidate-minus-reference deltas"
+        )
+        with self.assertRaisesRegex(RuntimeError, "must remain independent"):
+            validate_manifest(candidate_derived_floor)
+
         relaxed_wall_limit = copy.deepcopy(self.manifest)
         relaxed_wall_limit["budgetPolicy"]["maximumWallClockRegressionPercent"] = 100.0
         with self.assertRaisesRegex(RuntimeError, "frozen limits"):
@@ -338,6 +345,56 @@ class R2ReleaseBenchmarkTests(unittest.TestCase):
             False,
         )
         self.assertEqual(overloaded["hostLoad"]["verdict"], "fail")
+
+    def test_candidate_variance_cannot_widen_paired_noise_floor(self):
+        baseline = {
+            "wallClockMilliseconds": {"median": 100.0, "p95": 100.0},
+            "peakResidentMemoryBytes": {"median": 1_000_000.0, "p95": 1_000_000.0},
+        }
+        candidate = {
+            "wallClockMilliseconds": {"median": 150.0, "p95": 200.0},
+            "peakResidentMemoryBytes": {"median": 1_000_000.0, "p95": 1_000_000.0},
+        }
+        reference_samples = [
+            {"wallClockMilliseconds": 100.0, "hostLoadAverage": self._host_load()}
+            for _ in range(30)
+        ]
+        candidate_samples = [
+            {"wallClockMilliseconds": value, "hostLoadAverage": self._host_load()}
+            for value in ([100.0] * 15 + [200.0] * 15)
+        ]
+        induced = [
+            {
+                "wallClockMilliseconds": 400.0,
+                "componentHostLoadAverage": [self._host_load(), self._host_load()],
+            }
+            for _ in range(5)
+        ]
+
+        result = limits_and_proof(
+            baseline,
+            candidate,
+            reference_samples,
+            candidate_samples,
+            induced,
+            self.manifest["budgetPolicy"],
+            True,
+        )
+
+        self.assertEqual(
+            result["noiseFloorCalibration"]["sampleBasis"],
+            "reference-only wall-clock samples",
+        )
+        self.assertEqual(
+            result["noiseFloorCalibration"]["medianAbsoluteDeviationMilliseconds"],
+            0.0,
+        )
+        self.assertEqual(
+            result["noiseFloorCalibration"]["appliedFloorMilliseconds"], 10.0
+        )
+        self.assertEqual(result["wallClock"]["relativeRegressionPercent"], 100.0)
+        self.assertEqual(result["wallClock"]["verdict"], "fail")
+        self.assertEqual(result["inducedRegressionProof"]["verdict"], "pass")
 
     def test_paired_order_alternates_and_preserves_pair_indices(self):
         observed = [paired_roles(index) for index in range(4)]

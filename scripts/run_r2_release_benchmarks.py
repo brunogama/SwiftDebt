@@ -126,6 +126,11 @@ def validate_manifest(manifest: dict[str, Any]) -> None:
         raise RuntimeError("induced regression proof requires measured samples")
     if measurement.get("percentileMethod") != "nearest-rank":
         raise RuntimeError("release calibration requires nearest-rank percentiles")
+    if measurement.get("noiseFloorSource") != (
+        "Reference-only wall samples for paired R1/R2 scenarios; candidate calibration "
+        "samples for R2-only proposed ceilings."
+    ):
+        raise RuntimeError("release calibration noise-floor source must remain independent")
     preflight = manifest.get("preflightPolicy", {})
     if (
         preflight.get("durationSeconds") != 30

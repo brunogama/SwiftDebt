@@ -103,8 +103,9 @@ preflight and per-command load evidence.
 
 The wall-time gate keeps the 10 percent relative limit. For a stage whose R1
 p95 is under one second, the scenario also gets an absolute floor equal to the
-greater of 10 milliseconds and three median absolute deviations. A short stage
-fails only when both its relative limit and absolute floor are exceeded.
+greater of 10 milliseconds and three median absolute deviations from R1-only
+wall samples. Candidate variance cannot widen its own paired allowance. A short
+stage fails only when both its relative limit and absolute floor are exceeded.
 
 The peak-RSS gate keeps the 15 percent relative limit and the merged fixed 2 MiB
 process-memory allowance. Memory fails only when both limits are exceeded. The
@@ -115,6 +116,11 @@ For each scenario the runner measures a deliberate workload increase made of
 two complete sequential measured CLI processes. Calibration is invalid unless
 that workload fails the wall-time gate. No budget depends on changed line,
 source, or analysis-unit count.
+
+Repository cache states have no R1 command with equivalent evidence. Their
+current candidate samples calibrate proposed per-scale ceilings and prove
+determinism and sensitivity; they do not constitute an R1-to-R2 regression
+comparison. Those ceilings remain pending review even after a measured run.
 
 ---
 

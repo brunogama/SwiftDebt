@@ -39,14 +39,7 @@ def limits_and_proof(
     policy: dict[str, Any],
     paired: bool,
 ) -> dict[str, Any]:
-    if paired:
-        floor_samples = [
-            candidate_sample["wallClockMilliseconds"]
-            - baseline_sample["wallClockMilliseconds"]
-            for baseline_sample, candidate_sample in zip(raw_baseline, raw_candidate)
-        ]
-    else:
-        floor_samples = [sample["wallClockMilliseconds"] for sample in raw_baseline]
+    floor_samples = [sample["wallClockMilliseconds"] for sample in raw_baseline]
     mad = median_absolute_deviation(floor_samples)
     floor = max(
         policy["minimumShortStageFloorMilliseconds"],
@@ -94,7 +87,7 @@ def limits_and_proof(
     return {
         "noiseFloorCalibration": {
             "sampleBasis": (
-                "paired candidate-minus-reference wall-clock deltas"
+                "reference-only wall-clock samples"
                 if paired
                 else "calibration wall-clock samples"
             ),
