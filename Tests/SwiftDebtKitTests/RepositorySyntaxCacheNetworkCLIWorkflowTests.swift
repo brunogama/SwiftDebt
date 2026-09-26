@@ -61,7 +61,7 @@ extension RepositorySyntaxCacheCLIWorkflowTests {
         process.arguments =
             [
                 "-p", "(version 1)\n(allow default)\n(deny network*)",
-                try swiftDebtExecutableURL().path,
+                try cacheSwiftDebtExecutableURL().path,
             ] + arguments
         process.environment = ProcessInfo.processInfo.environment.merging([
             "CI": "1",

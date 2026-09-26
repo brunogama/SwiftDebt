@@ -64,6 +64,39 @@ extension RepositorySyntaxCacheCLIWorkflowTests {
         )
     }
 
+    func cacheSwiftDebtExecutableURL() throws -> URL {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let direct = root.appendingPathComponent(".build/debug/swift-debt")
+        if FileManager.default.isExecutableFile(atPath: direct.path) { return direct }
+        let build = root.appendingPathComponent(".build")
+        guard
+            let enumerator = FileManager.default.enumerator(
+                at: build,
+                includingPropertiesForKeys: nil
+            )
+        else {
+            throw CacheCLITestError("Missing .build directory")
+        }
+        let matches = enumerator.compactMap { item -> URL? in
+            guard let url = item as? URL,
+                url.lastPathComponent == "swift-debt",
+                url.path.contains("/debug/"),
+                FileManager.default.isExecutableFile(atPath: url.path)
+            else { return nil }
+            return url
+        }.sorted { lhs, rhs in
+            if lhs.path.count != rhs.path.count { return lhs.path.count < rhs.path.count }
+            return lhs.path < rhs.path
+        }
+        guard let match = matches.first else {
+            throw CacheCLITestError("Could not locate built swift-debt executable")
+        }
+        return match
+    }
+
     var repositoryFixtureRoot: URL {
         URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
