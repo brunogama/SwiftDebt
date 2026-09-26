@@ -1,18 +1,35 @@
+import Dispatch
+
 extension LifecycleReducer {
-    func process(_ snapshot: ObservationSnapshot, artifact: inout LifecycleArtifact) throws {
+    func process(
+        _ snapshot: ObservationSnapshot,
+        artifact: inout LifecycleArtifact,
+        profiling: Bool
+    ) throws -> LifecycleReconciliationProfile? {
+        let processingStartedAt = profiling ? DispatchTime.now().uptimeNanoseconds : nil
         let priorFindings = try artifact.parentFindingProjections(of: snapshot.id).map(\.finding)
         let identities = Set(
             priorFindings.map { $0.rule.identity }
                 + snapshot.detections.map { $0.rule.identity }
         ).sorted { $0.description < $1.description }
+        var candidateCount = 0
+        var evaluatedPairs = 0
+        var crediblePairs = 0
+        var uniqueContinuities = 0
+        var newFindings = 0
+        var unresolvedDetections = 0
+        var ambiguousGroups = 0
+        var reconciliationElapsedNanoseconds: UInt64 = 0
 
         for identity in identities {
             let candidates = priorFindings.filter { $0.rule.identity == identity }
             let detections = snapshot.detections.filter { $0.rule.identity == identity }
+            if profiling { candidateCount += candidates.count }
             if candidates.isEmpty {
                 for detection in detections {
                     try openFinding(for: detection, snapshot: snapshot, artifact: &artifact)
                 }
+                if profiling { newFindings += detections.count }
                 continue
             }
             if detections.isEmpty {
@@ -22,12 +39,22 @@ extension LifecycleReducer {
                 continue
             }
 
+            let startedAt = profiling ? DispatchTime.now().uptimeNanoseconds : nil
             let reconciliation = try ContinuityReconciler().reconcile(
                 findings: candidates,
                 detections: detections,
                 snapshot: snapshot,
                 artifact: artifact
             )
+            if let startedAt {
+                reconciliationElapsedNanoseconds += DispatchTime.now().uptimeNanoseconds - startedAt
+                evaluatedPairs += reconciliation.evaluatedPairs
+                crediblePairs += reconciliation.crediblePairs
+                uniqueContinuities += reconciliation.matches.count
+                newFindings += reconciliation.newDetections.count
+                unresolvedDetections += reconciliation.unresolvedGroups.reduce(0) { $0 + $1.detections.count }
+                ambiguousGroups += reconciliation.unresolvedGroups.filter(\.isAmbiguous).count
+            }
             for match in reconciliation.matches {
                 try record(match: match, snapshot: snapshot, artifact: &artifact)
             }
@@ -41,6 +68,20 @@ extension LifecycleReducer {
                 try recordAbsence(for: finding, snapshot: snapshot, artifact: &artifact)
             }
         }
+        guard let processingStartedAt else { return nil }
+        return LifecycleReconciliationProfile(
+            snapshotID: snapshot.id,
+            detections: snapshot.detections.count,
+            candidates: candidateCount,
+            evaluatedPairs: evaluatedPairs,
+            crediblePairs: crediblePairs,
+            uniqueContinuities: uniqueContinuities,
+            newFindings: newFindings,
+            unresolvedDetections: unresolvedDetections,
+            ambiguousGroups: ambiguousGroups,
+            processingElapsedNanoseconds: DispatchTime.now().uptimeNanoseconds - processingStartedAt,
+            reconciliationElapsedNanoseconds: reconciliationElapsedNanoseconds
+        )
     }
 
     private func openFinding(

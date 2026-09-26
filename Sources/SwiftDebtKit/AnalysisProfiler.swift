@@ -1,6 +1,7 @@
 import Dispatch
 import Foundation
 import SwiftDebtCore
+import SwiftDebtLifecycle
 
 #if canImport(Darwin)
     import Darwin
@@ -13,6 +14,8 @@ public struct AnalysisProfile: Codable, Sendable {
     public let measurements: [String]
     public let disabledOverhead: ProfilingDisabledOverhead
     public let phases: [ProfiledAnalysisPhase]
+    /// Present only when lifecycle ingestion was requested with profiling enabled.
+    public let lifecycleReconciliation: [LifecycleReconciliationProfile]?
 
     public static let disabledInstrumentationOverhead = ProfilingDisabledOverhead(
         phaseBoundaryChecks: 24,
@@ -62,7 +65,9 @@ final class AnalysisProfiler: AnalysisPhaseSink, @unchecked Sendable {
         }
     }
 
-    func profile() -> AnalysisProfile {
+    func profile(
+        lifecycleReconciliation: [LifecycleReconciliationProfile]? = nil
+    ) -> AnalysisProfile {
         lock.withLock {
             let peak = peakResidentMemoryBytes()
             let phases = AnalysisPhase.allCases.compactMap { phase -> ProfiledAnalysisPhase? in
@@ -77,7 +82,8 @@ final class AnalysisProfiler: AnalysisPhaseSink, @unchecked Sendable {
                 schemaVersion: 1,
                 measurements: ["wall-clock-nanoseconds", "peak-resident-memory-bytes"],
                 disabledOverhead: AnalysisProfile.disabledInstrumentationOverhead,
-                phases: phases
+                phases: phases,
+                lifecycleReconciliation: lifecycleReconciliation
             )
         }
     }
