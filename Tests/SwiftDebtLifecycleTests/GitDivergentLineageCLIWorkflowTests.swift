@@ -118,6 +118,39 @@ struct GitDivergentLineageCLIWorkflowTests {
         let bytes = try Data(contentsOf: orderedArtifact)
         #expect(try analyze(fixture, artifact: orderedArtifact).status == 0)
         #expect(try Data(contentsOf: orderedArtifact) == bytes)
+
+        let introduction = try runLifecycleCLI([
+            "lifecycle", "infer-introduction", orderedArtifact.path, finding.id.rawValue,
+            "--repository", fixture.repository.path, "--max-revisions", "8",
+        ])
+        #expect(introduction.status == 0, "\(introduction.standardError)")
+        let scopedText = try runLifecycleCLI([
+            "lifecycle", "explain", orderedArtifact.path, finding.id.rawValue,
+            "--head", branchB.id.rawValue, "--format", "text",
+        ])
+        let scopedJSON = try runLifecycleCLI([
+            "lifecycle", "explain", orderedArtifact.path, finding.id.rawValue,
+            "--head", branchB.id.rawValue, "--format", "json",
+        ])
+        let branchAJSON = try runLifecycleCLI([
+            "lifecycle", "explain", orderedArtifact.path, finding.id.rawValue,
+            "--head", branchA.id.rawValue, "--format", "json",
+        ])
+        #expect(scopedText.status == 0)
+        #expect(scopedJSON.status == 0)
+        #expect(branchAJSON.status == 0)
+        #expect(!scopedText.standardOutput.contains(branchARevision))
+        #expect(!scopedJSON.standardOutput.contains(branchARevision))
+        let scopedReport = try JSONDecoder().decode(
+            FindingExplanationReport.self,
+            from: Data(scopedJSON.standardOutput.utf8)
+        )
+        let branchAReport = try JSONDecoder().decode(
+            FindingExplanationReport.self,
+            from: Data(branchAJSON.standardOutput.utf8)
+        )
+        #expect(scopedReport.introductionConclusions.isEmpty)
+        #expect(branchAReport.introductionConclusions.count == 1)
     }
 
     private func analyze(

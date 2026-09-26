@@ -57,7 +57,7 @@ swift-debt lifecycle snapshot ARTIFACT SNAPSHOT_ID [--format text|json]
 
 These commands decode and validate the entire artifact before reporting. They never repair, replace, or partially interpret unreadable history.
 
-When the artifact has several graph heads, inventory reports one projection per Finding and head. `--head` selects one current branch projection explicitly. An unscoped explanation retains the complete append-only Finding event graph and renders the lifecycle and evidence state for every head. A head-scoped explanation returns only that head's event path, supporting snapshots, and unresolved evidence. Snapshot inspection reports its parent, children, and head status.
+When the artifact has several graph heads, inventory reports one projection per Finding and head. `--head` selects one current branch projection explicitly. An unscoped explanation retains the complete append-only Finding event graph and renders the lifecycle and evidence state for every head. A head-scoped explanation returns only that head's event path, supporting snapshots, and unresolved evidence. It includes an Introduction Conclusion only when its recorded Git head matches a persisted snapshot on the selected head's ancestor path; conclusions without that graph evidence remain available in the unscoped explanation. Snapshot inspection reports its parent, children, and head status.
 
 Introduction inference is a separate, explicit artifact mutation:
 

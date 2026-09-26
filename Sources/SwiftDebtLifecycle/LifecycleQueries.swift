@@ -101,7 +101,20 @@ public struct FindingExplanationReport: Codable, Equatable, Sendable {
         self.unresolvedDetections = artifact.unresolvedDetections.filter {
             selectedSnapshotIDs.contains($0.snapshotID) && $0.candidateFindingIDs.contains(findingID)
         }
-        self.introductionConclusions = artifact.introductionConclusions(for: findingID)
+        let conclusions = artifact.introductionConclusions(for: findingID)
+        if let headSnapshotID {
+            self.introductionConclusions = conclusions.filter { conclusion in
+                artifact.snapshots.contains { snapshot in
+                    guard case .git(let revision, _, _) = snapshot.provenance.sourceIdentity else {
+                        return false
+                    }
+                    return revision == conclusion.evidence.boundary.repositoryHeadRevision
+                        && artifact.isAncestor(snapshot.id, of: headSnapshotID)
+                }
+            }
+        } else {
+            self.introductionConclusions = conclusions
+        }
     }
 }
 
