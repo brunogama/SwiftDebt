@@ -156,6 +156,37 @@ artifact. No timing result from that attempt is used for calibration.
 
 ---
 
+## Fail-closed recovery during finalization
+
+The first compact-retention attempt stopped before artifact publication when
+macOS reported the same temporary directory as `/tmp/...` and
+`/private/tmp/...`. Exact provenance comparison rejected the alias. The harness
+now canonicalizes reported and expected paths with the same platform-aware
+rule; tests cover the alias and a genuinely different-path rejection.
+
+The next attempt completed all paired scenarios, every 16 and 128-file
+repository state, and the disabled and cold 1,024-file states. It stopped with
+`ENOSPC` during the 1,024-file warm state because validated command directories
+were still retained. Atomic publication again left no final artifact.
+
+Before removing generated work trees, 34 representative raw command
+directories and a run inventory were preserved in the machine-local diagnostic
+archive `/tmp/swiftdebt-r2-calibration-abort-diagnostics-20260926.tgz`. Its
+SHA-256 is
+`3845384a952c2b4445d8a85f711dda056fc3c45a6d8304da459a6f66c93f43d0`.
+That archive is diagnostic and is not a release artifact in this repository.
+Only the three generated calibration trees named in the inventory were
+removed; free space recovered from 1.1 GiB to 22 GiB.
+
+The final harness writes each validated sample atomically, then removes its
+derived command directory. A cleanup interruption retains both the compact
+record and raw directory for diagnosis. Tests cover normal cleanup, interrupted
+cleanup, JSON round trips, and complete cache-sample revalidation. The final
+run's 23 MB work directory and zero retained analysis reports demonstrate that
+the retention fix bounded storage through all scale points.
+
+---
+
 ## Frozen current inputs and rerun contract
 
 Any rerun uses the current `manifest.v1.json`, whose candidate source is commit
