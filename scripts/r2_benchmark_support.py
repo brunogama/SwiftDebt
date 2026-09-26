@@ -14,6 +14,7 @@ import statistics
 import subprocess
 import sys
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -105,7 +106,9 @@ def memory_gate(
     baseline_p95_bytes: float,
     candidate_p95_bytes: float,
     relative_limit_percent: float,
+    absolute_limit_bytes: int = 0,
 ) -> dict[str, Any]:
+    absolute = max(0, candidate_p95_bytes - baseline_p95_bytes)
     relative = (
         math.inf
         if baseline_p95_bytes == 0 and candidate_p95_bytes > 0
@@ -113,13 +116,115 @@ def memory_gate(
         if baseline_p95_bytes
         else 0.0
     )
+    relative_breached = relative > relative_limit_percent
+    absolute_breached = absolute > absolute_limit_bytes
     return {
         "baselineP95Bytes": int(baseline_p95_bytes),
         "candidateP95Bytes": int(candidate_p95_bytes),
+        "absoluteRegressionBytes": int(absolute),
         "relativeRegressionPercent": relative,
         "relativeLimitPercent": relative_limit_percent,
-        "verdict": "fail" if relative > relative_limit_percent else "pass",
+        "absoluteLimitBytes": absolute_limit_bytes,
+        "maximumToleratedAbsoluteRegressionBytes": max(
+            int(baseline_p95_bytes * relative_limit_percent / 100),
+            absolute_limit_bytes,
+        ),
+        "relativeLimitBreached": relative_breached,
+        "absoluteLimitBreached": absolute_breached,
+        "verdict": "fail" if relative_breached and absolute_breached else "pass",
     }
+
+
+def evaluate_preflight(
+    samples: list[dict[str, float]], policy: dict[str, float]
+) -> dict[str, Any]:
+    if not samples:
+        raise ValueError("preflight requires at least one host sample")
+    maximum_load = max(sample["oneMinuteLoad"] for sample in samples)
+    minimum_idle = min(sample["cpuIdlePercent"] for sample in samples)
+    maximum_disk = max(sample["diskMegabytesPerSecond"] for sample in samples)
+    load_passed = maximum_load <= policy["maximumOneMinuteLoad"]
+    idle_passed = minimum_idle >= policy["minimumCPUIdlePercent"]
+    disk_passed = maximum_disk <= policy["maximumDiskMegabytesPerSecond"]
+    return {
+        "samples": samples,
+        "observed": {
+            "maximumOneMinuteLoad": maximum_load,
+            "minimumCPUIdlePercent": minimum_idle,
+            "maximumDiskMegabytesPerSecond": maximum_disk,
+        },
+        "limits": policy,
+        "checks": {
+            "oneMinuteLoad": "pass" if load_passed else "fail",
+            "cpuIdle": "pass" if idle_passed else "fail",
+            "diskThroughput": "pass" if disk_passed else "fail",
+        },
+        "verdict": "pass" if load_passed and idle_passed and disk_passed else "fail",
+    }
+
+
+def capture_preflight(policy: dict[str, Any]) -> dict[str, Any]:
+    duration = int(policy["durationSeconds"])
+    interval = int(policy["sampleIntervalSeconds"])
+    if duration <= 0 or interval <= 0 or duration % interval:
+        raise ValueError("preflight duration must be a positive multiple of its interval")
+    samples = []
+    started = time.monotonic()
+    for index in range(duration // interval):
+        sample_deadline = started + ((index + 1) * interval)
+        remaining = sample_deadline - time.monotonic()
+        if remaining > 0:
+            time.sleep(remaining)
+        samples.append(
+            {
+                "sampleIndex": index,
+                "capturedAt": datetime.now(timezone.utc).isoformat(),
+                "oneMinuteLoad": os.getloadavg()[0],
+                "cpuIdlePercent": current_cpu_idle_percent(),
+                "diskMegabytesPerSecond": current_disk_megabytes_per_second(),
+            }
+        )
+    result = evaluate_preflight(samples, policy)
+    result["elapsedSeconds"] = time.monotonic() - started
+    return result
+
+
+def current_cpu_idle_percent() -> float:
+    completed = subprocess.run(
+        ["top", "-l", "1", "-n", "0"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if completed.returncode != 0:
+        raise RuntimeError(completed.stderr.strip() or "top failed during preflight")
+    match = re.search(r"CPU usage:.*?([0-9.]+)% idle", completed.stdout)
+    if match is None:
+        raise RuntimeError("top did not report CPU idle percentage")
+    return float(match.group(1))
+
+
+def current_disk_megabytes_per_second() -> float:
+    completed = subprocess.run(
+        ["iostat", "-d", "-w", "1", "-c", "2"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if completed.returncode != 0:
+        raise RuntimeError(completed.stderr.strip() or "iostat failed during preflight")
+    numeric_rows = []
+    for line in completed.stdout.splitlines():
+        fields = line.split()
+        try:
+            numbers = [float(field) for field in fields]
+        except ValueError:
+            continue
+        if numbers and len(numbers) % 3 == 0:
+            numeric_rows.append(numbers)
+    if not numeric_rows:
+        raise RuntimeError("iostat did not report per-device throughput")
+    return sum(numeric_rows[-1][index] for index in range(2, len(numeric_rows[-1]), 3))
 
 
 def scale_source(index: int) -> str:
@@ -170,6 +275,24 @@ def generate_scale_corpus(root: Path, source_files: int) -> dict[str, Any]:
             "swiftdebt.refactoring.data-clumps": 1,
             "swiftdebt.refactoring.repeated-switches": source_files,
         },
+    }
+
+
+def apply_standard_one_file_edit(root: Path) -> dict[str, Any]:
+    relative_path = Path("Scale0000.swift")
+    source = root / relative_path
+    if not source.is_file():
+        raise RuntimeError(f"standard edit source is missing: {source}")
+    marker = "// swiftdebt standard one-file cache invalidation probe\n"
+    original = source.read_text(encoding="utf-8")
+    if marker in original:
+        raise RuntimeError("standard one-file edit was already applied")
+    source.write_text(original + "\n" + marker, encoding="utf-8")
+    return {
+        "relativePath": relative_path.as_posix(),
+        "operation": "append-comment",
+        "marker": marker.rstrip("\n"),
+        "changedSourceCount": 1,
     }
 
 
@@ -285,6 +408,7 @@ def atomic_json(path: Path, value: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(path.name + ".tmp")
     temporary.write_text(
-        json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        json.dumps(value, allow_nan=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
     )
     os.replace(temporary, path)

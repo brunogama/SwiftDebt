@@ -7,6 +7,12 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from r2_benchmark_cache import (
+    induced_repository_samples,
+    prepare_repository_seed,
+    run_repository_sample,
+)
+from r2_benchmark_cache_contract import expected_cache_activity
 from r2_benchmark_cli import aggregate, induced_samples, run_cli_sample, validate_sample
 from r2_benchmark_support import (
     generate_exhaustion_corpus,
@@ -57,6 +63,7 @@ def limits_and_proof(
         baseline["peakResidentMemoryBytes"]["p95"],
         candidate["peakResidentMemoryBytes"]["p95"],
         policy["maximumPeakMemoryRegressionPercent"],
+        policy["maximumPeakMemoryRegressionBytes"],
     )
     induced_summary = summary([sample["wallClockMilliseconds"] for sample in induced])
     observed_loads = [
@@ -107,10 +114,8 @@ def limits_and_proof(
         "fixedLimits": {
             "wallClockP95Milliseconds": wall["baselineP95Milliseconds"]
             + wall["maximumToleratedAbsoluteRegressionMilliseconds"],
-            "peakResidentMemoryP95Bytes": int(
-                memory["baselineP95Bytes"]
-                * (1 + policy["maximumPeakMemoryRegressionPercent"] / 100)
-            ),
+            "peakResidentMemoryP95Bytes": memory["baselineP95Bytes"]
+            + memory["maximumToleratedAbsoluteRegressionBytes"],
             "approvalState": "proposed-for-review",
         },
         "inducedRegressionProof": {
@@ -143,6 +148,7 @@ def measure_relative(
                 False,
             )
             validate_sample(sample, scenario)
+            enforce_sample_load(sample, policy)
     raw = []
     progress(scenario["id"], f"running {measurement['measuredRuns']} measured pairs")
     for pair_index in range(measurement["measuredRuns"]):
@@ -151,6 +157,7 @@ def measure_relative(
                 binaries[role], corpus, root / f"pair-{pair_index}-{role}", False
             )
             validate_sample(sample, scenario)
+            enforce_sample_load(sample, policy)
             sample.update(
                 {"pairIndex": pair_index, "orderInPair": order_in_pair, "role": role}
             )
@@ -174,6 +181,7 @@ def measure_relative(
     induced = induced_samples(
         candidate, corpus, root, False, measurement["inducedRegressionRuns"]
     )
+    enforce_induced_load(induced, policy)
     evaluations = limits_and_proof(
         reference_aggregate,
         candidate_aggregate,
@@ -232,28 +240,51 @@ def measure_repository(
     repository_configuration: dict[str, Any],
     repository_provider: dict[str, Any],
     repository_rules: dict[str, Any],
+    cache_compatibility: dict[str, Any],
 ) -> dict[str, Any]:
-    progress(scenario["id"], f"running {measurement['warmupRuns']} warmups")
-    for warmup in range(measurement["warmupRuns"]):
-        sample = run_cli_sample(candidate, corpus, root / f"warmup-{warmup}", True)
-        validate_sample(
-            sample,
+    prepared_seed = None
+    if scenario["cacheState"] in {"warm", "one-file-edit"}:
+        progress(scenario["id"], "preparing one validated reusable cache seed")
+        prepared_seed = prepare_repository_seed(
+            candidate,
+            corpus,
+            root / "prepared-seed",
             scenario,
             repository_configuration,
             repository_provider,
             repository_rules,
+            cache_compatibility,
         )
+        enforce_sample_load(prepared_seed["sample"], policy)
+    progress(scenario["id"], f"running {measurement['warmupRuns']} warmups")
+    for warmup in range(measurement["warmupRuns"]):
+        sample = run_repository_sample(
+            candidate,
+            corpus,
+            root / f"warmup-{warmup}",
+            scenario,
+            repository_configuration,
+            repository_provider,
+            repository_rules,
+            cache_compatibility,
+            prepared_seed,
+        )
+        enforce_sample_load(sample, policy)
     raw = []
     progress(scenario["id"], f"running {measurement['measuredRuns']} measured samples")
     for index in range(measurement["measuredRuns"]):
-        sample = run_cli_sample(candidate, corpus, root / f"sample-{index}", True)
-        validate_sample(
-            sample,
+        sample = run_repository_sample(
+            candidate,
+            corpus,
+            root / f"sample-{index}",
             scenario,
             repository_configuration,
             repository_provider,
             repository_rules,
+            cache_compatibility,
+            prepared_seed,
         )
+        enforce_sample_load(sample, policy)
         sample["sampleIndex"] = index
         raw.append(sample)
         if (index + 1) % 5 == 0 or index + 1 == measurement["measuredRuns"]:
@@ -263,15 +294,37 @@ def measure_repository(
             )
     baseline = aggregate(raw)
     progress(scenario["id"], "running deliberate two-pass regression proof")
-    induced = induced_samples(
-        candidate, corpus, root, True, measurement["inducedRegressionRuns"]
+    induced = induced_repository_samples(
+        candidate,
+        corpus,
+        root,
+        scenario,
+        measurement["inducedRegressionRuns"],
+        repository_configuration,
+        repository_provider,
+        repository_rules,
+        cache_compatibility,
+        prepared_seed,
     )
+    enforce_induced_load(induced, policy)
     evaluations = limits_and_proof(baseline, baseline, raw, raw, induced, policy, False)
     report_stable = len({sample["reportSHA256"] for sample in raw}) == 1
     sidecar_stable = len({sample["repositoryEvidenceSHA256"] for sample in raw}) == 1
+    cache_activity_stable = (
+        len(
+            {
+                sample["comparableRepositoryCacheReportSHA256"]
+                for sample in raw
+            }
+        )
+        == 1
+    )
+    cache_store_stable = len({sample["cacheStoreSHA256After"] for sample in raw}) == 1
     output_validation = {
         "candidateReportByteStable": report_stable,
         "candidateRepositorySidecarByteStable": sidecar_stable,
+        "candidateCacheActivityCanonicalByteStable": cache_activity_stable,
+        "candidateCacheStoreByteStable": cache_store_stable,
         "candidateEngineVersions": sorted(
             {sample["reportEngineVersion"] for sample in raw}
         ),
@@ -286,7 +339,7 @@ def measure_repository(
         baseline,
         baseline,
         evaluations,
-        report_stable and sidecar_stable,
+        report_stable and sidecar_stable and cache_activity_stable and cache_store_stable,
         True,
         output_validation,
     )
@@ -312,7 +365,9 @@ def scenario_result(
     )
     return {
         "id": scenario["id"],
+        "comparison": scenario["comparison"],
         "state": scenario["state"],
+        "cacheState": scenario["cacheState"],
         "sourceSnapshot": {
             **{
                 key: scenario[key]
@@ -334,6 +389,18 @@ def scenario_result(
             ),
         },
         "measuredStages": scenario["measuredStages"],
+        **(
+            {
+                "expectedCacheActivity": scenario["expectedCacheActivity"],
+                **(
+                    {"standardEdit": scenario["standardEdit"]}
+                    if "standardEdit" in scenario
+                    else {}
+                ),
+            }
+            if scenario["repositoryEvidence"]
+            else {}
+        ),
         "baseline": baseline,
         "candidate": candidate,
         "rawSamples": raw,
@@ -342,7 +409,7 @@ def scenario_result(
         "outputValidation": output_validation,
         "indexSizeBytes": {
             "availability": "not-applicable",
-            "reason": "Similarity is disabled and this source branch contains no candidate index.",
+            "reason": "Similarity is disabled and this benchmark performs no candidate-index operation.",
         },
         "candidateCount": {
             "availability": "not-applicable",
@@ -361,18 +428,23 @@ def exhaustion_proof(
     )
     if generated["snapshotSHA256"] != scenario["snapshotSHA256"]:
         raise RuntimeError("exhaustion corpus does not match the manifest")
-    sample = run_cli_sample(candidate, corpus, root / "exhaustion", True, {2})
-    evidence = sample["repositoryEvidence"]
+    sample = run_cli_sample(
+        candidate,
+        corpus,
+        root / "exhaustion",
+        True,
+        {2},
+        cache_state="disabled",
+    )
+    validate_exhaustion_sample(manifest, sample, generated)
+    enforce_sample_load(sample, manifest["budgetPolicy"])
     maximum_load = max(
         sample["hostLoadAverage"]["before"]["oneMinute"],
         sample["hostLoadAverage"]["after"]["oneMinute"],
     )
     load_limit = manifest["budgetPolicy"]["maximumObservedOneMinuteLoad"]
     passed = (
-        sample["exitStatus"] == 2
-        and "comparison-budget-exceeded" in evidence["issueCodes"]
-        and not sample["unexpectedFiles"]
-        and maximum_load <= load_limit
+        sample["exitStatus"] == 2 and not sample["unexpectedFiles"] and maximum_load <= load_limit
     )
     return {
         "id": scenario["id"],
@@ -387,3 +459,94 @@ def exhaustion_proof(
         },
         "verdict": "pass" if passed else "fail",
     }
+
+
+def validate_exhaustion_sample(
+    manifest: dict[str, Any], sample: dict[str, Any], generated: dict[str, Any]
+) -> None:
+    scenario = manifest["exhaustionScenario"]
+    evidence = sample["repositoryEvidence"]
+    expected_rules = manifest["repositoryRules"]
+    expected_revisions = {
+        identity: contract["semanticRevision"]
+        for identity, contract in expected_rules.items()
+    }
+    provider = manifest["providerIdentities"]["repositorySyntax"]
+    expected_provider = [(provider["name"], provider["version"])]
+    expected_rule_providers = {
+        identity: expected_provider for identity in expected_rules
+    }
+    activity = sample["repositoryCacheActivity"]
+    observed_activity = {
+        key: activity[key]
+        for key in (
+            "mode",
+            "disposition",
+            "selectedSourceCount",
+            "reusedSourceCount",
+            "recomputedSourceCount",
+            "removedSourceCount",
+            "invalidations",
+            "networkRequestCount",
+        )
+    }
+    observed_activity["writePerformed"] = activity["storage"]["writePerformed"]
+    valid = (
+        sample["exitStatus"] == scenario["expectedExitStatus"]
+        and not sample["unexpectedFiles"]
+        and sample["sourceSnapshotSHA256"] == generated["snapshotSHA256"]
+        and evidence["sourceFileCount"] == scenario["sourceFileCount"]
+        and evidence["detectionCount"] == 0
+        and evidence["completeRuleCount"] == 1
+        and evidence["incompleteRuleCount"] == 1
+        and evidence["issueCodes"] == [scenario["expectedIssueCode"]]
+        and evidence["configuration"] == manifest["repositoryConfiguration"]
+        and evidence["ruleDetectionCounts"]
+        == {identity: 0 for identity in expected_rules}
+        and evidence["ruleSemanticRevisions"] == expected_revisions
+        and evidence["ruleCompletionStates"]
+        == {
+            "swiftdebt.refactoring.data-clumps": "incomplete",
+            "swiftdebt.refactoring.repeated-switches": "complete",
+        }
+        and evidence["providers"] == expected_provider
+        and evidence["ruleProviders"] == expected_rule_providers
+        and activity["reportKind"] == "swiftdebt-repository-syntax-cache"
+        and activity["schemaVersion"] == 1
+        and activity["sourceSnapshotDigest"] == evidence["snapshotContentDigest"]
+        and activity["compatibility"] == manifest["repositoryCacheCompatibility"]
+        and observed_activity
+        == expected_cache_activity("disabled", scenario["sourceFileCount"])
+        and activity["storage"]
+        == {
+            "location": None,
+            "dataClasses": [],
+            "byteCount": 0,
+            "contentDigest": None,
+            "writePerformed": False,
+        }
+    )
+    if not valid:
+        raise RuntimeError(
+            "comparison-budget exhaustion did not produce the exact incomplete result"
+        )
+
+
+def enforce_sample_load(sample: dict[str, Any], policy: dict[str, Any]) -> None:
+    limit = policy["maximumObservedOneMinuteLoad"]
+    observed = max(
+        sample["hostLoadAverage"]["before"]["oneMinute"],
+        sample["hostLoadAverage"]["after"]["oneMinute"],
+    )
+    if observed > limit:
+        raise RuntimeError(
+            f"host load {observed:.2f} exceeded the frozen {limit:.2f} ceiling"
+        )
+
+
+def enforce_induced_load(
+    samples: list[dict[str, Any]], policy: dict[str, Any]
+) -> None:
+    for sample in samples:
+        for component in sample["componentHostLoadAverage"]:
+            enforce_sample_load({"hostLoadAverage": component}, policy)
