@@ -27,6 +27,7 @@
             identity: LocalCandidateIndexIdentity,
             workBudget: LocalCandidateIndexWorkBudget = .standard
         ) async throws -> SQVectorExactCandidateIndex {
+            try identity.validate()
             let connection: SQLiteConnection
             do {
                 connection = try await SQLiteDatabase.open(at: url.path)
@@ -44,6 +45,7 @@
             identity: LocalCandidateIndexIdentity,
             workBudget: LocalCandidateIndexWorkBudget = .standard
         ) async throws -> SQVectorExactCandidateIndex {
+            try identity.validate()
             let connection: SQLiteConnection
             do {
                 connection = try await SQLiteDatabase.openInMemory()

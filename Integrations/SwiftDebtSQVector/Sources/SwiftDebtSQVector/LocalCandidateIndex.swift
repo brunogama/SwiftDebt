@@ -115,6 +115,25 @@ public struct LocalCandidateIndexIdentity: Codable, Equatable, Sendable {
         }
         try providerVersion.validate(field: .providerVersion)
         try modelRevision.validate(field: .modelRevision)
+        try sqVectorPackage.validate()
+        guard sqVectorPackage == .pinned else {
+            throw LocalCandidateIndexError.incompatibleIndex(
+                expected: Self(
+                    schemaVersion: schemaVersion,
+                    namespace: namespace,
+                    provider: provider,
+                    providerVersion: providerVersion,
+                    model: model,
+                    modelRevision: modelRevision,
+                    dimensions: dimensions,
+                    metric: metric,
+                    projectionRevision: projectionRevision,
+                    sourceSnapshotDigest: sourceSnapshotDigest,
+                    sqVectorPackage: .pinned
+                ),
+                actual: self
+            )
+        }
     }
 
     func validateVector(_ values: [Float]) throws {

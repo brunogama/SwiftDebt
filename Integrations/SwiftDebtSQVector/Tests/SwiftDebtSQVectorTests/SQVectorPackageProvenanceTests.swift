@@ -36,6 +36,40 @@
             }
         }
 
+        @Test("rejects decoded package claims before creating storage")
+        func rejectsDecodedPackageClaim() async throws {
+            let expected = try makeIdentity()
+            let claimedPackage = try makeSQVectorPackageIdentity(
+                revision: String(repeating: "d", count: 40)
+            )
+            let encoded = try JSONEncoder().encode(expected)
+            var object = try #require(
+                JSONSerialization.jsonObject(with: encoded) as? [String: Any]
+            )
+            var package = try #require(
+                object["sqVectorPackage"] as? [String: Any]
+            )
+            package["revision"] = claimedPackage.revision
+            object["sqVectorPackage"] = package
+            let decoded = try JSONDecoder().decode(
+                LocalCandidateIndexIdentity.self,
+                from: JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
+            )
+            #expect(decoded.sqVectorPackage == claimedPackage)
+
+            let url = temporaryIndexURL()
+            defer { removeIndexFiles(at: url) }
+            await #expect(
+                throws: LocalCandidateIndexError.incompatibleIndex(
+                    expected: expected,
+                    actual: decoded
+                )
+            ) {
+                _ = try await SQVectorExactCandidateIndex.open(at: url, identity: decoded)
+            }
+            #expect(FileManager.default.fileExists(atPath: url.path) == false)
+        }
+
         @Test("rejects persisted package version and revision mismatches")
         func compatibility() async throws {
             let pinned = SQVectorPackageIdentity.pinned

@@ -34,10 +34,7 @@ public struct SQVectorPackageIdentity: Codable, Equatable, Sendable {
     public let revision: String
 
     public init(version: LocalCandidateVersionIdentity, revision: String) throws {
-        try version.validate(field: .sqVectorPackageVersion)
-        guard isHexadecimal(revision, allowedLengths: [40, 64]) else {
-            throw LocalCandidateIndexError.invalidSQVectorPackageRevision(revision)
-        }
+        try Self.validate(version: version, revision: revision)
         self.version = version
         self.revision = revision.lowercased()
     }
@@ -48,6 +45,20 @@ public struct SQVectorPackageIdentity: Codable, Equatable, Sendable {
     ) {
         self.version = version
         revision = validatedRevision
+    }
+
+    func validate() throws {
+        try Self.validate(version: version, revision: revision)
+    }
+
+    private static func validate(
+        version: LocalCandidateVersionIdentity,
+        revision: String
+    ) throws {
+        try version.validate(field: .sqVectorPackageVersion)
+        guard isHexadecimal(revision, allowedLengths: [40, 64]) else {
+            throw LocalCandidateIndexError.invalidSQVectorPackageRevision(revision)
+        }
     }
 }
 
