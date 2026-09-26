@@ -119,7 +119,7 @@ public struct SemanticComparisonBasis: Codable, Equatable, Sendable {
         }
         let semanticsCompatible =
             priorRule.semanticRevision == currentRule.semanticRevision
-            ? priorRule == currentRule
+            ? priorRule.identity == currentRule.identity
             : matchingDeclaration?.supportedClaims.contains(claim) == true
         let configurationAssessment = try ConfigurationComparisonEvaluator().assess(
             claim: claim,

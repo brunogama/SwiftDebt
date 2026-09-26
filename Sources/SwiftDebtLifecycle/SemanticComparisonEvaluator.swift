@@ -41,7 +41,7 @@ struct SemanticComparisonEvaluator {
         )
         let semanticsCompatible =
             priorRule.semanticRevision == currentRule.semanticRevision
-            ? priorRule == currentRule
+            ? priorRule.identity == currentRule.identity
             : declaration?.supportedClaims.contains(claim) == true
         let decision: SemanticComparisonDecision =
             environmentReasons.isEmpty && configuration.isCompatible && semanticsCompatible
@@ -153,13 +153,7 @@ struct SemanticComparisonEvaluator {
         declaration: SemanticCompatibilityDeclaration?
     ) throws -> [LifecycleReason] {
         if priorRule.semanticRevision == currentRule.semanticRevision {
-            guard priorRule != currentRule else { return [] }
-            return [
-                try reason(
-                    "semantic-contract-mutated",
-                    "The same Semantic Revision carries different persisted compatibility declarations."
-                )
-            ]
+            return []
         }
         guard let declaration else {
             return [

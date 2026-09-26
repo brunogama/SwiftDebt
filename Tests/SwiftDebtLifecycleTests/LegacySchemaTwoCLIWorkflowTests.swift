@@ -79,14 +79,14 @@ struct LegacySchemaTwoCLIWorkflowTests {
         let artifact = fixture.directory.appendingPathComponent("legacy.json")
         let forcedSource = "func load() throws -> Int { 1 }\nlet value = try! load()\n"
         let handledSource = "func load() throws -> Int { 1 }\nlet value = try? load()\n"
-        try datedCommit(fixture, source: forcedSource, message: "add force try", date: "2026-01-01T00:00:00 +0000")
-        try datedCommit(fixture, source: handledSource, message: "resolve force try", date: "2026-01-02T00:00:00 +0000")
+        _ = try fixture.commit(source: forcedSource, message: "add force try", date: "2026-01-01T00:00:00 +0000")
+        let resolvedRevision = try fixture.commit(
+            source: handledSource, message: "resolve force try", date: "2026-01-02T00:00:00 +0000")
         #expect(
-            try fixture.gitOutput(["rev-parse", "HEAD"]).trimmingCharacters(in: .whitespacesAndNewlines)
-                == "c3e20615787a29eac1a19cc7abae0df4325788eb")
+            resolvedRevision == "c3e20615787a29eac1a19cc7abae0df4325788eb")
         try FileManager.default.copyItem(at: source, to: artifact)
-        try datedCommit(
-            fixture, source: forcedSource, message: "reintroduce force try", date: "2026-01-03T00:00:00 +0000")
+        _ = try fixture.commit(
+            source: forcedSource, message: "reintroduce force try", date: "2026-01-03T00:00:00 +0000")
 
         let result = try runLifecycleCLI([
             "analyze", fixture.repository.path, "--format", "json",
@@ -98,34 +98,9 @@ struct LegacySchemaTwoCLIWorkflowTests {
         #expect(migrated.findings.count == 1)
         #expect(migrated.findings.first?.events.map(\.transition.kind) == [.opened, .resolved])
         #expect(migrated.unresolvedDetections.count == 1)
-        #expect(migrated.unresolvedDetections.first?.reasons.map(\.code) == ["configuration-incomparable"])
+        #expect(migrated.unresolvedDetections.first?.reasons.map(\.code) == ["configuration-basis-unavailable"])
         let inventory = try runLifecycleCLI(["lifecycle", "inventory", artifact.path])
         #expect(inventory.status == 0)
-        #expect(inventory.standardOutput.contains("reasons=configuration-incomparable"))
-    }
-
-    private func datedCommit(
-        _ fixture: TemporaryLifecycleGitRepository,
-        source: String,
-        message: String,
-        date: String
-    ) throws {
-        try fixture.write(source: source)
-        try fixture.runGit(["add", "Sources/Input.swift"])
-        var environment = ProcessInfo.processInfo.environment
-        environment["GIT_AUTHOR_DATE"] = date
-        environment["GIT_COMMITTER_DATE"] = date
-        environment["GIT_AUTHOR_NAME"] = "Lifecycle Test"
-        environment["GIT_AUTHOR_EMAIL"] = "lifecycle@example.test"
-        environment["GIT_COMMITTER_NAME"] = "Lifecycle Test"
-        environment["GIT_COMMITTER_EMAIL"] = "lifecycle@example.test"
-        let result = try runLifecycleProcess(
-            executable: URL(fileURLWithPath: "/usr/bin/env"),
-            arguments: ["git", "-C", fixture.repository.path, "-c", "commit.gpgsign=false", "commit", "-m", message],
-            directory: fixture.repository,
-            environment: environment,
-            mergeStandardError: true
-        )
-        #expect(result.status == 0)
+        #expect(inventory.standardOutput.contains("reasons=configuration-basis-unavailable"))
     }
 }
