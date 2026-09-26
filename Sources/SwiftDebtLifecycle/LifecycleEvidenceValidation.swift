@@ -5,29 +5,45 @@ extension LifecycleArtifact {
         processed: Set<SnapshotID>,
         findings: [FindingID: Finding]
     ) throws {
-        let eventSequences = try finding.events.map { event -> UInt in
-            guard let snapshot = snapshots[event.snapshotID] else {
-                throw LifecycleContractError.invalidArtifact(
-                    "Finding \(finding.id) references a missing snapshot."
-                )
-            }
-            return snapshot.provenance.lineage.sequence
-        }
-        guard zip(eventSequences, eventSequences.dropFirst()).allSatisfy({ pair in pair.0 < pair.1 }) else {
+        guard Set(finding.events.map(\.snapshotID)).count == finding.events.count else {
             throw LifecycleContractError.invalidArtifact(
-                "Finding \(finding.id) events must follow strict lineage order."
+                "Finding \(finding.id) has more than one event in a snapshot projection."
             )
         }
+        let eventByID = Dictionary(uniqueKeysWithValues: finding.events.map { ($0.id, $0) })
         for event in finding.events {
-            guard let snapshot = snapshots[event.snapshotID],
-                processed.contains(event.snapshotID),
-                snapshot.provenance.lineage.lineageID == finding.lineageID
-            else {
+            guard let snapshot = snapshots[event.snapshotID], processed.contains(event.snapshotID) else {
                 throw LifecycleContractError.invalidArtifact(
-                    "Finding \(finding.id) references a missing or unrelated snapshot."
+                    "Finding \(finding.id) references a missing or unprocessed snapshot."
                 )
             }
-            try validate(event.transition, finding: finding, snapshot: snapshot, findings: findings)
+            let parentProjection: FindingProjection?
+            if let parentID = parentSnapshotID(of: event.snapshotID) {
+                parentProjection = try findingProjection(finding, at: parentID)
+            } else {
+                parentProjection = nil
+            }
+            let expectedBasis = parentProjection?.finding.events.last?.id
+            guard event.basisEventIDs == (expectedBasis.map { [$0] } ?? []) else {
+                throw LifecycleContractError.invalidArtifact(
+                    "Finding \(finding.id) event basis does not match its selected parent projection."
+                )
+            }
+            if let basisID = expectedBasis {
+                guard let basisEvent = eventByID[basisID],
+                    isAncestor(basisEvent.snapshotID, of: event.snapshotID)
+                else {
+                    throw LifecycleContractError.invalidArtifact(
+                        "Finding \(finding.id) event basis crosses unrelated snapshot branches."
+                    )
+                }
+            }
+            guard let projection = try findingProjection(finding, at: event.snapshotID) else {
+                throw LifecycleContractError.invalidArtifact(
+                    "Finding \(finding.id) has no projection at one of its events."
+                )
+            }
+            try validate(event.transition, finding: projection.finding, snapshot: snapshot, findings: findings)
         }
     }
 
@@ -50,14 +66,24 @@ extension LifecycleArtifact {
                 Set(unresolved.candidateFindingIDs).count == unresolved.candidateFindingIDs.count,
                 unresolved.candidateFindingIDs
                     == unresolved.candidateFindingIDs.sorted(by: { $0.rawValue < $1.rawValue }),
-                unresolved.candidateFindingIDs.allSatisfy({ candidateID in
-                    guard let candidate = findings[candidateID] else { return false }
-                    return candidate.lineageID == snapshot.provenance.lineage.lineageID
-                        && candidate.rule.identity == detection.rule.identity
-                }),
                 !unresolved.reasons.isEmpty
             else {
                 throw LifecycleContractError.invalidArtifact("An Unresolved Detection has a broken reference.")
+            }
+            let candidates = try parentFindingProjections(of: snapshot.id)
+            let eligibleIDs = Set(
+                candidates.compactMap { projection -> FindingID? in
+                    projection.finding.rule.identity == detection.rule.identity
+                        ? projection.finding.id : nil
+                })
+            guard
+                unresolved.candidateFindingIDs.allSatisfy({ candidateID in
+                    findings[candidateID] != nil && eligibleIDs.contains(candidateID)
+                })
+            else {
+                throw LifecycleContractError.invalidArtifact(
+                    "An Unresolved Detection references a Finding outside its parent projection."
+                )
             }
         }
     }
@@ -83,28 +109,16 @@ extension LifecycleArtifact {
             try validateMatchedContinuity(
                 evidence,
                 finding: finding,
-                snapshot: snapshot,
-                findings: findings
+                snapshot: snapshot
             )
         case .resolved(let evidence):
-            guard let eventIndex = finding.events.firstIndex(where: { $0.snapshotID == snapshot.id }) else {
-                throw LifecycleContractError.invalidArtifact(
-                    "A resolved event is missing from its Finding history."
-                )
-            }
-            let findingAtResolution = try Finding(
-                id: finding.id,
-                lineageID: finding.lineageID,
-                rule: finding.rule,
-                events: Array(finding.events[...eventIndex])
-            )
             let assessment = try ResolutionCoverageEvaluator().assess(
-                finding: findingAtResolution,
+                finding: finding,
                 snapshot: snapshot,
                 artifact: self
             )
             guard case .verified(let expectedAtomicIDs, let expectedReasons) = assessment,
-                evidence.priorSnapshotID == findingAtResolution.firstObservationSnapshotID,
+                evidence.priorSnapshotID == finding.firstObservationSnapshotID,
                 evidence.coveredAtomicObservationIDs == expectedAtomicIDs,
                 evidence.reasons == expectedReasons
             else {
@@ -115,6 +129,10 @@ extension LifecycleArtifact {
                 throw LifecycleContractError.invalidArtifact("An unverified event requires blockers.")
             }
         case .continuityAmbiguous(let evidence):
+            let eligibleIDs = Set(
+                try parentFindingProjections(of: snapshot.id).compactMap { projection in
+                    projection.finding.rule.identity == finding.rule.identity ? projection.finding.id : nil
+                })
             guard !evidence.currentDetectionIDs.isEmpty,
                 !evidence.candidateFindingIDs.isEmpty,
                 !evidence.reasons.isEmpty,
@@ -124,9 +142,8 @@ extension LifecycleArtifact {
                     snapshot.detection(id: detectionID)?.rule.identity == finding.rule.identity
                 }),
                 evidence.candidateFindingIDs.allSatisfy({ candidateID in
-                    guard let candidate = findings[candidateID] else { return false }
-                    return candidate.lineageID == finding.lineageID
-                        && candidate.rule.identity == finding.rule.identity
+                    findings[candidateID]?.rule.identity == finding.rule.identity
+                        && eligibleIDs.contains(candidateID)
                 }),
                 evidence.candidateFindingIDs.contains(finding.id)
             else {
@@ -134,7 +151,6 @@ extension LifecycleArtifact {
             }
         }
     }
-
 }
 
 extension AtomicObservationOutcome {

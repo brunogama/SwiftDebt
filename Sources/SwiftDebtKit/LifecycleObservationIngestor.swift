@@ -50,12 +50,12 @@ struct LifecycleObservationIngestor: Sendable {
         )
         let store = LifecycleArtifactStore(artifactURL: artifactURL, generatorVersion: engineVersion)
         return try store.ingest { artifact in
-            let lineage = try lineagePosition(
+            let ordering = try snapshotOrdering(
                 snapshotID: snapshotID,
                 gitSnapshot: capture.gitSnapshot,
                 artifact: artifact
             )
-            return try ObservationSnapshot(
+            let snapshot = try ObservationSnapshot(
                 id: snapshotID,
                 provenance: SnapshotProvenance(
                     sourceIdentity: capture.sourceIdentity,
@@ -63,23 +63,24 @@ struct LifecycleObservationIngestor: Sendable {
                     configurationFingerprint: configuration,
                     capabilities: capabilities,
                     engineVersion: engineVersion,
-                    lineage: lineage,
+                    lineage: ordering.lineage,
                     sourceSelection: capture.sourceSelection,
                     sourceRenames: capture.sourceRenames,
                     sourceDeletions: capture.sourceDeletions
                 ),
                 analysis: analysis
             )
+            return LifecycleSnapshotIngestion(snapshot: snapshot, parentEdge: ordering.parentEdge)
         }
     }
 
-    private func lineagePosition(
+    private func snapshotOrdering(
         snapshotID: SnapshotID,
         gitSnapshot: LifecycleGitSnapshot,
         artifact: LifecycleArtifact?
-    ) throws -> LineagePosition {
+    ) throws -> (lineage: LineagePosition, parentEdge: SnapshotParentEdge?) {
         if let existing = artifact?.snapshot(id: snapshotID) {
-            return existing.provenance.lineage
+            return (existing.provenance.lineage, artifact?.parentEdge(of: snapshotID))
         }
         guard let artifact, !artifact.snapshots.isEmpty else {
             if case .available(_, _, let state, _, _, _, _) = gitSnapshot, state != .clean {
@@ -87,10 +88,7 @@ struct LifecycleObservationIngestor: Sendable {
                     "a dirty working tree cannot seed an extendable lifecycle lineage."
                 )
             }
-            return try LineagePosition(
-                lineageID: LineageID("lineage-\(snapshotID.rawValue.dropFirst("snapshot-".count))"),
-                sequence: 1
-            )
+            return (try rootLineage(for: snapshotID), nil)
         }
 
         guard case .available(_, let revision, let state, let parents, _, _, _) = gitSnapshot else {
@@ -116,22 +114,35 @@ struct LifecycleObservationIngestor: Sendable {
             throw LifecycleAnalysisError.unorderedSnapshot(reason)
         }
 
-        let candidates = artifact.lineageHeads.compactMap { head -> LineageHead? in
-            guard let snapshot = artifact.snapshot(id: head.snapshotID),
-                gitRevision(of: snapshot) == parentRevision,
-                gitWorkingTreeState(of: snapshot) == .clean
-            else { return nil }
-            return head
+        let processed = Set(artifact.processedSnapshotIDs)
+        let candidates = artifact.snapshots.filter { snapshot in
+            processed.contains(snapshot.id)
+                && gitRevision(of: snapshot) == parentRevision
+                && gitWorkingTreeState(of: snapshot) == .clean
         }
         guard candidates.count == 1, let predecessor = candidates.first else {
             throw LifecycleAnalysisError.unorderedSnapshot(
-                "the direct Git parent is not one unique clean lineage head in the artifact."
+                "the direct Git parent is not one unique clean processed snapshot in the artifact."
             )
         }
-        return try LineagePosition(
-            lineageID: predecessor.lineageID,
-            sequence: predecessor.sequence + 1,
-            predecessorSnapshotID: predecessor.snapshotID
+        return (
+            try LineagePosition(
+                lineageID: predecessor.provenance.lineage.lineageID,
+                sequence: predecessor.provenance.lineage.sequence + 1,
+                predecessorSnapshotID: predecessor.id
+            ),
+            SnapshotParentEdge(
+                childSnapshotID: snapshotID,
+                parentSnapshotID: predecessor.id,
+                basis: .gitDirectParent(parentRevision)
+            )
+        )
+    }
+
+    private func rootLineage(for snapshotID: SnapshotID) throws -> LineagePosition {
+        try LineagePosition(
+            lineageID: LineageID("lineage-\(snapshotID.rawValue.dropFirst("snapshot-".count))"),
+            sequence: 1
         )
     }
 

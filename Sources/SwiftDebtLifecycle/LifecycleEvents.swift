@@ -1,11 +1,11 @@
 import SwiftDebtCore
 
-public enum FindingLifecycleState: String, Codable, Equatable, Sendable {
+public enum FindingLifecycleState: String, Codable, Equatable, Hashable, Sendable {
     case open
     case resolved
 }
 
-public enum FindingEvidenceState: String, Codable, Equatable, Sendable {
+public enum FindingEvidenceState: String, Codable, Equatable, Hashable, Sendable {
     case observed
     case unverified
     case continuityAmbiguous = "continuity-ambiguous"
@@ -163,11 +163,18 @@ extension LifecycleTransition: Codable {
 public struct LifecycleEvent: Codable, Equatable, Sendable {
     public let id: LifecycleEventID
     public let snapshotID: SnapshotID
+    public let basisEventIDs: [LifecycleEventID]
     public let transition: LifecycleTransition
 
-    public init(id: LifecycleEventID, snapshotID: SnapshotID, transition: LifecycleTransition) {
+    public init(
+        id: LifecycleEventID,
+        snapshotID: SnapshotID,
+        basisEventIDs: [LifecycleEventID] = [],
+        transition: LifecycleTransition
+    ) {
         self.id = id
         self.snapshotID = snapshotID
+        self.basisEventIDs = basisEventIDs.sorted { $0.rawValue < $1.rawValue }
         self.transition = transition
     }
 }

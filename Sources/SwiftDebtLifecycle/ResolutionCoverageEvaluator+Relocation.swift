@@ -155,8 +155,7 @@ extension ResolutionCoverageEvaluator {
         var visited: Set<SnapshotID> = []
         while cursor.id != priorSnapshot.id {
             guard visited.insert(cursor.id).inserted,
-                cursor.provenance.lineage.lineageID == priorSnapshot.provenance.lineage.lineageID,
-                let predecessorID = cursor.provenance.lineage.predecessorSnapshotID,
+                let predecessorID = artifact.parentSnapshotID(of: cursor.id),
                 let predecessor = artifact.snapshot(id: predecessorID)
             else {
                 throw LifecycleContractError.invalidArtifact(

@@ -27,7 +27,7 @@ let observation = try ObservationSnapshot(
 let result = try LifecycleArtifactStore(artifactURL: artifactURL).ingest(observation)
 ```
 
-The store serializes one schema-versioned `swiftdebt-lifecycle` artifact. Ingestion holds an advisory exclusive lock, writes by atomic replacement, orders pending lineage snapshots by their explicit predecessor relationship, and leaves bytes unchanged when the same snapshot is retried.
+The store serializes one schema-versioned `swiftdebt-lifecycle` artifact. Schema 2 persists a snapshot parent graph and per-branch Finding event bases. Ingestion holds an advisory exclusive lock, writes by atomic replacement, orders pending snapshots by their explicit predecessor relationship, and leaves bytes unchanged when the same snapshot is retried. A validated schema 1 artifact migrates in memory without changing its bytes; the next accepted atomic ingestion writes schema 2 while preserving every existing Snapshot, Finding, Detection, and Lifecycle Event ID.
 
 The supported CLI write path accepts only an artifact location:
 
@@ -50,12 +50,14 @@ Provenance remains a trusted integration input for direct library callers. A syn
 The lifecycle audit query commands remain read-only:
 
 ```text
-swift-debt lifecycle inventory ARTIFACT [--format text|json]
-swift-debt lifecycle explain ARTIFACT FINDING_ID [--format text|json]
+swift-debt lifecycle inventory ARTIFACT [--head SNAPSHOT_ID] [--format text|json]
+swift-debt lifecycle explain ARTIFACT FINDING_ID [--head SNAPSHOT_ID] [--format text|json]
 swift-debt lifecycle snapshot ARTIFACT SNAPSHOT_ID [--format text|json]
 ```
 
 These commands decode and validate the entire artifact before reporting. They never repair, replace, or partially interpret unreadable history.
+
+When the artifact has several graph heads, inventory reports one projection per Finding and head. `--head` selects one current branch projection explicitly. An unscoped explanation retains the complete append-only Finding event graph and renders the lifecycle and evidence state for every head. A head-scoped explanation returns only that head's event path, supporting snapshots, and unresolved evidence. It includes an Introduction Conclusion only when its recorded Git head matches a persisted snapshot on the selected head's ancestor path; conclusions without that graph evidence remain available in the unscoped explanation. Snapshot inspection reports its parent, children, and head status.
 
 Introduction inference is a separate, explicit artifact mutation:
 
@@ -93,12 +95,14 @@ The analyze-to-artifact path records:
 | Configuration fingerprint | Versioned SHA-256 over source selection kind, effective exclusions, maximum file size, and the exact Rule Identities and Semantic Revisions emitted by R1. |
 | Capability availability | `syntax-analysis` available. Parse and rule failures remain explicit source and Atomic Observation outcomes rather than unavailable capability claims. |
 | Engine identity | The schema-2 report engine version produced by the same analysis run. |
-| Lineage | Existing position for an exact retry, or the unique clean single-parent Git successor of one clean artifact head. |
+| Snapshot graph | Existing edge for an exact retry, or one clean single-parent Git edge to the unique persisted snapshot of that parent revision. The parent does not need to remain a graph head. |
 | Source rename evidence | Canonical Git rename edges between the direct parent and current revision, captured from the same clean repository state. |
 
 The Git cleanliness check excludes only untracked or ignored lifecycle artifacts, lock files, and exact `--output`, `--profile-output`, and `--stamp` paths requested for that run when they are inside the repository. A Git-tracked output remains visible to provenance. Directory discovery also omits the requested generated stamp SourceUnit. These rules prevent ordinary SwiftDebt outputs from changing the source state it records without hiding tracked or unrelated changes, which continue to block successor claims.
 
-The first snapshot may use a content-only identity when the input is outside Git. A later content-only snapshot cannot be ordered automatically. Dirty working trees, merge commits, skipped commits, duplicate but different evidence for one revision, and disconnected histories also fail closed. The CLI does not infer a successor from invocation time.
+The first snapshot may use a content-only identity when the input is outside Git. A later content-only snapshot cannot be ordered automatically. Dirty working trees, merge commits, skipped commits, duplicate but different evidence for one revision, and disconnected histories also fail closed. A clean single-parent child can extend a persisted parent even after another child has already been observed, so sibling Git branches remain parallel graph heads. The CLI does not infer a successor from invocation time.
+
+Each Finding keeps one stable identity and an append-only event graph. A non-opening event names the exact predecessor event from its parent snapshot projection. A branch can therefore resolve a Finding while its sibling keeps the same Finding open without either event becoming evidence on the other branch. Artifact validation rejects missing parents, cycles, event bases that cross sibling paths, and non-opening events whose basis is not the parent projection's terminal event. Merge snapshots remain unsupported and fail before mutation.
 
 The local SHA-256 implementation exists because the current R2 digest helper validates but does not compute digests. Consolidation with R2's `RepositorySHA256` is an integration task after that separate branch lands; this slice does not couple to unmerged code.
 
@@ -138,7 +142,7 @@ A committed empty Atomic Observation proves absence only for its exact rule by S
 
 The reducer and artifact decoder both recompute a resolution proof. A resolution is valid only when all of these conditions hold:
 
-- the resolving snapshot is a later processed snapshot in the Finding's lineage;
+- the resolving snapshot is a later processed descendant on the selected snapshot-graph path;
 - repository scope is complete;
 - both source identities are available;
 - effective configuration, engine version, and capability sets are comparable;
@@ -153,7 +157,7 @@ Git-backed snapshots also persist the engine's repository-relative source select
 Swift SourceUnit rename and deletion evidence. A partial selection records the affected prior source as
 out of scope and cannot verify resolution. A deletion can support resolution only when the current
 snapshot has complete comparable repository coverage of the eligible successor search space.
-Resolution follows the persisted predecessor chain, so an observed sequence of Git rename or deletion
+Resolution follows the persisted snapshot parent path, so an observed sequence of Git rename or deletion
 edges remains part of the later proof. A real CLI fixture covers two consecutive renames, partial
 observations at both edges, and final complete repository coverage.
 Lifecycle-enabled analysis can persist that proof after the sole Swift SourceUnit is deleted: the
@@ -161,7 +165,7 @@ schema-2 report contains zero input files, while the Observation Snapshot retain
 and an empty rule by SourceUnit product. Analysis without lifecycle ingestion keeps the existing
 no-sources failure.
 
-A tampered resolution that points at an existing failed or unrelated Atomic Observation is rejected. Unknown schemas, invalid digests, broken Detection or candidate Finding references, inconsistent lineage order, and malformed parse outcomes also fail closed.
+A tampered resolution that points at an existing failed or unrelated Atomic Observation is rejected. Unknown schemas, invalid digests, broken Detection or candidate Finding references, invalid snapshot graph edges, sibling event leakage, inconsistent ordering metadata, and malformed parse outcomes also fail closed.
 
 ## Acceptance status
 
@@ -191,7 +195,7 @@ All implemented acceptance tests use the real R1 `RuleEngine`, the public lifecy
 | AT-18 | Direct | A real merge with one positive and one absent parent follows the positive lineage and attributes introduction to its earlier commit. |
 | AT-19 | Direct | A real merge that introduces the Detection after both parents prove absence is exact at the merge. |
 | AT-20 | Direct | Real dirty-worktree and shallow-clone fixtures retain First Observation and block exact attribution with specific reasons. |
-| AT-21 | Partial | Reverse arrival and divergent library fixtures preserve source order; the CLI accepts only a verified direct Git parent and rejects dirty, merge, or disconnected successors. Real divergent Git lineages in one artifact remain open. |
+| AT-21 | Direct | A real Git fixture analyzes one root and two sibling children in both arrival orders. One branch resolves the shared Finding while the other keeps it open; both retain one Finding ID, independent event projections, explicit graph heads, head-scoped CLI output, byte-identical replay, and no sibling evidence leakage. Dirty, merge, disconnected, and broken-parent inputs fail closed. |
 | AT-22 | Partial | Retry and reverse-arrival replay preserve canonical bytes, and real CLI replay is byte-identical; concurrent replay and interruption injection remain open. |
 | AT-23 | Partial | Persisted human and JSON queries expose blockers; real CLI tests prove text and JSON parity for every ambiguity candidate and blocker and for unverified reasons. CLI snapshot inspection shows derived Git, configuration, capability, engine, scope, selected-rule, and rename provenance. Full human/machine audit parity remains open. |
 | AT-24 | Direct | Unknown schema, broken references, reference-valid false resolution proof, and invalid candidate references fail closed. |

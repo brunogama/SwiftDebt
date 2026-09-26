@@ -17,80 +17,102 @@ extension LifecycleArtifact {
 
         let snapshotByID = Dictionary(uniqueKeysWithValues: snapshots.map { ($0.id, $0) })
         let processed = Set(processedSnapshotIDs)
-        try validateLineages(snapshotByID: snapshotByID, processed: processed)
+        try validateSnapshotGraph(snapshotByID: snapshotByID, processed: processed)
         try validateFindings(snapshotByID: snapshotByID, processed: processed)
         try validateIntroductionConclusions()
     }
 
-    private func validateLineages(
+    private func validateSnapshotGraph(
         snapshotByID: [SnapshotID: ObservationSnapshot],
         processed: Set<SnapshotID>
     ) throws {
-        let lineagePositions = snapshots.map {
-            "\($0.provenance.lineage.lineageID.rawValue):\($0.provenance.lineage.sequence)"
-        }
-        guard Set(lineagePositions).count == lineagePositions.count else {
-            throw LifecycleContractError.invalidArtifact("A lineage cannot contain duplicate sequence positions.")
-        }
-        guard processedSnapshotIDs.allSatisfy({ snapshotByID[$0] != nil }) else {
+        guard processed.allSatisfy({ snapshotByID[$0] != nil }) else {
             throw LifecycleContractError.invalidArtifact("A processed snapshot reference is broken.")
         }
-        guard Set(lineageHeads.map(\.lineageID)).count == lineageHeads.count else {
-            throw LifecycleContractError.invalidArtifact("A lineage can have only one processed head.")
+        guard Set(snapshotParentEdges.map(\.childSnapshotID)).count == snapshotParentEdges.count else {
+            throw LifecycleContractError.invalidArtifact(
+                "Schema 2 currently supports at most one parent per snapshot; merge nodes are unsupported."
+            )
         }
-        for snapshot in snapshots {
-            let position = snapshot.provenance.lineage
-            guard position.sequence > 1 else { continue }
-            if let predecessorID = position.predecessorSnapshotID,
-                let predecessor = snapshotByID[predecessorID]
-            {
-                guard predecessor.provenance.lineage.lineageID == position.lineageID,
-                    predecessor.provenance.lineage.sequence + 1 == position.sequence
-                else {
-                    throw LifecycleContractError.invalidArtifact(
-                        "Snapshot \(snapshot.id) has an inconsistent predecessor."
-                    )
-                }
-                guard !processed.contains(snapshot.id) || processed.contains(predecessorID) else {
-                    throw LifecycleContractError.invalidArtifact(
-                        "Processed snapshot \(snapshot.id) follows an unprocessed predecessor."
-                    )
-                }
-            } else if processed.contains(snapshot.id) {
+        for edge in snapshotParentEdges {
+            guard edge.childSnapshotID != edge.parentSnapshotID,
+                let child = snapshotByID[edge.childSnapshotID]
+            else {
+                throw LifecycleContractError.invalidArtifact("A snapshot parent edge has a broken child reference.")
+            }
+            if let parent = snapshotByID[edge.parentSnapshotID] {
+                try validate(edge: edge, child: child, parent: parent)
+            } else if processed.contains(edge.childSnapshotID) {
                 throw LifecycleContractError.invalidArtifact(
-                    "Processed snapshot \(snapshot.id) has a missing predecessor."
+                    "Processed snapshot \(edge.childSnapshotID) has a missing graph parent."
+                )
+            }
+            guard !processed.contains(edge.childSnapshotID) || processed.contains(edge.parentSnapshotID) else {
+                throw LifecycleContractError.invalidArtifact(
+                    "Processed snapshot \(edge.childSnapshotID) follows an unprocessed graph parent."
                 )
             }
         }
-        try validateLineageHeads(snapshotByID: snapshotByID, processed: processed)
+        for snapshot in snapshots {
+            let declaredParent = snapshot.provenance.lineage.predecessorSnapshotID
+            let edge = parentEdge(of: snapshot.id)
+            if let declaredParent {
+                guard edge?.parentSnapshotID == declaredParent else {
+                    throw LifecycleContractError.invalidArtifact(
+                        "Snapshot \(snapshot.id) lost its explicit predecessor edge."
+                    )
+                }
+            }
+            if processed.contains(snapshot.id), snapshot.provenance.lineage.sequence > 1,
+                declaredParent != nil, edge == nil
+            {
+                throw LifecycleContractError.invalidArtifact(
+                    "Processed snapshot \(snapshot.id) has no graph parent."
+                )
+            }
+        }
+        for snapshotID in snapshotByID.keys {
+            var cursor: SnapshotID? = snapshotID
+            var visited: Set<SnapshotID> = []
+            while let current = cursor {
+                guard visited.insert(current).inserted else {
+                    throw LifecycleContractError.invalidArtifact("Snapshot graph contains a cycle.")
+                }
+                cursor = parentSnapshotID(of: current)
+            }
+        }
     }
 
-    private func validateLineageHeads(
-        snapshotByID: [SnapshotID: ObservationSnapshot],
-        processed: Set<SnapshotID>
+    private func validate(
+        edge: SnapshotParentEdge,
+        child: ObservationSnapshot,
+        parent: ObservationSnapshot
     ) throws {
-        for head in lineageHeads {
-            guard let snapshot = snapshotByID[head.snapshotID],
-                processed.contains(head.snapshotID),
-                snapshot.provenance.lineage.lineageID == head.lineageID,
-                snapshot.provenance.lineage.sequence == head.sequence
+        switch edge.basis {
+        case .explicitPredecessor, .migratedSchemaOne:
+            let childPosition = child.provenance.lineage
+            let parentPosition = parent.provenance.lineage
+            guard childPosition.predecessorSnapshotID == parent.id,
+                childPosition.lineageID == parentPosition.lineageID,
+                childPosition.sequence == parentPosition.sequence + 1
             else {
-                throw LifecycleContractError.invalidArtifact("Lineage head \(head.lineageID) is inconsistent.")
+                throw LifecycleContractError.invalidArtifact(
+                    "An explicit snapshot predecessor is inconsistent with legacy lineage provenance."
+                )
             }
-        }
-        let processedLineages = Set(processed.compactMap { snapshotByID[$0]?.provenance.lineage.lineageID })
-        guard processedLineages == Set(lineageHeads.map(\.lineageID)) else {
-            throw LifecycleContractError.invalidArtifact("Every processed lineage requires exactly one head.")
-        }
-        for lineageID in processedLineages {
-            let lineageSnapshots = processed.compactMap { snapshotByID[$0] }.filter {
-                $0.provenance.lineage.lineageID == lineageID
-            }
-            guard let maximum = lineageSnapshots.map({ $0.provenance.lineage.sequence }).max(),
-                let head = lineageHeads.first(where: { $0.lineageID == lineageID }),
-                maximum == head.sequence
+        case .gitDirectParent(let parentRevision):
+            guard case .git(_, let childState, _) = child.provenance.sourceIdentity,
+                case .git(let observedParentRevision, let parentState, _) = parent.provenance.sourceIdentity,
+                childState == .clean,
+                parentState == .clean,
+                observedParentRevision == parentRevision,
+                child.provenance.lineage.predecessorSnapshotID == parent.id,
+                child.provenance.lineage.lineageID == parent.provenance.lineage.lineageID,
+                child.provenance.lineage.sequence == parent.provenance.lineage.sequence + 1
             else {
-                throw LifecycleContractError.invalidArtifact("Lineage \(lineageID) has an invalid processed head.")
+                throw LifecycleContractError.invalidArtifact(
+                    "A Git snapshot edge does not match one clean persisted parent revision."
+                )
             }
         }
     }

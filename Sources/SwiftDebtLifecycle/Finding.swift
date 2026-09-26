@@ -1,5 +1,7 @@
 public struct Finding: Codable, Equatable, Sendable {
     public let id: FindingID
+    /// The lineage in which the immutable First Observation was recorded.
+    /// Snapshot graph projections, rather than this value, determine later state.
     public let lineageID: LineageID
     public let rule: SnapshotRule
     public private(set) var events: [LifecycleEvent]
@@ -14,40 +16,39 @@ public struct Finding: Codable, Equatable, Sendable {
         self.lineageID = lineageID
         self.rule = rule
         self.events = events
-        try validateEventSequence()
+        try validateEventGraph()
+        self.events = try canonicalEvents()
     }
 
     public var firstObservationSnapshotID: SnapshotID {
-        events[0].snapshotID
+        openingEvent.snapshotID
     }
 
+    /// A conservative aggregate retained for source compatibility. Branch-aware
+    /// consumers should use `LifecycleArtifact.findingProjection(id:at:)`.
     public var lifecycleState: FindingLifecycleState {
-        events.reduce(.open) { state, event in
-            if case .resolved = event.transition { return .resolved }
-            if case .reopened = event.transition { return .open }
-            return state
-        }
+        terminalEvents.contains { state(after: $0.id) == .open } ? .open : .resolved
     }
 
+    /// A conservative aggregate retained for source compatibility. Divergent
+    /// evidence is reported as unverified until a graph head is selected.
     public var evidenceState: FindingEvidenceState {
-        guard let event = events.last else { return .unverified }
-        switch event.transition {
-        case .opened, .observed, .reopened: return .observed
-        case .resolved: return .verifiedAbsent
-        case .unverified: return .unverified
-        case .continuityAmbiguous: return .continuityAmbiguous
-        }
+        let states = Set(terminalEvents.map { evidenceState(for: $0) })
+        return states.count == 1 ? states.first ?? .unverified : .unverified
     }
 
     public var openingDetectionID: DetectionID {
-        guard case .opened(let evidence) = events[0].transition else {
-            preconditionFailure("Validated Findings always start with an opened event.")
+        guard case .opened(let evidence) = openingEvent.transition else {
+            preconditionFailure("Validated Findings always contain one opened event.")
         }
         return evidence.detectionID
     }
 
     package var latestDetectionReference: (snapshotID: SnapshotID, detectionID: DetectionID) {
-        for event in events.reversed() {
+        guard terminalEvents.count == 1, let terminal = terminalEvents.first else {
+            preconditionFailure("Select a snapshot graph projection before requesting latest Detection evidence.")
+        }
+        for event in (try? eventPath(endingAt: terminal.id))?.reversed() ?? [] {
             switch event.transition {
             case .opened(let evidence):
                 return (event.snapshotID, evidence.detectionID)
@@ -57,54 +58,62 @@ public struct Finding: Codable, Equatable, Sendable {
                 continue
             }
         }
-        preconditionFailure("Validated Findings always contain an observational event.")
+        preconditionFailure("Validated Findings always contain observational evidence.")
+    }
+
+    package var openingEvent: LifecycleEvent {
+        guard let event = events.first(where: { $0.transition.kind == .opened }) else {
+            preconditionFailure("Validated Findings always contain one opened event.")
+        }
+        return event
+    }
+
+    package var terminalEvents: [LifecycleEvent] {
+        let referenced = Set(events.flatMap(\.basisEventIDs))
+        return events.filter { !referenced.contains($0.id) }
     }
 
     mutating func append(_ event: LifecycleEvent) throws {
         guard !events.contains(where: { $0.id == event.id }) else { return }
-        let next = try Finding(
+        self = try Finding(
             id: id,
             lineageID: lineageID,
             rule: rule,
             events: events + [event]
         )
-        self = next
     }
 
-    private func validateEventSequence() throws {
-        guard let first = events.first, case .opened = first.transition else {
-            throw LifecycleContractError.invalidArtifact("Finding \(id) must start with an opened event.")
-        }
-        guard Set(events.map(\.id)).count == events.count else {
-            throw LifecycleContractError.invalidArtifact("Finding \(id) has duplicate event IDs.")
-        }
-        var state = FindingLifecycleState.open
-        for event in events.dropFirst() {
-            switch event.transition {
-            case .opened:
-                throw LifecycleContractError.invalidArtifact("Finding \(id) has more than one opened event.")
-            case .observed:
-                guard state == .open else {
-                    throw LifecycleContractError.invalidArtifact("Finding \(id) is observed while resolved.")
-                }
-            case .resolved:
-                guard state == .open else {
-                    throw LifecycleContractError.invalidArtifact("Finding \(id) resolves more than once.")
-                }
-                state = .resolved
-            case .reopened:
-                guard state == .resolved else {
-                    throw LifecycleContractError.invalidArtifact("Finding \(id) reopens while already open.")
-                }
-                state = .open
-            case .unverified, .continuityAmbiguous:
-                guard state == .open else {
-                    throw LifecycleContractError.invalidArtifact(
-                        "Finding \(id) cannot add uncertain evidence after verified resolution."
-                    )
-                }
+    package func projected(through terminalEventID: LifecycleEventID) throws -> Finding {
+        try Finding(
+            id: id,
+            lineageID: lineageID,
+            rule: rule,
+            events: eventPath(endingAt: terminalEventID)
+        )
+    }
+
+    package func eventPath(endingAt terminalEventID: LifecycleEventID) throws -> [LifecycleEvent] {
+        let byID = Dictionary(uniqueKeysWithValues: events.map { ($0.id, $0) })
+        var path: [LifecycleEvent] = []
+        var cursor = terminalEventID
+        var visited: Set<LifecycleEventID> = []
+        while true {
+            guard visited.insert(cursor).inserted, let event = byID[cursor] else {
+                throw LifecycleContractError.invalidArtifact(
+                    "Finding \(id) has a cyclic or broken event basis."
+                )
             }
+            path.append(event)
+            guard let basis = event.basisEventIDs.first else { break }
+            cursor = basis
         }
+        let ordered = path.reversed()
+        guard ordered.first?.transition.kind == .opened else {
+            throw LifecycleContractError.invalidArtifact(
+                "Finding \(id) has an event path that does not reach its opening."
+            )
+        }
+        return Array(ordered)
     }
 
     private enum CodingKeys: String, CodingKey {

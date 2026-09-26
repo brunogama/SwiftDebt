@@ -9,10 +9,12 @@ extension LifecycleReadService {
 
     func renderInventory(_ report: LifecycleInventoryReport) -> String {
         var lines = ["SwiftDebt lifecycle inventory"]
+        lines += report.headSnapshotIDs.map { "Graph head: \($0.rawValue)" }
         for finding in report.findings {
             let location = finding.lastKnownLocation
             lines.append(
-                "\(finding.id.rawValue) \(finding.lifecycleState.rawValue) \(finding.evidenceState.rawValue) "
+                "\(finding.id.rawValue) head=\(finding.headSnapshotID.rawValue) "
+                    + "\(finding.lifecycleState.rawValue) \(finding.evidenceState.rawValue) "
                     + "\(finding.rule.identity) \(location.sourcePath.rawValue):\(location.line):\(location.column)"
             )
             lines.append("  First Observation: \(finding.firstObservationSnapshotID.rawValue)")
@@ -34,13 +36,16 @@ extension LifecycleReadService {
     func renderExplanation(_ report: FindingExplanationReport) -> String {
         var lines = [
             "Finding \(report.finding.id.rawValue)",
-            "State: \(report.finding.lifecycleState.rawValue)",
-            "Evidence: \(report.finding.evidenceState.rawValue)",
             "First Observation: \(report.finding.firstObservationSnapshotID.rawValue)",
         ]
-        for event in report.finding.events {
-            lines.append("\(event.snapshotID.rawValue) \(event.transition.kind.rawValue)")
-            lines += reasons(for: event.transition).map { "  \($0.code): \($0.message)" }
+        for projection in report.projections {
+            lines.append("Graph head: \(projection.snapshotID.rawValue)")
+            lines.append("State: \(projection.lifecycleState.rawValue)")
+            lines.append("Evidence: \(projection.evidenceState.rawValue)")
+            for event in projection.finding.events {
+                lines.append("\(event.snapshotID.rawValue) \(event.transition.kind.rawValue)")
+                lines += reasons(for: event.transition).map { "  \($0.code): \($0.message)" }
+            }
         }
         for unresolved in report.unresolvedDetections {
             lines.append("Unresolved Detection \(unresolved.detectionID.rawValue)")
@@ -74,7 +79,10 @@ extension LifecycleReadService {
         let snapshot = report.snapshot
         var lines = [
             "Snapshot \(snapshot.id.rawValue)",
-            "Lineage: \(snapshot.provenance.lineage.lineageID.rawValue) #\(snapshot.provenance.lineage.sequence)",
+            "Graph parent: \(report.parentSnapshotID?.rawValue ?? "none")",
+            "Graph children: \(report.childSnapshotIDs.map(\.rawValue).joined(separator: ","))",
+            "Graph head: \(report.isHead)",
+            "Legacy lineage: \(snapshot.provenance.lineage.lineageID.rawValue) #\(snapshot.provenance.lineage.sequence)",
             renderSourceIdentity(snapshot.provenance.sourceIdentity),
             "Scope: \(renderScope(snapshot.provenance.scope))",
             "Configuration: \(snapshot.provenance.configurationFingerprint.value)",

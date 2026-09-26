@@ -2,6 +2,7 @@ import Foundation
 
 public struct FindingSummary: Codable, Equatable, Sendable {
     public let id: FindingID
+    public let headSnapshotID: SnapshotID
     public let lineageID: LineageID
     public let rule: SnapshotRule
     public let lifecycleState: FindingLifecycleState
@@ -14,34 +15,54 @@ public struct FindingSummary: Codable, Equatable, Sendable {
 public struct LifecycleInventoryReport: Codable, Equatable, Sendable {
     public let schemaVersion: Int
     public let reportKind: String
+    public let headSnapshotIDs: [SnapshotID]
     public let findings: [FindingSummary]
     public let unresolvedDetections: [UnresolvedDetection]
 
-    public init(artifact: LifecycleArtifact) throws {
+    public init(artifact: LifecycleArtifact, headSnapshotID: SnapshotID? = nil) throws {
         try artifact.validate()
-        self.schemaVersion = 1
+        let heads = try selectedHeads(headSnapshotID, artifact: artifact)
+        self.schemaVersion = 2
         self.reportKind = "swiftdebt-lifecycle-inventory"
-        self.findings = try artifact.findings.map { finding in
-            let reference = finding.latestDetectionReference
-            guard let snapshot = artifact.snapshot(id: reference.snapshotID),
-                let detection = snapshot.detection(id: reference.detectionID)
-            else {
-                throw LifecycleContractError.invalidArtifact(
-                    "Finding \(finding.id) has no latest observed Detection."
+        self.headSnapshotIDs = heads
+        self.findings = try heads.flatMap { headID -> [FindingSummary] in
+            guard let head = artifact.snapshot(id: headID) else {
+                throw LifecycleContractError.missingSnapshot(headID.rawValue)
+            }
+            return try artifact.findingProjections(at: headID).map { projection in
+                let finding = projection.finding
+                let reference = finding.latestDetectionReference
+                guard let snapshot = artifact.snapshot(id: reference.snapshotID),
+                    let detection = snapshot.detection(id: reference.detectionID)
+                else {
+                    throw LifecycleContractError.invalidArtifact(
+                        "Finding \(finding.id) has no latest observed Detection."
+                    )
+                }
+                return FindingSummary(
+                    id: finding.id,
+                    headSnapshotID: headID,
+                    lineageID: head.provenance.lineage.lineageID,
+                    rule: finding.rule,
+                    lifecycleState: finding.lifecycleState,
+                    evidenceState: finding.evidenceState,
+                    firstObservationSnapshotID: finding.firstObservationSnapshotID,
+                    lastKnownLocation: detection.location,
+                    introductionConclusion: artifact.currentIntroductionConclusion(for: finding.id)
                 )
             }
-            return FindingSummary(
-                id: finding.id,
-                lineageID: finding.lineageID,
-                rule: finding.rule,
-                lifecycleState: finding.lifecycleState,
-                evidenceState: finding.evidenceState,
-                firstObservationSnapshotID: finding.firstObservationSnapshotID,
-                lastKnownLocation: detection.location,
-                introductionConclusion: artifact.currentIntroductionConclusion(for: finding.id)
-            )
+        }.sorted(by: Self.summaryOrder)
+        let selectedSnapshotIDs = try snapshotIDs(on: heads, artifact: artifact)
+        self.unresolvedDetections = artifact.unresolvedDetections.filter {
+            selectedSnapshotIDs.contains($0.snapshotID)
         }
-        self.unresolvedDetections = artifact.unresolvedDetections
+    }
+
+    private static func summaryOrder(_ lhs: FindingSummary, _ rhs: FindingSummary) -> Bool {
+        if lhs.headSnapshotID != rhs.headSnapshotID {
+            return lhs.headSnapshotID.rawValue < rhs.headSnapshotID.rawValue
+        }
+        return lhs.id.rawValue < rhs.id.rawValue
     }
 }
 
@@ -49,24 +70,51 @@ public struct FindingExplanationReport: Codable, Equatable, Sendable {
     public let schemaVersion: Int
     public let reportKind: String
     public let finding: Finding
+    public let projections: [FindingProjection]
     public let supportingSnapshots: [ObservationSnapshot]
     public let unresolvedDetections: [UnresolvedDetection]
     public let introductionConclusions: [IntroductionConclusion]
 
-    public init(findingID: FindingID, artifact: LifecycleArtifact) throws {
+    public init(
+        findingID: FindingID,
+        artifact: LifecycleArtifact,
+        headSnapshotID: SnapshotID? = nil
+    ) throws {
         try artifact.validate()
         guard let finding = artifact.finding(id: findingID) else {
             throw LifecycleContractError.missingFinding(findingID.rawValue)
         }
-        let snapshotIDs = Set(finding.events.map(\.snapshotID))
-        self.schemaVersion = 1
-        self.reportKind = "swiftdebt-lifecycle-finding-explanation"
-        self.finding = finding
-        self.supportingSnapshots = artifact.snapshots.filter { snapshotIDs.contains($0.id) }
-        self.unresolvedDetections = artifact.unresolvedDetections.filter {
-            $0.candidateFindingIDs.contains(findingID)
+        let heads = try selectedHeads(headSnapshotID, artifact: artifact)
+        let projections = try heads.compactMap { try artifact.findingProjection(finding, at: $0) }
+        if let headSnapshotID, projections.isEmpty {
+            throw LifecycleContractError.missingFinding(
+                "\(findingID.rawValue) at snapshot \(headSnapshotID.rawValue)"
+            )
         }
-        self.introductionConclusions = artifact.introductionConclusions(for: findingID)
+        let supportingSnapshotIDs = Set(projections.flatMap { $0.finding.events.map(\.snapshotID) })
+        let selectedSnapshotIDs = try snapshotIDs(on: projections.map(\.snapshotID), artifact: artifact)
+        self.schemaVersion = 2
+        self.reportKind = "swiftdebt-lifecycle-finding-explanation"
+        self.finding = headSnapshotID == nil ? finding : projections[0].finding
+        self.projections = projections.sorted { $0.snapshotID.rawValue < $1.snapshotID.rawValue }
+        self.supportingSnapshots = artifact.snapshots.filter { supportingSnapshotIDs.contains($0.id) }
+        self.unresolvedDetections = artifact.unresolvedDetections.filter {
+            selectedSnapshotIDs.contains($0.snapshotID) && $0.candidateFindingIDs.contains(findingID)
+        }
+        let conclusions = artifact.introductionConclusions(for: findingID)
+        if let headSnapshotID {
+            self.introductionConclusions = conclusions.filter { conclusion in
+                artifact.snapshots.contains { snapshot in
+                    guard case .git(let revision, _, _) = snapshot.provenance.sourceIdentity else {
+                        return false
+                    }
+                    return revision == conclusion.evidence.boundary.repositoryHeadRevision
+                        && artifact.isAncestor(snapshot.id, of: headSnapshotID)
+                }
+            }
+        } else {
+            self.introductionConclusions = conclusions
+        }
     }
 }
 
@@ -74,6 +122,9 @@ public struct SnapshotInspectionReport: Codable, Equatable, Sendable {
     public let schemaVersion: Int
     public let reportKind: String
     public let snapshot: ObservationSnapshot
+    public let parentSnapshotID: SnapshotID?
+    public let childSnapshotIDs: [SnapshotID]
+    public let isHead: Bool
     public let affectedFindingIDs: [FindingID]
     public let unresolvedDetections: [UnresolvedDetection]
 
@@ -82,9 +133,12 @@ public struct SnapshotInspectionReport: Codable, Equatable, Sendable {
         guard let snapshot = artifact.snapshot(id: snapshotID) else {
             throw LifecycleContractError.missingSnapshot(snapshotID.rawValue)
         }
-        self.schemaVersion = 1
+        self.schemaVersion = 2
         self.reportKind = "swiftdebt-lifecycle-snapshot-inspection"
         self.snapshot = snapshot
+        self.parentSnapshotID = artifact.parentSnapshotID(of: snapshotID)
+        self.childSnapshotIDs = artifact.childSnapshotIDs(of: snapshotID)
+        self.isHead = artifact.headSnapshotIDs.contains(snapshotID)
         self.affectedFindingIDs = artifact.findings.compactMap { finding in
             finding.events.contains(where: { $0.snapshotID == snapshotID }) ? finding.id : nil
         }.sorted { $0.rawValue < $1.rawValue }
@@ -100,8 +154,15 @@ public enum LifecycleReadFormat: String, Codable, Sendable {
 public struct LifecycleReadService: Sendable {
     public init() {}
 
-    public func inventory(at url: URL, format: LifecycleReadFormat) throws -> String {
-        let report = try LifecycleInventoryReport(artifact: LifecycleArtifactStore(artifactURL: url).load())
+    public func inventory(
+        at url: URL,
+        headSnapshotID: SnapshotID? = nil,
+        format: LifecycleReadFormat
+    ) throws -> String {
+        let report = try LifecycleInventoryReport(
+            artifact: LifecycleArtifactStore(artifactURL: url).load(),
+            headSnapshotID: headSnapshotID
+        )
         switch format {
         case .json: return try renderJSON(report)
         case .text: return renderInventory(report)
@@ -111,10 +172,15 @@ public struct LifecycleReadService: Sendable {
     public func explain(
         findingID: FindingID,
         at url: URL,
+        headSnapshotID: SnapshotID? = nil,
         format: LifecycleReadFormat
     ) throws -> String {
         let artifact = try LifecycleArtifactStore(artifactURL: url).load()
-        let report = try FindingExplanationReport(findingID: findingID, artifact: artifact)
+        let report = try FindingExplanationReport(
+            findingID: findingID,
+            artifact: artifact,
+            headSnapshotID: headSnapshotID
+        )
         switch format {
         case .json: return try renderJSON(report)
         case .text: return renderExplanation(report)
@@ -133,4 +199,24 @@ public struct LifecycleReadService: Sendable {
         case .text: return renderSnapshot(report)
         }
     }
+}
+
+private func selectedHeads(
+    _ requested: SnapshotID?,
+    artifact: LifecycleArtifact
+) throws -> [SnapshotID] {
+    guard let requested else { return artifact.headSnapshotIDs }
+    guard artifact.headSnapshotIDs.contains(requested) else {
+        throw LifecycleContractError.invalidArtifact(
+            "Snapshot \(requested) is not a current graph head."
+        )
+    }
+    return [requested]
+}
+
+private func snapshotIDs(
+    on heads: [SnapshotID],
+    artifact: LifecycleArtifact
+) throws -> Set<SnapshotID> {
+    try Set(heads.flatMap { try artifact.snapshotPath(through: $0).map(\.id) })
 }
