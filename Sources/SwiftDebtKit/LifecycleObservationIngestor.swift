@@ -30,7 +30,8 @@ struct LifecycleObservationIngestor: Sendable {
         analysis: AnalysisSnapshot,
         capture: LifecycleAnalysisCapture,
         engineVersion: String,
-        artifactURL: URL
+        artifactURL: URL,
+        profileReconciliation: Bool = false
     ) throws -> LifecycleReduction {
         let capability = try SnapshotCapability(name: "syntax-analysis", state: .available)
         let capabilities = [capability]
@@ -51,30 +52,31 @@ struct LifecycleObservationIngestor: Sendable {
             sourceDeletions: capture.sourceDeletions
         )
         let store = LifecycleArtifactStore(artifactURL: artifactURL, generatorVersion: engineVersion)
-        return try store.ingest { artifact in
-            let ordering = try snapshotOrdering(
-                snapshotID: snapshotID,
-                gitSnapshot: capture.gitSnapshot,
-                artifact: artifact
-            )
-            let snapshot = try ObservationSnapshot(
-                id: snapshotID,
-                provenance: SnapshotProvenance(
-                    sourceIdentity: capture.sourceIdentity,
-                    scope: capture.scope,
-                    configurationFingerprint: configuration,
-                    effectiveConfiguration: effectiveConfiguration,
-                    capabilities: capabilities,
-                    engineVersion: engineVersion,
-                    lineage: ordering.lineage,
-                    sourceSelection: capture.sourceSelection,
-                    sourceRenames: capture.sourceRenames,
-                    sourceDeletions: capture.sourceDeletions
-                ),
-                analysis: analysis
-            )
-            return LifecycleSnapshotIngestion(snapshot: snapshot, parentEdge: ordering.parentEdge)
-        }
+        return try store.ingest(
+            buildingSnapshot: { artifact in
+                let ordering = try snapshotOrdering(
+                    snapshotID: snapshotID,
+                    gitSnapshot: capture.gitSnapshot,
+                    artifact: artifact
+                )
+                let snapshot = try ObservationSnapshot(
+                    id: snapshotID,
+                    provenance: SnapshotProvenance(
+                        sourceIdentity: capture.sourceIdentity,
+                        scope: capture.scope,
+                        configurationFingerprint: configuration,
+                        effectiveConfiguration: effectiveConfiguration,
+                        capabilities: capabilities,
+                        engineVersion: engineVersion,
+                        lineage: ordering.lineage,
+                        sourceSelection: capture.sourceSelection,
+                        sourceRenames: capture.sourceRenames,
+                        sourceDeletions: capture.sourceDeletions
+                    ),
+                    analysis: analysis
+                )
+                return LifecycleSnapshotIngestion(snapshot: snapshot, parentEdge: ordering.parentEdge)
+            }, profileReconciliation: profileReconciliation)
     }
 
     private func snapshotOrdering(

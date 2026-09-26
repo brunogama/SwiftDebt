@@ -22,6 +22,8 @@ struct ContinuityReconciliation {
     let unresolvedGroups: [ContinuityUnresolvedGroup]
     let newDetections: [ObservedDetection]
     let absentFindings: [Finding]
+    let evaluatedPairs: Int
+    let crediblePairs: Int
 }
 
 struct ContinuityReconciler {
@@ -119,7 +121,9 @@ struct ContinuityReconciler {
             absentFindings: candidates.indices.compactMap { index in
                 matchedCandidates.contains(index) || groupedCandidates.contains(index)
                     ? nil : candidates[index].finding
-            }
+            },
+            evaluatedPairs: candidates.count * detections.count,
+            crediblePairs: relations.count
         )
     }
 

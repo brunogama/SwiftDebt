@@ -9,15 +9,18 @@ public struct LifecycleReduction: Equatable, Sendable {
     public let artifact: LifecycleArtifact
     public let status: SnapshotIngestionStatus
     public let processedSnapshotIDs: [SnapshotID]
+    public let reconciliationProfiles: [LifecycleReconciliationProfile]?
 
     public init(
         artifact: LifecycleArtifact,
         status: SnapshotIngestionStatus,
-        processedSnapshotIDs: [SnapshotID]
+        processedSnapshotIDs: [SnapshotID],
+        reconciliationProfiles: [LifecycleReconciliationProfile]? = nil
     ) {
         self.artifact = artifact
         self.status = status
         self.processedSnapshotIDs = processedSnapshotIDs
+        self.reconciliationProfiles = reconciliationProfiles
     }
 }
 
@@ -33,7 +36,8 @@ public struct LifecycleReducer: Sendable {
 
     package func ingest(
         _ input: LifecycleSnapshotIngestion,
-        into artifact: LifecycleArtifact
+        into artifact: LifecycleArtifact,
+        profileReconciliation: Bool = false
     ) throws -> LifecycleReduction {
         try artifact.validate()
         let snapshot = input.snapshot
@@ -46,7 +50,8 @@ public struct LifecycleReducer: Sendable {
             return LifecycleReduction(
                 artifact: artifact,
                 status: .alreadyPresent,
-                processedSnapshotIDs: []
+                processedSnapshotIDs: [],
+                reconciliationProfiles: profileReconciliation ? [] : nil
             )
         }
         if let edge = input.parentEdge {
@@ -62,8 +67,11 @@ public struct LifecycleReducer: Sendable {
         if let edge = input.parentEdge { updated.snapshotParentEdges.append(edge) }
 
         var newlyProcessed: [SnapshotID] = []
+        var profiles: [LifecycleReconciliationProfile] = []
         while let next = nextProcessableSnapshot(in: updated) {
-            try process(next, artifact: &updated)
+            if let profile = try process(next, artifact: &updated, profiling: profileReconciliation) {
+                profiles.append(profile)
+            }
             updated.processedSnapshotIDs.append(next.id)
             newlyProcessed.append(next.id)
         }
@@ -83,7 +91,8 @@ public struct LifecycleReducer: Sendable {
         return LifecycleReduction(
             artifact: updated,
             status: .accepted,
-            processedSnapshotIDs: newlyProcessed
+            processedSnapshotIDs: newlyProcessed,
+            reconciliationProfiles: profileReconciliation ? profiles : nil
         )
     }
 

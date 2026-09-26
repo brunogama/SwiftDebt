@@ -219,7 +219,6 @@ public struct AnalysisService: Sendable {
             let base = try ReportRenderer().render(report, format: format, root: root.path)
             return format == .diagnostics ? base + debtValidationDiagnostics : base
         }()
-        let profile = profiler?.profile()
         let repositoryRendered = try repositoryEvidenceReport.map { try RepositoryEvidenceRenderer().json($0) }
         let repositoryCacheRendered = try repositorySyntaxCacheReport.map {
             try RepositorySyntaxCacheRenderer().json($0)
@@ -232,14 +231,6 @@ public struct AnalysisService: Sendable {
         }
         if let repositoryCacheReportURL, let repositoryCacheRendered {
             try write(repositoryCacheRendered, to: repositoryCacheReportURL)
-        }
-        if let profileURL, let profile {
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
-            let data = try encoder.encode(profile)
-            try FileManager.default.createDirectory(
-                at: profileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try data.write(to: profileURL, options: .atomic)
         }
         let debtValidationFailed = debtValidationFailed(configuration.debtValidation, analysis: rankedDebtAnalysis)
         let ruleAnalysisIncomplete = ruleAnalysisSnapshot.map { !$0.isComplete } ?? false
@@ -274,10 +265,21 @@ public struct AnalysisService: Sendable {
                 analysis: ruleAnalysisSnapshot,
                 capture: lifecycleCapture,
                 engineVersion: report.engineVersion,
-                artifactURL: lifecycleArtifactURL
+                artifactURL: lifecycleArtifactURL,
+                profileReconciliation: profiler != nil
             )
         } else {
             lifecycleReduction = nil
+        }
+        let profile = profiler?.profile(
+            lifecycleReconciliation: lifecycleReduction?.reconciliationProfiles)
+        if let profileURL, let profile {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+            let data = try encoder.encode(profile)
+            try FileManager.default.createDirectory(
+                at: profileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try data.write(to: profileURL, options: .atomic)
         }
         return AnalysisRunResult(
             report: report,

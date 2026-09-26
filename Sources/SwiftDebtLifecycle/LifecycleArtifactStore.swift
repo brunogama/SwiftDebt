@@ -52,9 +52,10 @@ public struct LifecycleArtifactStore: Sendable {
     }
 
     package func ingest(
-        buildingSnapshot buildSnapshot: (LifecycleArtifact?) throws -> LifecycleSnapshotIngestion
+        buildingSnapshot buildSnapshot: (LifecycleArtifact?) throws -> LifecycleSnapshotIngestion,
+        profileReconciliation: Bool = false
     ) throws -> LifecycleReduction {
-        try ingestLocked(buildSnapshot)
+        try ingestLocked(buildSnapshot, profileReconciliation: profileReconciliation)
     }
 
     package func recordIntroduction(
@@ -107,7 +108,8 @@ public struct LifecycleArtifactStore: Sendable {
     }
 
     private func ingestLocked(
-        _ buildSnapshot: (LifecycleArtifact?) throws -> LifecycleSnapshotIngestion
+        _ buildSnapshot: (LifecycleArtifact?) throws -> LifecycleSnapshotIngestion,
+        profileReconciliation: Bool = false
     ) throws -> LifecycleReduction {
         let directory = artifactURL.deletingLastPathComponent()
         do {
@@ -119,7 +121,8 @@ public struct LifecycleArtifactStore: Sendable {
             let existingArtifact = FileManager.default.fileExists(atPath: artifactURL.path) ? try load() : nil
             let input = try buildSnapshot(existingArtifact)
             let artifact = try existingArtifact ?? LifecycleArtifact(generatorVersion: generatorVersion)
-            let reduction = try LifecycleReducer().ingest(input, into: artifact)
+            let reduction = try LifecycleReducer().ingest(
+                input, into: artifact, profileReconciliation: profileReconciliation)
             if reduction.status == .accepted {
                 try write(reduction.artifact)
             }
