@@ -119,6 +119,27 @@ struct RuleEngineTests {
         }
     }
 
+    @Test("RuleEngine rejects unbacked or forward configuration compatibility")
+    func invalidConfigurationCompatibilityIsRejectedAtRegistration() {
+        let source = SourceUnit(path: "Input.swift", content: "let value = 1")
+        #expect(
+            throws: RuleEngineError.invalidCompatibilityDeclaration(
+                ForwardConfigurationCompatibilityRule.identity,
+                "a configuration declaration must start at the current or an earlier Semantic Revision."
+            )
+        ) {
+            try RuleEngine().analyze(source, using: ForwardConfigurationCompatibilityRule())
+        }
+        #expect(
+            throws: RuleEngineError.invalidCompatibilityDeclaration(
+                UnbackedConfigurationCompatibilityRule.identity,
+                "cross-revision configuration compatibility requires a matching semantic declaration for every claim."
+            )
+        ) {
+            try RuleEngine().analyze(source, using: UnbackedConfigurationCompatibilityRule())
+        }
+    }
+
     @Test("Force try reports only try! at the exclamation mark")
     func forceTryLocationsAndConditionalBranches() throws {
         let source = SourceUnit(

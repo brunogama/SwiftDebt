@@ -116,6 +116,44 @@ struct RuleIdentityTests {
         #expect(contract.compatibilityDeclarations == [firstDeclaration, secondDeclaration])
     }
 
+    @Test("Configuration compatibility declarations retain typed direction and test evidence")
+    func configurationCompatibilityDeclarationValidation() throws {
+        let evidence = try #require(
+            CompatibilityTestEvidence(
+                identifier: "ConfigurationCompatibilityTests.maximumFileBytes",
+                summary: "Exercises the declared direction through the public lifecycle surface."
+            )
+        )
+        let declaration = try #require(
+            ConfigurationCompatibilityDeclaration(
+                fromRevision: .initial,
+                supportedClaims: [.continuity, .absence, .absence],
+                conditions: [.maximumFileBytesNondecreasing, .maximumFileBytesNondecreasing],
+                testEvidence: evidence,
+                rationale: "A larger ceiling preserves the tested lifecycle interpretation."
+            )
+        )
+
+        #expect(declaration.supportedClaims == [.absence, .continuity])
+        #expect(declaration.conditions == [.maximumFileBytesNondecreasing])
+        #expect(declaration.conditions.first?.dimension == .maximumFileBytes)
+        #expect(
+            CompatibilityTestEvidence(
+                identifier: "not a stable id",
+                summary: "Invalid."
+            ) == nil
+        )
+        #expect(
+            ConfigurationCompatibilityDeclaration(
+                fromRevision: .initial,
+                supportedClaims: [.absence],
+                conditions: [],
+                testEvidence: evidence,
+                rationale: "No typed condition."
+            ) == nil
+        )
+    }
+
     @Test("Source paths normalize safe relative components")
     func sourcePathNormalization() throws {
         let path = try SourcePath("./Sources//Feature/../Feature/Input.swift")

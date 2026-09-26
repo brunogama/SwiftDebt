@@ -51,6 +51,13 @@ public struct ObservationSnapshot: Codable, Equatable, Sendable {
                 "Selected rules must have unique Rule Identities."
             )
         }
+        if let effectiveConfiguration = provenance.effectiveConfiguration {
+            guard effectiveConfiguration.selectedRuleIdentities == rules.map(\.identity) else {
+                throw LifecycleContractError.invalidSnapshot(
+                    "Effective configuration selected rules do not match the Observation Snapshot."
+                )
+            }
+        }
         guard Set(sources.map(\.sourcePath)).count == sources.count else {
             throw LifecycleContractError.invalidSnapshot("SourceUnit paths must be unique.")
         }

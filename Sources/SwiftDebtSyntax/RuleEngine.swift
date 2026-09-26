@@ -131,6 +131,43 @@ public struct RuleEngine {
                 "a declaration must point from an earlier revision into the current revision."
             )
         }
+
+        let configurationDeclarations = descriptor.contract.configurationCompatibilityDeclarations
+        let claimKeys = configurationDeclarations.flatMap { declaration in
+            declaration.supportedClaims.map {
+                ConfigurationClaimKey(revision: declaration.fromRevision, claim: $0)
+            }
+        }
+        guard Set(claimKeys).count == claimKeys.count else {
+            throw RuleEngineError.invalidCompatibilityDeclaration(
+                descriptor.identity,
+                "each prior Semantic Revision and claim may have only one configuration declaration."
+            )
+        }
+        guard
+            configurationDeclarations.allSatisfy({
+                $0.fromRevision.rawValue <= descriptor.semanticRevision.rawValue
+            })
+        else {
+            throw RuleEngineError.invalidCompatibilityDeclaration(
+                descriptor.identity,
+                "a configuration declaration must start at the current or an earlier Semantic Revision."
+            )
+        }
+        for declaration in configurationDeclarations
+        where declaration.fromRevision != descriptor.semanticRevision {
+            guard
+                let semantic = declarations.first(where: {
+                    $0.fromRevision == declaration.fromRevision
+                }),
+                declaration.supportedClaims.allSatisfy(semantic.supportedClaims.contains)
+            else {
+                throw RuleEngineError.invalidCompatibilityDeclaration(
+                    descriptor.identity,
+                    "cross-revision configuration compatibility requires a matching semantic declaration for every claim."
+                )
+            }
+        }
     }
 
     private func select(_ sources: [SourceUnit]) throws -> [SelectedSource] {
@@ -282,6 +319,11 @@ private struct RegisteredRule {
 private struct SelectedSource {
     let source: SourceUnit
     let path: SourcePath
+}
+
+private struct ConfigurationClaimKey: Hashable {
+    let revision: SemanticRevision
+    let claim: SemanticCompatibilityClaim
 }
 
 private struct EmissionProposal {

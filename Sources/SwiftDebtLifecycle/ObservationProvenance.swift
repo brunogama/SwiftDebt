@@ -24,6 +24,7 @@ public struct SnapshotProvenance: Codable, Equatable, Sendable {
     public let sourceIdentity: SnapshotSourceIdentity
     public let scope: ObservationScope
     public let configurationFingerprint: LifecycleDigest
+    public let effectiveConfiguration: LifecycleEffectiveConfiguration?
     public let capabilities: [SnapshotCapability]
     public let engineVersion: String
     public let lineage: LineagePosition
@@ -41,6 +42,58 @@ public struct SnapshotProvenance: Codable, Equatable, Sendable {
         sourceSelection: SourceSelectionEvidence? = nil,
         sourceRenames: [SourceRenameEvidence] = [],
         sourceDeletions: [SourceDeletionEvidence] = []
+    ) throws {
+        try self.init(
+            sourceIdentity: sourceIdentity,
+            scope: scope,
+            configurationFingerprint: configurationFingerprint,
+            effectiveConfiguration: nil,
+            capabilities: capabilities,
+            engineVersion: engineVersion,
+            lineage: lineage,
+            sourceSelection: sourceSelection,
+            sourceRenames: sourceRenames,
+            sourceDeletions: sourceDeletions
+        )
+    }
+
+    package init(
+        sourceIdentity: SnapshotSourceIdentity,
+        scope: ObservationScope,
+        configurationFingerprint: LifecycleDigest,
+        effectiveConfiguration: LifecycleEffectiveConfiguration,
+        capabilities: [SnapshotCapability] = [],
+        engineVersion: String,
+        lineage: LineagePosition,
+        sourceSelection: SourceSelectionEvidence? = nil,
+        sourceRenames: [SourceRenameEvidence] = [],
+        sourceDeletions: [SourceDeletionEvidence] = []
+    ) throws {
+        try self.init(
+            sourceIdentity: sourceIdentity,
+            scope: scope,
+            configurationFingerprint: configurationFingerprint,
+            effectiveConfiguration: Optional(effectiveConfiguration),
+            capabilities: capabilities,
+            engineVersion: engineVersion,
+            lineage: lineage,
+            sourceSelection: sourceSelection,
+            sourceRenames: sourceRenames,
+            sourceDeletions: sourceDeletions
+        )
+    }
+
+    private init(
+        sourceIdentity: SnapshotSourceIdentity,
+        scope: ObservationScope,
+        configurationFingerprint: LifecycleDigest,
+        effectiveConfiguration: LifecycleEffectiveConfiguration?,
+        capabilities: [SnapshotCapability],
+        engineVersion: String,
+        lineage: LineagePosition,
+        sourceSelection: SourceSelectionEvidence?,
+        sourceRenames: [SourceRenameEvidence],
+        sourceDeletions: [SourceDeletionEvidence]
     ) throws {
         guard hasLifecycleContent(engineVersion) else {
             throw LifecycleContractError.invalidSnapshot(
@@ -81,9 +134,24 @@ public struct SnapshotProvenance: Codable, Equatable, Sendable {
                 )
             }
         }
+        if let effectiveConfiguration {
+            guard try effectiveConfiguration.fingerprint() == configurationFingerprint else {
+                throw LifecycleContractError.invalidSnapshot(
+                    "Effective configuration does not match its canonical fingerprint."
+                )
+            }
+            if let sourceSelection {
+                guard sourceSelection.kind == effectiveConfiguration.sourceSelectionKind else {
+                    throw LifecycleContractError.invalidSnapshot(
+                        "Effective configuration and source selection kinds disagree."
+                    )
+                }
+            }
+        }
         self.sourceIdentity = sourceIdentity
         self.scope = scope
         self.configurationFingerprint = configurationFingerprint
+        self.effectiveConfiguration = effectiveConfiguration
         self.capabilities = sortedCapabilities
         self.engineVersion = engineVersion
         self.lineage = lineage
@@ -96,6 +164,7 @@ public struct SnapshotProvenance: Codable, Equatable, Sendable {
         case sourceIdentity
         case scope
         case configurationFingerprint
+        case effectiveConfiguration
         case capabilities
         case engineVersion
         case lineage
@@ -111,6 +180,10 @@ public struct SnapshotProvenance: Codable, Equatable, Sendable {
                 sourceIdentity: values.decode(SnapshotSourceIdentity.self, forKey: .sourceIdentity),
                 scope: values.decode(ObservationScope.self, forKey: .scope),
                 configurationFingerprint: values.decode(LifecycleDigest.self, forKey: .configurationFingerprint),
+                effectiveConfiguration: values.decodeIfPresent(
+                    LifecycleEffectiveConfiguration.self,
+                    forKey: .effectiveConfiguration
+                ),
                 capabilities: values.decode([SnapshotCapability].self, forKey: .capabilities),
                 engineVersion: values.decode(String.self, forKey: .engineVersion),
                 lineage: values.decode(LineagePosition.self, forKey: .lineage),

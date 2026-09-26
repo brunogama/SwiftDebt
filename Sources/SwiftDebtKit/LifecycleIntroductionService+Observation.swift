@@ -61,7 +61,11 @@ extension LifecycleIntroductionService {
             gitAfterRead: historicalGitSnapshot
         )
         let capabilities = [try SnapshotCapability(name: "syntax-analysis", state: .available)]
-        let configuration = try LifecycleCanonicalDigest.configuration(analysis: analysis, capture: capture)
+        let effectiveConfiguration = try LifecycleCanonicalDigest.effectiveConfiguration(
+            analysis: analysis,
+            capture: capture
+        )
+        let configuration = try effectiveConfiguration.fingerprint()
         let snapshotID = try LifecycleCanonicalDigest.snapshotID(
             sourceIdentity: capture.sourceIdentity,
             scope: capture.scope,
@@ -79,6 +83,7 @@ extension LifecycleIntroductionService {
                 sourceIdentity: capture.sourceIdentity,
                 scope: capture.scope,
                 configurationFingerprint: configuration,
+                effectiveConfiguration: effectiveConfiguration,
                 capabilities: capabilities,
                 engineVersion: SwiftDebtRelease.version,
                 lineage: try LineagePosition(

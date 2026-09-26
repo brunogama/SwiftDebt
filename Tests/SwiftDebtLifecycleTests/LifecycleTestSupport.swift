@@ -67,6 +67,24 @@ struct LifecycleRuleV2ContinuityCompatible: DebtRule {
     }
 }
 
+struct LifecycleRuleV2ContinuityAndConfigurationCompatible: DebtRule {
+    static let identity = LifecycleRuleV1.identity
+    static let metadata = LifecycleRuleV1.metadata
+    static let contract = RuleContract(
+        semanticRevision: revisionTwo,
+        semantics: "Preserves the v1 Detection meaning across one tested configuration change.",
+        rationale: "Exercises composed semantic and effective-configuration compatibility.",
+        compatibilityDeclarations: [continuityOnlyCompatibility],
+        configurationCompatibilityDeclarations: [continuityConfigurationCompatibility]
+    )
+
+    let mode: TestRuleMode
+
+    func detect(in context: AnalysisContext, emit: DetectionEmitter) throws {
+        try emitFixtureDetections(mode: mode, context: context, emit: emit)
+    }
+}
+
 struct AlwaysFailingRule: DebtRule {
     static let identity = RuleIdentity(
         namespace: RuleNamespace(validated: "swiftdebt.test"),
@@ -109,6 +127,26 @@ private let continuityOnlyCompatibility: SemanticCompatibilityDeclaration = {
         )
     else {
         preconditionFailure("The fixture compatibility declaration is valid.")
+    }
+    return declaration
+}()
+
+private let continuityConfigurationCompatibility: ConfigurationCompatibilityDeclaration = {
+    guard
+        let evidence = CompatibilityTestEvidence(
+            identifier:
+                "EffectiveConfigurationContractTests.crossRevisionRequiresBothDeclarations",
+            summary: "Exercises composed semantic and configuration compatibility through lifecycle ingestion."
+        ),
+        let declaration = ConfigurationCompatibilityDeclaration(
+            fromRevision: .initial,
+            supportedClaims: [.continuity],
+            conditions: [.maximumFileBytesNondecreasing],
+            testEvidence: evidence,
+            rationale: "A larger source-size ceiling preserves positive fixture Detection identity."
+        )
+    else {
+        preconditionFailure("The fixture configuration compatibility declaration is valid.")
     }
     return declaration
 }()

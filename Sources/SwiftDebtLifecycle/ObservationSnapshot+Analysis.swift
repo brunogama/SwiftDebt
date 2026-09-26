@@ -19,7 +19,8 @@ extension ObservationSnapshot {
             try SnapshotRule(
                 identity: $0.identity,
                 semanticRevision: $0.semanticRevision,
-                compatibilityDeclarations: $0.contract.compatibilityDeclarations
+                compatibilityDeclarations: $0.contract.compatibilityDeclarations,
+                configurationCompatibilityDeclarations: $0.contract.configurationCompatibilityDeclarations
             )
         }
 
@@ -29,7 +30,9 @@ extension ObservationSnapshot {
             let rule = try SnapshotRule(
                 identity: result.descriptor.identity,
                 semanticRevision: result.descriptor.semanticRevision,
-                compatibilityDeclarations: result.descriptor.contract.compatibilityDeclarations
+                compatibilityDeclarations: result.descriptor.contract.compatibilityDeclarations,
+                configurationCompatibilityDeclarations:
+                    result.descriptor.contract.configurationCompatibilityDeclarations
             )
             let atomicID = try AtomicObservationID("\(id.rawValue):atomic:\(atomicIndex)")
             let outcome: AtomicObservationOutcome

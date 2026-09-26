@@ -111,6 +111,52 @@ struct RankedDebtAnalysisTests {
         #expect(analysis.summary.unavailableEvidenceCount == unavailable.count)
     }
 
+    @Test func providerEvidenceDoesNotCrossAttachBetweenSameIDEntities() async throws {
+        let root = try temporaryGitTestDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try initializeGitRepository(at: root)
+        for path in ["Sources/A.swift", "Sources/B.swift"] {
+            try writeGitFixture(
+                """
+                private func inspect() {
+                    if true { print("\(path)") }
+                }
+                """,
+                name: path,
+                root: root
+            )
+        }
+        try commitGitFixture(
+            root: root,
+            message: "feat: add same-name callables",
+            authorEmail: "fixture@example.test",
+            timestamp: "2026-09-01T00:00:00Z"
+        )
+
+        let result = try await AnalysisService().run(
+            .init(
+                path: root.path,
+                jobs: 1,
+                debtAnalysisOptions: DebtAnalysisOptions(aggregationStrategy: .none),
+                debtReferenceTime: ISO8601DateFormatter().date(from: "2026-09-12T00:00:00Z")
+            ))
+        let analysis = try #require(result.rankedDebtAnalysis)
+        let sameIDItems = analysis.items.filter {
+            $0.item.id == "callable:Workspace.inspect()"
+        }
+
+        #expect(sameIDItems.count == 2)
+        #expect(
+            Set(sameIDItems.compactMap { $0.item.entity.location.file })
+                == Set(["Sources/A.swift", "Sources/B.swift"])
+        )
+        for item in sameIDItems {
+            let recency = item.item.evidence.filter { $0.kind == "git-history.recency" }
+            #expect(recency.count == 1)
+            #expect(recency.first?.location == item.item.entity.location)
+        }
+    }
+
     @Test func aggregateOnlyNoAggregationAndFiltersAreDeterministic() throws {
         let items = [
             debtItem(

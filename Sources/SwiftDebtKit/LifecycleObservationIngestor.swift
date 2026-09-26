@@ -34,10 +34,11 @@ struct LifecycleObservationIngestor: Sendable {
     ) throws -> LifecycleReduction {
         let capability = try SnapshotCapability(name: "syntax-analysis", state: .available)
         let capabilities = [capability]
-        let configuration = try LifecycleCanonicalDigest.configuration(
+        let effectiveConfiguration = try LifecycleCanonicalDigest.effectiveConfiguration(
             analysis: analysis,
             capture: capture
         )
+        let configuration = try effectiveConfiguration.fingerprint()
         let snapshotID = try LifecycleCanonicalDigest.snapshotID(
             sourceIdentity: capture.sourceIdentity,
             scope: capture.scope,
@@ -62,6 +63,7 @@ struct LifecycleObservationIngestor: Sendable {
                     sourceIdentity: capture.sourceIdentity,
                     scope: capture.scope,
                     configurationFingerprint: configuration,
+                    effectiveConfiguration: effectiveConfiguration,
                     capabilities: capabilities,
                     engineVersion: engineVersion,
                     lineage: ordering.lineage,

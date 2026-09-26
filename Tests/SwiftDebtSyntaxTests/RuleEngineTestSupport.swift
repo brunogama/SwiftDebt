@@ -122,6 +122,36 @@ struct InvalidCompatibilityDirectionRule: TestDebtRule {
     func detect(in context: AnalysisContext, emit: DetectionEmitter) throws {}
 }
 
+struct ForwardConfigurationCompatibilityRule: TestDebtRule {
+    static let identity = RuleIdentity(
+        namespace: RuleNamespace(validated: "tests"),
+        id: RuleID(validated: "forward-configuration-compatibility")
+    )
+    static let contract = RuleContract(
+        semanticRevision: .initial,
+        semantics: "Fixture with a future configuration compatibility source.",
+        rationale: "Exercises the RuleEngine authority boundary.",
+        configurationCompatibilityDeclarations: [futureConfigurationCompatibility]
+    )
+
+    func detect(in context: AnalysisContext, emit: DetectionEmitter) throws {}
+}
+
+struct UnbackedConfigurationCompatibilityRule: TestDebtRule {
+    static let identity = RuleIdentity(
+        namespace: RuleNamespace(validated: "tests"),
+        id: RuleID(validated: "unbacked-configuration-compatibility")
+    )
+    static let contract = RuleContract(
+        semanticRevision: secondRevision,
+        semantics: "Fixture with configuration compatibility but no semantic declaration.",
+        rationale: "Exercises cross-revision composition safety.",
+        configurationCompatibilityDeclarations: [priorConfigurationCompatibility]
+    )
+
+    func detect(in context: AnalysisContext, emit: DetectionEmitter) throws {}
+}
+
 private let sameRevisionCompatibility: SemanticCompatibilityDeclaration = {
     guard
         let declaration = SemanticCompatibilityDeclaration(
@@ -133,4 +163,53 @@ private let sameRevisionCompatibility: SemanticCompatibilityDeclaration = {
         preconditionFailure("The declaration value is structurally valid.")
     }
     return declaration
+}()
+
+private let compatibilityEvidence: CompatibilityTestEvidence = {
+    guard
+        let evidence = CompatibilityTestEvidence(
+            identifier: "RuleEngineTests.invalidConfigurationCompatibility",
+            summary: "Exercises registration validation."
+        )
+    else {
+        preconditionFailure("The test evidence is structurally valid.")
+    }
+    return evidence
+}()
+
+private let futureConfigurationCompatibility: ConfigurationCompatibilityDeclaration = {
+    guard
+        let declaration = ConfigurationCompatibilityDeclaration(
+            fromRevision: secondRevision,
+            supportedClaims: [.absence],
+            conditions: [.maximumFileBytesNondecreasing],
+            testEvidence: compatibilityEvidence,
+            rationale: "Invalid because the containing rule is revision 1."
+        )
+    else {
+        preconditionFailure("The declaration value is structurally valid.")
+    }
+    return declaration
+}()
+
+private let priorConfigurationCompatibility: ConfigurationCompatibilityDeclaration = {
+    guard
+        let declaration = ConfigurationCompatibilityDeclaration(
+            fromRevision: .initial,
+            supportedClaims: [.absence],
+            conditions: [.maximumFileBytesNondecreasing],
+            testEvidence: compatibilityEvidence,
+            rationale: "Invalid because no semantic declaration covers the revision change."
+        )
+    else {
+        preconditionFailure("The declaration value is structurally valid.")
+    }
+    return declaration
+}()
+
+private let secondRevision: SemanticRevision = {
+    guard let revision = SemanticRevision(2) else {
+        preconditionFailure("Two is a valid Semantic Revision.")
+    }
+    return revision
 }()
