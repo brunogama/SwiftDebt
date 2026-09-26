@@ -219,6 +219,7 @@ public struct AnalysisService: Sendable {
             let base = try ReportRenderer().render(report, format: format, root: root.path)
             return format == .diagnostics ? base + debtValidationDiagnostics : base
         }()
+        let preliminaryProfile = profiler?.profile()
         let repositoryRendered = try repositoryEvidenceReport.map { try RepositoryEvidenceRenderer().json($0) }
         let repositoryCacheRendered = try repositorySyntaxCacheReport.map {
             try RepositorySyntaxCacheRenderer().json($0)
@@ -231,6 +232,9 @@ public struct AnalysisService: Sendable {
         }
         if let repositoryCacheReportURL, let repositoryCacheRendered {
             try write(repositoryCacheRendered, to: repositoryCacheReportURL)
+        }
+        if let profileURL, let preliminaryProfile {
+            try writeProfile(preliminaryProfile, to: profileURL)
         }
         let debtValidationFailed = debtValidationFailed(configuration.debtValidation, analysis: rankedDebtAnalysis)
         let ruleAnalysisIncomplete = ruleAnalysisSnapshot.map { !$0.isComplete } ?? false
@@ -271,15 +275,12 @@ public struct AnalysisService: Sendable {
         } else {
             lifecycleReduction = nil
         }
-        let profile = profiler?.profile(
-            lifecycleReconciliation: lifecycleReduction?.reconciliationProfiles)
-        if let profileURL, let profile {
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
-            let data = try encoder.encode(profile)
-            try FileManager.default.createDirectory(
-                at: profileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try data.write(to: profileURL, options: .atomic)
+        let profile =
+            lifecycleReduction == nil
+            ? preliminaryProfile
+            : profiler?.profile(lifecycleReconciliation: lifecycleReduction?.reconciliationProfiles)
+        if lifecycleReduction != nil, let profileURL, let profile {
+            try writeProfile(profile, to: profileURL)
         }
         return AnalysisRunResult(
             report: report,
@@ -522,6 +523,15 @@ public struct AnalysisService: Sendable {
     private func write(_ content: String, to url: URL) throws {
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try content.write(to: url, atomically: true, encoding: .utf8)
+    }
+
+    private func writeProfile(_ profile: AnalysisProfile, to url: URL) throws {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+        let data = try encoder.encode(profile)
+        try FileManager.default.createDirectory(
+            at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try data.write(to: url, options: .atomic)
     }
 
     private func reserveOutput(

@@ -4,6 +4,28 @@ import Testing
 
 @Suite("R3 lifecycle reconciliation profiling CLI")
 struct LifecycleReconciliationProfilingCLIWorkflowTests {
+    @Test("A rejected lifecycle artifact still leaves the analysis profile sidecar")
+    func failedLifecycleIngestionPreservesAnalysisProfile() throws {
+        let fixture = try TemporaryLifecycleGitRepository()
+        _ = try fixture.commit(source: Self.forcedTrySource, message: "add forced try")
+        let artifactURL = fixture.directory.appendingPathComponent("invalid-lifecycle.json")
+        let profileURL = fixture.directory.appendingPathComponent("profile.json")
+        let corruptBytes = Data("{invalid json\n".utf8)
+        try corruptBytes.write(to: artifactURL)
+
+        let result = try analyze(fixture, artifact: artifactURL, profile: profileURL)
+
+        #expect(result.status == 2)
+        #expect(result.standardError.contains("Unable to read lifecycle artifact"))
+        let profile = try #require(
+            JSONSerialization.jsonObject(with: Data(contentsOf: profileURL)) as? [String: Any]
+        )
+        #expect(profile["schemaVersion"] as? Int == 1)
+        #expect((profile["phases"] as? [[String: Any]])?.isEmpty == false)
+        #expect(profile["lifecycleReconciliation"] == nil)
+        #expect(try Data(contentsOf: artifactURL) == corruptBytes)
+    }
+
     @Test("Opt-in profiling preserves canonical artifact bytes and replay records no work")
     func profilingDoesNotChangeLifecycleEvidence() throws {
         let fixture = try TemporaryLifecycleGitRepository()
