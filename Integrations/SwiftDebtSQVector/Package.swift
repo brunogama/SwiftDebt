@@ -17,7 +17,7 @@ let package = Package(
         .package(name: "SwiftDebt", path: "../.."),
         .package(
             url: "https://github.com/brunogama/sqvector-swift.git",
-            revision: "aafd9ae601826112978127c7cb611c94ab8a2e06"
+            revision: "dffe847b82aadecb6eaf344cbda05a43bb5a4a51"
         ),
     ],
     targets: [
