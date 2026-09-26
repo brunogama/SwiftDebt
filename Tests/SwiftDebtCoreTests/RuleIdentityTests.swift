@@ -88,6 +88,34 @@ struct RuleIdentityTests {
         )
     }
 
+    @Test("Rule contracts order compatibility declarations by source revision")
+    func ruleContractCompatibilityDeclarationOrdering() throws {
+        let secondRevision = try #require(SemanticRevision(2))
+        let firstDeclaration = try #require(
+            SemanticCompatibilityDeclaration(
+                fromRevision: .initial,
+                supportedClaims: [.continuity],
+                rationale: "Revision 3 preserves continuity with revision 1."
+            )
+        )
+        let secondDeclaration = try #require(
+            SemanticCompatibilityDeclaration(
+                fromRevision: secondRevision,
+                supportedClaims: [.absence],
+                rationale: "Revision 3 preserves absence with revision 2."
+            )
+        )
+
+        let contract = RuleContract(
+            semanticRevision: try #require(SemanticRevision(3)),
+            semantics: "Reports a stable test condition.",
+            rationale: "Compatibility declarations remain deterministic.",
+            compatibilityDeclarations: [secondDeclaration, firstDeclaration]
+        )
+
+        #expect(contract.compatibilityDeclarations == [firstDeclaration, secondDeclaration])
+    }
+
     @Test("Source paths normalize safe relative components")
     func sourcePathNormalization() throws {
         let path = try SourcePath("./Sources//Feature/../Feature/Input.swift")

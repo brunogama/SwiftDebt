@@ -153,7 +153,7 @@ Every continuation, resolution, reopening, and Introduction Conclusion persists 
 
 Artifact validation recomputes each decision and the lifecycle outcome from those persisted dimensions. Removing or altering a basis causes decode to fail closed. Explanations render the direction, claim, decision, snapshot pair, configuration pair, engine pair, and declaration rationale.
 
-The lifecycle configuration digest is versioned independently from Semantic Revision. This permits an exact effective-configuration match across rule revisions while the snapshot ID continues to bind the complete selected Semantic Revisions and compatibility declarations. Existing schema-2 analysis and report bytes remain unchanged.
+The lifecycle configuration digest is versioned independently from Semantic Revision. This permits an exact effective-configuration match across rule revisions for new schema-3 snapshots while the snapshot ID continues to bind the complete selected Semantic Revisions and compatibility declarations. Existing schema-2 analysis and report bytes remain unchanged. A genuine schema-2 lifecycle artifact uses the older configuration digest, which includes Semantic Revisions. Equality with the new digest cannot be inferred from those hashes. Migration preserves its historical claims, but a new Detection remains unresolved when that legacy configuration boundary lacks an explicit proof of equivalence. The CLI reports `configuration-incomparable` instead of inventing continuity or absence. `LegacySchemaTwoGitReintroduction.json` was produced by the pre-schema-3 CLI at `09e3b1b` over the fixed Git revisions reconstructed by its CLI test.
 
 ## Verified absence
 

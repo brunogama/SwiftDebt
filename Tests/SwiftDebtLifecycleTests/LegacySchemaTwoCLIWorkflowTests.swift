@@ -70,61 +70,62 @@ struct LegacySchemaTwoCLIWorkflowTests {
         #expect(result.standardError.contains("migration boundary"))
     }
 
-    @Test("New directional continuity can extend a migrated schema 2 Finding")
-    func directionalContinuityExtendsLegacyFinding() throws {
-        let temporary = try TemporaryLifecycleArtifact()
-        let store = LifecycleArtifactStore(artifactURL: temporary.url)
-        let original = try makeObservation(
-            id: "legacy-directional-root",
-            sequence: 1,
-            rules: [LifecycleRuleV1(mode: .committed(1))]
+    @Test("A genuine schema 2 configuration cannot claim unproved continuity")
+    func genuineLegacyConfigurationRemainsUnresolved() throws {
+        let source = try #require(
+            Bundle.module.url(forResource: "LegacySchemaTwoGitReintroduction", withExtension: "json")
         )
-        _ = try store.ingest(original)
-        let openingID = try #require(store.load().findings.first?.events.first?.id)
+        let fixture = try TemporaryLifecycleGitRepository()
+        let artifact = fixture.directory.appendingPathComponent("legacy.json")
+        let forcedSource = "func load() throws -> Int { 1 }\nlet value = try! load()\n"
+        let handledSource = "func load() throws -> Int { 1 }\nlet value = try? load()\n"
+        try datedCommit(fixture, source: forcedSource, message: "add force try", date: "2026-01-01T00:00:00 +0000")
+        try datedCommit(fixture, source: handledSource, message: "resolve force try", date: "2026-01-02T00:00:00 +0000")
+        #expect(
+            try fixture.gitOutput(["rev-parse", "HEAD"]).trimmingCharacters(in: .whitespacesAndNewlines)
+                == "c3e20615787a29eac1a19cc7abae0df4325788eb")
+        try FileManager.default.copyItem(at: source, to: artifact)
+        try datedCommit(
+            fixture, source: forcedSource, message: "reintroduce force try", date: "2026-01-03T00:00:00 +0000")
 
-        var legacy = try artifactJSONObject(at: temporary.url)
-        legacy["schemaVersion"] = 2
-        legacy.removeValue(forKey: "legacyProcessedSnapshotIDs")
-        var findings = try #require(legacy["findings"] as? [[String: Any]])
-        var events = try #require(findings[0]["events"] as? [[String: Any]])
-        events[0].removeValue(forKey: "evidenceContract")
-        findings[0]["events"] = events
-        legacy["findings"] = findings
-        try lifecycleJSONData(legacy).write(to: temporary.url, options: .atomic)
+        let result = try runLifecycleCLI([
+            "analyze", fixture.repository.path, "--format", "json",
+            "--lifecycle-artifact", artifact.path, "--jobs", "2",
+        ])
+        #expect(result.status == 0)
+        let migrated = try LifecycleArtifactStore(artifactURL: artifact).load()
+        #expect(migrated.schemaVersion == 3)
+        #expect(migrated.findings.count == 1)
+        #expect(migrated.findings.first?.events.map(\.transition.kind) == [.opened, .resolved])
+        #expect(migrated.unresolvedDetections.count == 1)
+        #expect(migrated.unresolvedDetections.first?.reasons.map(\.code) == ["configuration-incomparable"])
+        let inventory = try runLifecycleCLI(["lifecycle", "inventory", artifact.path])
+        #expect(inventory.status == 0)
+        #expect(inventory.standardOutput.contains("reasons=configuration-incomparable"))
+    }
 
-        let continued = try makeObservation(
-            id: "legacy-directional-child",
-            sequence: 2,
-            predecessor: original.id.rawValue,
-            rules: [LifecycleRuleV2ContinuityCompatible(mode: .committed(1))]
+    private func datedCommit(
+        _ fixture: TemporaryLifecycleGitRepository,
+        source: String,
+        message: String,
+        date: String
+    ) throws {
+        try fixture.write(source: source)
+        try fixture.runGit(["add", "Sources/Input.swift"])
+        var environment = ProcessInfo.processInfo.environment
+        environment["GIT_AUTHOR_DATE"] = date
+        environment["GIT_COMMITTER_DATE"] = date
+        environment["GIT_AUTHOR_NAME"] = "Lifecycle Test"
+        environment["GIT_AUTHOR_EMAIL"] = "lifecycle@example.test"
+        environment["GIT_COMMITTER_NAME"] = "Lifecycle Test"
+        environment["GIT_COMMITTER_EMAIL"] = "lifecycle@example.test"
+        let result = try runLifecycleProcess(
+            executable: URL(fileURLWithPath: "/usr/bin/env"),
+            arguments: ["git", "-C", fixture.repository.path, "-c", "commit.gpgsign=false", "commit", "-m", message],
+            directory: fixture.repository,
+            environment: environment,
+            mergeStandardError: true
         )
-        #expect(try store.ingest(continued).status == .accepted)
-        let persisted = try store.load()
-        let finding = try #require(persisted.findings.first)
-        #expect(persisted.findings.count == 1)
-        #expect(finding.events.map(\.transition.kind) == [.opened, .observed])
-        #expect(finding.events.first?.id == openingID)
-        #expect(finding.events.map(\.evidenceContract) == [.legacySchemaTwo, .semanticComparisonV1])
-        #expect(finding.events.first?.semanticComparisons.isEmpty == true)
-        #expect(finding.events.last?.semanticComparisons.first?.claim == .continuity)
-        #expect(finding.events.last?.semanticComparisons.first?.decision == .compatible)
-
-        var corrupted = try artifactJSONObject(at: temporary.url)
-        var tamperedFindings = try #require(corrupted["findings"] as? [[String: Any]])
-        var tamperedEvents = try #require(tamperedFindings[0]["events"] as? [[String: Any]])
-        let newEventIndex = try #require(
-            tamperedEvents.firstIndex { $0["snapshotID"] as? String == continued.id.rawValue }
-        )
-        tamperedEvents[newEventIndex]["evidenceContract"] = "legacy-schema-2"
-        tamperedFindings[0]["events"] = tamperedEvents
-        corrupted["findings"] = tamperedFindings
-        var legacyIDs = try #require(corrupted["legacyProcessedSnapshotIDs"] as? [String])
-        legacyIDs.append(continued.id.rawValue)
-        corrupted["legacyProcessedSnapshotIDs"] = legacyIDs
-        try lifecycleJSONData(corrupted).write(to: temporary.url, options: .atomic)
-        let rejected = try runLifecycleCLI(["lifecycle", "inventory", temporary.url.path])
-        #expect(rejected.status == 2)
-        #expect(rejected.standardOutput.isEmpty)
-        #expect(rejected.standardError.contains("migration boundary"))
+        #expect(result.status == 0)
     }
 }
