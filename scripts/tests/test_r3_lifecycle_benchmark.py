@@ -9,6 +9,7 @@ from r3_lifecycle_benchmark_support import (  # noqa: E402
     largest_artifact_bytes,
     validate_explanation,
     validate_incremental_artifact,
+    validate_incremental_profile,
     validate_inventory,
 )
 
@@ -88,6 +89,29 @@ class R3LifecycleBenchmarkValidationTests(unittest.TestCase):
             "introductionArtifact": {"bytes": 240},
         }
         self.assertEqual(largest_artifact_bytes(tier), 240)
+
+    def test_reconciliation_profile_is_bound_to_observed_continuity(self) -> None:
+        record = {
+            "snapshotID": "snapshot-2", "detections": 1, "candidates": 1,
+            "evaluatedPairs": 1, "crediblePairs": 1, "uniqueContinuities": 1,
+            "newFindings": 0, "unresolvedDetections": 0, "ambiguousGroups": 0,
+            "processingElapsedNanoseconds": 200, "reconciliationElapsedNanoseconds": 100,
+        }
+        profile = {"schemaVersion": 1, "lifecycleReconciliation": [record]}
+        self.assertEqual(
+            validate_incremental_profile(self.encoded(profile), self.encoded(self.incremental), 1),
+            {key: value for key, value in record.items() if key != "snapshotID"},
+        )
+        for key, value in (
+            ("snapshotID", "wrong-snapshot"), ("candidates", 0),
+            ("uniqueContinuities", 0), ("reconciliationElapsedNanoseconds", 0),
+        ):
+            changed = dict(record, **{key: value})
+            with self.subTest(key=key), self.assertRaises(RuntimeError):
+                validate_incremental_profile(
+                    self.encoded({"schemaVersion": 1, "lifecycleReconciliation": [changed]}),
+                    self.encoded(self.incremental), 1,
+                )
 
 
 if __name__ == "__main__":

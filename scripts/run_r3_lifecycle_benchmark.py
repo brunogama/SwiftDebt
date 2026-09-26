@@ -20,11 +20,12 @@ from typing import Callable
 
 from r3_lifecycle_benchmark_support import (
     PADDING_LINES, artifact_info, commit, fixture, largest_artifact_bytes,
-    validate_explanation, validate_incremental_artifact, validate_inventory,
+    validate_explanation, validate_incremental_artifact, validate_incremental_profile,
+    validate_inventory,
 )
 
 TIERS = {"small": 10, "medium": 100, "large": 1_000}
-FIXTURE_VERSION = 1
+FIXTURE_VERSION = 2
 COMMAND_TIMEOUT_SECONDS = 600
 OPERATIONS = ("cold", "replay", "incremental", "inventory", "explain", "introduction")
 
@@ -170,20 +171,33 @@ def run_tier(binary: Path, source_count: int, runs: int, warmups: int) -> dict[s
         edited.write_text("// Shift location without changing the debt predicate\n" + edited.read_text())
         edited_revision = commit(repository, "move one benchmark detection", 3)
         incremental_info = {}
+        profile_path = root / "incremental-profile.json"
         for index in range(warmups + runs):
             artifact.write_bytes(cold_bytes)
-            sample = measured(analyze)
+            profile_path.unlink(missing_ok=True)
+            sample = measured(analyze + ["--profile-output", str(profile_path)])
             incremental_bytes = artifact.read_bytes()
             incremental_info = artifact_info(artifact)
             validate_incremental_artifact(cold_bytes, incremental_bytes, source_count)
+            sample["reconciliation"] = validate_incremental_profile(
+                profile_path.read_text(), incremental_bytes, source_count
+            )
             if index >= warmups:
                 samples["incremental"].append(sample)
+        reconciliation_samples = [sample["reconciliation"] for sample in samples["incremental"]]
         return {
             "sourceFiles": source_count, "sourceLines": source_count * (PADDING_LINES + 2),
             "gitRevisions": {"absent": absent_revision, "detected": detected_revision,
                              "edited": edited_revision},
             "coldArtifact": cold_info, "incrementalArtifact": incremental_info,
             "introductionArtifact": introduction_info,
+            "incrementalReconciliation": {
+                "samples": reconciliation_samples,
+                "medianElapsedNanoseconds": statistics.median(
+                    sample["reconciliationElapsedNanoseconds"] for sample in reconciliation_samples
+                ),
+                "affectedCandidates": reconciliation_samples[0]["candidates"],
+            },
             "operations": {name: summary(samples[name]) for name in OPERATIONS},
         }
 

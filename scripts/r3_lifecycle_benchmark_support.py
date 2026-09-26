@@ -130,6 +130,40 @@ def validate_incremental_artifact(cold_bytes: bytes, incremental_bytes: bytes, s
         raise RuntimeError("incremental analysis did not observe the shifted ForceTry Detection")
 
 
+def validate_incremental_profile(profile_json: str, incremental_bytes: bytes, source_count: int) -> dict[str, int]:
+    """Bind the opt-in reconciliation measurements to the observed snapshot."""
+    profile = json.loads(profile_json)
+    artifact = json.loads(incremental_bytes)
+    records = profile.get("lifecycleReconciliation")
+    if profile.get("schemaVersion") != 1 or not isinstance(records, list) or len(records) != 1:
+        raise RuntimeError("incremental profile must contain one reconciliation record")
+    record = records[0]
+    if not isinstance(record, dict):
+        raise RuntimeError("incremental profile has an invalid reconciliation record")
+    expected_snapshot_id = artifact["snapshots"][-1]["id"]
+    if record.get("snapshotID") != expected_snapshot_id:
+        raise RuntimeError("incremental profile describes a different Snapshot")
+    fields = (
+        "detections", "candidates", "evaluatedPairs", "crediblePairs",
+        "uniqueContinuities", "newFindings", "unresolvedDetections",
+        "ambiguousGroups", "processingElapsedNanoseconds",
+        "reconciliationElapsedNanoseconds",
+    )
+    if any(type(record.get(field)) is not int or record[field] < 0 for field in fields):
+        raise RuntimeError("incremental profile has invalid reconciliation measurements")
+    if (record["detections"] != source_count
+            or record["candidates"] != source_count
+            or record["uniqueContinuities"] != source_count
+            or record["newFindings"] != 0
+            or record["unresolvedDetections"] != len(artifact["unresolvedDetections"])
+            or record["ambiguousGroups"] != 0
+            or not source_count <= record["crediblePairs"] <= record["evaluatedPairs"]
+            or not 0 < record["reconciliationElapsedNanoseconds"]
+            <= record["processingElapsedNanoseconds"]):
+        raise RuntimeError("incremental profile does not match observed Finding continuity")
+    return {field: record[field] for field in fields}
+
+
 def largest_artifact_bytes(tier: dict) -> int:
     return max(tier[name]["bytes"] for name in
                ("coldArtifact", "incrementalArtifact", "introductionArtifact"))
