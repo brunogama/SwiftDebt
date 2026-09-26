@@ -5,7 +5,7 @@
   "sources": {
     "referenceImplementationCommit": "54516ae9385dabd09969d9f02a8f51b6cea2b0e1",
     "referenceEngineVersion": "0.8.0",
-    "candidateImplementationCommit": "778a9d517933e8f24f0eefbd4d84b7a0f54809b9",
+    "candidateImplementationCommit": "4b9db979e7dc0f870d00f6cae9dcab37528bffb4",
     "candidateEngineVersion": "0.10.0",
     "corpusGenerator": "scripts/r2_benchmark_support.py scale_source v1",
     "snapshotDigestAlgorithm": "SHA-256 over sorted length-framed relative paths and file bytes"

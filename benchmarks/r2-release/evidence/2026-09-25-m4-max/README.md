@@ -91,11 +91,11 @@ artifact. No timing result from that attempt is used for calibration.
 
 ## Current rerun requirements
 
-The next run uses the current `manifest.v1.json`, whose candidate is the exact
-reviewed repository-cache head and whose scenarios explicitly separate cache
-disabled, cold, warm, and one-file-edit states. The historical 0.9.0 candidate
-binary and old manifest cannot be reused for that run. The frozen R1 reference
-remains the same.
+The next run uses the current `manifest.v1.json`, whose candidate source is
+merged main commit `4b9db979e7dc0f870d00f6cae9dcab37528bffb4` and whose scenarios
+explicitly separate cache disabled, cold, warm, and one-file-edit states. The
+historical 0.9.0 candidate binary and old manifest cannot be reused for that
+run. The frozen R1 reference remains the same.
 
 The runner now performs and records its own 30-second preflight. Every five-
 second sample must keep one-minute load at or below 14, CPU idle at or above 40

@@ -37,7 +37,7 @@ class R2ReleaseBenchmarkCacheTests(unittest.TestCase):
         sources = self.manifest["sources"]
         self.assertEqual(
             sources["candidateImplementationCommit"],
-            "778a9d517933e8f24f0eefbd4d84b7a0f54809b9",
+            "4b9db979e7dc0f870d00f6cae9dcab37528bffb4",
         )
         self.assertEqual(sources["candidateEngineVersion"], "0.10.0")
         observed = {
