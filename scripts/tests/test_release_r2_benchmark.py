@@ -22,7 +22,9 @@ from r2_benchmark_support import (  # noqa: E402
     tree_sha256,
 )
 from r2_benchmark_cli import (  # noqa: E402
+    compact_sample_path,
     comparable_report_sha256,
+    retain_compact_sample,
     run_cli_sample,
     validate_sample,
 )
@@ -195,6 +197,39 @@ class R2ReleaseBenchmarkTests(unittest.TestCase):
             self.assertFalse(output.exists())
             self.assertFalse(output.with_name("calibration.json.tmp").exists())
 
+    def test_compact_sample_retains_json_metadata_and_discards_derived_output(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            destination = root / "sample-0"
+            destination.mkdir()
+            (destination / "analysis.json").write_bytes(b"x" * 1_048_576)
+            sample = {
+                "wallClockMilliseconds": 12.5,
+                "providers": [["SwiftSyntax", "602.0.0"]],
+            }
+
+            observed = retain_compact_sample(destination, sample)
+
+            self.assertEqual(observed, compact_sample_path(destination))
+            self.assertFalse(destination.exists())
+            self.assertEqual(json.loads(observed.read_text()), sample)
+            self.assertFalse(observed.with_name(f"{observed.name}.tmp").exists())
+
+            interrupted = root / "sample-1"
+            interrupted.mkdir()
+            (interrupted / "analysis.json").write_text("derived", encoding="utf-8")
+            with patch(
+                "r2_benchmark_cli.shutil.rmtree",
+                side_effect=OSError("derived-output cleanup interrupted"),
+            ):
+                with self.assertRaisesRegex(OSError, "cleanup interrupted"):
+                    retain_compact_sample(interrupted, sample)
+
+            self.assertTrue(interrupted.is_dir())
+            self.assertEqual(
+                json.loads(compact_sample_path(interrupted).read_text()), sample
+            )
+
     def test_generated_scale_snapshots_and_analysis_unit_counts_are_frozen(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -234,7 +269,7 @@ class R2ReleaseBenchmarkTests(unittest.TestCase):
     def test_exhaustion_proof_requires_exact_incomplete_evidence(self):
         scenario = self.manifest["exhaustionScenario"]
         digest = {"algorithm": "sha256", "value": "0" * 64}
-        provider = ("SwiftSyntax", "602.0.0")
+        provider = ["SwiftSyntax", "602.0.0"]
         identities = sorted(self.manifest["repositoryRules"])
         sample = {
             "exitStatus": 2,
@@ -512,7 +547,9 @@ class R2ReleaseBenchmarkTests(unittest.TestCase):
             self.manifest["repositoryRules"],
         )
         wrong_provider = copy.deepcopy(sample)
-        wrong_provider["repositoryEvidence"]["providers"] = [("SwiftSyntax", "unknown")]
+        wrong_provider["repositoryEvidence"]["providers"] = [
+            ["SwiftSyntax", "unknown"]
+        ]
         with self.assertRaisesRegex(RuntimeError, "unexpected repository provider"):
             validate_sample(
                 wrong_provider,

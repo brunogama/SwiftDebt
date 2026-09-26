@@ -119,6 +119,7 @@ python3 scripts/run_r2_release_benchmarks.py \
   --reference-binary /Users/bruno/Developer/SwiftSCMA-r1-benchmark/.build/release/swift-debt \
   --candidate-root /Users/bruno/Developer/SwiftSCMA-r2-benchmarks \
   --candidate-binary /Users/bruno/Developer/SwiftSCMA-r2-benchmarks/.build/release/swift-debt \
+  --work-directory /tmp/swiftdebt-r2-calibration-$(git rev-parse --short HEAD) \
   --output benchmarks/r2-release/evidence/2026-09-25-m4-max/calibration.v1.json
 ```
 

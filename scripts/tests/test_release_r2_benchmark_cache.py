@@ -175,6 +175,25 @@ class R2ReleaseBenchmarkCacheTests(unittest.TestCase):
                 prepared_seed,
             )
 
+            for state in scenarios:
+                compact = root / f"sample-{state}.sample.json"
+                self.assertTrue(compact.is_file())
+                self.assertFalse((root / f"sample-{state}").exists())
+                persisted = json.loads(compact.read_text(encoding="utf-8"))
+                validate_cache_sample(
+                    persisted,
+                    scenarios[state],
+                    self.manifest["repositoryConfiguration"],
+                    self.manifest["providerIdentities"]["repositorySyntax"],
+                    self.manifest["repositoryRules"],
+                    self.manifest["repositoryCacheCompatibility"],
+                )
+            self.assertTrue((root / "prepared-seed/output.sample.json").is_file())
+            self.assertFalse((root / "prepared-seed/output").exists())
+            self.assertTrue((root / "prepared-warm.sample.json").is_file())
+            self.assertFalse((root / "prepared-warm").exists())
+            self.assertFalse(any(root.rglob("analysis.json")))
+
         self.assertIsNone(samples["disabled"]["cacheStoreSHA256After"])
         self.assertIsNotNone(samples["cold"]["cacheStoreSHA256After"])
         self.assertEqual(

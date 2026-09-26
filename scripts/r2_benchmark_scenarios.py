@@ -13,7 +13,14 @@ from r2_benchmark_cache import (
     run_repository_sample,
 )
 from r2_benchmark_cache_contract import expected_cache_activity
-from r2_benchmark_cli import aggregate, induced_samples, run_cli_sample, validate_sample
+from r2_benchmark_cli import (
+    aggregate,
+    induced_samples,
+    record_compact_sample,
+    retain_compact_sample,
+    run_cli_sample,
+    validate_sample,
+)
 from r2_benchmark_support import (
     generate_exhaustion_corpus,
     median_absolute_deviation,
@@ -135,21 +142,24 @@ def measure_relative(
     warmups_completed = 0
     for warmup in range(measurement["warmupRuns"]):
         for position, role in enumerate(paired_roles(warmup)):
+            destination = root / f"warmup-{warmup}-{position}-{role}"
             sample = run_cli_sample(
                 binaries[role],
                 corpus,
-                root / f"warmup-{warmup}-{position}-{role}",
+                destination,
                 False,
             )
             validate_sample(sample, scenario)
             enforce_sample_load(sample, policy)
+            retain_compact_sample(destination, sample)
         warmups_completed += 1
     raw = []
     progress(scenario["id"], f"running {measurement['measuredRuns']} measured pairs")
     for pair_index in range(measurement["measuredRuns"]):
         for order_in_pair, role in enumerate(paired_roles(pair_index)):
+            destination = root / f"pair-{pair_index}-{role}"
             sample = run_cli_sample(
-                binaries[role], corpus, root / f"pair-{pair_index}-{role}", False
+                binaries[role], corpus, destination, False
             )
             validate_sample(sample, scenario)
             enforce_sample_load(sample, policy)
@@ -157,6 +167,7 @@ def measure_relative(
                 {"pairIndex": pair_index, "orderInPair": order_in_pair, "role": role}
             )
             raw.append(sample)
+            retain_compact_sample(destination, sample)
         if (pair_index + 1) % 5 == 0 or pair_index + 1 == measurement["measuredRuns"]:
             progress(
                 scenario["id"],
@@ -268,6 +279,7 @@ def measure_repository(
         )
         enforce_sample_load(sample, policy)
         sample["sampleIndex"] = index
+        record_compact_sample(root / f"sample-{index}", sample)
         raw.append(sample)
         if (index + 1) % 5 == 0 or index + 1 == measurement["measuredRuns"]:
             progress(
@@ -460,10 +472,11 @@ def exhaustion_proof(
     )
     if generated["snapshotSHA256"] != scenario["snapshotSHA256"]:
         raise RuntimeError("exhaustion corpus does not match the manifest")
+    destination = root / "exhaustion"
     sample = run_cli_sample(
         candidate,
         corpus,
-        root / "exhaustion",
+        destination,
         True,
         {2},
         cache_state="disabled",
@@ -478,7 +491,7 @@ def exhaustion_proof(
     passed = (
         sample["exitStatus"] == 2 and not sample["unexpectedFiles"] and maximum_load <= load_limit
     )
-    return {
+    result = {
         "id": scenario["id"],
         "sourceSnapshot": generated,
         "sample": sample,
@@ -491,6 +504,8 @@ def exhaustion_proof(
         },
         "verdict": "pass" if passed else "fail",
     }
+    retain_compact_sample(destination, sample)
+    return result
 
 
 def validate_exhaustion_sample(
@@ -504,7 +519,7 @@ def validate_exhaustion_sample(
         for identity, contract in expected_rules.items()
     }
     provider = manifest["providerIdentities"]["repositorySyntax"]
-    expected_provider = [(provider["name"], provider["version"])]
+    expected_provider = [[provider["name"], provider["version"]]]
     expected_rule_providers = {
         identity: expected_provider for identity in expected_rules
     }

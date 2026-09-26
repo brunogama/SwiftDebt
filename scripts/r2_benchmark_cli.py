@@ -9,7 +9,13 @@ import shutil
 from pathlib import Path
 from typing import Any
 
-from r2_benchmark_support import sha256_file, summary, timed_command, tree_sha256
+from r2_benchmark_support import (
+    atomic_json,
+    sha256_file,
+    summary,
+    timed_command,
+    tree_sha256,
+)
 
 
 def comparable_report_sha256(report: dict[str, Any]) -> str:
@@ -32,6 +38,22 @@ def comparable_cache_report_sha256(report: dict[str, Any]) -> str:
     return hashlib.sha256(canonical).hexdigest()
 
 
+def compact_sample_path(destination: Path) -> Path:
+    return destination.with_name(f"{destination.name}.sample.json")
+
+
+def record_compact_sample(destination: Path, sample: dict[str, Any]) -> Path:
+    compact = compact_sample_path(destination)
+    atomic_json(compact, sample)
+    return compact
+
+
+def retain_compact_sample(destination: Path, sample: dict[str, Any]) -> Path:
+    compact = record_compact_sample(destination, sample)
+    shutil.rmtree(destination)
+    return compact
+
+
 def run_cli_sample(
     binary: Path,
     corpus: Path,
@@ -42,6 +64,7 @@ def run_cli_sample(
     cache_path: Path | None = None,
 ) -> dict[str, Any]:
     shutil.rmtree(destination, ignore_errors=True)
+    compact_sample_path(destination).unlink(missing_ok=True)
     destination.mkdir(parents=True)
     report = destination / "analysis.json"
     profile = destination / "profile.json"
@@ -148,24 +171,27 @@ def run_cli_sample(
             },
             "ruleProviders": {
                 rule["ruleIdentity"]: sorted(
-                    (
+                    [
                         capability["provider"]["name"],
                         capability["provider"]["version"],
-                    )
+                    ]
                     for capability in rule["capabilities"]
                 )
                 for rule in rules
             },
-            "providers": sorted(
-                {
-                    (
-                        capability["provider"]["name"],
-                        capability["provider"]["version"],
-                    )
-                    for rule in rules
-                    for capability in rule["capabilities"]
-                }
-            ),
+            "providers": [
+                list(identity)
+                for identity in sorted(
+                    {
+                        (
+                            capability["provider"]["name"],
+                            capability["provider"]["version"],
+                        )
+                        for rule in rules
+                        for capability in rule["capabilities"]
+                    }
+                )
+            ],
         }
         activity = json.loads(cache_report.read_text(encoding="utf-8"))
         invalidations = activity["invalidations"]
@@ -249,7 +275,7 @@ def validate_sample(
             f"{scenario['id']} used an unexpected repository configuration"
         )
     if expected_provider is not None:
-        provider = [(expected_provider["name"], expected_provider["version"])]
+        provider = [[expected_provider["name"], expected_provider["version"]]]
         expected_rule_providers = {
             identity: provider for identity in scenario["expectedDetectionCounts"]
         }
@@ -314,20 +340,26 @@ def induced_samples(
 ) -> list[dict[str, Any]]:
     samples = []
     for index in range(count):
-        components = [
-            run_cli_sample(
-                binary,
-                corpus,
-                root / f"induced-{index}-{component}",
-                repository_evidence,
+        components = []
+        destinations = []
+        for component in range(2):
+            destination = root / f"induced-{index}-{component}"
+            destinations.append(destination)
+            components.append(
+                run_cli_sample(
+                    binary,
+                    corpus,
+                    destination,
+                    repository_evidence,
+                )
             )
-            for component in range(2)
-        ]
         unexpected = [
             item["unexpectedFiles"] for item in components if item["unexpectedFiles"]
         ]
         if unexpected:
             raise RuntimeError(f"induced sample created unexpected files: {unexpected}")
+        for destination, component in zip(destinations, components):
+            retain_compact_sample(destination, component)
         samples.append(
             {
                 "sampleIndex": index,

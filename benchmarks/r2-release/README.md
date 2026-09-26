@@ -18,6 +18,7 @@ independent reviewer gates remain open.
 | `../../scripts/r2_benchmark_cli.py` | Real CLI process measurement and output validation. |
 | `../../scripts/r2_benchmark_cache.py` | Explicit cache-state preparation and exact activity validation. |
 | `../../scripts/r2_benchmark_scenarios.py` | Scenario sampling, fixed limits, and induced-regression proof. |
+| `../../scripts/validate_r2_release_calibration.py` | Recompute and validate a checked-in artifact without claiming live host reproduction. |
 | `evidence/2026-09-25-m4-max/moderate-load-invalid.v1.json` | Preserved raw artifact from the first invalid calibration. |
 | `evidence/2026-09-25-m4-max/README.md` | Historical result, interruption evidence, and current rerun requirements. |
 
@@ -50,6 +51,13 @@ other report difference invalidates the paired scenario.
 Each scenario records completed warmup, measured, and induced-run counts in the
 generated artifact so CI can validate the checked-in 5+30 protocol without
 claiming to reproduce the host-specific timings.
+
+After each command passes output and cache validation, the runner atomically
+records its complete measurement metadata as a compact `*.sample.json` file and
+removes the bulky derived analysis files. A command that fails before validation
+keeps its derived directory for diagnosis. The final artifact contains the same
+measured raw samples; compact work-directory records are diagnostic checkpoints,
+not a substitute for the atomic artifact.
 
 ---
 
@@ -148,6 +156,7 @@ python3 scripts/run_r2_release_benchmarks.py \
   --reference-binary /Users/bruno/Developer/SwiftSCMA-r1-benchmark/.build/release/swift-debt \
   --candidate-root "$PWD" \
   --candidate-binary .build/release/swift-debt \
+  --work-directory /tmp/swiftdebt-r2-calibration-$(git rev-parse --short HEAD) \
   --output benchmarks/r2-release/evidence/2026-09-25-m4-max/calibration.v1.json
 ```
 

@@ -8,7 +8,12 @@ from pathlib import Path
 from typing import Any
 
 from r2_benchmark_cache_contract import EXPECTED_CACHE_DATA_CLASSES, seed_scenario
-from r2_benchmark_cli import run_cli_sample, validate_sample
+from r2_benchmark_cli import (
+    compact_sample_path,
+    retain_compact_sample,
+    run_cli_sample,
+    validate_sample,
+)
 from r2_benchmark_support import (
     apply_standard_one_file_edit,
     sha256_file,
@@ -27,6 +32,7 @@ def run_repository_sample(
     prepared_seed: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     shutil.rmtree(sample_root, ignore_errors=True)
+    compact_sample_path(sample_root).unlink(missing_ok=True)
     sample_root.mkdir(parents=True)
     cache_state = scenario["cacheState"]
     state_root = sample_root / "state"
@@ -116,9 +122,7 @@ def run_repository_sample(
         expected_files.add("state/repository-syntax-cache.json")
     if local_seed:
         expected_files.add("seed/repository-syntax-cache.json")
-        expected_files.update(
-            f"seed/output/{relative}" for relative in seed["sample"]["createdFiles"]
-        )
+        expected_files.add("seed/output.sample.json")
     if cache_state == "one-file-edit":
         expected_files.update(f"state/corpus/{relative}" for relative in source_files)
     if measured["controlledStateFiles"] != sorted(expected_files):
@@ -136,6 +140,7 @@ def run_repository_sample(
         repository_rules,
         cache_compatibility,
     )
+    retain_compact_sample(sample_root, measured)
     return measured
 
 
@@ -177,6 +182,7 @@ def prepare_repository_seed(
         repository_rules,
         cache_compatibility,
     )
+    retain_compact_sample(seed_root / "output", sample)
     return {"cachePath": cache_path, "sample": sample}
 
 
