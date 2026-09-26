@@ -2,7 +2,7 @@
 
 `calibration.v1.json` is the valid compact-retention calibration for the
 current manifest. Its SHA-256 is
-`a6c778c32b45501b4bb0b24142223811d89d94487ded47d1b45656492b7de09b`.
+`6ac98c45359027321bc5386c4400655738aa6ad3890e3dfd2091ab87bf22a3e5`.
 The independent artifact validator recomputes every aggregate, budget, output
 identity, cache contract, load check, induced proof, and exhaustion verdict
 from the checked-in raw samples.
@@ -27,6 +27,16 @@ The run completed on 2026-09-26 from harness commit
 matched the manifest's pinned source commit
 `4b9db979e7dc0f870d00f6cae9dcab37528bffb4`. Later changes to the benchmark
 branch or `main` do not change that measured candidate identity.
+
+After measurement, the product-identity gate exposed machine-local checkout
+names in command and cache-path fields. The artifact was regenerated from the
+original atomic JSON through the runner's role-root presentation function; the
+measurements were not rerun. Exact reference, candidate, and work root prefixes
+became `$R2_REFERENCE_ROOT`, `$R2_CANDIDATE_ROOT`, and `$R2_WORK_ROOT`.
+Source commits, binary SHA-256 values, raw numeric measurements, report hashes,
+sidecar hashes, cache hashes, scenario verdicts, and manifest identity remain
+unchanged. The validator independently enforces this presentation scheme and
+rejects leaked absolute paths.
 
 | Role | Commit | Engine version | Binary SHA-256 |
 |---|---|---:|---|
@@ -223,8 +233,8 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
 python3 scripts/run_r2_release_benchmarks.py \
   --manifest benchmarks/r2-release/manifest.v1.json \
-  --reference-root /Users/bruno/Developer/SwiftSCMA-r1-benchmark \
-  --reference-binary /Users/bruno/Developer/SwiftSCMA-r1-benchmark/.build/release/swift-debt \
+  --reference-root /tmp/swiftdebt-r1-reference \
+  --reference-binary /tmp/swiftdebt-r1-reference/.build/release/swift-debt \
   --candidate-root /tmp/swiftdebt-r2-candidate \
   --candidate-binary /tmp/swiftdebt-r2-candidate/.build/release/swift-debt \
   --work-directory /tmp/swiftdebt-r2-calibration-$(git rev-parse --short HEAD) \

@@ -28,6 +28,10 @@ from r2_benchmark_cli import (  # noqa: E402
     run_cli_sample,
     validate_sample,
 )
+from r2_benchmark_evidence import (  # noqa: E402
+    present_portable_paths,
+    validate_portable_path_presentation,
+)
 from r2_benchmark_scenarios import (  # noqa: E402
     limits_and_proof,
     validate_exhaustion_sample,
@@ -187,7 +191,7 @@ class R2ReleaseBenchmarkTests(unittest.TestCase):
         artifact_bytes = artifact_path.read_bytes()
         self.assertEqual(
             hashlib.sha256(artifact_bytes).hexdigest(),
-            "a6c778c32b45501b4bb0b24142223811d89d94487ded47d1b45656492b7de09b",
+            "6ac98c45359027321bc5386c4400655738aa6ad3890e3dfd2091ab87bf22a3e5",
         )
         artifact = json.loads(artifact_bytes)
 
@@ -210,6 +214,56 @@ class R2ReleaseBenchmarkTests(unittest.TestCase):
         artifact["releaseQualification"] = "complete"
         with self.assertRaisesRegex(RuntimeError, "cannot claim complete"):
             validate_calibration(self.manifest, manifest_path, artifact)
+
+        artifact["releaseQualification"] = "incomplete"
+        command = artifact["scenarios"][0]["rawSamples"][0]["command"]
+        original_binary = command[0]
+        command[0] = "cd /Users/example/Developer/retired-product/build/swift-debt"
+        with self.assertRaisesRegex(RuntimeError, "machine-local absolute path"):
+            validate_calibration(self.manifest, manifest_path, artifact)
+        command[0] = original_binary
+
+    def test_portable_path_presentation_uses_exact_nonoverlapping_role_roots(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            roots = {
+                "referenceRoot": root / "reference",
+                "candidateRoot": root / "candidate",
+                "workRoot": root / "work",
+            }
+            evidence = {
+                "command": [
+                    str(roots["referenceRoot"] / ".build/release/swift-debt"),
+                    str(roots["candidateRoot"] / ".build/release/swift-debt"),
+                ],
+                "cache": str(roots["workRoot"] / "sample/cache.json"),
+                "standardEdit": "// swiftdebt standard one-file cache invalidation probe",
+            }
+
+            presented = present_portable_paths(evidence, roots)
+
+            self.assertEqual(
+                presented["command"],
+                [
+                    "$R2_REFERENCE_ROOT/.build/release/swift-debt",
+                    "$R2_CANDIDATE_ROOT/.build/release/swift-debt",
+                ],
+            )
+            self.assertEqual(presented["cache"], "$R2_WORK_ROOT/sample/cache.json")
+            validate_portable_path_presentation(presented)
+
+            lookalike = {"path": f"{roots['candidateRoot']}-copy/file"}
+            with self.assertRaisesRegex(RuntimeError, "unpresented role-root prefix"):
+                present_portable_paths(lookalike, roots)
+
+            embedded = {"command": f"cd {roots['workRoot']}/sample"}
+            with self.assertRaisesRegex(RuntimeError, "unpresented role-root prefix"):
+                present_portable_paths(embedded, roots)
+
+            overlapping = dict(roots)
+            overlapping["workRoot"] = roots["candidateRoot"] / "work"
+            with self.assertRaisesRegex(RuntimeError, "role roots overlap"):
+                present_portable_paths(evidence, overlapping)
 
     def test_atomic_artifact_write_never_exposes_partial_final_path(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -518,10 +572,21 @@ class R2ReleaseBenchmarkTests(unittest.TestCase):
             root = Path(temporary)
             manifest_path = root / "manifest.json"
             manifest_path.write_text(json.dumps(self.manifest), encoding="utf-8")
-            reference = root / "reference"
-            candidate = root / "candidate"
+            reference_root = root / "reference-root"
+            candidate_root = root / "candidate-root"
+            work_root = root / "work-root"
+            reference_root.mkdir()
+            candidate_root.mkdir()
+            work_root.mkdir()
+            reference = reference_root / "swift-debt"
+            candidate = candidate_root / "swift-debt"
             reference.write_bytes(b"reference")
             candidate.write_bytes(b"candidate")
+            path_roots = {
+                "referenceRoot": reference_root,
+                "candidateRoot": candidate_root,
+                "workRoot": work_root,
+            }
             result = evidence(
                 self.manifest,
                 manifest_path,
@@ -531,6 +596,7 @@ class R2ReleaseBenchmarkTests(unittest.TestCase):
                 scenarios,
                 {},
                 True,
+                path_roots=path_roots,
             )
             self.assertEqual(result["binaries"]["reference"]["engineVersion"], "0.8.0")
             self.assertEqual(result["binaries"]["candidate"]["engineVersion"], "0.10.0")
@@ -545,6 +611,7 @@ class R2ReleaseBenchmarkTests(unittest.TestCase):
                     scenarios,
                     {},
                     True,
+                    path_roots=path_roots,
                 )
 
     def test_real_process_adapter_records_profile_and_validates_sidecar(self):

@@ -17,6 +17,7 @@ from r2_benchmark_cache_contract import (
     EXPECTED_CACHE_DATA_CLASSES,
     expected_cache_activity,
 )
+from r2_benchmark_evidence import present_portable_paths
 from r2_benchmark_scenarios import (
     exhaustion_proof,
     measure_relative,
@@ -410,6 +411,11 @@ def calibrate(
             exhaustion,
             measured_pass,
             preflight,
+            {
+                "referenceRoot": arguments.reference_root,
+                "candidateRoot": arguments.candidate_root,
+                "workRoot": work,
+            },
         )
     finally:
         if context is not None:
@@ -471,6 +477,7 @@ def evidence(
     exhaustion: dict[str, Any],
     measured_pass: bool,
     preflight: dict[str, Any] | None = None,
+    path_roots: dict[str, Path] | None = None,
 ) -> dict[str, Any]:
     reference_versions = sorted(
         {
@@ -507,7 +514,7 @@ def evidence(
         raise RuntimeError(
             "benchmark engine version mismatch: " + "; ".join(mismatches)
         )
-    return {
+    result = {
         "schemaVersion": 1,
         "manifestID": manifest["manifestID"],
         "manifestSHA256": sha256_file(manifest_path),
@@ -540,6 +547,9 @@ def evidence(
         "blockedScenarios": manifest["blockedScenarios"],
         "observabilityGaps": manifest["observabilityGaps"],
     }
+    if path_roots is None:
+        raise RuntimeError("calibration evidence requires portable role roots")
+    return present_portable_paths(result, path_roots)
 
 
 def main() -> int:

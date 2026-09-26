@@ -26,7 +26,7 @@ independent reviewer gates remain open.
 `manifest.v1.json` is authored source configuration. Calibration JSON is
 generated atomically by the runner and must not be edited by hand. The current
 artifact has SHA-256
-`a6c778c32b45501b4bb0b24142223811d89d94487ded47d1b45656492b7de09b`.
+`6ac98c45359027321bc5386c4400655738aa6ad3890e3dfd2091ab87bf22a3e5`.
 
 The branch commit named `test(performance): preserve initial R2 calibration`
 retains the exact historical manifest and invalid artifact before the cache
@@ -188,8 +188,8 @@ CLI lane is free and the host is quiet:
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
 python3 scripts/run_r2_release_benchmarks.py \
   --manifest benchmarks/r2-release/manifest.v1.json \
-  --reference-root /Users/bruno/Developer/SwiftSCMA-r1-benchmark \
-  --reference-binary /Users/bruno/Developer/SwiftSCMA-r1-benchmark/.build/release/swift-debt \
+  --reference-root /tmp/swiftdebt-r1-reference \
+  --reference-binary /tmp/swiftdebt-r1-reference/.build/release/swift-debt \
   --candidate-root /tmp/swiftdebt-r2-candidate \
   --candidate-binary /tmp/swiftdebt-r2-candidate/.build/release/swift-debt \
   --work-directory /tmp/swiftdebt-r2-calibration-$(git rev-parse --short HEAD) \

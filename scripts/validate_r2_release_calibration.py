@@ -12,6 +12,7 @@ from typing import Any
 
 from r2_benchmark_cache import validate_cache_sample
 from r2_benchmark_cli import aggregate, validate_sample
+from r2_benchmark_evidence import validate_portable_path_presentation
 from r2_benchmark_scenarios import (
     enforce_induced_load,
     enforce_sample_load,
@@ -58,6 +59,7 @@ def validate_calibration(
         artifact.get("releaseQualification") == "incomplete",
         "deterministic cache calibration cannot claim complete R2 qualification",
     )
+    validate_portable_path_presentation(artifact)
     for key in (
         "environment",
         "binaryBuildProtocol",
