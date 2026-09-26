@@ -101,10 +101,18 @@
         {
           "id": "rs-flat-case-order-mismatch",
           "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
-          "authorLabel": "negative",
+          "authorLabel": "out-of-scope",
           "count": 10,
           "template": "repeated-switches-case-order-mismatch",
-          "rationale": "The same cases occur in a different order, which is semantically relevant to matching."
+          "rationale": "The switches are candidate-equivalent dispatches whose disjoint cases appear in a different order. Semantic equivalence and reachability are outside the ordered syntax rule."
+        },
+        {
+          "id": "rs-flat-case-set-mismatch",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "authorLabel": "negative",
+          "count": 10,
+          "template": "repeated-switches-case-set-mismatch",
+          "rationale": "Two switches use the same simple discriminator but single out different values, ranges, patterns, or types, so their branch partitions are different."
         }
       ]
     },
@@ -148,10 +156,10 @@
         {
           "id": "rs-nested-scope-mismatch",
           "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
-          "authorLabel": "negative",
+          "authorLabel": "out-of-scope",
           "count": 10,
           "template": "repeated-switches-scope-mismatch",
-          "rationale": "Identical switches occur in two different nested nominal scopes."
+          "rationale": "The identical switches belong to distinct nominal or top-level textual scopes, which the rule explicitly does not compare, so they are excluded from the confusion matrix."
         },
         {
           "id": "rs-nested-token-boundary",
@@ -160,6 +168,14 @@
           "count": 10,
           "template": "repeated-switches-token-boundary",
           "rationale": "Case labels differ only by a token boundary and must remain distinct."
+        },
+        {
+          "id": "rs-nested-associated-pattern-mismatch",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "authorLabel": "negative",
+          "count": 10,
+          "template": "repeated-switches-associated-pattern-mismatch",
+          "rationale": "Two switches in one textual scope use the same simple discriminator but constrain different associated values, so their branch partitions are different."
         }
       ]
     },
@@ -182,7 +198,7 @@
           "authorLabel": "negative",
           "count": 10,
           "template": "data-clumps-unnamed-parameters",
-          "rationale": "The second callable uses only unnamed parameters, which do not enter the observed element set."
+          "rationale": "Wildcards and renamed locals leave fewer than three shared named-and-typed parameter elements."
         },
         {
           "id": "dc-modules-token-boundary",
@@ -203,10 +219,10 @@
         {
           "id": "rs-modules-compound-discriminator",
           "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
-          "authorLabel": "negative",
+          "authorLabel": "out-of-scope",
           "count": 10,
           "template": "repeated-switches-compound-discriminator",
-          "rationale": "Call expressions are outside the simple-discriminator observable scope."
+          "rationale": "The repeated dispatch candidates use compound discriminator expressions that the rule explicitly does not resolve, so they are excluded from the confusion matrix."
         },
         {
           "id": "rs-modules-where-clause",
@@ -214,7 +230,15 @@
           "authorLabel": "negative",
           "count": 10,
           "template": "repeated-switches-where-clause",
-          "rationale": "A where clause changes the normalized ordered case-label shape."
+          "rationale": "The where predicates or their placement differ structurally and describe different branch conditions."
+        },
+        {
+          "id": "rs-modules-branch-partition-mismatch",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "authorLabel": "negative",
+          "count": 10,
+          "template": "repeated-switches-branch-partition-mismatch",
+          "rationale": "Two switches use the same simple discriminator but one has a strictly finer branch partition than the other."
         }
       ]
     }
@@ -254,6 +278,10 @@
           "sha256": "a626c0701c41eb88bbb2a6dd01267337f06720371de1f630d15644bf7c537c4c",
           "analysisPath": "Tree.swift"
         }
+      ],
+      "provisionalAuditNotes": [
+        "The four Data Clumps detections overlap the same CommandConfiguration property and initializer family; they are not four independent smell confirmations.",
+        "All snapshot observations remain unlabeled until the two qualified reviewers inspect the decisive locations."
       ]
     },
     {
@@ -290,6 +318,10 @@
           "sha256": "99a54563a42a1cefd2d2c183a797b387b2f7e59aaa5ce31accaebbddb5501bd1",
           "analysisPath": "Windows.swift"
         }
+      ],
+      "provisionalAuditNotes": [
+        "Both Data Clumps detections merge equal Index spellings from distinct nested collection types; these are likely false positives because source spelling does not prove type identity.",
+        "All snapshot observations remain unlabeled until the two qualified reviewers inspect the decisive locations."
       ]
     }
   ]

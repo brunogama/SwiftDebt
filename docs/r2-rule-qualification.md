@@ -13,7 +13,11 @@ The versioned manifest is
 `Tests/SwiftDebtKitTests/Fixtures/RepositoryQualification/corpus-v1.json`.
 Each family expands to ten immutable case IDs. The checked-in renderer records
 a distinct ambiguity or benign pattern for every case and produces the Swift
-source used by the CLI.
+source used by the CLI. Manifest validation removes each case-specific symbol
+salt and rejects duplicate rendered sources across the entire synthetic
+corpus. The corrected unnamed-parameter family and the three replacement
+negative families are self-contained, compile-valid Swift rather than
+identifier-renamed copies.
 
 Each published case result contains:
 
@@ -26,15 +30,27 @@ Each published case result contains:
 - complete primary, compared-unit, and decisive-fact locations for every
   observed Detection.
 
-The evaluator batches the 180 synthetic cases into three repository runs. Case
+The evaluator batches the 210 synthetic cases into three repository runs. Case
 boundaries remain auditable because every source path maps to one immutable
-case ID. Any Detection spanning two cases fails the engineering gate.
+case ID. Detections are indexed by both rule identity and case ID, so a
+Detection from one rule cannot be attributed to the other rule's case. Any
+Detection spanning two cases fails the engineering gate.
 
-| Repository shape | CLI selection | Cases per rule |
-|---|---|---:|
-| `flat-single-module` | Flat source-root discovery | 10 positive, 20 negative |
-| `nested-source-tree` | Recursive nested-directory discovery | 10 positive, 20 negative |
-| `explicit-multi-module` | Explicit manifest with three modules | 10 positive, 20 negative |
+| Repository shape | CLI selection | Data Clumps | Repeated Switches |
+|---|---|---:|---:|
+| `flat-single-module` | Flat source-root discovery | 10 positive, 20 negative | 10 positive, 20 negative, 10 out of scope |
+| `nested-source-tree` | Recursive nested-directory discovery | 10 positive, 20 negative | 10 positive, 20 negative, 10 out of scope |
+| `explicit-multi-module` | Explicit manifest with three modules | 10 positive, 20 negative | 10 positive, 20 negative, 10 out of scope |
+
+The 30 Repeated Switches cases outside the observable rule scope remain
+published with their source spans and any observed detections. They are
+excluded from the confusion matrix. Ten contain candidate-equivalent case
+partitions in a different order, which require semantic equivalence and
+reachability analysis. Ten use compound discriminator expressions that the
+syntax rule explicitly excludes. Ten place identical switches in different
+textual scopes, which the rule does not compare. Three new in-scope negative
+families preserve 60 adversarial negatives: they change the selected case set,
+associated-value constraints, or branch partition cardinality.
 
 ---
 
@@ -52,7 +68,17 @@ running the CLI.
 | `apple/swift-algorithms` | `5b7143f8e291dee0e14c118fd0212487f0b37af5` | 4 |
 
 Snapshot observations retain decisive locations but remain excluded from the
-confusion matrix until the reviewers assign independent case labels.
+confusion matrix until the reviewers assign independent case labels. The
+report also carries provisional audit notes so reviewers see known ambiguity
+before assigning those labels:
+
+- The two Swift Algorithms Data Clumps observations combine equal `Index`
+  spellings from distinct nested collection types. They are likely false
+  positives because textual spelling does not establish compiler type
+  identity.
+- The four Swift Argument Parser Data Clumps observations overlap one
+  `CommandConfiguration` property and initializer family. They are not four
+  independent confirmations of a smell.
 
 ---
 
@@ -66,9 +92,12 @@ semantic revision 2. Its synthetic results are measured against author labels:
 | Data Clumps | 30 | 0 | 60 | 0 | 1.000000 | 0.000000 | 1.000000 |
 | Repeated Switches | 30 | 0 | 60 | 0 | 1.000000 | 0.000000 | 1.000000 |
 
-These figures are provisional. The report publishes the declared observable
-scope, exclusions, known false-positive risks, known false-negative risks,
-false-positive case IDs, and false-negative case IDs for each rule.
+These figures are provisional and use only the 30 positive and 60 adversarial
+negative author labels per rule. The 30 Repeated Switches out-of-scope cases
+are listed separately and cannot improve or worsen the matrix. The report
+publishes the declared observable scope, exclusions, known false-positive
+risks, known false-negative risks, false-positive case IDs, false-negative
+case IDs, and out-of-scope case IDs for each rule.
 
 Both pinned snapshots completed exact analysis. At the pinned source selection,
 Swift Argument Parser produced four Data Clumps Detections and one Repeated
@@ -91,6 +120,8 @@ sidecar must equal the unsandboxed baseline.
 Run the exact gate after building the executable:
 
 ```sh
+python3 -m unittest scripts/tests/test_repository_qualification.py
+
 python3 scripts/evaluate_repository_qualification.py \
   --swift-debt .build/debug/swift-debt \
   --output /tmp/swiftdebt-rule-qualification.json \

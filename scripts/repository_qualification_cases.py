@@ -75,7 +75,7 @@ PATTERNS: dict[str, list[str]] = {
         "enum properties are outside the supported nominal kinds",
         "properties in callable-local types are excluded",
         "static stored properties are excluded",
-        "class stored properties are excluded",
+        "class computed properties are excluded",
         "stored properties without explicit types are excluded",
     ],
     "data-clumps-init-subscript-positive": [
@@ -129,26 +129,38 @@ PATTERNS: dict[str, list[str]] = {
     "repeated-switches-discriminator-mismatch": [
         "different local identifiers",
         "identifier case differs",
-        "identifier and self member access differ",
+        "local identifier and nested member access differ",
         "different base identifiers for member access",
         "different member names on one base",
         "member-access chain lengths differ",
         "different nested members",
         "domain synonyms remain distinct",
-        "one discriminator has an explicit self base",
+        "different members on self differ",
         "two independently named state values remain distinct",
     ],
     "repeated-switches-case-order-mismatch": [
-        "two enum cases are reversed",
-        "default moves before a specific case",
-        "three enum cases rotate",
-        "binding and literal cases swap",
-        "where-constrained cases swap",
-        "type-cast cases swap",
-        "range cases swap",
-        "combined case items reverse",
-        "nil and value cases swap",
-        "wildcard and literal cases swap",
+        "reversed disjoint enum cases are a candidate equivalent dispatch",
+        "default position changes without changing the listed specific case",
+        "rotated disjoint enum cases are a candidate equivalent dispatch",
+        "binding and literal cases use the same candidate partition in a new order",
+        "where-constrained and fallback cases use the same candidate partition in a new order",
+        "type-cast cases use the same candidate partition in a new order",
+        "disjoint range cases use the same candidate partition in a new order",
+        "combined case items reverse inside one candidate equivalent branch",
+        "nil and value cases use the same candidate partition in a new order",
+        "wildcard and literal ordering needs semantic reachability analysis",
+    ],
+    "repeated-switches-case-set-mismatch": [
+        "different enum cases are singled out",
+        "nil and one specific wrapped value are singled out",
+        "different integer literals are singled out",
+        "disjoint integer ranges are singled out",
+        "different tuple positions are constrained",
+        "one specific success and a failure are singled out",
+        "different associated-value cases are singled out",
+        "different string literals are singled out",
+        "different runtime types are singled out",
+        "disjoint enum case groups are singled out",
     ],
     "repeated-switches-nested-positive": [
         "one-level nested struct scope",
@@ -173,6 +185,18 @@ PATTERNS: dict[str, list[str]] = {
         "actor and struct scopes",
         "enum and struct scopes",
         "two unrelated nominal owners",
+    ],
+    "repeated-switches-associated-pattern-mismatch": [
+        "different integer payload values are singled out",
+        "different string payload values are singled out",
+        "different tuple payload positions are constrained",
+        "different associated-value cases are singled out",
+        "a constrained success and a failure case are singled out",
+        "different optional payload positions are constrained",
+        "different nested error cases are singled out",
+        "different labeled payload positions are constrained",
+        "a literal node value and empty children are singled out",
+        "different associated-value ranges are singled out",
     ],
     "repeated-switches-token-boundary": [
         "case let value and case letvalue remain distinct",
@@ -214,13 +238,25 @@ PATTERNS: dict[str, list[str]] = {
         "only one switch has a where clause",
         "where constants differ",
         "where comparison operators differ",
-        "where-bound identifiers differ",
+        "where-bound values feed different expressions",
         "where conjunction terms differ",
         "where membership ranges differ",
         "where boolean literals differ",
         "where member names differ",
         "where function names differ",
         "where clauses appear on different case items",
+    ],
+    "repeated-switches-branch-partition-mismatch": [
+        "three explicit enum branches contract to one explicit branch",
+        "four explicit enum branches contract to two explicit branches",
+        "two integer literals contract to one literal",
+        "two integer ranges contract to one range",
+        "two string literals contract to one literal",
+        "two optional value predicates contract to one predicate",
+        "two tuple patterns contract to one pattern",
+        "two runtime type patterns contract to one type",
+        "success and failure predicates contract to success only",
+        "two combined enum groups contract to one combined group",
     ],
 }
 
@@ -239,6 +275,16 @@ def render_case(template: str, ordinal: int) -> dict[str, str]:
 
 def case_pattern(template: str, ordinal: int) -> str:
     return PATTERNS[template][ordinal]
+
+
+def normalized_rendered_case(template: str, ordinal: int) -> str:
+    """Return rendered source with its per-case identifier salt removed."""
+    _, salt = _CASE_SALTS[template]
+    marker = f"{salt}{ordinal:02d}"
+    rendered = render_case(template, ordinal)
+    return "\n".join(
+        source.replace(marker, "<case>") for _, source in sorted(rendered.items())
+    )
 
 
 def _data_functions(ordinal: int, mismatch: str | None = None) -> dict[str, str]:
@@ -412,8 +458,12 @@ def _data_callable(ordinal: int, mode: str) -> dict[str, str]:
     if ordinal == 8:
         wildcard_types = ["Result<String, Error>", "[String]", "Set<Int>"]
     wildcard = [f"_: {type_name}" for type_name in wildcard_types]
-    if ordinal in (1, 4):
+    if ordinal == 1:
         wildcard[2] = f"other{stem}: {wildcard_types[2]}"
+    if ordinal == 4:
+        wildcard[0] = "_: String"
+        wildcard[1] = f"otherRegion{stem}: Int"
+        wildcard[2] = f"enabled{stem}: Bool"
     if ordinal == 5:
         wildcard = [f"external _: {type_name}" for type_name in wildcard_types]
     if ordinal == 6:
@@ -463,10 +513,10 @@ def _switch_case(ordinal: int, mode: str) -> dict[str, str]:
     second_labels = list(first_labels)
     if mode == "discriminator":
         subject_pairs = [
-            ("mode", "state"), ("mode", "Mode"), ("mode", "self.mode"), ("left.mode", "right.mode"),
+            ("mode", "state"), ("mode", "Mode"), ("mode", "context.mode"), ("left.mode", "right.mode"),
             ("context.mode", "context.state"), ("context.mode", "context.current.mode"),
             ("context.inner.mode", "context.outer.mode"), ("status", "phase"),
-            ("self.mode", "mode"), ("primaryState", "secondaryState"),
+            ("self.mode", "self.state"), ("primaryState", "secondaryState"),
         ]
         first_subject, second_subject = subject_pairs[ordinal]
         first_labels = second_labels = ["case .idle:", "case .busy:"]
@@ -574,18 +624,231 @@ def _switch_extension(ordinal: int, mode: str) -> dict[str, str]:
         ("case let value where value > 0:", "case let value:"),
         ("case let value where value > 0:", "case let value where value > 1:"),
         ("case let value where value > 0:", "case let value where value >= 0:"),
-        ("case let left where left > 0:", "case let right where right > 0:"),
+        ("case let left where left > 0:", "case let right where right.isMultiple(of: 2):"),
         ("case let value where value > 0 && flag:", "case let value where value > 0 && ready:"),
         ("case let value where 0..<10 ~= value:", "case let value where 0..<20 ~= value:"),
         ("case let value where true:", "case let value where false:"),
         ("case let value where value.ready:", "case let value where value.active:"),
         ("case let value where accepts(value):", "case let value where permits(value):"),
-        ("case let value where value > 0, 0:", "case let value, 0 where value > 0:"),
+        ("case let value where value > 0, 0:", "case -1, let value where value > 0:"),
     ]
     first_label, second_label = where_pairs[ordinal]
     first = [first_label, "default:"]
     second = [second_label, "default:"]
     source = f"extension {owner} {{\n  func first() {{\n{_switch_statement('value', first, 'a')}  }}\n  func second() {{\n{_switch_statement('value', second, 'b')}  }}\n}}\n"
+    return {"Case.swift": source}
+
+
+def _switch_case_set_mismatch(ordinal: int) -> dict[str, str]:
+    stem = f"q{ordinal:02d}"
+    variants = [
+        (
+            f"enum Phase{stem} {{ case idle, busy, waiting }}",
+            f"Phase{stem}",
+            ["case .idle:", "default:"],
+            ["case .busy:", "default:"],
+        ),
+        ("", "Int?", ["case .none:", "default:"], ["case .some(0):", "default:"]),
+        ("", "Int", ["case 0:", "default:"], ["case 1:", "default:"]),
+        ("", "Int", ["case 0..<10:", "default:"], ["case 10..<20:", "default:"]),
+        (
+            "",
+            "(Int, Int)",
+            ["case (0, _):", "default:"],
+            ["case (_, 0):", "default:"],
+        ),
+        (
+            f"enum Failure{stem}: Error {{ case rejected }}",
+            f"Result<Int, Failure{stem}>",
+            ["case .success(0):", "default:"],
+            ["case .failure(_):", "default:"],
+        ),
+        (
+            f"enum Mixed{stem} {{ case flag(Bool), count(Int), other }}",
+            f"Mixed{stem}",
+            ["case .flag(true):", "default:"],
+            ["case .count(0):", "default:"],
+        ),
+        ("", "String", ["case \"\":", "default:"], ["case \"ready\":", "default:"]),
+        ("", "Any", ["case is String:", "default:"], ["case is Int:", "default:"]),
+        (
+            f"enum Stage{stem} {{ case idle, waiting, busy, paused, other }}",
+            f"Stage{stem}",
+            ["case .idle, .waiting:", "default:"],
+            ["case .busy, .paused:", "default:"],
+        ),
+    ]
+    prelude, type_name, first_labels, second_labels = variants[ordinal]
+    source = (
+        (prelude + "\n" if prelude else "")
+        + f"struct CaseSet{stem} {{\n"
+        + f"  func first(_ value: {type_name}) {{\n"
+        + _switch_statement("value", first_labels, "first")
+        + "  }\n"
+        + f"  func second(_ value: {type_name}) {{\n"
+        + _switch_statement("value", second_labels, "second")
+        + "  }\n"
+        + "}\n"
+    )
+    return {"Case.swift": source}
+
+
+def _switch_branch_partition_mismatch(ordinal: int) -> dict[str, str]:
+    stem = f"b{ordinal:02d}"
+    variants = [
+        (
+            f"enum Route{stem} {{ case a, b, c, other }}",
+            f"Route{stem}",
+            ["case .a:", "case .b:", "case .c:", "default:"],
+            ["case .a:", "default:"],
+        ),
+        (
+            f"enum Mode{stem} {{ case a, b, c, d, other }}",
+            f"Mode{stem}",
+            ["case .a:", "case .b:", "case .c:", "case .d:", "default:"],
+            ["case .a:", "case .b:", "default:"],
+        ),
+        ("", "Int", ["case 0:", "case 1:", "default:"], ["case 0:", "default:"]),
+        (
+            "",
+            "Int",
+            ["case 0..<10:", "case 10..<20:", "default:"],
+            ["case 0..<10:", "default:"],
+        ),
+        (
+            "",
+            "String",
+            ["case \"open\":", "case \"closed\":", "default:"],
+            ["case \"open\":", "default:"],
+        ),
+        (
+            "",
+            "Int?",
+            ["case .some(let value) where value > 0:", "case .some(_):", "default:"],
+            ["case .some(let value) where value > 0:", "default:"],
+        ),
+        (
+            "",
+            "(Int, Int)",
+            ["case (0, _):", "case (_, 0):", "default:"],
+            ["case (0, _):", "default:"],
+        ),
+        (
+            "",
+            "Any",
+            ["case is String:", "case is Int:", "default:"],
+            ["case is String:", "default:"],
+        ),
+        (
+            f"enum Failure{stem}: Error {{ case rejected }}",
+            f"Result<Int, Failure{stem}>",
+            [
+                "case .success(let value) where value > 0:",
+                "case .failure(_):",
+                "default:",
+            ],
+            ["case .success(let value) where value > 0:", "default:"],
+        ),
+        (
+            f"enum State{stem} {{ case a, b, c, d, other }}",
+            f"State{stem}",
+            ["case .a, .b:", "case .c, .d:", "default:"],
+            ["case .a, .b:", "default:"],
+        ),
+    ]
+    prelude, type_name, first_labels, second_labels = variants[ordinal]
+    source = (
+        (prelude + "\n" if prelude else "")
+        + f"struct Partition{stem} {{\n"
+        + f"  func first(_ value: {type_name}) {{\n"
+        + _switch_statement("value", first_labels, "first")
+        + "  }\n"
+        + f"  func second(_ value: {type_name}) {{\n"
+        + _switch_statement("value", second_labels, "second")
+        + "  }\n"
+        + "}\n"
+    )
+    return {"Case.swift": source}
+
+
+def _switch_associated_pattern_mismatch(ordinal: int) -> dict[str, str]:
+    stem = f"u{ordinal:02d}"
+    variants = [
+        (
+            f"enum NumberPayload{stem} {{ case number(Int), none }}",
+            f"NumberPayload{stem}",
+            "case .number(0):",
+            "case .number(1):",
+        ),
+        (
+            f"enum TextPayload{stem} {{ case text(String), none }}",
+            f"TextPayload{stem}",
+            "case .text(\"\"):",
+            "case .text(\"ready\"):",
+        ),
+        (
+            f"enum PointPayload{stem} {{ case point(Int, Int), none }}",
+            f"PointPayload{stem}",
+            "case .point(0, _):",
+            "case .point(_, 0):",
+        ),
+        (
+            f"enum MixedPayload{stem} {{ case state(Bool), count(Int), none }}",
+            f"MixedPayload{stem}",
+            "case .state(true):",
+            "case .count(0):",
+        ),
+        (
+            f"enum Outcome{stem} {{ case success(Int), failure, pending }}",
+            f"Outcome{stem}",
+            "case .success(let value) where value > 0:",
+            "case .failure:",
+        ),
+        (
+            f"enum OptionalPair{stem} {{ case pair(Int?, Int?), none }}",
+            f"OptionalPair{stem}",
+            "case .pair(.some(_), .none):",
+            "case .pair(.none, .some(_)):",
+        ),
+        (
+            f"enum Fault{stem} {{ case network, storage }}\n"
+            f"enum ResultState{stem} {{ case failed(Fault{stem}), ok, pending }}",
+            f"ResultState{stem}",
+            "case .failed(.network):",
+            "case .failed(.storage):",
+        ),
+        (
+            f"enum LabeledPoint{stem} {{ case point(x: Int, y: Int), none }}",
+            f"LabeledPoint{stem}",
+            "case .point(0, _):",
+            "case .point(_, 0):",
+        ),
+        (
+            f"indirect enum Tree{stem} {{ case node(Int, [Tree{stem}]), leaf }}",
+            f"Tree{stem}",
+            "case .node(0, _):",
+            "case .node(_, let children) where children.isEmpty:",
+        ),
+        (
+            f"enum Span{stem} {{ case value(Int), none }}",
+            f"Span{stem}",
+            "case .value(let value) where (0..<10).contains(value):",
+            "case .value(let value) where (10..<20).contains(value):",
+        ),
+    ]
+    prelude, type_name, first_label, second_label = variants[ordinal]
+    source = (
+        prelude
+        + "\n"
+        + f"struct AssociatedPattern{stem} {{\n"
+        + f"  func first(_ value: {type_name}) {{\n"
+        + _switch_statement("value", [first_label, "default:"], "first")
+        + "  }\n"
+        + f"  func second(_ value: {type_name}) {{\n"
+        + _switch_statement("value", [second_label, "default:"], "second")
+        + "  }\n"
+        + "}\n"
+    )
     return {"Case.swift": source}
 
 
@@ -630,12 +893,15 @@ _RENDERERS: dict[str, Callable[[int], dict[str, str]]] = {
     "repeated-switches-methods-positive": lambda i: _switch_case(i, "positive"),
     "repeated-switches-discriminator-mismatch": lambda i: _switch_case(i, "discriminator"),
     "repeated-switches-case-order-mismatch": lambda i: _switch_case(i, "order"),
+    "repeated-switches-case-set-mismatch": _switch_case_set_mismatch,
     "repeated-switches-nested-positive": lambda i: _switch_nested(i, "positive"),
     "repeated-switches-scope-mismatch": lambda i: _switch_nested(i, "scope"),
+    "repeated-switches-associated-pattern-mismatch": _switch_associated_pattern_mismatch,
     "repeated-switches-token-boundary": lambda i: _switch_nested(i, "boundary"),
     "repeated-switches-extensions-positive": lambda i: _switch_extension(i, "positive"),
     "repeated-switches-compound-discriminator": lambda i: _switch_extension(i, "compound"),
     "repeated-switches-where-clause": lambda i: _switch_extension(i, "where"),
+    "repeated-switches-branch-partition-mismatch": _switch_branch_partition_mismatch,
 }
 
 _CASE_SALTS = {
@@ -651,10 +917,13 @@ _CASE_SALTS = {
     "repeated-switches-methods-positive": ("s", "rmp"),
     "repeated-switches-discriminator-mismatch": ("s", "rdm"),
     "repeated-switches-case-order-mismatch": ("s", "rom"),
+    "repeated-switches-case-set-mismatch": ("q", "rcs"),
     "repeated-switches-nested-positive": ("n", "rnp"),
     "repeated-switches-scope-mismatch": ("n", "rsm"),
+    "repeated-switches-associated-pattern-mismatch": ("u", "rap"),
     "repeated-switches-token-boundary": ("n", "rtb"),
     "repeated-switches-extensions-positive": ("e", "rep"),
     "repeated-switches-compound-discriminator": ("e", "rcd"),
     "repeated-switches-where-clause": ("e", "rwc"),
+    "repeated-switches-branch-partition-mismatch": ("b", "rbp"),
 }

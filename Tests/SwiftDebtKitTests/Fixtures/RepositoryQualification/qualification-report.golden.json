@@ -2,7 +2,7 @@
   "corpus": {
     "authorLabelState": "provisional-pending-independent-review",
     "id": "swiftdebt-r2-repository-rule-qualification-v1",
-    "manifestDigest": "fab4bc82a0d96de0c31b2021410d3e7567e9efeea45f76f1adb55434ece3da24",
+    "manifestDigest": "b30b1f232de6640a001e2e42145a7f1ff2d9cc1e48f92111518928a84126f00f",
     "review": {
       "adjudicationStatus": "pending",
       "requiredQualifiedSwiftReviewers": 2,
@@ -20,8 +20,8 @@
   },
   "determinism": {
     "allRunsByteIdentical": true,
-    "evidenceByteCount": 84284,
-    "evidenceByteDigest": "8723bd28c35d75409e8283ad49efc69a8b2fae6bb03bad87468d572052b6b203",
+    "evidenceByteCount": 84784,
+    "evidenceByteDigest": "ff675749a0721e5a5e7833bd10372a85e1c79024b5bbbdb8bf0bc5d8fc9f704d",
     "parseJobCounts": [
       1,
       2,
@@ -30,21 +30,21 @@
     "runs": [
       {
         "allByteIdentical": true,
-        "byteDigest": "8723bd28c35d75409e8283ad49efc69a8b2fae6bb03bad87468d572052b6b203",
+        "byteDigest": "ff675749a0721e5a5e7833bd10372a85e1c79024b5bbbdb8bf0bc5d8fc9f704d",
         "gitStateBeforeAndAfterEveryRun": "clean",
         "parseJobs": 1,
         "runs": 10
       },
       {
         "allByteIdentical": true,
-        "byteDigest": "8723bd28c35d75409e8283ad49efc69a8b2fae6bb03bad87468d572052b6b203",
+        "byteDigest": "ff675749a0721e5a5e7833bd10372a85e1c79024b5bbbdb8bf0bc5d8fc9f704d",
         "gitStateBeforeAndAfterEveryRun": "clean",
         "parseJobs": 2,
         "runs": 10
       },
       {
         "allByteIdentical": true,
-        "byteDigest": "8723bd28c35d75409e8283ad49efc69a8b2fae6bb03bad87468d572052b6b203",
+        "byteDigest": "ff675749a0721e5a5e7833bd10372a85e1c79024b5bbbdb8bf0bc5d8fc9f704d",
         "gitStateBeforeAndAfterEveryRun": "clean",
         "parseJobs": 8,
         "runs": 10
@@ -65,7 +65,7 @@
   },
   "networkIsolation": {
     "defaultCLIConfiguration": true,
-    "evidenceByteDigest": "8723bd28c35d75409e8283ad49efc69a8b2fae6bb03bad87468d572052b6b203",
+    "evidenceByteDigest": "ff675749a0721e5a5e7833bd10372a85e1c79024b5bbbdb8bf0bc5d8fc9f704d",
     "harness": "macOS sandbox-exec deny network wildcard",
     "outputMatchesUnsandboxedBaseline": true,
     "status": "pass"
@@ -594,6 +594,10 @@
           "semanticRevision": 2
         }
       ],
+      "provisionalAuditNotes": [
+        "The four Data Clumps detections overlap the same CommandConfiguration property and initializer family; they are not four independent smell confirmations.",
+        "All snapshot observations remain unlabeled until the two qualified reviewers inspect the decisive locations."
+      ],
       "repositoryURL": "https://github.com/apple/swift-argument-parser.git",
       "sourceIdentity": {
         "repositorySnapshot": {
@@ -1032,6 +1036,10 @@
           "semanticRevision": 2
         }
       ],
+      "provisionalAuditNotes": [
+        "Both Data Clumps detections merge equal Index spellings from distinct nested collection types; these are likely false positives because source spelling does not prove type identity.",
+        "All snapshot observations remain unlabeled until the two qualified reviewers inspect the decisive locations."
+      ],
       "repositoryURL": "https://github.com/apple/swift-algorithms.git",
       "sourceIdentity": {
         "repositorySnapshot": {
@@ -1049,53 +1057,13 @@
   "repositoryShapes": [
     {
       "analyzerGenerator": "SwiftDebt 0.10.0",
-      "caseCount": 60,
+      "caseCount": 70,
       "description": "One flat source root discovered by the CLI as module Workspace.",
       "id": "flat-single-module",
       "layout": "flat",
       "repositorySnapshotDigest": {
         "algorithm": "sha256",
-        "value": "f6d9b1b94738ec4b3d30fd06f1f544aa7b9e653e52899e60ba8578b81ca6ea7d"
-      },
-      "ruleCompletion": {
-        "swiftdebt.refactoring.data-clumps": "complete",
-        "swiftdebt.refactoring.repeated-switches": "complete"
-      },
-      "sourceFileCount": 60,
-      "sourceTreeDigest": {
-        "algorithm": "sha256-framed-path-and-bytes-v1",
-        "value": "9e0237513af56f4b20ff0ed1c79a0229fed425b6e1d5adc3cd8404e740664df5"
-      }
-    },
-    {
-      "analyzerGenerator": "SwiftDebt 0.10.0",
-      "caseCount": 60,
-      "description": "Sources are distributed under nested feature directories and discovered recursively.",
-      "id": "nested-source-tree",
-      "layout": "nested",
-      "repositorySnapshotDigest": {
-        "algorithm": "sha256",
-        "value": "801726411f16bd2bd06398436d2475968c18180900bcc3075e2d7a18caae6cb6"
-      },
-      "ruleCompletion": {
-        "swiftdebt.refactoring.data-clumps": "complete",
-        "swiftdebt.refactoring.repeated-switches": "complete"
-      },
-      "sourceFileCount": 60,
-      "sourceTreeDigest": {
-        "algorithm": "sha256-framed-path-and-bytes-v1",
-        "value": "4f5f7b01aa3ece3e91fcd4ad3197566f004723997d9f9889ced79697a8cfd8b9"
-      }
-    },
-    {
-      "analyzerGenerator": "SwiftDebt 0.10.0",
-      "caseCount": 60,
-      "description": "An explicit CLI source manifest assigns files to three modules in a workspace-shaped tree.",
-      "id": "explicit-multi-module",
-      "layout": "manifest",
-      "repositorySnapshotDigest": {
-        "algorithm": "sha256",
-        "value": "1f52623d867106c22aa69d470849e3141487664c18abfc09f84c9f43d17e96f8"
+        "value": "e4e7ac539f1bd7213de226a6bb5823d24f63a2ce05bc6df5de2c38ff4be9f11f"
       },
       "ruleCompletion": {
         "swiftdebt.refactoring.data-clumps": "complete",
@@ -1104,7 +1072,47 @@
       "sourceFileCount": 70,
       "sourceTreeDigest": {
         "algorithm": "sha256-framed-path-and-bytes-v1",
-        "value": "c9fa78d11617a69cc1a54e8e962595f35ad4ba4a89a7debd23c7077f3c1326e5"
+        "value": "3c4871172fe73c7659ae9e5518486bd33081b70cb7dc1fb756bb7704f2f01a51"
+      }
+    },
+    {
+      "analyzerGenerator": "SwiftDebt 0.10.0",
+      "caseCount": 70,
+      "description": "Sources are distributed under nested feature directories and discovered recursively.",
+      "id": "nested-source-tree",
+      "layout": "nested",
+      "repositorySnapshotDigest": {
+        "algorithm": "sha256",
+        "value": "1f98ee9666634bec0c2c5b37d261c45cc2a9ee378b650c106d1a7c2080d99968"
+      },
+      "ruleCompletion": {
+        "swiftdebt.refactoring.data-clumps": "complete",
+        "swiftdebt.refactoring.repeated-switches": "complete"
+      },
+      "sourceFileCount": 70,
+      "sourceTreeDigest": {
+        "algorithm": "sha256-framed-path-and-bytes-v1",
+        "value": "0bc3f3efeebbd02be0276994968e64fe3e7d9ebd1ffca89b5337a33244486dc5"
+      }
+    },
+    {
+      "analyzerGenerator": "SwiftDebt 0.10.0",
+      "caseCount": 70,
+      "description": "An explicit CLI source manifest assigns files to three modules in a workspace-shaped tree.",
+      "id": "explicit-multi-module",
+      "layout": "manifest",
+      "repositorySnapshotDigest": {
+        "algorithm": "sha256",
+        "value": "474f363153f8168abb6ecafca100fc4f071191739c375e44f10fffe583035c5a"
+      },
+      "ruleCompletion": {
+        "swiftdebt.refactoring.data-clumps": "complete",
+        "swiftdebt.refactoring.repeated-switches": "complete"
+      },
+      "sourceFileCount": 80,
+      "sourceTreeDigest": {
+        "algorithm": "sha256-framed-path-and-bytes-v1",
+        "value": "8ce04dee2466953b71bde8cd5801c2d72f0c557931dcf09bcb3c4b928e38ca37"
       }
     }
   ],
@@ -1112,6 +1120,7 @@
     {
       "authoredCaseCounts": {
         "adversarialNegative": 60,
+        "outOfScope": 0,
         "positive": 30,
         "repositoryShapes": 3
       },
@@ -1191,8 +1200,11 @@
           ],
           "id": "dc-flat-functions-positive-01",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two top-level functions repeat the same three named and typed parameters.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "c94edb6839cd720ec2d62cf763fe08255cc17647819c4bd95b6f78f652f451ae"
@@ -1283,8 +1295,11 @@
           ],
           "id": "dc-flat-functions-positive-02",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two top-level functions repeat the same three named and typed parameters.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "ca9aba5174bc5933c04af069689b5fa66826202bda80a04b50ae0595bcc4f8e6"
@@ -1375,8 +1390,11 @@
           ],
           "id": "dc-flat-functions-positive-03",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two top-level functions repeat the same three named and typed parameters.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "2ffe3c8534badde51d7ebd0a6f7c4ef0105804a5400f3dbb2a9934a515f9199e"
@@ -1467,8 +1485,11 @@
           ],
           "id": "dc-flat-functions-positive-04",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two top-level functions repeat the same three named and typed parameters.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "b8ae469de5c2599afd0d62590838b69b8b82bd4b4f6f723c7f58ceb7d16353a1"
@@ -1559,8 +1580,11 @@
           ],
           "id": "dc-flat-functions-positive-05",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two top-level functions repeat the same three named and typed parameters.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "cc9c760affa1fd79470a4d147fd102733ecd4522fd10666d265fab30ea113ac7"
@@ -1651,8 +1675,11 @@
           ],
           "id": "dc-flat-functions-positive-06",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two top-level functions repeat the same three named and typed parameters.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "c29d20cf6a823b30e98aeba20a562cbe2724c66ebe65e96d8d0204284117b24d"
@@ -1743,8 +1770,11 @@
           ],
           "id": "dc-flat-functions-positive-07",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two top-level functions repeat the same three named and typed parameters.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "d4daf90cc3301adfedec3efaba9bc1f20abc49f24514a7c800e3f1494727c73a"
@@ -1835,8 +1865,11 @@
           ],
           "id": "dc-flat-functions-positive-08",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two top-level functions repeat the same three named and typed parameters.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "70918aa6156c0803eda7e7de73f747792a44ba1cdb8cc9a3d891f87d37676339"
@@ -1927,8 +1960,11 @@
           ],
           "id": "dc-flat-functions-positive-09",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two top-level functions repeat the same three named and typed parameters.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "f09f0872656fee7b874819899a74c697e62ccd3ca567d6fc01ada7b3fdf5b9f4"
@@ -2019,8 +2055,11 @@
           ],
           "id": "dc-flat-functions-positive-10",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two top-level functions repeat the same three named and typed parameters.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "76db5049c994de8b2997a4ffe58d9c8698fe6d8f6344dbacb41a9f286fe76a45"
@@ -2043,8 +2082,11 @@
           "detections": [],
           "id": "dc-flat-name-mismatch-01",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "One of three local parameter names differs, leaving only two exact elements.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "da8b5fc250e0cba2560f4c7ad125f974b7bc728e1b9e9323a8c4a3022a0b5c42"
@@ -2067,8 +2109,11 @@
           "detections": [],
           "id": "dc-flat-name-mismatch-02",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "One of three local parameter names differs, leaving only two exact elements.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "7445d75aef4de7ab10338c6567aa0accf6e0ced1677f698b8005d9bb7ddf1730"
@@ -2091,8 +2136,11 @@
           "detections": [],
           "id": "dc-flat-name-mismatch-03",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "One of three local parameter names differs, leaving only two exact elements.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "a72d4650389899301794a5433e275cab50314c18734ae8c936a2bb4a9a737323"
@@ -2115,8 +2163,11 @@
           "detections": [],
           "id": "dc-flat-name-mismatch-04",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "One of three local parameter names differs, leaving only two exact elements.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "f638868cc3bc8c23e7bb328663ff7fbc5df7df07ee241ee6f03ed395f6855eee"
@@ -2139,8 +2190,11 @@
           "detections": [],
           "id": "dc-flat-name-mismatch-05",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "One of three local parameter names differs, leaving only two exact elements.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "165fd59616b8552ab2f3f5657a7a452a4539fd4718753007101181035a263560"
@@ -2163,8 +2217,11 @@
           "detections": [],
           "id": "dc-flat-name-mismatch-06",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "One of three local parameter names differs, leaving only two exact elements.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "00aebe2fba9f451fd55c98faa5edc82915eb11916fbc73302f831792d2246a14"
@@ -2187,8 +2244,11 @@
           "detections": [],
           "id": "dc-flat-name-mismatch-07",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "One of three local parameter names differs, leaving only two exact elements.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "54117285278209152aea6498b06413c097eb75d8f0adf97ccbc7b1c84a85fe79"
@@ -2211,8 +2271,11 @@
           "detections": [],
           "id": "dc-flat-name-mismatch-08",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "One of three local parameter names differs, leaving only two exact elements.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "434bb6483b7e0f85eb2b309ecdebc8ca1a2ede86434cfa432c8bf072c1db2386"
@@ -2235,8 +2298,11 @@
           "detections": [],
           "id": "dc-flat-name-mismatch-09",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "One of three local parameter names differs, leaving only two exact elements.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "d20d40a3e51080006e1503220342e8e32daefcdaaa2d0719cc1d3e768f28f96e"
@@ -2259,8 +2325,11 @@
           "detections": [],
           "id": "dc-flat-name-mismatch-10",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "One of three local parameter names differs, leaving only two exact elements.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "a9e9d79db6715d6a021c722dd390f2dabd028c0fea625316bb6c08fb5fc3ff53"
@@ -2283,8 +2352,11 @@
           "detections": [],
           "id": "dc-flat-type-mismatch-01",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "One of three parameter types differs, leaving only two exact elements.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "1be2fde4e6a4bca4bdcd998514a5e56cc7103520a370005b3b22f8ccc8f05cdc"
@@ -2307,8 +2379,11 @@
           "detections": [],
           "id": "dc-flat-type-mismatch-02",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "One of three parameter types differs, leaving only two exact elements.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "82c576cb62855bfb418ad628627d9a13ed7ae87308be4c86fd9a237bfd19a414"
@@ -2331,8 +2406,11 @@
           "detections": [],
           "id": "dc-flat-type-mismatch-03",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "One of three parameter types differs, leaving only two exact elements.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "f45b58b2e0c858270ed80f1d39cfe65fd720c8e315cf94ad9ae99ab31808ef33"
@@ -2355,8 +2433,11 @@
           "detections": [],
           "id": "dc-flat-type-mismatch-04",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "One of three parameter types differs, leaving only two exact elements.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "516957e92ae4040c4a3f10c0f6ff7d08fa6094cbf933e7786a7b24387e659584"
@@ -2379,8 +2460,11 @@
           "detections": [],
           "id": "dc-flat-type-mismatch-05",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "One of three parameter types differs, leaving only two exact elements.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "706a04249febb1b8aaf747bf5c284eb73b6e7c6bef5288c2e47e114ebed7da99"
@@ -2403,8 +2487,11 @@
           "detections": [],
           "id": "dc-flat-type-mismatch-06",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "One of three parameter types differs, leaving only two exact elements.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "c91f6125e28d84803e474b653030c2277b5b7cd867b30d08967f42a16a2a53cb"
@@ -2427,8 +2514,11 @@
           "detections": [],
           "id": "dc-flat-type-mismatch-07",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "One of three parameter types differs, leaving only two exact elements.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "25a1046e65bd704a46c194f2475c81d06432806dc205e73777e42b43c38bbdea"
@@ -2451,8 +2541,11 @@
           "detections": [],
           "id": "dc-flat-type-mismatch-08",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "One of three parameter types differs, leaving only two exact elements.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "d63a1b1d6c81c2d9dbf634f2d84a6c90cf1930055736f3bd8de84ebe8afd1286"
@@ -2475,8 +2568,11 @@
           "detections": [],
           "id": "dc-flat-type-mismatch-09",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "One of three parameter types differs, leaving only two exact elements.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "992aad8fe425c0762547fb92cabb3a5e1c7f7aec8fc7f61410bc8000f718c254"
@@ -2499,8 +2595,11 @@
           "detections": [],
           "id": "dc-flat-type-mismatch-10",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "One of three parameter types differs, leaving only two exact elements.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "d085207533df1fe8c50630405cd89e7f3f39d7a1492478c9ad1db552e13b7f4a"
@@ -2591,8 +2690,11 @@
           ],
           "id": "dc-modules-callable-kinds-positive-01",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "An initializer and subscript repeat the same three named and typed parameters.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "7f5806fc04c84870cec35da850ecac4f30acfd88ad5b553eb5b497bbedc59739"
@@ -2683,8 +2785,11 @@
           ],
           "id": "dc-modules-callable-kinds-positive-02",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "An initializer and subscript repeat the same three named and typed parameters.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "7022d971610709c9d989728a0e5e558bfe99a90cdafcebd64b2e3baabd1faf7d"
@@ -2775,8 +2880,11 @@
           ],
           "id": "dc-modules-callable-kinds-positive-03",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "An initializer and subscript repeat the same three named and typed parameters.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "fd98020aec44bb806258e122a60afea785aaf05ee5fb28fed2d1ee626cc7448a"
@@ -2867,8 +2975,11 @@
           ],
           "id": "dc-modules-callable-kinds-positive-04",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "An initializer and subscript repeat the same three named and typed parameters.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "6bd2f53a663a7aaeee0acdd5622d3219931506764450524053bc9ddab939d511"
@@ -2959,8 +3070,11 @@
           ],
           "id": "dc-modules-callable-kinds-positive-05",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "An initializer and subscript repeat the same three named and typed parameters.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "b5bc7edab49afbbad1d9f42fa5cd710bc251c28a0a9b3ce801c78e0ddb61da97"
@@ -3051,8 +3165,11 @@
           ],
           "id": "dc-modules-callable-kinds-positive-06",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "An initializer and subscript repeat the same three named and typed parameters.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "f953418a2b9dc627742a7908f2d3712c40bb1be8403e8de9af1fe83801632ac3"
@@ -3143,8 +3260,11 @@
           ],
           "id": "dc-modules-callable-kinds-positive-07",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "An initializer and subscript repeat the same three named and typed parameters.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "da18f96c7f6f574fa9d31b87a541d7e0ad8b028de5d5d8d760c8e971f2c508cc"
@@ -3235,8 +3355,11 @@
           ],
           "id": "dc-modules-callable-kinds-positive-08",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "An initializer and subscript repeat the same three named and typed parameters.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "9007e849e66fb8c5e005c42ebbe8648f7f3f264a0677b770fdd322b4f7a8dc21"
@@ -3327,8 +3450,11 @@
           ],
           "id": "dc-modules-callable-kinds-positive-09",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "An initializer and subscript repeat the same three named and typed parameters.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "fe4f2c998d342c351ad2628aa2497b0fa39e69be1a769145e6456cb71e3c7b3f"
@@ -3419,8 +3545,11 @@
           ],
           "id": "dc-modules-callable-kinds-positive-10",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "An initializer and subscript repeat the same three named and typed parameters.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "656e61fd4a6f63eeae0f9054423ad48966dbe78b88fde5cc330ad20398ca345c"
@@ -3443,8 +3572,11 @@
           "detections": [],
           "id": "dc-modules-token-boundary-01",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Opaque-type token sequences and similarly spelled nominal types retain distinct token boundaries.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "2107c161c0d7717ac38658d980fc20f2057a779a6dbe8c068fd0ccd05c95112d"
@@ -3467,8 +3599,11 @@
           "detections": [],
           "id": "dc-modules-token-boundary-02",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Opaque-type token sequences and similarly spelled nominal types retain distinct token boundaries.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "3877eef0df0425538f74dc7f98cd3e1c6769f6be2e00bafab3b8e5cc446e344d"
@@ -3491,8 +3626,11 @@
           "detections": [],
           "id": "dc-modules-token-boundary-03",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Opaque-type token sequences and similarly spelled nominal types retain distinct token boundaries.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "807630bfcf181e24108db9a55860fe24b779cb37355b0bb2df06e2d694347ba2"
@@ -3515,8 +3653,11 @@
           "detections": [],
           "id": "dc-modules-token-boundary-04",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Opaque-type token sequences and similarly spelled nominal types retain distinct token boundaries.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "395537ce9c16760580c0a5425563eabc717919ac30f73e93cdb1c3d220fb66be"
@@ -3539,8 +3680,11 @@
           "detections": [],
           "id": "dc-modules-token-boundary-05",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Opaque-type token sequences and similarly spelled nominal types retain distinct token boundaries.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "93e0704f2ac598297d2f8c28e7de29839e8f5d9ff2ccc88fc746e208be2d3224"
@@ -3563,8 +3707,11 @@
           "detections": [],
           "id": "dc-modules-token-boundary-06",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Opaque-type token sequences and similarly spelled nominal types retain distinct token boundaries.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "1db2354b2e9f6a8b657eeeafaf4829bfe37d1594ed8ca94ac626a2daf62c7124"
@@ -3587,8 +3734,11 @@
           "detections": [],
           "id": "dc-modules-token-boundary-07",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Opaque-type token sequences and similarly spelled nominal types retain distinct token boundaries.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "60a435da0b2f806c4acfac6c0bb33cd64167aadb01cbb88baf9f676ab5c98cdd"
@@ -3611,8 +3761,11 @@
           "detections": [],
           "id": "dc-modules-token-boundary-08",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Opaque-type token sequences and similarly spelled nominal types retain distinct token boundaries.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "6124302aed560dc38b3a66fe4893d1b5f26a4de19b4dc7eb8c0701c258850d65"
@@ -3635,8 +3788,11 @@
           "detections": [],
           "id": "dc-modules-token-boundary-09",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Opaque-type token sequences and similarly spelled nominal types retain distinct token boundaries.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "f5bb62caec0250c289bb53f7e705d21e0a8c2fbf9e773c2e2aa725356bccdecf"
@@ -3659,8 +3815,11 @@
           "detections": [],
           "id": "dc-modules-token-boundary-10",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Opaque-type token sequences and similarly spelled nominal types retain distinct token boundaries.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "1cc65257fbc200db0192bea717b461b49628967f5e9563c6a5f98017fb97393f"
@@ -3683,8 +3842,11 @@
           "detections": [],
           "id": "dc-modules-unnamed-parameters-01",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "The second callable uses only unnamed parameters, which do not enter the observed element set.",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Wildcards and renamed locals leave fewer than three shared named-and-typed parameter elements.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "71231f71be56d1f91f622005256fb18dda867a1ef0f2e52f0713c52efb09af43"
@@ -3707,8 +3869,11 @@
           "detections": [],
           "id": "dc-modules-unnamed-parameters-02",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "The second callable uses only unnamed parameters, which do not enter the observed element set.",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Wildcards and renamed locals leave fewer than three shared named-and-typed parameter elements.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "80ee42c6545e36aa1b39fe9e94d65cf7cef0589dd4f2dcf4a7832490480d8985"
@@ -3731,8 +3896,11 @@
           "detections": [],
           "id": "dc-modules-unnamed-parameters-03",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "The second callable uses only unnamed parameters, which do not enter the observed element set.",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Wildcards and renamed locals leave fewer than three shared named-and-typed parameter elements.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "965fb1553a4e4468974434d375a895b5abe848fd6459711d5f9fad53295d1ff8"
@@ -3755,8 +3923,11 @@
           "detections": [],
           "id": "dc-modules-unnamed-parameters-04",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "The second callable uses only unnamed parameters, which do not enter the observed element set.",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Wildcards and renamed locals leave fewer than three shared named-and-typed parameter elements.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "c43bbe4a8f7c19d3ada6fbdab2ba1eda537c29dbeb0bc2796a3af62184cbbb83"
@@ -3779,11 +3950,14 @@
           "detections": [],
           "id": "dc-modules-unnamed-parameters-05",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "The second callable uses only unnamed parameters, which do not enter the observed element set.",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Wildcards and renamed locals leave fewer than three shared named-and-typed parameter elements.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
-            "value": "8874f02b1b80c39b167f44e6ead3132b5c4e6db095839b21dde69f23b929d01d"
+            "value": "5e984b6d11ab420f8524739a8ec01f816c958bb8b944aecc61f9cfce3ce43d69"
           },
           "sourcePaths": [
             "Modules/Module2/dc-modules-unnamed-parameters-05/Case.swift"
@@ -3803,8 +3977,11 @@
           "detections": [],
           "id": "dc-modules-unnamed-parameters-06",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "The second callable uses only unnamed parameters, which do not enter the observed element set.",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Wildcards and renamed locals leave fewer than three shared named-and-typed parameter elements.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "36146825f074ded926e62bce896864db0a4c3b4a98e2f889c4d1842aae72d95d"
@@ -3827,8 +4004,11 @@
           "detections": [],
           "id": "dc-modules-unnamed-parameters-07",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "The second callable uses only unnamed parameters, which do not enter the observed element set.",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Wildcards and renamed locals leave fewer than three shared named-and-typed parameter elements.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "ca9faf04235495d48e4f2c26015ec349ac3d3925099440ad57fc126f1d506ad9"
@@ -3851,8 +4031,11 @@
           "detections": [],
           "id": "dc-modules-unnamed-parameters-08",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "The second callable uses only unnamed parameters, which do not enter the observed element set.",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Wildcards and renamed locals leave fewer than three shared named-and-typed parameter elements.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "a23aa7b08ecdc9b85c2c6684a394e8cb66c592e14f1aa357c8d8e445752a9ca4"
@@ -3875,8 +4058,11 @@
           "detections": [],
           "id": "dc-modules-unnamed-parameters-09",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "The second callable uses only unnamed parameters, which do not enter the observed element set.",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Wildcards and renamed locals leave fewer than three shared named-and-typed parameter elements.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "f24c5d17f5a96c035f871d783f6351c95798fb877c6bf5a0c356dc6604f1ab7a"
@@ -3899,8 +4085,11 @@
           "detections": [],
           "id": "dc-modules-unnamed-parameters-10",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "The second callable uses only unnamed parameters, which do not enter the observed element set.",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Wildcards and renamed locals leave fewer than three shared named-and-typed parameter elements.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "3d285d13299339ab536d534ec8fec8c8c99c3114e08aafb639daddb11ff89804"
@@ -3923,8 +4112,11 @@
           "detections": [],
           "id": "dc-nested-computed-properties-01",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "The apparent second group consists only of computed properties, outside the stored-property scope.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "1438c4b6fe98b5eab5e244ff0b8383cd215330797b25f6ed8e74c8933a05eb5d"
@@ -3947,8 +4139,11 @@
           "detections": [],
           "id": "dc-nested-computed-properties-02",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "The apparent second group consists only of computed properties, outside the stored-property scope.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "068d9fdee1cfb04e7698837b7075b81e867931a107ee3069f9277cda59f04232"
@@ -3971,8 +4166,11 @@
           "detections": [],
           "id": "dc-nested-computed-properties-03",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "The apparent second group consists only of computed properties, outside the stored-property scope.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "040c75908774938d1720ccaa43f8a68e6cc7a2dd4243b8cb3a6319ecc6c15ea8"
@@ -3995,8 +4193,11 @@
           "detections": [],
           "id": "dc-nested-computed-properties-04",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "The apparent second group consists only of computed properties, outside the stored-property scope.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "485a90cba3909292ca6bf4ed4c7f47c9ee12d724eb72c19b8f574c3b257f70d1"
@@ -4019,8 +4220,11 @@
           "detections": [],
           "id": "dc-nested-computed-properties-05",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "The apparent second group consists only of computed properties, outside the stored-property scope.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "4216f6284f7a47942478de00798dfd2a7aebf6791a2e38eb45f4bbf885147c33"
@@ -4043,8 +4247,11 @@
           "detections": [],
           "id": "dc-nested-computed-properties-06",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "The apparent second group consists only of computed properties, outside the stored-property scope.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "bfa1fafb00739536046b1bc66c4aceb2b6a1ae4e4569653b53cf40cd07b485e2"
@@ -4067,8 +4274,11 @@
           "detections": [],
           "id": "dc-nested-computed-properties-07",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "The apparent second group consists only of computed properties, outside the stored-property scope.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "d9eeb67ef244705dcaf33ce842ec0663a410f9fd3d32540068fa5b3695689b5c"
@@ -4091,8 +4301,11 @@
           "detections": [],
           "id": "dc-nested-computed-properties-08",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "The apparent second group consists only of computed properties, outside the stored-property scope.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "8d5f4e59d008ce87776fbd50949afd281d8b70aad83de91846be21feb16ebc90"
@@ -4109,14 +4322,17 @@
           ]
         },
         {
-          "ambiguityOrBenignPattern": "class stored properties are excluded",
+          "ambiguityOrBenignPattern": "class computed properties are excluded",
           "authorLabel": "negative",
           "classificationAgainstAuthorLabel": "true-negative",
           "detections": [],
           "id": "dc-nested-computed-properties-09",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "The apparent second group consists only of computed properties, outside the stored-property scope.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "d7f7f0269982500c0523ea5d98952e7fd7f65642f2bde74c83c0c4e5bef0e009"
@@ -4139,8 +4355,11 @@
           "detections": [],
           "id": "dc-nested-computed-properties-10",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "The apparent second group consists only of computed properties, outside the stored-property scope.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "d587cdfe5fe0befc0c4ecda93bb6f5a38aaa1495223fd5ad93bf17301ab0bdd2"
@@ -4163,8 +4382,11 @@
           "detections": [],
           "id": "dc-nested-only-two-shared-01",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two property groups share only two elements and each has a distinct third property.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "eeed738e0cdcd18dd3d155fc38e28fe169ee2be94fdfc33004ea7fdc60a1e43f"
@@ -4187,8 +4409,11 @@
           "detections": [],
           "id": "dc-nested-only-two-shared-02",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two property groups share only two elements and each has a distinct third property.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "c39834b92de729268ea89839eacb1959bb4bbfda541c6130103a96c84d41ba5f"
@@ -4211,8 +4436,11 @@
           "detections": [],
           "id": "dc-nested-only-two-shared-03",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two property groups share only two elements and each has a distinct third property.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "48393631b0826f7aadda3963167d996304ba0294c2fc2abd365f2cdc5cd0f7b4"
@@ -4235,8 +4463,11 @@
           "detections": [],
           "id": "dc-nested-only-two-shared-04",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two property groups share only two elements and each has a distinct third property.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "6348ec2f1b397c21e17245212e94b85de59ceadba0f0349073cf4cdd1e270eba"
@@ -4259,8 +4490,11 @@
           "detections": [],
           "id": "dc-nested-only-two-shared-05",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two property groups share only two elements and each has a distinct third property.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "7b6a316e6591300ea62334d8b1db757160e205a30e9d749fab29e0e2c6dcdd2c"
@@ -4283,8 +4517,11 @@
           "detections": [],
           "id": "dc-nested-only-two-shared-06",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two property groups share only two elements and each has a distinct third property.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "aecb480fdb2b1be41dbf2a89dc88e28a258a0e12aaa3d557170b511c7e45dba2"
@@ -4307,8 +4544,11 @@
           "detections": [],
           "id": "dc-nested-only-two-shared-07",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two property groups share only two elements and each has a distinct third property.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "f674efcfdce1bca0e6bbc9d329b59538c689642ceb96305324a0b3b18525616a"
@@ -4331,8 +4571,11 @@
           "detections": [],
           "id": "dc-nested-only-two-shared-08",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two property groups share only two elements and each has a distinct third property.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "62c2d9c249f7748c8ee3a9aac547a608b1a6f79cefbee52f3d9215bd0d39a6af"
@@ -4355,8 +4598,11 @@
           "detections": [],
           "id": "dc-nested-only-two-shared-09",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two property groups share only two elements and each has a distinct third property.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "3fb87a5ca23585234bcd10d74d7328bf1a110f2578529cef6c0681a82a604b30"
@@ -4379,8 +4625,11 @@
           "detections": [],
           "id": "dc-nested-only-two-shared-10",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two property groups share only two elements and each has a distinct third property.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "f46d9e3f451445127388811189676ec02b3552b6e1b5867652f1819be9b0affa"
@@ -4471,8 +4720,11 @@
           ],
           "id": "dc-nested-properties-positive-01",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two nominal types directly store the same three named and typed properties.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "d726a689b68495d67c53d9a48844f0506960ed33b8e9569b258289ef371bf981"
@@ -4563,8 +4815,11 @@
           ],
           "id": "dc-nested-properties-positive-02",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two nominal types directly store the same three named and typed properties.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "4f0353793eb9d85885e09d3e2da9a14a382520cca9c883f70ef2560d2413f9a1"
@@ -4655,8 +4910,11 @@
           ],
           "id": "dc-nested-properties-positive-03",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two nominal types directly store the same three named and typed properties.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "816f6cae2e82f5a41f4a5fdd91df97e8cc18c15f0c8c555c25409d9bd6bf6789"
@@ -4747,8 +5005,11 @@
           ],
           "id": "dc-nested-properties-positive-04",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two nominal types directly store the same three named and typed properties.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "3375ca57309e1f522651792262bc05fafc4b6c329401b46a1a84463b3a19273e"
@@ -4839,8 +5100,11 @@
           ],
           "id": "dc-nested-properties-positive-05",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two nominal types directly store the same three named and typed properties.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "c438d4ed27c5c2ef3d34353b8b9f888f781b62a37c477d45c0dee56d8e94293d"
@@ -4931,8 +5195,11 @@
           ],
           "id": "dc-nested-properties-positive-06",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two nominal types directly store the same three named and typed properties.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "64b1bf038dcb99a56ded0fa8acdd039c534aa8f12a6be65a8b05a97ebfce33ae"
@@ -5023,8 +5290,11 @@
           ],
           "id": "dc-nested-properties-positive-07",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two nominal types directly store the same three named and typed properties.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "90872d81a7eb8ced372b9646bb70bc40926c0b45936949d59718e21dcdb1e59f"
@@ -5115,8 +5385,11 @@
           ],
           "id": "dc-nested-properties-positive-08",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two nominal types directly store the same three named and typed properties.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "31b5d7a44f9763722972e6a9357630ae5bfc9643b47b14f0648d84e87abb414c"
@@ -5207,8 +5480,11 @@
           ],
           "id": "dc-nested-properties-positive-09",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two nominal types directly store the same three named and typed properties.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "3cee5f91660e5f001477aa885845cbbc936f94183b326d3b8d02edc11bf4f917"
@@ -5299,8 +5575,11 @@
           ],
           "id": "dc-nested-properties-positive-10",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two nominal types directly store the same three named and typed properties.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "8e0571d71040550175f5cdc1d4f943ae1a6907b4dc63ceefaa1334a4d8d6dad3"
@@ -5334,6 +5613,7 @@
         "Equal local names and type spellings can describe unrelated concepts"
       ],
       "observableScope": "Closed groups of at least three exact local-name and normalized-type elements in at least two supported parameter or stored-property units.",
+      "outOfScopeCaseIDs": [],
       "provisionalConfusionMatrix": {
         "falseNegative": 0,
         "falsePositive": 0,
@@ -5345,6 +5625,7 @@
         "precision": "1.000000",
         "recall": "1.000000"
       },
+      "provisionalMetricsPopulation": "positive-and-adversarial-negative-cases-only",
       "ruleIdentity": "swiftdebt.refactoring.data-clumps",
       "scopeExclusions": [
         "Compiler-resolved typealias and generic identity",
@@ -5357,19 +5638,23 @@
     {
       "authoredCaseCounts": {
         "adversarialNegative": 60,
+        "outOfScope": 30,
         "positive": 30,
         "repositoryShapes": 3
       },
       "caseResults": [
         {
-          "ambiguityOrBenignPattern": "two enum cases are reversed",
-          "authorLabel": "negative",
-          "classificationAgainstAuthorLabel": "true-negative",
+          "ambiguityOrBenignPattern": "reversed disjoint enum cases are a candidate equivalent dispatch",
+          "authorLabel": "out-of-scope",
+          "classificationAgainstAuthorLabel": "excluded-out-of-scope",
           "detections": [],
           "id": "rs-flat-case-order-mismatch-01",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "The same cases occur in a different order, which is semantically relevant to matching.",
+          "provisionalMetricsInclusion": "excluded-out-of-scope",
+          "rationale": "The switches are candidate-equivalent dispatches whose disjoint cases appear in a different order. Semantic equivalence and reachability are outside the ordered syntax rule.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "c97014dd88abf588b77bb8cec273695f4027ab3a6ff7d0ccb51cccb02a187dff"
@@ -5386,14 +5671,17 @@
           ]
         },
         {
-          "ambiguityOrBenignPattern": "default moves before a specific case",
-          "authorLabel": "negative",
-          "classificationAgainstAuthorLabel": "true-negative",
+          "ambiguityOrBenignPattern": "default position changes without changing the listed specific case",
+          "authorLabel": "out-of-scope",
+          "classificationAgainstAuthorLabel": "excluded-out-of-scope",
           "detections": [],
           "id": "rs-flat-case-order-mismatch-02",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "The same cases occur in a different order, which is semantically relevant to matching.",
+          "provisionalMetricsInclusion": "excluded-out-of-scope",
+          "rationale": "The switches are candidate-equivalent dispatches whose disjoint cases appear in a different order. Semantic equivalence and reachability are outside the ordered syntax rule.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "7e48a56f906a3b6fc85c6238fb5c53283bea80de860214133d8a24d6d353be85"
@@ -5410,14 +5698,17 @@
           ]
         },
         {
-          "ambiguityOrBenignPattern": "three enum cases rotate",
-          "authorLabel": "negative",
-          "classificationAgainstAuthorLabel": "true-negative",
+          "ambiguityOrBenignPattern": "rotated disjoint enum cases are a candidate equivalent dispatch",
+          "authorLabel": "out-of-scope",
+          "classificationAgainstAuthorLabel": "excluded-out-of-scope",
           "detections": [],
           "id": "rs-flat-case-order-mismatch-03",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "The same cases occur in a different order, which is semantically relevant to matching.",
+          "provisionalMetricsInclusion": "excluded-out-of-scope",
+          "rationale": "The switches are candidate-equivalent dispatches whose disjoint cases appear in a different order. Semantic equivalence and reachability are outside the ordered syntax rule.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "0bfac3e87d99cc55910c67410994dfbe1d75228fe92202fef53f534967da70d0"
@@ -5434,14 +5725,17 @@
           ]
         },
         {
-          "ambiguityOrBenignPattern": "binding and literal cases swap",
-          "authorLabel": "negative",
-          "classificationAgainstAuthorLabel": "true-negative",
+          "ambiguityOrBenignPattern": "binding and literal cases use the same candidate partition in a new order",
+          "authorLabel": "out-of-scope",
+          "classificationAgainstAuthorLabel": "excluded-out-of-scope",
           "detections": [],
           "id": "rs-flat-case-order-mismatch-04",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "The same cases occur in a different order, which is semantically relevant to matching.",
+          "provisionalMetricsInclusion": "excluded-out-of-scope",
+          "rationale": "The switches are candidate-equivalent dispatches whose disjoint cases appear in a different order. Semantic equivalence and reachability are outside the ordered syntax rule.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "3a403b659e5fa08e94d8900bf7db371454d16e51622f7924439614d72aa28e7a"
@@ -5458,14 +5752,17 @@
           ]
         },
         {
-          "ambiguityOrBenignPattern": "where-constrained cases swap",
-          "authorLabel": "negative",
-          "classificationAgainstAuthorLabel": "true-negative",
+          "ambiguityOrBenignPattern": "where-constrained and fallback cases use the same candidate partition in a new order",
+          "authorLabel": "out-of-scope",
+          "classificationAgainstAuthorLabel": "excluded-out-of-scope",
           "detections": [],
           "id": "rs-flat-case-order-mismatch-05",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "The same cases occur in a different order, which is semantically relevant to matching.",
+          "provisionalMetricsInclusion": "excluded-out-of-scope",
+          "rationale": "The switches are candidate-equivalent dispatches whose disjoint cases appear in a different order. Semantic equivalence and reachability are outside the ordered syntax rule.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "0c88c9341957fdd02b5940c5106e9cb33fb99ad60a75e183a38b48075b4c4b5a"
@@ -5482,14 +5779,17 @@
           ]
         },
         {
-          "ambiguityOrBenignPattern": "type-cast cases swap",
-          "authorLabel": "negative",
-          "classificationAgainstAuthorLabel": "true-negative",
+          "ambiguityOrBenignPattern": "type-cast cases use the same candidate partition in a new order",
+          "authorLabel": "out-of-scope",
+          "classificationAgainstAuthorLabel": "excluded-out-of-scope",
           "detections": [],
           "id": "rs-flat-case-order-mismatch-06",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "The same cases occur in a different order, which is semantically relevant to matching.",
+          "provisionalMetricsInclusion": "excluded-out-of-scope",
+          "rationale": "The switches are candidate-equivalent dispatches whose disjoint cases appear in a different order. Semantic equivalence and reachability are outside the ordered syntax rule.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "c27a6b015ca29a2d47da258b158b9113adf8a494cf12af78efadbe921799e69e"
@@ -5506,14 +5806,17 @@
           ]
         },
         {
-          "ambiguityOrBenignPattern": "range cases swap",
-          "authorLabel": "negative",
-          "classificationAgainstAuthorLabel": "true-negative",
+          "ambiguityOrBenignPattern": "disjoint range cases use the same candidate partition in a new order",
+          "authorLabel": "out-of-scope",
+          "classificationAgainstAuthorLabel": "excluded-out-of-scope",
           "detections": [],
           "id": "rs-flat-case-order-mismatch-07",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "The same cases occur in a different order, which is semantically relevant to matching.",
+          "provisionalMetricsInclusion": "excluded-out-of-scope",
+          "rationale": "The switches are candidate-equivalent dispatches whose disjoint cases appear in a different order. Semantic equivalence and reachability are outside the ordered syntax rule.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "0d390048802a6a6a720f29dcbb6fa0891b3485e6c17c1eed5502c93b2e0ac593"
@@ -5530,14 +5833,17 @@
           ]
         },
         {
-          "ambiguityOrBenignPattern": "combined case items reverse",
-          "authorLabel": "negative",
-          "classificationAgainstAuthorLabel": "true-negative",
+          "ambiguityOrBenignPattern": "combined case items reverse inside one candidate equivalent branch",
+          "authorLabel": "out-of-scope",
+          "classificationAgainstAuthorLabel": "excluded-out-of-scope",
           "detections": [],
           "id": "rs-flat-case-order-mismatch-08",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "The same cases occur in a different order, which is semantically relevant to matching.",
+          "provisionalMetricsInclusion": "excluded-out-of-scope",
+          "rationale": "The switches are candidate-equivalent dispatches whose disjoint cases appear in a different order. Semantic equivalence and reachability are outside the ordered syntax rule.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "c6fe205facac271215876052580b8434412bc991d30fedf67bae03262b5e3465"
@@ -5554,14 +5860,17 @@
           ]
         },
         {
-          "ambiguityOrBenignPattern": "nil and value cases swap",
-          "authorLabel": "negative",
-          "classificationAgainstAuthorLabel": "true-negative",
+          "ambiguityOrBenignPattern": "nil and value cases use the same candidate partition in a new order",
+          "authorLabel": "out-of-scope",
+          "classificationAgainstAuthorLabel": "excluded-out-of-scope",
           "detections": [],
           "id": "rs-flat-case-order-mismatch-09",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "The same cases occur in a different order, which is semantically relevant to matching.",
+          "provisionalMetricsInclusion": "excluded-out-of-scope",
+          "rationale": "The switches are candidate-equivalent dispatches whose disjoint cases appear in a different order. Semantic equivalence and reachability are outside the ordered syntax rule.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "4829c408191e8032dfa1eabcc38eabab4cf3956f341e4980dff5f245b10881e1"
@@ -5578,14 +5887,17 @@
           ]
         },
         {
-          "ambiguityOrBenignPattern": "wildcard and literal cases swap",
-          "authorLabel": "negative",
-          "classificationAgainstAuthorLabel": "true-negative",
+          "ambiguityOrBenignPattern": "wildcard and literal ordering needs semantic reachability analysis",
+          "authorLabel": "out-of-scope",
+          "classificationAgainstAuthorLabel": "excluded-out-of-scope",
           "detections": [],
           "id": "rs-flat-case-order-mismatch-10",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "The same cases occur in a different order, which is semantically relevant to matching.",
+          "provisionalMetricsInclusion": "excluded-out-of-scope",
+          "rationale": "The switches are candidate-equivalent dispatches whose disjoint cases appear in a different order. Semantic equivalence and reachability are outside the ordered syntax rule.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "091467d163260d15652db576be0e66ce23ef59cf4f8850f3ee43f122db495dd8"
@@ -5602,14 +5914,287 @@
           ]
         },
         {
+          "ambiguityOrBenignPattern": "different enum cases are singled out",
+          "authorLabel": "negative",
+          "classificationAgainstAuthorLabel": "true-negative",
+          "detections": [],
+          "id": "rs-flat-case-set-mismatch-01",
+          "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Two switches use the same simple discriminator but single out different values, ranges, patterns, or types, so their branch partitions are different.",
+          "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
+          "sourceIdentity": {
+            "algorithm": "sha256-framed-path-and-bytes-v1",
+            "value": "c490425e7fe5d47fd19c928708ae9a2603ebb29770d66bce6a52fc7e5acecb80"
+          },
+          "sourcePaths": [
+            "rs-flat-case-set-mismatch-01--Case.swift"
+          ],
+          "sourceSpans": [
+            {
+              "endLine": 19,
+              "file": "rs-flat-case-set-mismatch-01--Case.swift",
+              "startLine": 1
+            }
+          ]
+        },
+        {
+          "ambiguityOrBenignPattern": "nil and one specific wrapped value are singled out",
+          "authorLabel": "negative",
+          "classificationAgainstAuthorLabel": "true-negative",
+          "detections": [],
+          "id": "rs-flat-case-set-mismatch-02",
+          "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Two switches use the same simple discriminator but single out different values, ranges, patterns, or types, so their branch partitions are different.",
+          "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
+          "sourceIdentity": {
+            "algorithm": "sha256-framed-path-and-bytes-v1",
+            "value": "373fe1e6194d1f657db6aad819354885c2b04bf85fb5331b833dd951c1648191"
+          },
+          "sourcePaths": [
+            "rs-flat-case-set-mismatch-02--Case.swift"
+          ],
+          "sourceSpans": [
+            {
+              "endLine": 18,
+              "file": "rs-flat-case-set-mismatch-02--Case.swift",
+              "startLine": 1
+            }
+          ]
+        },
+        {
+          "ambiguityOrBenignPattern": "different integer literals are singled out",
+          "authorLabel": "negative",
+          "classificationAgainstAuthorLabel": "true-negative",
+          "detections": [],
+          "id": "rs-flat-case-set-mismatch-03",
+          "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Two switches use the same simple discriminator but single out different values, ranges, patterns, or types, so their branch partitions are different.",
+          "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
+          "sourceIdentity": {
+            "algorithm": "sha256-framed-path-and-bytes-v1",
+            "value": "edf218e772b31895fd47a1d59b79b55f17bbdedb4d69a6b9c20f417e194ece6a"
+          },
+          "sourcePaths": [
+            "rs-flat-case-set-mismatch-03--Case.swift"
+          ],
+          "sourceSpans": [
+            {
+              "endLine": 18,
+              "file": "rs-flat-case-set-mismatch-03--Case.swift",
+              "startLine": 1
+            }
+          ]
+        },
+        {
+          "ambiguityOrBenignPattern": "disjoint integer ranges are singled out",
+          "authorLabel": "negative",
+          "classificationAgainstAuthorLabel": "true-negative",
+          "detections": [],
+          "id": "rs-flat-case-set-mismatch-04",
+          "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Two switches use the same simple discriminator but single out different values, ranges, patterns, or types, so their branch partitions are different.",
+          "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
+          "sourceIdentity": {
+            "algorithm": "sha256-framed-path-and-bytes-v1",
+            "value": "552d13a3cc32a8a1f31310a29fe6842eedc040ec87aa436fcf37a13f57f83033"
+          },
+          "sourcePaths": [
+            "rs-flat-case-set-mismatch-04--Case.swift"
+          ],
+          "sourceSpans": [
+            {
+              "endLine": 18,
+              "file": "rs-flat-case-set-mismatch-04--Case.swift",
+              "startLine": 1
+            }
+          ]
+        },
+        {
+          "ambiguityOrBenignPattern": "different tuple positions are constrained",
+          "authorLabel": "negative",
+          "classificationAgainstAuthorLabel": "true-negative",
+          "detections": [],
+          "id": "rs-flat-case-set-mismatch-05",
+          "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Two switches use the same simple discriminator but single out different values, ranges, patterns, or types, so their branch partitions are different.",
+          "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
+          "sourceIdentity": {
+            "algorithm": "sha256-framed-path-and-bytes-v1",
+            "value": "db9676c393a0358f4f468bb720c4128b11f8f97b00eba97de0b2e870f3e1bbf7"
+          },
+          "sourcePaths": [
+            "rs-flat-case-set-mismatch-05--Case.swift"
+          ],
+          "sourceSpans": [
+            {
+              "endLine": 18,
+              "file": "rs-flat-case-set-mismatch-05--Case.swift",
+              "startLine": 1
+            }
+          ]
+        },
+        {
+          "ambiguityOrBenignPattern": "one specific success and a failure are singled out",
+          "authorLabel": "negative",
+          "classificationAgainstAuthorLabel": "true-negative",
+          "detections": [],
+          "id": "rs-flat-case-set-mismatch-06",
+          "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Two switches use the same simple discriminator but single out different values, ranges, patterns, or types, so their branch partitions are different.",
+          "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
+          "sourceIdentity": {
+            "algorithm": "sha256-framed-path-and-bytes-v1",
+            "value": "21a049babe602a421e41996a7284909fede69f7da0795804464c6e5f844d4231"
+          },
+          "sourcePaths": [
+            "rs-flat-case-set-mismatch-06--Case.swift"
+          ],
+          "sourceSpans": [
+            {
+              "endLine": 19,
+              "file": "rs-flat-case-set-mismatch-06--Case.swift",
+              "startLine": 1
+            }
+          ]
+        },
+        {
+          "ambiguityOrBenignPattern": "different associated-value cases are singled out",
+          "authorLabel": "negative",
+          "classificationAgainstAuthorLabel": "true-negative",
+          "detections": [],
+          "id": "rs-flat-case-set-mismatch-07",
+          "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Two switches use the same simple discriminator but single out different values, ranges, patterns, or types, so their branch partitions are different.",
+          "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
+          "sourceIdentity": {
+            "algorithm": "sha256-framed-path-and-bytes-v1",
+            "value": "5fa437459eaf20bf97052b20865ee3d92290a9b91f7670512fb2c8985010bef7"
+          },
+          "sourcePaths": [
+            "rs-flat-case-set-mismatch-07--Case.swift"
+          ],
+          "sourceSpans": [
+            {
+              "endLine": 19,
+              "file": "rs-flat-case-set-mismatch-07--Case.swift",
+              "startLine": 1
+            }
+          ]
+        },
+        {
+          "ambiguityOrBenignPattern": "different string literals are singled out",
+          "authorLabel": "negative",
+          "classificationAgainstAuthorLabel": "true-negative",
+          "detections": [],
+          "id": "rs-flat-case-set-mismatch-08",
+          "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Two switches use the same simple discriminator but single out different values, ranges, patterns, or types, so their branch partitions are different.",
+          "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
+          "sourceIdentity": {
+            "algorithm": "sha256-framed-path-and-bytes-v1",
+            "value": "b6100d977f4e05ca62b85a0efb9e82023b5727a0023a9ed5ffbd923025c380a4"
+          },
+          "sourcePaths": [
+            "rs-flat-case-set-mismatch-08--Case.swift"
+          ],
+          "sourceSpans": [
+            {
+              "endLine": 18,
+              "file": "rs-flat-case-set-mismatch-08--Case.swift",
+              "startLine": 1
+            }
+          ]
+        },
+        {
+          "ambiguityOrBenignPattern": "different runtime types are singled out",
+          "authorLabel": "negative",
+          "classificationAgainstAuthorLabel": "true-negative",
+          "detections": [],
+          "id": "rs-flat-case-set-mismatch-09",
+          "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Two switches use the same simple discriminator but single out different values, ranges, patterns, or types, so their branch partitions are different.",
+          "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
+          "sourceIdentity": {
+            "algorithm": "sha256-framed-path-and-bytes-v1",
+            "value": "48cc41528b82f204d8cd52d09d17f9ea3c5ea006be5c5ef51b52378ced6a8d48"
+          },
+          "sourcePaths": [
+            "rs-flat-case-set-mismatch-09--Case.swift"
+          ],
+          "sourceSpans": [
+            {
+              "endLine": 18,
+              "file": "rs-flat-case-set-mismatch-09--Case.swift",
+              "startLine": 1
+            }
+          ]
+        },
+        {
+          "ambiguityOrBenignPattern": "disjoint enum case groups are singled out",
+          "authorLabel": "negative",
+          "classificationAgainstAuthorLabel": "true-negative",
+          "detections": [],
+          "id": "rs-flat-case-set-mismatch-10",
+          "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Two switches use the same simple discriminator but single out different values, ranges, patterns, or types, so their branch partitions are different.",
+          "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
+          "sourceIdentity": {
+            "algorithm": "sha256-framed-path-and-bytes-v1",
+            "value": "4a0a9bccdf7ebe4081431acfccdddce2486008ef8ab8bf7930652185061d2be3"
+          },
+          "sourcePaths": [
+            "rs-flat-case-set-mismatch-10--Case.swift"
+          ],
+          "sourceSpans": [
+            {
+              "endLine": 19,
+              "file": "rs-flat-case-set-mismatch-10--Case.swift",
+              "startLine": 1
+            }
+          ]
+        },
+        {
           "ambiguityOrBenignPattern": "different local identifiers",
           "authorLabel": "negative",
           "classificationAgainstAuthorLabel": "true-negative",
           "detections": [],
           "id": "rs-flat-discriminator-mismatch-01",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "The switch shapes match but their simple discriminator identifiers differ.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "c4d5a005e721e7c57fea8485791500c3786ee3a221e5a753af0dd9e6a3048d77"
@@ -5632,8 +6217,11 @@
           "detections": [],
           "id": "rs-flat-discriminator-mismatch-02",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "The switch shapes match but their simple discriminator identifiers differ.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "4ede72638e4b265c213449a4ceb644d68f959397c4e13cf1752a92cc2e2e44f6"
@@ -5650,17 +6238,20 @@
           ]
         },
         {
-          "ambiguityOrBenignPattern": "identifier and self member access differ",
+          "ambiguityOrBenignPattern": "local identifier and nested member access differ",
           "authorLabel": "negative",
           "classificationAgainstAuthorLabel": "true-negative",
           "detections": [],
           "id": "rs-flat-discriminator-mismatch-03",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "The switch shapes match but their simple discriminator identifiers differ.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
-            "value": "9d6c5ab61cee03b9ca4e7d8715750f00b0df3767d855cfd6cec209d9aec0fff2"
+            "value": "451e2236ed0244c501e3accc2302dd9cb30225360b72b0e6a5011b0075ac08e2"
           },
           "sourcePaths": [
             "rs-flat-discriminator-mismatch-03--Case.swift"
@@ -5680,8 +6271,11 @@
           "detections": [],
           "id": "rs-flat-discriminator-mismatch-04",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "The switch shapes match but their simple discriminator identifiers differ.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "8401294bcfb3c26084916b487c3b2d6ef183e7f571f1ba8af822e4c0c174248c"
@@ -5704,8 +6298,11 @@
           "detections": [],
           "id": "rs-flat-discriminator-mismatch-05",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "The switch shapes match but their simple discriminator identifiers differ.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "ed9e0d5d5e7e79f8348440705e241ba82449b67d0681bb7f960992f22bf49d0a"
@@ -5728,8 +6325,11 @@
           "detections": [],
           "id": "rs-flat-discriminator-mismatch-06",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "The switch shapes match but their simple discriminator identifiers differ.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "c7cff7edbb664c6ab695becc4fa71648fa8e8e42afffff9b79aa3093052aadf0"
@@ -5752,8 +6352,11 @@
           "detections": [],
           "id": "rs-flat-discriminator-mismatch-07",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "The switch shapes match but their simple discriminator identifiers differ.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "88e884cffa5945c5cb9e758811d00a9b1958d62168694686929f1d733d02fac7"
@@ -5776,8 +6379,11 @@
           "detections": [],
           "id": "rs-flat-discriminator-mismatch-08",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "The switch shapes match but their simple discriminator identifiers differ.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "41bb630dbbcc4bfa4857a2ae42299ff133677ccdae7daf7e7c78df326bf82df1"
@@ -5794,17 +6400,20 @@
           ]
         },
         {
-          "ambiguityOrBenignPattern": "one discriminator has an explicit self base",
+          "ambiguityOrBenignPattern": "different members on self differ",
           "authorLabel": "negative",
           "classificationAgainstAuthorLabel": "true-negative",
           "detections": [],
           "id": "rs-flat-discriminator-mismatch-09",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "The switch shapes match but their simple discriminator identifiers differ.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
-            "value": "31ca7020777fb6a0fe2fad15412e91449c8d37be66f31176ba7bbbb00444cac8"
+            "value": "cb82501d3689d5f0b830ff99953e1aeabd457e952b1f0791b0abb5f576aac996"
           },
           "sourcePaths": [
             "rs-flat-discriminator-mismatch-09--Case.swift"
@@ -5824,8 +6433,11 @@
           "detections": [],
           "id": "rs-flat-discriminator-mismatch-10",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "The switch shapes match but their simple discriminator identifiers differ.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "4366108ed50171f5524877944a3ef21074d12aae0b5b7fb48d24822e043622ba"
@@ -5933,8 +6545,11 @@
           ],
           "id": "rs-flat-methods-positive-01",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two methods in one nominal scope switch on the same identifier with the same ordered cases.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "da579741d5de206a4451d1f0e266ff0d072e449d034a0e694adb4de61fb289ed"
@@ -6042,8 +6657,11 @@
           ],
           "id": "rs-flat-methods-positive-02",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two methods in one nominal scope switch on the same identifier with the same ordered cases.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "b0d8d18e50fdb472e5ae3eb572732c422bdfd412cfb2f00f938d7f3b38769ae1"
@@ -6151,8 +6769,11 @@
           ],
           "id": "rs-flat-methods-positive-03",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two methods in one nominal scope switch on the same identifier with the same ordered cases.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "5c6f5fa26632a68b50fba450940ba71a9fceadfe7a446bff9f97bfad26eb3784"
@@ -6260,8 +6881,11 @@
           ],
           "id": "rs-flat-methods-positive-04",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two methods in one nominal scope switch on the same identifier with the same ordered cases.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "4991010b24ecbbe738a2588b928cfe6a5b61e4f5bcc9dd4b2598cafd6ac22e59"
@@ -6369,8 +6993,11 @@
           ],
           "id": "rs-flat-methods-positive-05",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two methods in one nominal scope switch on the same identifier with the same ordered cases.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "72f1dd3c43b3ebafdcdd529e9f7a3db3ba755553926afb0b5b875174758f1be3"
@@ -6478,8 +7105,11 @@
           ],
           "id": "rs-flat-methods-positive-06",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two methods in one nominal scope switch on the same identifier with the same ordered cases.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "789531a6061689555ad037963a2b9d1735ff8c51df850c2bf4169e105bc44f33"
@@ -6587,8 +7217,11 @@
           ],
           "id": "rs-flat-methods-positive-07",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two methods in one nominal scope switch on the same identifier with the same ordered cases.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "c1072dbaf1773cde8f1e12968d5de211168a19631481706eae72c53037168a75"
@@ -6696,8 +7329,11 @@
           ],
           "id": "rs-flat-methods-positive-08",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two methods in one nominal scope switch on the same identifier with the same ordered cases.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "61f5c093b28c1ec37bc87df12a37fd5577fe61a82856d820356199edcc4d686f"
@@ -6805,8 +7441,11 @@
           ],
           "id": "rs-flat-methods-positive-09",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two methods in one nominal scope switch on the same identifier with the same ordered cases.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "1529c19f0f5f8f44e87969fcafe47246662c86bd06871ac7ed0d55db404d2277"
@@ -6914,8 +7553,11 @@
           ],
           "id": "rs-flat-methods-positive-10",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two methods in one nominal scope switch on the same identifier with the same ordered cases.",
           "repositoryShape": "flat-single-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "86377ce160254908b1bdbe3e529aded794f81a9f0447495bbcdb557d5765d5af"
@@ -6932,14 +7574,287 @@
           ]
         },
         {
-          "ambiguityOrBenignPattern": "call expressions are not simple discriminators",
+          "ambiguityOrBenignPattern": "three explicit enum branches contract to one explicit branch",
           "authorLabel": "negative",
           "classificationAgainstAuthorLabel": "true-negative",
           "detections": [],
+          "id": "rs-modules-branch-partition-mismatch-01",
+          "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Two switches use the same simple discriminator but one has a strictly finer branch partition than the other.",
+          "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
+          "sourceIdentity": {
+            "algorithm": "sha256-framed-path-and-bytes-v1",
+            "value": "1865708530214d22e0c123050faa14c6cef4dcdfbc5f99a4d0255fc91db38f52"
+          },
+          "sourcePaths": [
+            "Modules/Module1/rs-modules-branch-partition-mismatch-01/Case.swift"
+          ],
+          "sourceSpans": [
+            {
+              "endLine": 23,
+              "file": "Modules/Module1/rs-modules-branch-partition-mismatch-01/Case.swift",
+              "startLine": 1
+            }
+          ]
+        },
+        {
+          "ambiguityOrBenignPattern": "four explicit enum branches contract to two explicit branches",
+          "authorLabel": "negative",
+          "classificationAgainstAuthorLabel": "true-negative",
+          "detections": [],
+          "id": "rs-modules-branch-partition-mismatch-02",
+          "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Two switches use the same simple discriminator but one has a strictly finer branch partition than the other.",
+          "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
+          "sourceIdentity": {
+            "algorithm": "sha256-framed-path-and-bytes-v1",
+            "value": "538b167e021a5b09ad2291e8339f12a053bf22dbf06337f49834629615392458"
+          },
+          "sourcePaths": [
+            "Modules/Module1/rs-modules-branch-partition-mismatch-02/Case.swift"
+          ],
+          "sourceSpans": [
+            {
+              "endLine": 27,
+              "file": "Modules/Module1/rs-modules-branch-partition-mismatch-02/Case.swift",
+              "startLine": 1
+            }
+          ]
+        },
+        {
+          "ambiguityOrBenignPattern": "two integer literals contract to one literal",
+          "authorLabel": "negative",
+          "classificationAgainstAuthorLabel": "true-negative",
+          "detections": [],
+          "id": "rs-modules-branch-partition-mismatch-03",
+          "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Two switches use the same simple discriminator but one has a strictly finer branch partition than the other.",
+          "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
+          "sourceIdentity": {
+            "algorithm": "sha256-framed-path-and-bytes-v1",
+            "value": "e3ee10b25e33e42028613d925c4c61d6b75e6e3cd0ecdbab8ed4e495a3393759"
+          },
+          "sourcePaths": [
+            "Modules/Module1/rs-modules-branch-partition-mismatch-03/Case.swift"
+          ],
+          "sourceSpans": [
+            {
+              "endLine": 20,
+              "file": "Modules/Module1/rs-modules-branch-partition-mismatch-03/Case.swift",
+              "startLine": 1
+            }
+          ]
+        },
+        {
+          "ambiguityOrBenignPattern": "two integer ranges contract to one range",
+          "authorLabel": "negative",
+          "classificationAgainstAuthorLabel": "true-negative",
+          "detections": [],
+          "id": "rs-modules-branch-partition-mismatch-04",
+          "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Two switches use the same simple discriminator but one has a strictly finer branch partition than the other.",
+          "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
+          "sourceIdentity": {
+            "algorithm": "sha256-framed-path-and-bytes-v1",
+            "value": "5fab223d2d96bd8a269f1d74b0701d37743ffea3e58c0decc6cfba963839e19c"
+          },
+          "sourcePaths": [
+            "Modules/Module1/rs-modules-branch-partition-mismatch-04/Case.swift"
+          ],
+          "sourceSpans": [
+            {
+              "endLine": 20,
+              "file": "Modules/Module1/rs-modules-branch-partition-mismatch-04/Case.swift",
+              "startLine": 1
+            }
+          ]
+        },
+        {
+          "ambiguityOrBenignPattern": "two string literals contract to one literal",
+          "authorLabel": "negative",
+          "classificationAgainstAuthorLabel": "true-negative",
+          "detections": [],
+          "id": "rs-modules-branch-partition-mismatch-05",
+          "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Two switches use the same simple discriminator but one has a strictly finer branch partition than the other.",
+          "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
+          "sourceIdentity": {
+            "algorithm": "sha256-framed-path-and-bytes-v1",
+            "value": "930a3b2635fb0b2c77900132ab01b76b55a7c496f97d2cfbdfb60c8e629914b2"
+          },
+          "sourcePaths": [
+            "Modules/Module1/rs-modules-branch-partition-mismatch-05/Case.swift"
+          ],
+          "sourceSpans": [
+            {
+              "endLine": 20,
+              "file": "Modules/Module1/rs-modules-branch-partition-mismatch-05/Case.swift",
+              "startLine": 1
+            }
+          ]
+        },
+        {
+          "ambiguityOrBenignPattern": "two optional value predicates contract to one predicate",
+          "authorLabel": "negative",
+          "classificationAgainstAuthorLabel": "true-negative",
+          "detections": [],
+          "id": "rs-modules-branch-partition-mismatch-06",
+          "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Two switches use the same simple discriminator but one has a strictly finer branch partition than the other.",
+          "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
+          "sourceIdentity": {
+            "algorithm": "sha256-framed-path-and-bytes-v1",
+            "value": "de70f23a74fb965815624e9a4c83f1ec9244f6d143420ccf15486448f7241f27"
+          },
+          "sourcePaths": [
+            "Modules/Module1/rs-modules-branch-partition-mismatch-06/Case.swift"
+          ],
+          "sourceSpans": [
+            {
+              "endLine": 20,
+              "file": "Modules/Module1/rs-modules-branch-partition-mismatch-06/Case.swift",
+              "startLine": 1
+            }
+          ]
+        },
+        {
+          "ambiguityOrBenignPattern": "two tuple patterns contract to one pattern",
+          "authorLabel": "negative",
+          "classificationAgainstAuthorLabel": "true-negative",
+          "detections": [],
+          "id": "rs-modules-branch-partition-mismatch-07",
+          "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Two switches use the same simple discriminator but one has a strictly finer branch partition than the other.",
+          "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
+          "sourceIdentity": {
+            "algorithm": "sha256-framed-path-and-bytes-v1",
+            "value": "ee04f289a11f168073b7f4f86dd2a5d1823ba2367c073584a4850c9c78984a63"
+          },
+          "sourcePaths": [
+            "Modules/Module1/rs-modules-branch-partition-mismatch-07/Case.swift"
+          ],
+          "sourceSpans": [
+            {
+              "endLine": 20,
+              "file": "Modules/Module1/rs-modules-branch-partition-mismatch-07/Case.swift",
+              "startLine": 1
+            }
+          ]
+        },
+        {
+          "ambiguityOrBenignPattern": "two runtime type patterns contract to one type",
+          "authorLabel": "negative",
+          "classificationAgainstAuthorLabel": "true-negative",
+          "detections": [],
+          "id": "rs-modules-branch-partition-mismatch-08",
+          "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Two switches use the same simple discriminator but one has a strictly finer branch partition than the other.",
+          "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
+          "sourceIdentity": {
+            "algorithm": "sha256-framed-path-and-bytes-v1",
+            "value": "10156fbd70cce5146b0aab3894e430139870e5ebe6cd7f58d8972543cf148596"
+          },
+          "sourcePaths": [
+            "Modules/Module1/rs-modules-branch-partition-mismatch-08/Case.swift"
+          ],
+          "sourceSpans": [
+            {
+              "endLine": 20,
+              "file": "Modules/Module1/rs-modules-branch-partition-mismatch-08/Case.swift",
+              "startLine": 1
+            }
+          ]
+        },
+        {
+          "ambiguityOrBenignPattern": "success and failure predicates contract to success only",
+          "authorLabel": "negative",
+          "classificationAgainstAuthorLabel": "true-negative",
+          "detections": [],
+          "id": "rs-modules-branch-partition-mismatch-09",
+          "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Two switches use the same simple discriminator but one has a strictly finer branch partition than the other.",
+          "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
+          "sourceIdentity": {
+            "algorithm": "sha256-framed-path-and-bytes-v1",
+            "value": "3057cdbc8218de26abc73f6325297dacc04d082a0ae3b4843247821e2ea2586b"
+          },
+          "sourcePaths": [
+            "Modules/Module1/rs-modules-branch-partition-mismatch-09/Case.swift"
+          ],
+          "sourceSpans": [
+            {
+              "endLine": 21,
+              "file": "Modules/Module1/rs-modules-branch-partition-mismatch-09/Case.swift",
+              "startLine": 1
+            }
+          ]
+        },
+        {
+          "ambiguityOrBenignPattern": "two combined enum groups contract to one combined group",
+          "authorLabel": "negative",
+          "classificationAgainstAuthorLabel": "true-negative",
+          "detections": [],
+          "id": "rs-modules-branch-partition-mismatch-10",
+          "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Two switches use the same simple discriminator but one has a strictly finer branch partition than the other.",
+          "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
+          "sourceIdentity": {
+            "algorithm": "sha256-framed-path-and-bytes-v1",
+            "value": "713e60ea7935be34c011bd68351c05b19835df65037ddec8b3c6cc7885b58dcb"
+          },
+          "sourcePaths": [
+            "Modules/Module1/rs-modules-branch-partition-mismatch-10/Case.swift"
+          ],
+          "sourceSpans": [
+            {
+              "endLine": 21,
+              "file": "Modules/Module1/rs-modules-branch-partition-mismatch-10/Case.swift",
+              "startLine": 1
+            }
+          ]
+        },
+        {
+          "ambiguityOrBenignPattern": "call expressions are not simple discriminators",
+          "authorLabel": "out-of-scope",
+          "classificationAgainstAuthorLabel": "excluded-out-of-scope",
+          "detections": [],
           "id": "rs-modules-compound-discriminator-01",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "Call expressions are outside the simple-discriminator observable scope.",
+          "provisionalMetricsInclusion": "excluded-out-of-scope",
+          "rationale": "The repeated dispatch candidates use compound discriminator expressions that the rule explicitly does not resolve, so they are excluded from the confusion matrix.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "4307bc6b4dba17e70876c5d70494d35cb8dbadd3fdbeaf534294c00efac74b18"
@@ -6957,13 +7872,16 @@
         },
         {
           "ambiguityOrBenignPattern": "subscript expressions are not simple discriminators",
-          "authorLabel": "negative",
-          "classificationAgainstAuthorLabel": "true-negative",
+          "authorLabel": "out-of-scope",
+          "classificationAgainstAuthorLabel": "excluded-out-of-scope",
           "detections": [],
           "id": "rs-modules-compound-discriminator-02",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "Call expressions are outside the simple-discriminator observable scope.",
+          "provisionalMetricsInclusion": "excluded-out-of-scope",
+          "rationale": "The repeated dispatch candidates use compound discriminator expressions that the rule explicitly does not resolve, so they are excluded from the confusion matrix.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "bba256694633c77b48261d5e4275042ccb78be9c5c7a0928d459262ecb53725c"
@@ -6981,13 +7899,16 @@
         },
         {
           "ambiguityOrBenignPattern": "tuple expressions are not simple discriminators",
-          "authorLabel": "negative",
-          "classificationAgainstAuthorLabel": "true-negative",
+          "authorLabel": "out-of-scope",
+          "classificationAgainstAuthorLabel": "excluded-out-of-scope",
           "detections": [],
           "id": "rs-modules-compound-discriminator-03",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "Call expressions are outside the simple-discriminator observable scope.",
+          "provisionalMetricsInclusion": "excluded-out-of-scope",
+          "rationale": "The repeated dispatch candidates use compound discriminator expressions that the rule explicitly does not resolve, so they are excluded from the confusion matrix.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "e297436c4da42419c8e3c97c92ebe2bb080dc44922a7b96b9403792ff8159750"
@@ -7005,13 +7926,16 @@
         },
         {
           "ambiguityOrBenignPattern": "binary expressions are not simple discriminators",
-          "authorLabel": "negative",
-          "classificationAgainstAuthorLabel": "true-negative",
+          "authorLabel": "out-of-scope",
+          "classificationAgainstAuthorLabel": "excluded-out-of-scope",
           "detections": [],
           "id": "rs-modules-compound-discriminator-04",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "Call expressions are outside the simple-discriminator observable scope.",
+          "provisionalMetricsInclusion": "excluded-out-of-scope",
+          "rationale": "The repeated dispatch candidates use compound discriminator expressions that the rule explicitly does not resolve, so they are excluded from the confusion matrix.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "9770941ca0e3a739000ea8cf2824b1a2b41035ad9ba525f7d47db4a9c57c548d"
@@ -7029,13 +7953,16 @@
         },
         {
           "ambiguityOrBenignPattern": "ternary expressions are not simple discriminators",
-          "authorLabel": "negative",
-          "classificationAgainstAuthorLabel": "true-negative",
+          "authorLabel": "out-of-scope",
+          "classificationAgainstAuthorLabel": "excluded-out-of-scope",
           "detections": [],
           "id": "rs-modules-compound-discriminator-05",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "Call expressions are outside the simple-discriminator observable scope.",
+          "provisionalMetricsInclusion": "excluded-out-of-scope",
+          "rationale": "The repeated dispatch candidates use compound discriminator expressions that the rule explicitly does not resolve, so they are excluded from the confusion matrix.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "a61f97bf3af4872a946d46f0c281acf67ded42cbdf0149f2fcffb6a735d5e33e"
@@ -7053,13 +7980,16 @@
         },
         {
           "ambiguityOrBenignPattern": "forced-value expressions are not simple discriminators",
-          "authorLabel": "negative",
-          "classificationAgainstAuthorLabel": "true-negative",
+          "authorLabel": "out-of-scope",
+          "classificationAgainstAuthorLabel": "excluded-out-of-scope",
           "detections": [],
           "id": "rs-modules-compound-discriminator-06",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "Call expressions are outside the simple-discriminator observable scope.",
+          "provisionalMetricsInclusion": "excluded-out-of-scope",
+          "rationale": "The repeated dispatch candidates use compound discriminator expressions that the rule explicitly does not resolve, so they are excluded from the confusion matrix.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "6dbc2320832f1449f4853e231919d8533c29c1b6025f6e18cfa242dde0469c30"
@@ -7077,13 +8007,16 @@
         },
         {
           "ambiguityOrBenignPattern": "optional-chain expressions are not simple discriminators",
-          "authorLabel": "negative",
-          "classificationAgainstAuthorLabel": "true-negative",
+          "authorLabel": "out-of-scope",
+          "classificationAgainstAuthorLabel": "excluded-out-of-scope",
           "detections": [],
           "id": "rs-modules-compound-discriminator-07",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "Call expressions are outside the simple-discriminator observable scope.",
+          "provisionalMetricsInclusion": "excluded-out-of-scope",
+          "rationale": "The repeated dispatch candidates use compound discriminator expressions that the rule explicitly does not resolve, so they are excluded from the confusion matrix.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "6668d7232f85e287bae561ae52aeabb67bfafc67b832515ee0fbc8de714fe0f9"
@@ -7101,13 +8034,16 @@
         },
         {
           "ambiguityOrBenignPattern": "cast expressions are not simple discriminators",
-          "authorLabel": "negative",
-          "classificationAgainstAuthorLabel": "true-negative",
+          "authorLabel": "out-of-scope",
+          "classificationAgainstAuthorLabel": "excluded-out-of-scope",
           "detections": [],
           "id": "rs-modules-compound-discriminator-08",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "Call expressions are outside the simple-discriminator observable scope.",
+          "provisionalMetricsInclusion": "excluded-out-of-scope",
+          "rationale": "The repeated dispatch candidates use compound discriminator expressions that the rule explicitly does not resolve, so they are excluded from the confusion matrix.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "6f3a3555eaa4473d3a46bb297cd8f21f87c3aa205e913c727b181e8757b01843"
@@ -7125,13 +8061,16 @@
         },
         {
           "ambiguityOrBenignPattern": "await expressions are not simple discriminators",
-          "authorLabel": "negative",
-          "classificationAgainstAuthorLabel": "true-negative",
+          "authorLabel": "out-of-scope",
+          "classificationAgainstAuthorLabel": "excluded-out-of-scope",
           "detections": [],
           "id": "rs-modules-compound-discriminator-09",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "Call expressions are outside the simple-discriminator observable scope.",
+          "provisionalMetricsInclusion": "excluded-out-of-scope",
+          "rationale": "The repeated dispatch candidates use compound discriminator expressions that the rule explicitly does not resolve, so they are excluded from the confusion matrix.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "37250972fb7510b1e735253fc58c64a31d60c7aadd0de490a8e30b0ffb27ec97"
@@ -7149,13 +8088,16 @@
         },
         {
           "ambiguityOrBenignPattern": "try expressions are not simple discriminators",
-          "authorLabel": "negative",
-          "classificationAgainstAuthorLabel": "true-negative",
+          "authorLabel": "out-of-scope",
+          "classificationAgainstAuthorLabel": "excluded-out-of-scope",
           "detections": [],
           "id": "rs-modules-compound-discriminator-10",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "Call expressions are outside the simple-discriminator observable scope.",
+          "provisionalMetricsInclusion": "excluded-out-of-scope",
+          "rationale": "The repeated dispatch candidates use compound discriminator expressions that the rule explicitly does not resolve, so they are excluded from the confusion matrix.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "137e683fc63953dc3f54675501d2240b5c4ac2242d479f94f264c023c7c27bcc"
@@ -7263,8 +8205,11 @@
           ],
           "id": "rs-modules-extensions-positive-01",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two extensions of one type in the same module contain the same switch shape.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "385072af12bd6662335b6ef365e146be740d0b48ec831fc698af49387bd1b433"
@@ -7378,8 +8323,11 @@
           ],
           "id": "rs-modules-extensions-positive-02",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two extensions of one type in the same module contain the same switch shape.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "72926f09de3e7ef4d0e741dcdcb829640f020aaec70a7bb80ef70196de71f1ce"
@@ -7493,8 +8441,11 @@
           ],
           "id": "rs-modules-extensions-positive-03",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two extensions of one type in the same module contain the same switch shape.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "332df042a4dbf79aa09fd5bb5a407a286f674be3fe16248f4cb202171e6e5254"
@@ -7608,8 +8559,11 @@
           ],
           "id": "rs-modules-extensions-positive-04",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two extensions of one type in the same module contain the same switch shape.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "3e44a943a252e9e7307087841529c30ab03a7c20fc04d247add238e4bb8c7727"
@@ -7723,8 +8677,11 @@
           ],
           "id": "rs-modules-extensions-positive-05",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two extensions of one type in the same module contain the same switch shape.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "ba9ea861a65a73e8f30eac700fcda34b5224c796e4972329b007dbb287f478e6"
@@ -7838,8 +8795,11 @@
           ],
           "id": "rs-modules-extensions-positive-06",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two extensions of one type in the same module contain the same switch shape.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "a0a1bad07c1cdf768e71e22ed7e9b04422704020886ca53d66e03cc74bb44ab0"
@@ -7953,8 +8913,11 @@
           ],
           "id": "rs-modules-extensions-positive-07",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two extensions of one type in the same module contain the same switch shape.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "60c3d0e674a4f28ba4b6d00295f469023c73297f1f6288e461765622f49e41fc"
@@ -8068,8 +9031,11 @@
           ],
           "id": "rs-modules-extensions-positive-08",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two extensions of one type in the same module contain the same switch shape.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "bfeb5c31aef68ad11c5924b6fd5d9e93d636fcf298f6961fc3ffe45445b0eead"
@@ -8183,8 +9149,11 @@
           ],
           "id": "rs-modules-extensions-positive-09",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two extensions of one type in the same module contain the same switch shape.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "c89b537460dcb84333ca97cff96a1477eb569432bc60392d1143b9444d9007d6"
@@ -8298,8 +9267,11 @@
           ],
           "id": "rs-modules-extensions-positive-10",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two extensions of one type in the same module contain the same switch shape.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "b80db5e5e5d50bca67b667f6da938000d57a537403bb2f89998df583d3bfdb46"
@@ -8328,8 +9300,11 @@
           "detections": [],
           "id": "rs-modules-where-clause-01",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "A where clause changes the normalized ordered case-label shape.",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "The where predicates or their placement differ structurally and describe different branch conditions.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "2807e95ec5a8abb2729e5874777ce5335a0fd89de6f716ab1a2917ad61fcee5f"
@@ -8352,8 +9327,11 @@
           "detections": [],
           "id": "rs-modules-where-clause-02",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "A where clause changes the normalized ordered case-label shape.",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "The where predicates or their placement differ structurally and describe different branch conditions.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "7c2c168c3b866fc6b54a870b4c8d67c404f5be953f9578f825eb9b640ea83769"
@@ -8376,8 +9354,11 @@
           "detections": [],
           "id": "rs-modules-where-clause-03",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "A where clause changes the normalized ordered case-label shape.",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "The where predicates or their placement differ structurally and describe different branch conditions.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "c8b9de765f13522fb198a77a37e9760b5a3c2495b82a848d317482e8eee0cd9c"
@@ -8394,17 +9375,20 @@
           ]
         },
         {
-          "ambiguityOrBenignPattern": "where-bound identifiers differ",
+          "ambiguityOrBenignPattern": "where-bound values feed different expressions",
           "authorLabel": "negative",
           "classificationAgainstAuthorLabel": "true-negative",
           "detections": [],
           "id": "rs-modules-where-clause-04",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "A where clause changes the normalized ordered case-label shape.",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "The where predicates or their placement differ structurally and describe different branch conditions.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
-            "value": "61185038b676cfe979e0cff20135b8bac79776e3551843caa027668b2c16d3fb"
+            "value": "995ae50ac7897344089d17aa83e5b1e40695c35f8ebf0ab09086c059b2d8403c"
           },
           "sourcePaths": [
             "Modules/Module3/rs-modules-where-clause-04/Case.swift"
@@ -8424,8 +9408,11 @@
           "detections": [],
           "id": "rs-modules-where-clause-05",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "A where clause changes the normalized ordered case-label shape.",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "The where predicates or their placement differ structurally and describe different branch conditions.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "7af121ab0f0555c8d41e289c8effff959ddfdad3e62f78d5ec8053fc8bf7f852"
@@ -8448,8 +9435,11 @@
           "detections": [],
           "id": "rs-modules-where-clause-06",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "A where clause changes the normalized ordered case-label shape.",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "The where predicates or their placement differ structurally and describe different branch conditions.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "87227c9f048ca8b144608609fb8ed0de53f01b3a3f8df7fd8193f9e47c925d94"
@@ -8472,8 +9462,11 @@
           "detections": [],
           "id": "rs-modules-where-clause-07",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "A where clause changes the normalized ordered case-label shape.",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "The where predicates or their placement differ structurally and describe different branch conditions.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "f4bc086613b274b3210abd901d74c79fd9006d49a468b9dec1c6d6916e574f2b"
@@ -8496,8 +9489,11 @@
           "detections": [],
           "id": "rs-modules-where-clause-08",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "A where clause changes the normalized ordered case-label shape.",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "The where predicates or their placement differ structurally and describe different branch conditions.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "298aa84576104c7161de85eca7263d99144cbde9b5f14af754310a9f7e70587a"
@@ -8520,8 +9516,11 @@
           "detections": [],
           "id": "rs-modules-where-clause-09",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "A where clause changes the normalized ordered case-label shape.",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "The where predicates or their placement differ structurally and describe different branch conditions.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "be01215def778c7a1928163a6e6c15a73563be4363b3bc79d27724f3206a70a3"
@@ -8544,11 +9543,14 @@
           "detections": [],
           "id": "rs-modules-where-clause-10",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "A where clause changes the normalized ordered case-label shape.",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "The where predicates or their placement differ structurally and describe different branch conditions.",
           "repositoryShape": "explicit-multi-module",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
-            "value": "81e94683f69ed7605d3bdd51758d806c3c6955beb317e33ab80575a615bdfe5f"
+            "value": "ba4cbe9c89de10c1473aa091bef1f4c2f84e77227c635cd426724742fe3e1268"
           },
           "sourcePaths": [
             "Modules/Module3/rs-modules-where-clause-10/Case.swift"
@@ -8562,14 +9564,287 @@
           ]
         },
         {
-          "ambiguityOrBenignPattern": "sibling nested structs",
+          "ambiguityOrBenignPattern": "different integer payload values are singled out",
           "authorLabel": "negative",
           "classificationAgainstAuthorLabel": "true-negative",
           "detections": [],
+          "id": "rs-nested-associated-pattern-mismatch-01",
+          "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Two switches in one textual scope use the same simple discriminator but constrain different associated values, so their branch partitions are different.",
+          "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
+          "sourceIdentity": {
+            "algorithm": "sha256-framed-path-and-bytes-v1",
+            "value": "a3f02224aaaab7e0a9b9976cb0fe1be68c3e8dd5af78ea72102ef1578b941666"
+          },
+          "sourcePaths": [
+            "Sources/Feature7/rs-nested-associated-pattern-mismatch-01/Case.swift"
+          ],
+          "sourceSpans": [
+            {
+              "endLine": 19,
+              "file": "Sources/Feature7/rs-nested-associated-pattern-mismatch-01/Case.swift",
+              "startLine": 1
+            }
+          ]
+        },
+        {
+          "ambiguityOrBenignPattern": "different string payload values are singled out",
+          "authorLabel": "negative",
+          "classificationAgainstAuthorLabel": "true-negative",
+          "detections": [],
+          "id": "rs-nested-associated-pattern-mismatch-02",
+          "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Two switches in one textual scope use the same simple discriminator but constrain different associated values, so their branch partitions are different.",
+          "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
+          "sourceIdentity": {
+            "algorithm": "sha256-framed-path-and-bytes-v1",
+            "value": "b985e4551128b04e45a8a26e1747595184b8256729ae7af399dbcef111a63a96"
+          },
+          "sourcePaths": [
+            "Sources/Feature7/rs-nested-associated-pattern-mismatch-02/Case.swift"
+          ],
+          "sourceSpans": [
+            {
+              "endLine": 19,
+              "file": "Sources/Feature7/rs-nested-associated-pattern-mismatch-02/Case.swift",
+              "startLine": 1
+            }
+          ]
+        },
+        {
+          "ambiguityOrBenignPattern": "different tuple payload positions are constrained",
+          "authorLabel": "negative",
+          "classificationAgainstAuthorLabel": "true-negative",
+          "detections": [],
+          "id": "rs-nested-associated-pattern-mismatch-03",
+          "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Two switches in one textual scope use the same simple discriminator but constrain different associated values, so their branch partitions are different.",
+          "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
+          "sourceIdentity": {
+            "algorithm": "sha256-framed-path-and-bytes-v1",
+            "value": "ba4ebaae2c77410fe806dab578052379409da202cd1a2ba6c179d0ec9b68927c"
+          },
+          "sourcePaths": [
+            "Sources/Feature7/rs-nested-associated-pattern-mismatch-03/Case.swift"
+          ],
+          "sourceSpans": [
+            {
+              "endLine": 19,
+              "file": "Sources/Feature7/rs-nested-associated-pattern-mismatch-03/Case.swift",
+              "startLine": 1
+            }
+          ]
+        },
+        {
+          "ambiguityOrBenignPattern": "different associated-value cases are singled out",
+          "authorLabel": "negative",
+          "classificationAgainstAuthorLabel": "true-negative",
+          "detections": [],
+          "id": "rs-nested-associated-pattern-mismatch-04",
+          "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Two switches in one textual scope use the same simple discriminator but constrain different associated values, so their branch partitions are different.",
+          "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
+          "sourceIdentity": {
+            "algorithm": "sha256-framed-path-and-bytes-v1",
+            "value": "e94b7eafd4476a63ab69cd74e00eeeecc39b03dd6f810330d13536ffcf20a454"
+          },
+          "sourcePaths": [
+            "Sources/Feature7/rs-nested-associated-pattern-mismatch-04/Case.swift"
+          ],
+          "sourceSpans": [
+            {
+              "endLine": 19,
+              "file": "Sources/Feature7/rs-nested-associated-pattern-mismatch-04/Case.swift",
+              "startLine": 1
+            }
+          ]
+        },
+        {
+          "ambiguityOrBenignPattern": "a constrained success and a failure case are singled out",
+          "authorLabel": "negative",
+          "classificationAgainstAuthorLabel": "true-negative",
+          "detections": [],
+          "id": "rs-nested-associated-pattern-mismatch-05",
+          "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Two switches in one textual scope use the same simple discriminator but constrain different associated values, so their branch partitions are different.",
+          "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
+          "sourceIdentity": {
+            "algorithm": "sha256-framed-path-and-bytes-v1",
+            "value": "3c178586f4edd537cf4fa971fb163e882705c095a09383a8af40d5e6756ec0d6"
+          },
+          "sourcePaths": [
+            "Sources/Feature7/rs-nested-associated-pattern-mismatch-05/Case.swift"
+          ],
+          "sourceSpans": [
+            {
+              "endLine": 19,
+              "file": "Sources/Feature7/rs-nested-associated-pattern-mismatch-05/Case.swift",
+              "startLine": 1
+            }
+          ]
+        },
+        {
+          "ambiguityOrBenignPattern": "different optional payload positions are constrained",
+          "authorLabel": "negative",
+          "classificationAgainstAuthorLabel": "true-negative",
+          "detections": [],
+          "id": "rs-nested-associated-pattern-mismatch-06",
+          "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Two switches in one textual scope use the same simple discriminator but constrain different associated values, so their branch partitions are different.",
+          "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
+          "sourceIdentity": {
+            "algorithm": "sha256-framed-path-and-bytes-v1",
+            "value": "01bb8e49c73704ab4230d0ace1f992e0c11ef25b873f444167daf03426cd1bd2"
+          },
+          "sourcePaths": [
+            "Sources/Feature7/rs-nested-associated-pattern-mismatch-06/Case.swift"
+          ],
+          "sourceSpans": [
+            {
+              "endLine": 19,
+              "file": "Sources/Feature7/rs-nested-associated-pattern-mismatch-06/Case.swift",
+              "startLine": 1
+            }
+          ]
+        },
+        {
+          "ambiguityOrBenignPattern": "different nested error cases are singled out",
+          "authorLabel": "negative",
+          "classificationAgainstAuthorLabel": "true-negative",
+          "detections": [],
+          "id": "rs-nested-associated-pattern-mismatch-07",
+          "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Two switches in one textual scope use the same simple discriminator but constrain different associated values, so their branch partitions are different.",
+          "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
+          "sourceIdentity": {
+            "algorithm": "sha256-framed-path-and-bytes-v1",
+            "value": "5beeaaaec2f3403fb1b3056e2ed03a343e52bb1668b8158462d24bba8615a8b9"
+          },
+          "sourcePaths": [
+            "Sources/Feature7/rs-nested-associated-pattern-mismatch-07/Case.swift"
+          ],
+          "sourceSpans": [
+            {
+              "endLine": 20,
+              "file": "Sources/Feature7/rs-nested-associated-pattern-mismatch-07/Case.swift",
+              "startLine": 1
+            }
+          ]
+        },
+        {
+          "ambiguityOrBenignPattern": "different labeled payload positions are constrained",
+          "authorLabel": "negative",
+          "classificationAgainstAuthorLabel": "true-negative",
+          "detections": [],
+          "id": "rs-nested-associated-pattern-mismatch-08",
+          "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Two switches in one textual scope use the same simple discriminator but constrain different associated values, so their branch partitions are different.",
+          "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
+          "sourceIdentity": {
+            "algorithm": "sha256-framed-path-and-bytes-v1",
+            "value": "d2ac37bf1055f00db81db8e1867d49910d4169e9c79c87a62a880ddc6c36df9d"
+          },
+          "sourcePaths": [
+            "Sources/Feature7/rs-nested-associated-pattern-mismatch-08/Case.swift"
+          ],
+          "sourceSpans": [
+            {
+              "endLine": 19,
+              "file": "Sources/Feature7/rs-nested-associated-pattern-mismatch-08/Case.swift",
+              "startLine": 1
+            }
+          ]
+        },
+        {
+          "ambiguityOrBenignPattern": "a literal node value and empty children are singled out",
+          "authorLabel": "negative",
+          "classificationAgainstAuthorLabel": "true-negative",
+          "detections": [],
+          "id": "rs-nested-associated-pattern-mismatch-09",
+          "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Two switches in one textual scope use the same simple discriminator but constrain different associated values, so their branch partitions are different.",
+          "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
+          "sourceIdentity": {
+            "algorithm": "sha256-framed-path-and-bytes-v1",
+            "value": "987d96f9121f9d4413d8ac2c757c338d4d58543a64f1209286791dac2926c034"
+          },
+          "sourcePaths": [
+            "Sources/Feature7/rs-nested-associated-pattern-mismatch-09/Case.swift"
+          ],
+          "sourceSpans": [
+            {
+              "endLine": 19,
+              "file": "Sources/Feature7/rs-nested-associated-pattern-mismatch-09/Case.swift",
+              "startLine": 1
+            }
+          ]
+        },
+        {
+          "ambiguityOrBenignPattern": "different associated-value ranges are singled out",
+          "authorLabel": "negative",
+          "classificationAgainstAuthorLabel": "true-negative",
+          "detections": [],
+          "id": "rs-nested-associated-pattern-mismatch-10",
+          "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
+          "rationale": "Two switches in one textual scope use the same simple discriminator but constrain different associated values, so their branch partitions are different.",
+          "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
+          "sourceIdentity": {
+            "algorithm": "sha256-framed-path-and-bytes-v1",
+            "value": "d1884d20e18579f38c61d26147d5b7c69b9c15b7add623bb7766868426ace233"
+          },
+          "sourcePaths": [
+            "Sources/Feature7/rs-nested-associated-pattern-mismatch-10/Case.swift"
+          ],
+          "sourceSpans": [
+            {
+              "endLine": 19,
+              "file": "Sources/Feature7/rs-nested-associated-pattern-mismatch-10/Case.swift",
+              "startLine": 1
+            }
+          ]
+        },
+        {
+          "ambiguityOrBenignPattern": "sibling nested structs",
+          "authorLabel": "out-of-scope",
+          "classificationAgainstAuthorLabel": "excluded-out-of-scope",
+          "detections": [],
           "id": "rs-nested-scope-mismatch-01",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "Identical switches occur in two different nested nominal scopes.",
+          "provisionalMetricsInclusion": "excluded-out-of-scope",
+          "rationale": "The identical switches belong to distinct nominal or top-level textual scopes, which the rule explicitly does not compare, so they are excluded from the confusion matrix.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "db3ebb43fc1a1af6bdee189f33b55bf5cef8157d4fd1f6d1758f5cc0ddca376e"
@@ -8587,13 +9862,16 @@
         },
         {
           "ambiguityOrBenignPattern": "different outer structs",
-          "authorLabel": "negative",
-          "classificationAgainstAuthorLabel": "true-negative",
+          "authorLabel": "out-of-scope",
+          "classificationAgainstAuthorLabel": "excluded-out-of-scope",
           "detections": [],
           "id": "rs-nested-scope-mismatch-02",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "Identical switches occur in two different nested nominal scopes.",
+          "provisionalMetricsInclusion": "excluded-out-of-scope",
+          "rationale": "The identical switches belong to distinct nominal or top-level textual scopes, which the rule explicitly does not compare, so they are excluded from the confusion matrix.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "d083d59e8526978de226381844af568615f038b07853c2ed6b861b4873a83505"
@@ -8611,13 +9889,16 @@
         },
         {
           "ambiguityOrBenignPattern": "nested class and nested actor",
-          "authorLabel": "negative",
-          "classificationAgainstAuthorLabel": "true-negative",
+          "authorLabel": "out-of-scope",
+          "classificationAgainstAuthorLabel": "excluded-out-of-scope",
           "detections": [],
           "id": "rs-nested-scope-mismatch-03",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "Identical switches occur in two different nested nominal scopes.",
+          "provisionalMetricsInclusion": "excluded-out-of-scope",
+          "rationale": "The identical switches belong to distinct nominal or top-level textual scopes, which the rule explicitly does not compare, so they are excluded from the confusion matrix.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "da492f5f172c832a07baf8afcbd9c4072418023d61047acaa3b02fe184919bfc"
@@ -8635,13 +9916,16 @@
         },
         {
           "ambiguityOrBenignPattern": "top-level and nested scopes",
-          "authorLabel": "negative",
-          "classificationAgainstAuthorLabel": "true-negative",
+          "authorLabel": "out-of-scope",
+          "classificationAgainstAuthorLabel": "excluded-out-of-scope",
           "detections": [],
           "id": "rs-nested-scope-mismatch-04",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "Identical switches occur in two different nested nominal scopes.",
+          "provisionalMetricsInclusion": "excluded-out-of-scope",
+          "rationale": "The identical switches belong to distinct nominal or top-level textual scopes, which the rule explicitly does not compare, so they are excluded from the confusion matrix.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "35d4f395b2e0d163a52d39e3ec83b381283a0828b75e82f9e79ba87c820ef0e3"
@@ -8659,13 +9943,16 @@
         },
         {
           "ambiguityOrBenignPattern": "nested scopes at different depths",
-          "authorLabel": "negative",
-          "classificationAgainstAuthorLabel": "true-negative",
+          "authorLabel": "out-of-scope",
+          "classificationAgainstAuthorLabel": "excluded-out-of-scope",
           "detections": [],
           "id": "rs-nested-scope-mismatch-05",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "Identical switches occur in two different nested nominal scopes.",
+          "provisionalMetricsInclusion": "excluded-out-of-scope",
+          "rationale": "The identical switches belong to distinct nominal or top-level textual scopes, which the rule explicitly does not compare, so they are excluded from the confusion matrix.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "4d3003c5f36185d1be98806cee57389195d3f8826b38ab1af1e49a4ef90f5ae6"
@@ -8683,13 +9970,16 @@
         },
         {
           "ambiguityOrBenignPattern": "same inner name under different outers",
-          "authorLabel": "negative",
-          "classificationAgainstAuthorLabel": "true-negative",
+          "authorLabel": "out-of-scope",
+          "classificationAgainstAuthorLabel": "excluded-out-of-scope",
           "detections": [],
           "id": "rs-nested-scope-mismatch-06",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "Identical switches occur in two different nested nominal scopes.",
+          "provisionalMetricsInclusion": "excluded-out-of-scope",
+          "rationale": "The identical switches belong to distinct nominal or top-level textual scopes, which the rule explicitly does not compare, so they are excluded from the confusion matrix.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "f3a7ffc49125b00a055ced5f16e1f07ae075c805f60dd84e826d37a25bff7dba"
@@ -8707,13 +9997,16 @@
         },
         {
           "ambiguityOrBenignPattern": "struct and class scopes",
-          "authorLabel": "negative",
-          "classificationAgainstAuthorLabel": "true-negative",
+          "authorLabel": "out-of-scope",
+          "classificationAgainstAuthorLabel": "excluded-out-of-scope",
           "detections": [],
           "id": "rs-nested-scope-mismatch-07",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "Identical switches occur in two different nested nominal scopes.",
+          "provisionalMetricsInclusion": "excluded-out-of-scope",
+          "rationale": "The identical switches belong to distinct nominal or top-level textual scopes, which the rule explicitly does not compare, so they are excluded from the confusion matrix.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "0bbe87dfe1d9c1e7fa513f6b35529c6870b244a1c76ac2044975c791f0687f5f"
@@ -8731,13 +10024,16 @@
         },
         {
           "ambiguityOrBenignPattern": "actor and struct scopes",
-          "authorLabel": "negative",
-          "classificationAgainstAuthorLabel": "true-negative",
+          "authorLabel": "out-of-scope",
+          "classificationAgainstAuthorLabel": "excluded-out-of-scope",
           "detections": [],
           "id": "rs-nested-scope-mismatch-08",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "Identical switches occur in two different nested nominal scopes.",
+          "provisionalMetricsInclusion": "excluded-out-of-scope",
+          "rationale": "The identical switches belong to distinct nominal or top-level textual scopes, which the rule explicitly does not compare, so they are excluded from the confusion matrix.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "08ada7169ced1b26dd2d1c163b4bd357abcaf89b515c20998183d7c85fc3e6bb"
@@ -8755,13 +10051,16 @@
         },
         {
           "ambiguityOrBenignPattern": "enum and struct scopes",
-          "authorLabel": "negative",
-          "classificationAgainstAuthorLabel": "true-negative",
+          "authorLabel": "out-of-scope",
+          "classificationAgainstAuthorLabel": "excluded-out-of-scope",
           "detections": [],
           "id": "rs-nested-scope-mismatch-09",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "Identical switches occur in two different nested nominal scopes.",
+          "provisionalMetricsInclusion": "excluded-out-of-scope",
+          "rationale": "The identical switches belong to distinct nominal or top-level textual scopes, which the rule explicitly does not compare, so they are excluded from the confusion matrix.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "19ad7a49186c9f5a623984fdcf50bfe798e07611c76591224603df4454307226"
@@ -8779,13 +10078,16 @@
         },
         {
           "ambiguityOrBenignPattern": "two unrelated nominal owners",
-          "authorLabel": "negative",
-          "classificationAgainstAuthorLabel": "true-negative",
+          "authorLabel": "out-of-scope",
+          "classificationAgainstAuthorLabel": "excluded-out-of-scope",
           "detections": [],
           "id": "rs-nested-scope-mismatch-10",
           "labelStatus": "pending-two-qualified-reviewers",
-          "rationale": "Identical switches occur in two different nested nominal scopes.",
+          "provisionalMetricsInclusion": "excluded-out-of-scope",
+          "rationale": "The identical switches belong to distinct nominal or top-level textual scopes, which the rule explicitly does not compare, so they are excluded from the confusion matrix.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "d10a599b0c12f68b48f3469aa02b52bdb278630c03a53b83e49ad2435d0c44b7"
@@ -8808,8 +10110,11 @@
           "detections": [],
           "id": "rs-nested-token-boundary-01",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Case labels differ only by a token boundary and must remain distinct.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "3ec74625adf60e187c745f8dbb03b8815d8e60b9720839344476f0e27b862594"
@@ -8832,8 +10137,11 @@
           "detections": [],
           "id": "rs-nested-token-boundary-02",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Case labels differ only by a token boundary and must remain distinct.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "8df630e1c0d093fb8ea1696295bee5e9cbcab71fcc2f1240c4faee2432980111"
@@ -8856,8 +10164,11 @@
           "detections": [],
           "id": "rs-nested-token-boundary-03",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Case labels differ only by a token boundary and must remain distinct.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "571d86f0c6237bb285e6bb4e58b1ad53c11d3962e2727f6fc80565b4b7cfdd8d"
@@ -8880,8 +10191,11 @@
           "detections": [],
           "id": "rs-nested-token-boundary-04",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Case labels differ only by a token boundary and must remain distinct.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "85d4d8809e32a5ac9aa630a60a57bb5bcbe8ff73bbd080314ab8f3431e2afd8c"
@@ -8904,8 +10218,11 @@
           "detections": [],
           "id": "rs-nested-token-boundary-05",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Case labels differ only by a token boundary and must remain distinct.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "7e3ef0a621dfce32b7c017bd0364e28815d83dba203c2b41d6b7f965367c9d6b"
@@ -8928,8 +10245,11 @@
           "detections": [],
           "id": "rs-nested-token-boundary-06",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Case labels differ only by a token boundary and must remain distinct.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "9cf2b690160e990d102f30847136772bf8e1ae396314b5d4628068c1a60808f8"
@@ -8952,8 +10272,11 @@
           "detections": [],
           "id": "rs-nested-token-boundary-07",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Case labels differ only by a token boundary and must remain distinct.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "226020a3c368f6e1df80b1a95387c7f203be7f6f8177fee3a48307422aee5b48"
@@ -8976,8 +10299,11 @@
           "detections": [],
           "id": "rs-nested-token-boundary-08",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Case labels differ only by a token boundary and must remain distinct.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "c55aa11c769b5d68645f540ec88ac627563f830c035b02e59ce6d6b50f14c8b1"
@@ -9000,8 +10326,11 @@
           "detections": [],
           "id": "rs-nested-token-boundary-09",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Case labels differ only by a token boundary and must remain distinct.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "2676f6559f12514aa6ea114d309c32098599f52b0cf5822758e31244c48fa1b8"
@@ -9024,8 +10353,11 @@
           "detections": [],
           "id": "rs-nested-token-boundary-10",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Case labels differ only by a token boundary and must remain distinct.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "be27b3b009b2815d3d761148ded7121a5571083c136fb178586ff5aad6797447"
@@ -9133,8 +10465,11 @@
           ],
           "id": "rs-nested-types-positive-01",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two switches share a member-access discriminator and case shape inside one nested nominal scope.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "0f4c65c18c2cb58262b0e3f20b2f2b1b791c441b359d263abcfffd6038c2033c"
@@ -9242,8 +10577,11 @@
           ],
           "id": "rs-nested-types-positive-02",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two switches share a member-access discriminator and case shape inside one nested nominal scope.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "fb840a5ee3902ec4141d44133d6723e2b2e1c1881103b8885c7101f165f0ac8f"
@@ -9351,8 +10689,11 @@
           ],
           "id": "rs-nested-types-positive-03",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two switches share a member-access discriminator and case shape inside one nested nominal scope.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "0763cbf8af5dc1f9c414815b85c55cf1281bf5e16a8c5a9a30c39b9ffa0ccd18"
@@ -9460,8 +10801,11 @@
           ],
           "id": "rs-nested-types-positive-04",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two switches share a member-access discriminator and case shape inside one nested nominal scope.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "df44dbcff89599a2ad16ab123b53ca125c5ec5ef63ec9cca83e8958cc89ef045"
@@ -9569,8 +10913,11 @@
           ],
           "id": "rs-nested-types-positive-05",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two switches share a member-access discriminator and case shape inside one nested nominal scope.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "47671dc92fa13dd5c5c2144120c25a73e4bf7aa586715d2a135a37a7ae2d717d"
@@ -9678,8 +11025,11 @@
           ],
           "id": "rs-nested-types-positive-06",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two switches share a member-access discriminator and case shape inside one nested nominal scope.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "20671f1c9e4e71305fa3e5593b4a32d967ff12293f659826bd2d95e0aa89e5a9"
@@ -9787,8 +11137,11 @@
           ],
           "id": "rs-nested-types-positive-07",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two switches share a member-access discriminator and case shape inside one nested nominal scope.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "56c41fc98f52a1fe924fb8b696760596894e85dbf615bc5a9115ae5f07e53159"
@@ -9896,8 +11249,11 @@
           ],
           "id": "rs-nested-types-positive-08",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two switches share a member-access discriminator and case shape inside one nested nominal scope.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "9d3e39dc8c703ace6f2f6a319ad56ed839b43ab5dae15f604cd89aa27fcb1dd4"
@@ -10005,8 +11361,11 @@
           ],
           "id": "rs-nested-types-positive-09",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two switches share a member-access discriminator and case shape inside one nested nominal scope.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "bcf6d067561b11d6d46e5720a573b9420731f881883d44ed7d754d88ff1efdc2"
@@ -10114,8 +11473,11 @@
           ],
           "id": "rs-nested-types-positive-10",
           "labelStatus": "pending-two-qualified-reviewers",
+          "provisionalMetricsInclusion": "included",
           "rationale": "Two switches share a member-access discriminator and case shape inside one nested nominal scope.",
           "repositoryShape": "nested-source-tree",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "semanticRevision": 2,
           "sourceIdentity": {
             "algorithm": "sha256-framed-path-and-bytes-v1",
             "value": "469d81ee31d0ab2521f4e75ac4c63e83c122fbd006d2ff61af7faad07d49245a"
@@ -10149,6 +11511,38 @@
         "Equal discriminator spelling in one textual scope can bind to different declarations"
       ],
       "observableScope": "At least two switches in one textual module/type scope with the same simple discriminator and ordered normalized case-label shape.",
+      "outOfScopeCaseIDs": [
+        "rs-flat-case-order-mismatch-01",
+        "rs-flat-case-order-mismatch-02",
+        "rs-flat-case-order-mismatch-03",
+        "rs-flat-case-order-mismatch-04",
+        "rs-flat-case-order-mismatch-05",
+        "rs-flat-case-order-mismatch-06",
+        "rs-flat-case-order-mismatch-07",
+        "rs-flat-case-order-mismatch-08",
+        "rs-flat-case-order-mismatch-09",
+        "rs-flat-case-order-mismatch-10",
+        "rs-modules-compound-discriminator-01",
+        "rs-modules-compound-discriminator-02",
+        "rs-modules-compound-discriminator-03",
+        "rs-modules-compound-discriminator-04",
+        "rs-modules-compound-discriminator-05",
+        "rs-modules-compound-discriminator-06",
+        "rs-modules-compound-discriminator-07",
+        "rs-modules-compound-discriminator-08",
+        "rs-modules-compound-discriminator-09",
+        "rs-modules-compound-discriminator-10",
+        "rs-nested-scope-mismatch-01",
+        "rs-nested-scope-mismatch-02",
+        "rs-nested-scope-mismatch-03",
+        "rs-nested-scope-mismatch-04",
+        "rs-nested-scope-mismatch-05",
+        "rs-nested-scope-mismatch-06",
+        "rs-nested-scope-mismatch-07",
+        "rs-nested-scope-mismatch-08",
+        "rs-nested-scope-mismatch-09",
+        "rs-nested-scope-mismatch-10"
+      ],
       "provisionalConfusionMatrix": {
         "falseNegative": 0,
         "falsePositive": 0,
@@ -10160,6 +11554,7 @@
         "precision": "1.000000",
         "recall": "1.000000"
       },
+      "provisionalMetricsPopulation": "positive-and-adversarial-negative-cases-only",
       "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
       "scopeExclusions": [
         "Compiler-resolved discriminator identity",

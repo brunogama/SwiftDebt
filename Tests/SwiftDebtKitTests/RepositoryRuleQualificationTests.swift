@@ -1,8 +1,33 @@
 import Foundation
 import Testing
 
-@Suite("R2 repository rule qualification")
+@Suite("R2 repository rule qualification", .serialized)
 struct RepositoryRuleQualificationTests {
+    @Test("Corpus schema and renderer invariants")
+    func corpusInvariants() throws {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = [
+            "python3",
+            "-m",
+            "unittest",
+            "scripts/tests/test_repository_qualification.py",
+        ]
+        process.currentDirectoryURL = repositoryRoot
+        let stdout = Pipe()
+        let stderr = Pipe()
+        process.standardOutput = stdout
+        process.standardError = stderr
+        try process.run()
+        process.waitUntilExit()
+        let diagnostic = String(
+            decoding: stderr.fileHandleForReading.readDataToEndOfFile(),
+            as: UTF8.self
+        )
+
+        #expect(process.terminationStatus == 0, Comment(rawValue: diagnostic))
+    }
+
     @Test("Frozen corpus runs through the real CLI with reproducible evidence")
     func frozenCorpus() throws {
         let temporary = FileManager.default.temporaryDirectory.appendingPathComponent(
@@ -56,19 +81,38 @@ struct RepositoryRuleQualificationTests {
         let rules = try #require(report["rules"] as? [[String: Any]])
         #expect(rules.count == 2)
         for rule in rules {
+            let identity = try #require(rule["ruleIdentity"] as? String)
             let counts = try #require(rule["authoredCaseCounts"] as? [String: Any])
             #expect(counts["positive"] as? Int == 30)
             #expect(counts["adversarialNegative"] as? Int == 60)
+            #expect(
+                counts["outOfScope"] as? Int
+                    == (identity == "swiftdebt.refactoring.repeated-switches" ? 30 : 0)
+            )
             #expect(counts["repositoryShapes"] as? Int == 3)
             #expect(rule["supportState"] as? String == "Research")
+            #expect(
+                rule["provisionalMetricsPopulation"] as? String
+                    == "positive-and-adversarial-negative-cases-only"
+            )
             let matrix = try #require(rule["provisionalConfusionMatrix"] as? [String: Any])
             #expect(matrix["truePositive"] as? Int == 30)
             #expect(matrix["trueNegative"] as? Int == 60)
             #expect(matrix["falsePositive"] as? Int == 0)
             #expect(matrix["falseNegative"] as? Int == 0)
+            let outOfScopeIDs = try #require(rule["outOfScopeCaseIDs"] as? [String])
+            #expect(
+                outOfScopeIDs.count
+                    == (identity == "swiftdebt.refactoring.repeated-switches" ? 30 : 0)
+            )
         }
         let snapshots = try #require(report["realWorldSnapshots"] as? [[String: Any]])
         #expect(snapshots.count == 2)
+        for snapshot in snapshots {
+            let notes = try #require(snapshot["provisionalAuditNotes"] as? [String])
+            #expect(!notes.isEmpty)
+            #expect(snapshot["metricsInclusion"] as? String == "excluded-until-independent-case-labeling")
+        }
         #if os(macOS)
             let determinism = try #require(report["determinism"] as? [String: Any])
             #expect(determinism["totalRuns"] as? Int == 30)

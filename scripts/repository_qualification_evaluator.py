@@ -11,7 +11,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from repository_qualification_cases import PATTERNS, case_pattern, render_case
+from repository_qualification_cases import (
+    PATTERNS,
+    case_pattern,
+    normalized_rendered_case,
+    render_case,
+)
 
 
 DATA_CLUMPS = "swiftdebt.refactoring.data-clumps"
@@ -69,7 +74,7 @@ def evaluate(
     all_cases: list[CorpusCase] = []
     shape_reports: list[dict[str, Any]] = []
     materialized_shapes: list[MaterializedShape] = []
-    detections_by_case: dict[str, list[dict[str, Any]]] = {}
+    detections_by_case: dict[tuple[str, str], list[dict[str, Any]]] = {}
     evaluation_issues: list[str] = []
 
     for shape_definition in manifest["repositoryShapes"]:
@@ -97,7 +102,9 @@ def evaluate(
                         f"{shape.definition['id']}: {identity} detection crosses cases {sorted(case_ids)}"
                     )
                 for case_id in case_ids:
-                    detections_by_case.setdefault(case_id, []).append(_published_detection(detection))
+                    detections_by_case.setdefault((identity, case_id), []).append(
+                        _published_detection(detection)
+                    )
         shape_reports.append(
             {
                 "id": shape.definition["id"],
@@ -190,7 +197,11 @@ def _validate_manifest(manifest: dict[str, Any]) -> None:
     if rule_revisions != {DATA_CLUMPS: 2, REPEATED_SWITCHES: 2}:
         raise QualificationError("corpus rule identities and semantic revisions are not frozen")
     seen_families: set[str] = set()
-    counts = {identity: {"positive": 0, "negative": 0} for identity in RULE_IDENTITIES}
+    seen_rendered_sources: dict[str, str] = {}
+    counts = {
+        identity: {"positive": 0, "negative": 0, "out-of-scope": 0}
+        for identity in RULE_IDENTITIES
+    }
     shape_counts = {identity: set() for identity in RULE_IDENTITIES}
     for shape in manifest["repositoryShapes"]:
         if shape["layout"] not in {"flat", "nested", "manifest"}:
@@ -199,20 +210,44 @@ def _validate_manifest(manifest: dict[str, Any]) -> None:
             if family["id"] in seen_families:
                 raise QualificationError(f"duplicate family id: {family['id']}")
             seen_families.add(family["id"])
+            if family["ruleIdentity"] not in RULE_IDENTITIES:
+                raise QualificationError(f"unknown rule identity: {family['ruleIdentity']}")
+            if family["authorLabel"] not in {"positive", "negative", "out-of-scope"}:
+                raise QualificationError(f"unknown author label: {family['authorLabel']}")
             template = family["template"]
             if template not in PATTERNS or len(PATTERNS[template]) != family["count"]:
                 raise QualificationError(f"template count is not frozen: {template}")
             if len(set(PATTERNS[template])) != family["count"]:
                 raise QualificationError(f"case patterns must be behaviorally distinct: {template}")
+            for ordinal in range(family["count"]):
+                case_id = f"{family['id']}-{ordinal + 1:02d}"
+                normalized = normalized_rendered_case(template, ordinal)
+                if previous := seen_rendered_sources.get(normalized):
+                    raise QualificationError(
+                        "rendered cases must be behaviorally distinct after salt normalization: "
+                        f"{previous} and {case_id}"
+                    )
+                seen_rendered_sources[normalized] = case_id
             counts[family["ruleIdentity"]][family["authorLabel"]] += family["count"]
-            shape_counts[family["ruleIdentity"]].add(shape["id"])
+            if family["authorLabel"] != "out-of-scope":
+                shape_counts[family["ruleIdentity"]].add(shape["id"])
     for identity in RULE_IDENTITIES:
-        if counts[identity] != {"positive": 30, "negative": 60}:
-            raise QualificationError(f"{identity} requires exactly 30 positive and 60 negative cases")
+        if counts[identity]["positive"] < 30 or counts[identity]["negative"] < 60:
+            raise QualificationError(f"{identity} requires at least 30 positive and 60 negative cases")
         if len(shape_counts[identity]) < 3:
             raise QualificationError(f"{identity} requires at least three repository shapes")
     if len(manifest["realWorldSnapshots"]) < 2:
         raise QualificationError("at least two real-world snapshots are required")
+    for snapshot in manifest["realWorldSnapshots"]:
+        notes = snapshot.get("provisionalAuditNotes")
+        if (
+            not isinstance(notes, list)
+            or not notes
+            or not all(isinstance(note, str) and note.strip() for note in notes)
+        ):
+            raise QualificationError(
+                f"snapshot requires provisional audit notes: {snapshot.get('id', '<unknown>')}"
+            )
 
 
 def _materialize_shape(definition: dict[str, Any], synthetic_root: Path) -> MaterializedShape:
@@ -315,7 +350,7 @@ def _published_detection(detection: dict[str, Any]) -> dict[str, Any]:
 def _evaluate_cases(
     manifest: dict[str, Any],
     cases: list[CorpusCase],
-    detections: dict[str, list[dict[str, Any]]],
+    detections: dict[tuple[str, str], list[dict[str, Any]]],
     issues: list[str],
 ) -> list[dict[str, Any]]:
     metadata = {rule["identity"]: rule for rule in manifest["rules"]}
@@ -326,10 +361,14 @@ def _evaluate_cases(
         case_results = []
         false_positive_ids = []
         false_negative_ids = []
+        out_of_scope_ids = []
         for case in rule_cases:
-            observed = detections.get(case.case_id, [])
+            observed = detections.get((identity, case.case_id), [])
             detected = bool(observed)
-            if case.author_label == "positive" and detected:
+            if case.author_label == "out-of-scope":
+                classification = "excluded-out-of-scope"
+                out_of_scope_ids.append(case.case_id)
+            elif case.author_label == "positive" and detected:
                 classification = "true-positive"
                 matrix["truePositive"] += 1
             elif case.author_label == "positive":
@@ -350,6 +389,8 @@ def _evaluate_cases(
             case_results.append(
                 {
                     "id": case.case_id,
+                    "ruleIdentity": identity,
+                    "semanticRevision": metadata[identity]["semanticRevision"],
                     "repositoryShape": case.repository_shape,
                     "authorLabel": case.author_label,
                     "labelStatus": "pending-two-qualified-reviewers",
@@ -365,6 +406,11 @@ def _evaluate_cases(
                         for file, start, end in case.source_spans
                     ],
                     "classificationAgainstAuthorLabel": classification,
+                    "provisionalMetricsInclusion": (
+                        "excluded-out-of-scope"
+                        if case.author_label == "out-of-scope"
+                        else "included"
+                    ),
                     "detections": observed,
                 }
             )
@@ -386,10 +432,22 @@ def _evaluate_cases(
                 "knownFalseNegativeRisks": rule["knownFalseNegativeRisks"],
                 "authoredCaseCounts": {
                     "positive": sum(case.author_label == "positive" for case in rule_cases),
-                    "adversarialNegative": sum(case.author_label == "negative" for case in rule_cases),
-                    "repositoryShapes": len({case.repository_shape for case in rule_cases}),
+                    "adversarialNegative": sum(
+                        case.author_label == "negative" for case in rule_cases
+                    ),
+                    "outOfScope": sum(
+                        case.author_label == "out-of-scope" for case in rule_cases
+                    ),
+                    "repositoryShapes": len(
+                        {
+                            case.repository_shape
+                            for case in rule_cases
+                            if case.author_label != "out-of-scope"
+                        }
+                    ),
                 },
                 "provisionalConfusionMatrix": matrix,
+                "provisionalMetricsPopulation": "positive-and-adversarial-negative-cases-only",
                 "provisionalMetrics": {
                     "precision": f"{precision:.6f}",
                     "falsePositiveRate": f"{false_positive_rate:.6f}",
@@ -404,6 +462,7 @@ def _evaluate_cases(
                 },
                 "falsePositiveCaseIDs": false_positive_ids,
                 "falseNegativeCaseIDs": false_negative_ids,
+                "outOfScopeCaseIDs": out_of_scope_ids,
                 "caseResults": case_results,
             }
         )
@@ -472,6 +531,7 @@ def _evaluate_snapshot(
         },
         "observedRules": observed_rules,
         "metricsInclusion": "excluded-until-independent-case-labeling",
+        "provisionalAuditNotes": definition["provisionalAuditNotes"],
     }
 
 
