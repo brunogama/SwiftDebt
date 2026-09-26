@@ -39,6 +39,7 @@ struct DogfoodWorkflowTests {
             "--exclude", "Tests",
             "--exclude", "Examples",
             "--exclude", "Plugins",
+            "--exclude", "Integrations",
             "--format", "json",
             "--top", "10",
             "--jobs", "1",
