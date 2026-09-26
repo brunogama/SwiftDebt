@@ -1,0 +1,873 @@
+{
+  "schemaVersion": 1,
+  "manifestID": "swiftdebt-r2-release-performance-v1",
+  "qualificationScope": "R2 deterministic repository rules with similarity disabled",
+  "sources": {
+    "referenceImplementationCommit": "54516ae9385dabd09969d9f02a8f51b6cea2b0e1",
+    "referenceEngineVersion": "0.8.0",
+    "candidateImplementationCommit": "4b9db979e7dc0f870d00f6cae9dcab37528bffb4",
+    "candidateEngineVersion": "0.10.0",
+    "corpusGenerator": "scripts/r2_benchmark_support.py scale_source v1",
+    "snapshotDigestAlgorithm": "SHA-256 over sorted length-framed relative paths and file bytes"
+  },
+  "repositoryConfiguration": {
+    "minimumDataClumpElements": 3,
+    "minimumDataClumpOccurrences": 2,
+    "minimumRepeatedSwitchOccurrences": 2,
+    "maximumSourceFiles": 10000,
+    "maximumTotalSourceBytes": 268435456,
+    "maximumAnalysisUnitsPerRule": 50000,
+    "maximumDataClumpComparisons": 250000,
+    "maximumDetectionsPerRule": 10000
+  },
+  "repositoryRules": {
+    "swiftdebt.refactoring.data-clumps": {
+      "semanticRevision": 2,
+      "qualification": "Research"
+    },
+    "swiftdebt.refactoring.repeated-switches": {
+      "semanticRevision": 2,
+      "qualification": "Research"
+    }
+  },
+  "environment": {
+    "swiftVersion": "Apple Swift version 6.3.3 (swiftlang-6.3.3.1.3 clang-2100.1.1.101)\nTarget: arm64-apple-macosx28.0",
+    "xcodeVersion": "Xcode 26.6",
+    "xcodeBuild": "17F113",
+    "macOSVersion": "27.2",
+    "macOSBuild": "26B5091g",
+    "sdkVersion": "26.5",
+    "architecture": "arm64",
+    "hardwareModel": "Mac16,6",
+    "cpuModel": "Apple M4 Max",
+    "physicalCPUCount": 14,
+    "logicalCPUCount": 14,
+    "memoryBytes": 38654705664
+  },
+  "binaryBuildProtocol": {
+    "appliesTo": [
+      "reference",
+      "candidate"
+    ],
+    "configuration": "release",
+    "command": "DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift build -c release --jobs 2",
+    "toolchainIdentity": "The manifest environment swiftVersion, xcodeVersion, xcodeBuild, sdkVersion, and architecture apply to both binaries."
+  },
+  "providerIdentities": {
+    "repositorySyntax": {
+      "name": "SwiftSyntax",
+      "version": "602.0.0",
+      "availability": "available"
+    },
+    "embedding": {
+      "availability": "unavailable",
+      "reason": "No embedding provider is initialized by the deterministic repository-rule and syntax-cache slice."
+    },
+    "candidateIndex": {
+      "availability": "unavailable",
+      "reason": "The optional SQVector product is outside this deterministic repository-cache benchmark slice."
+    }
+  },
+  "commandTemplates": {
+    "similarityDisabled": [
+      "{binary}",
+      "analyze",
+      "{corpus}",
+      "--format",
+      "json",
+      "--jobs",
+      "1",
+      "--output",
+      "{freshOutput}/analysis.json",
+      "--profile-output",
+      "{freshOutput}/profile.json"
+    ],
+    "repositoryEvidenceCacheDisabled": [
+      "{binary}",
+      "analyze",
+      "{corpus}",
+      "--format",
+      "json",
+      "--jobs",
+      "1",
+      "--output",
+      "{freshOutput}/analysis.json",
+      "--profile-output",
+      "{freshOutput}/profile.json",
+      "--repository-evidence",
+      "{freshOutput}/repository-evidence.json",
+      "--repository-cache-report",
+      "{freshOutput}/repository-cache-report.json",
+      "--no-repository-cache"
+    ],
+    "repositoryEvidenceExplicitCache": [
+      "{binary}",
+      "analyze",
+      "{corpus}",
+      "--format",
+      "json",
+      "--jobs",
+      "1",
+      "--output",
+      "{freshOutput}/analysis.json",
+      "--profile-output",
+      "{freshOutput}/profile.json",
+      "--repository-evidence",
+      "{freshOutput}/repository-evidence.json",
+      "--repository-cache",
+      "{cache}",
+      "--repository-cache-report",
+      "{freshOutput}/repository-cache-report.json"
+    ]
+  },
+  "measurement": {
+    "design": "paired-interleaved for comparable R1/R2 commands; independently reset cache state for every sequential R2-only sample",
+    "warmupRuns": 5,
+    "measuredRuns": 30,
+    "inducedRegressionRuns": 5,
+    "percentileMethod": "nearest-rank",
+    "noiseFloorSource": "Reference-only wall samples for paired R1/R2 scenarios; candidate calibration samples for R2-only proposed ceilings.",
+    "crossVersionReportComparison": "Canonical JSON excluding only engineVersion; raw report SHA-256 and engineVersion remain recorded.",
+    "coldStateDefinition": "Each cold sample starts a new CLI process with either --no-repository-cache or an explicit absent cache path and a fresh derived-output directory; five unmeasured warmups precede measured samples, so filesystem pages may be resident.",
+    "rawMeasurements": [
+      "end-to-end-wall-clock-milliseconds",
+      "peak-resident-memory-bytes",
+      "available-profile-phase-wall-clock-nanoseconds",
+      "output-sha256",
+      "repository-sidecar-sha256",
+      "repository-cache-report-sha256-and-canonical-sha256",
+      "repository-cache-store-sha256-before-and-after",
+      "cache-disposition-reuse-recompute-write-and-invalidation-counts",
+      "host-load-average-before-and-after"
+    ],
+    "cacheStateProtocol": "Warm and one-file-edit scenarios create one validated compatible cache seed outside timed commands. Every sample copies those exact bytes into a fresh state directory and resets from the same generated corpus."
+  },
+  "budgetPolicy": {
+    "maximumWallClockRegressionPercent": 10.0,
+    "maximumPeakMemoryRegressionPercent": 15.0,
+    "medianAbsoluteDeviationMultiplier": 3.0,
+    "minimumShortStageFloorMilliseconds": 10.0,
+    "shortStageBoundaryMilliseconds": 1000.0,
+    "maximumObservedOneMinuteLoad": 21.0,
+    "hostLoadProvenance": "Measured samples are invalid above 1.5 runnable or blocked tasks per physical CPU on this 14-core host.",
+    "shortStageFailureRule": "Fail only when both the relative wall-clock limit and the scenario absolute noise floor are exceeded.",
+    "thresholdProvenance": "The relative bounds, 10 ms wall guard, and fixed 2 MiB process-memory allowance preserve the merged SwiftDebt performance gate; each short scenario may raise only its wall-clock floor to three median absolute deviations.",
+    "budgetBasis": "Frozen scenario p95 measurements; no limit is derived from changed line or unit counts.",
+    "maximumPeakMemoryRegressionBytes": 2097152,
+    "memoryFailureRule": "Fail only when both the 15 percent relative peak-RSS limit and the fixed 2 MiB absolute allowance are exceeded."
+  },
+  "scenarios": [
+    {
+      "id": "similarity-disabled-scale-16",
+      "comparison": "r1-r2-paired",
+      "state": "cold-fresh-process-and-derived-output",
+      "repositoryEvidence": false,
+      "sourceFileCount": 16,
+      "utf8ByteCount": 8368,
+      "snapshotSHA256": "924fbfb0a04ff259d116d1eca9872a7d50c30e7e8fe96e38129de47cbc647da7",
+      "analysisUnitCounts": {
+        "dataClumpUnits": 48,
+        "repeatedSwitchUnits": 32
+      },
+      "expectedDetectionCounts": {
+        "swiftdebt.refactoring.data-clumps": 1,
+        "swiftdebt.refactoring.repeated-switches": 16
+      },
+      "measuredStages": [
+        "end-to-end",
+        "discovery",
+        "parsing",
+        "structuralEvidence",
+        "graph",
+        "functionalEvidence",
+        "scoring",
+        "aggregation",
+        "rendering"
+      ],
+      "cacheState": "not-applicable"
+    },
+    {
+      "id": "similarity-disabled-scale-128",
+      "comparison": "r1-r2-paired",
+      "state": "cold-fresh-process-and-derived-output",
+      "repositoryEvidence": false,
+      "sourceFileCount": 128,
+      "utf8ByteCount": 66944,
+      "snapshotSHA256": "4864ef81a77a45a30a95601fea9f0a2dfdbbc87f9c8bc61296feb2f6e2770d0e",
+      "analysisUnitCounts": {
+        "dataClumpUnits": 384,
+        "repeatedSwitchUnits": 256
+      },
+      "expectedDetectionCounts": {
+        "swiftdebt.refactoring.data-clumps": 1,
+        "swiftdebt.refactoring.repeated-switches": 128
+      },
+      "measuredStages": [
+        "end-to-end",
+        "discovery",
+        "parsing",
+        "structuralEvidence",
+        "graph",
+        "functionalEvidence",
+        "scoring",
+        "aggregation",
+        "rendering"
+      ],
+      "cacheState": "not-applicable"
+    },
+    {
+      "id": "similarity-disabled-scale-1024",
+      "comparison": "r1-r2-paired",
+      "state": "cold-fresh-process-and-derived-output",
+      "repositoryEvidence": false,
+      "sourceFileCount": 1024,
+      "utf8ByteCount": 535552,
+      "snapshotSHA256": "e6bfb6fcdf3638fe77ab0986fa98ce1e69fd20c15064c6d3a27555f0246ff41d",
+      "analysisUnitCounts": {
+        "dataClumpUnits": 3072,
+        "repeatedSwitchUnits": 2048
+      },
+      "expectedDetectionCounts": {
+        "swiftdebt.refactoring.data-clumps": 1,
+        "swiftdebt.refactoring.repeated-switches": 1024
+      },
+      "measuredStages": [
+        "end-to-end",
+        "discovery",
+        "parsing",
+        "structuralEvidence",
+        "graph",
+        "functionalEvidence",
+        "scoring",
+        "aggregation",
+        "rendering"
+      ],
+      "cacheState": "not-applicable"
+    },
+    {
+      "id": "repository-evidence-cache-disabled-scale-16",
+      "comparison": "r2-calibration",
+      "state": "cold-cache-disabled",
+      "repositoryEvidence": true,
+      "sourceFileCount": 16,
+      "utf8ByteCount": 8368,
+      "snapshotSHA256": "924fbfb0a04ff259d116d1eca9872a7d50c30e7e8fe96e38129de47cbc647da7",
+      "analysisUnitCounts": {
+        "dataClumpUnits": 48,
+        "repeatedSwitchUnits": 32
+      },
+      "expectedDetectionCounts": {
+        "swiftdebt.refactoring.data-clumps": 1,
+        "swiftdebt.refactoring.repeated-switches": 16
+      },
+      "measuredStages": [
+        "end-to-end-including-unisolated-repository-analysis",
+        "discovery",
+        "parsing",
+        "structuralEvidence",
+        "graph",
+        "functionalEvidence",
+        "scoring",
+        "aggregation",
+        "rendering"
+      ],
+      "cacheState": "disabled",
+      "expectedCacheActivity": {
+        "mode": "disabled",
+        "disposition": "disabled",
+        "selectedSourceCount": 16,
+        "reusedSourceCount": 0,
+        "recomputedSourceCount": 16,
+        "removedSourceCount": 0,
+        "invalidations": {
+          "cache-disabled": 16
+        },
+        "writePerformed": false,
+        "networkRequestCount": 0
+      }
+    },
+    {
+      "id": "repository-evidence-cold-cache-scale-16",
+      "comparison": "r2-calibration",
+      "state": "cold-explicit-empty-cache",
+      "repositoryEvidence": true,
+      "sourceFileCount": 16,
+      "utf8ByteCount": 8368,
+      "snapshotSHA256": "924fbfb0a04ff259d116d1eca9872a7d50c30e7e8fe96e38129de47cbc647da7",
+      "analysisUnitCounts": {
+        "dataClumpUnits": 48,
+        "repeatedSwitchUnits": 32
+      },
+      "expectedDetectionCounts": {
+        "swiftdebt.refactoring.data-clumps": 1,
+        "swiftdebt.refactoring.repeated-switches": 16
+      },
+      "measuredStages": [
+        "end-to-end-including-unisolated-repository-analysis",
+        "discovery",
+        "parsing",
+        "structuralEvidence",
+        "graph",
+        "functionalEvidence",
+        "scoring",
+        "aggregation",
+        "rendering"
+      ],
+      "cacheState": "cold",
+      "expectedCacheActivity": {
+        "mode": "reuse",
+        "disposition": "cold-rebuild",
+        "selectedSourceCount": 16,
+        "reusedSourceCount": 0,
+        "recomputedSourceCount": 16,
+        "removedSourceCount": 0,
+        "invalidations": {
+          "cache-missing": 16
+        },
+        "writePerformed": true,
+        "networkRequestCount": 0
+      }
+    },
+    {
+      "id": "repository-evidence-warm-cache-scale-16",
+      "comparison": "r2-calibration",
+      "state": "warm-explicit-compatible-cache",
+      "repositoryEvidence": true,
+      "sourceFileCount": 16,
+      "utf8ByteCount": 8368,
+      "snapshotSHA256": "924fbfb0a04ff259d116d1eca9872a7d50c30e7e8fe96e38129de47cbc647da7",
+      "analysisUnitCounts": {
+        "dataClumpUnits": 48,
+        "repeatedSwitchUnits": 32
+      },
+      "expectedDetectionCounts": {
+        "swiftdebt.refactoring.data-clumps": 1,
+        "swiftdebt.refactoring.repeated-switches": 16
+      },
+      "measuredStages": [
+        "end-to-end-including-unisolated-repository-analysis",
+        "discovery",
+        "parsing",
+        "structuralEvidence",
+        "graph",
+        "functionalEvidence",
+        "scoring",
+        "aggregation",
+        "rendering"
+      ],
+      "cacheState": "warm",
+      "expectedCacheActivity": {
+        "mode": "reuse",
+        "disposition": "warm-reuse",
+        "selectedSourceCount": 16,
+        "reusedSourceCount": 16,
+        "recomputedSourceCount": 0,
+        "removedSourceCount": 0,
+        "invalidations": {},
+        "writePerformed": false,
+        "networkRequestCount": 0
+      }
+    },
+    {
+      "id": "repository-evidence-one-file-edit-scale-16",
+      "comparison": "r2-calibration",
+      "state": "warm-incremental-one-file-edit",
+      "repositoryEvidence": true,
+      "sourceFileCount": 16,
+      "utf8ByteCount": 8425,
+      "snapshotSHA256": "0e4f3659820872c8b85eeb2a572aeecc282f15246cb217519162202201f90f21",
+      "analysisUnitCounts": {
+        "dataClumpUnits": 48,
+        "repeatedSwitchUnits": 32
+      },
+      "expectedDetectionCounts": {
+        "swiftdebt.refactoring.data-clumps": 1,
+        "swiftdebt.refactoring.repeated-switches": 16
+      },
+      "measuredStages": [
+        "end-to-end-including-unisolated-repository-analysis",
+        "discovery",
+        "parsing",
+        "structuralEvidence",
+        "graph",
+        "functionalEvidence",
+        "scoring",
+        "aggregation",
+        "rendering"
+      ],
+      "cacheState": "one-file-edit",
+      "expectedCacheActivity": {
+        "mode": "reuse",
+        "disposition": "partial-rebuild",
+        "selectedSourceCount": 16,
+        "reusedSourceCount": 15,
+        "recomputedSourceCount": 1,
+        "removedSourceCount": 0,
+        "invalidations": {
+          "source-content-changed": 1
+        },
+        "writePerformed": true,
+        "networkRequestCount": 0
+      },
+      "baseSnapshotSHA256": "924fbfb0a04ff259d116d1eca9872a7d50c30e7e8fe96e38129de47cbc647da7",
+      "standardEdit": {
+        "relativePath": "Scale0000.swift",
+        "operation": "append-comment",
+        "marker": "// swiftdebt standard one-file cache invalidation probe",
+        "changedSourceCount": 1
+      }
+    },
+    {
+      "id": "repository-evidence-cache-disabled-scale-128",
+      "comparison": "r2-calibration",
+      "state": "cold-cache-disabled",
+      "repositoryEvidence": true,
+      "sourceFileCount": 128,
+      "utf8ByteCount": 66944,
+      "snapshotSHA256": "4864ef81a77a45a30a95601fea9f0a2dfdbbc87f9c8bc61296feb2f6e2770d0e",
+      "analysisUnitCounts": {
+        "dataClumpUnits": 384,
+        "repeatedSwitchUnits": 256
+      },
+      "expectedDetectionCounts": {
+        "swiftdebt.refactoring.data-clumps": 1,
+        "swiftdebt.refactoring.repeated-switches": 128
+      },
+      "measuredStages": [
+        "end-to-end-including-unisolated-repository-analysis",
+        "discovery",
+        "parsing",
+        "structuralEvidence",
+        "graph",
+        "functionalEvidence",
+        "scoring",
+        "aggregation",
+        "rendering"
+      ],
+      "cacheState": "disabled",
+      "expectedCacheActivity": {
+        "mode": "disabled",
+        "disposition": "disabled",
+        "selectedSourceCount": 128,
+        "reusedSourceCount": 0,
+        "recomputedSourceCount": 128,
+        "removedSourceCount": 0,
+        "invalidations": {
+          "cache-disabled": 128
+        },
+        "writePerformed": false,
+        "networkRequestCount": 0
+      }
+    },
+    {
+      "id": "repository-evidence-cold-cache-scale-128",
+      "comparison": "r2-calibration",
+      "state": "cold-explicit-empty-cache",
+      "repositoryEvidence": true,
+      "sourceFileCount": 128,
+      "utf8ByteCount": 66944,
+      "snapshotSHA256": "4864ef81a77a45a30a95601fea9f0a2dfdbbc87f9c8bc61296feb2f6e2770d0e",
+      "analysisUnitCounts": {
+        "dataClumpUnits": 384,
+        "repeatedSwitchUnits": 256
+      },
+      "expectedDetectionCounts": {
+        "swiftdebt.refactoring.data-clumps": 1,
+        "swiftdebt.refactoring.repeated-switches": 128
+      },
+      "measuredStages": [
+        "end-to-end-including-unisolated-repository-analysis",
+        "discovery",
+        "parsing",
+        "structuralEvidence",
+        "graph",
+        "functionalEvidence",
+        "scoring",
+        "aggregation",
+        "rendering"
+      ],
+      "cacheState": "cold",
+      "expectedCacheActivity": {
+        "mode": "reuse",
+        "disposition": "cold-rebuild",
+        "selectedSourceCount": 128,
+        "reusedSourceCount": 0,
+        "recomputedSourceCount": 128,
+        "removedSourceCount": 0,
+        "invalidations": {
+          "cache-missing": 128
+        },
+        "writePerformed": true,
+        "networkRequestCount": 0
+      }
+    },
+    {
+      "id": "repository-evidence-warm-cache-scale-128",
+      "comparison": "r2-calibration",
+      "state": "warm-explicit-compatible-cache",
+      "repositoryEvidence": true,
+      "sourceFileCount": 128,
+      "utf8ByteCount": 66944,
+      "snapshotSHA256": "4864ef81a77a45a30a95601fea9f0a2dfdbbc87f9c8bc61296feb2f6e2770d0e",
+      "analysisUnitCounts": {
+        "dataClumpUnits": 384,
+        "repeatedSwitchUnits": 256
+      },
+      "expectedDetectionCounts": {
+        "swiftdebt.refactoring.data-clumps": 1,
+        "swiftdebt.refactoring.repeated-switches": 128
+      },
+      "measuredStages": [
+        "end-to-end-including-unisolated-repository-analysis",
+        "discovery",
+        "parsing",
+        "structuralEvidence",
+        "graph",
+        "functionalEvidence",
+        "scoring",
+        "aggregation",
+        "rendering"
+      ],
+      "cacheState": "warm",
+      "expectedCacheActivity": {
+        "mode": "reuse",
+        "disposition": "warm-reuse",
+        "selectedSourceCount": 128,
+        "reusedSourceCount": 128,
+        "recomputedSourceCount": 0,
+        "removedSourceCount": 0,
+        "invalidations": {},
+        "writePerformed": false,
+        "networkRequestCount": 0
+      }
+    },
+    {
+      "id": "repository-evidence-one-file-edit-scale-128",
+      "comparison": "r2-calibration",
+      "state": "warm-incremental-one-file-edit",
+      "repositoryEvidence": true,
+      "sourceFileCount": 128,
+      "utf8ByteCount": 67001,
+      "snapshotSHA256": "cf30a36d00e9465c05dbf4a3ef4de3c68a1f2e6eee71bdb158c4e6c3bf09a28e",
+      "analysisUnitCounts": {
+        "dataClumpUnits": 384,
+        "repeatedSwitchUnits": 256
+      },
+      "expectedDetectionCounts": {
+        "swiftdebt.refactoring.data-clumps": 1,
+        "swiftdebt.refactoring.repeated-switches": 128
+      },
+      "measuredStages": [
+        "end-to-end-including-unisolated-repository-analysis",
+        "discovery",
+        "parsing",
+        "structuralEvidence",
+        "graph",
+        "functionalEvidence",
+        "scoring",
+        "aggregation",
+        "rendering"
+      ],
+      "cacheState": "one-file-edit",
+      "expectedCacheActivity": {
+        "mode": "reuse",
+        "disposition": "partial-rebuild",
+        "selectedSourceCount": 128,
+        "reusedSourceCount": 127,
+        "recomputedSourceCount": 1,
+        "removedSourceCount": 0,
+        "invalidations": {
+          "source-content-changed": 1
+        },
+        "writePerformed": true,
+        "networkRequestCount": 0
+      },
+      "baseSnapshotSHA256": "4864ef81a77a45a30a95601fea9f0a2dfdbbc87f9c8bc61296feb2f6e2770d0e",
+      "standardEdit": {
+        "relativePath": "Scale0000.swift",
+        "operation": "append-comment",
+        "marker": "// swiftdebt standard one-file cache invalidation probe",
+        "changedSourceCount": 1
+      }
+    },
+    {
+      "id": "repository-evidence-cache-disabled-scale-1024",
+      "comparison": "r2-calibration",
+      "state": "cold-cache-disabled",
+      "repositoryEvidence": true,
+      "sourceFileCount": 1024,
+      "utf8ByteCount": 535552,
+      "snapshotSHA256": "e6bfb6fcdf3638fe77ab0986fa98ce1e69fd20c15064c6d3a27555f0246ff41d",
+      "analysisUnitCounts": {
+        "dataClumpUnits": 3072,
+        "repeatedSwitchUnits": 2048
+      },
+      "expectedDetectionCounts": {
+        "swiftdebt.refactoring.data-clumps": 1,
+        "swiftdebt.refactoring.repeated-switches": 1024
+      },
+      "measuredStages": [
+        "end-to-end-including-unisolated-repository-analysis",
+        "discovery",
+        "parsing",
+        "structuralEvidence",
+        "graph",
+        "functionalEvidence",
+        "scoring",
+        "aggregation",
+        "rendering"
+      ],
+      "cacheState": "disabled",
+      "expectedCacheActivity": {
+        "mode": "disabled",
+        "disposition": "disabled",
+        "selectedSourceCount": 1024,
+        "reusedSourceCount": 0,
+        "recomputedSourceCount": 1024,
+        "removedSourceCount": 0,
+        "invalidations": {
+          "cache-disabled": 1024
+        },
+        "writePerformed": false,
+        "networkRequestCount": 0
+      }
+    },
+    {
+      "id": "repository-evidence-cold-cache-scale-1024",
+      "comparison": "r2-calibration",
+      "state": "cold-explicit-empty-cache",
+      "repositoryEvidence": true,
+      "sourceFileCount": 1024,
+      "utf8ByteCount": 535552,
+      "snapshotSHA256": "e6bfb6fcdf3638fe77ab0986fa98ce1e69fd20c15064c6d3a27555f0246ff41d",
+      "analysisUnitCounts": {
+        "dataClumpUnits": 3072,
+        "repeatedSwitchUnits": 2048
+      },
+      "expectedDetectionCounts": {
+        "swiftdebt.refactoring.data-clumps": 1,
+        "swiftdebt.refactoring.repeated-switches": 1024
+      },
+      "measuredStages": [
+        "end-to-end-including-unisolated-repository-analysis",
+        "discovery",
+        "parsing",
+        "structuralEvidence",
+        "graph",
+        "functionalEvidence",
+        "scoring",
+        "aggregation",
+        "rendering"
+      ],
+      "cacheState": "cold",
+      "expectedCacheActivity": {
+        "mode": "reuse",
+        "disposition": "cold-rebuild",
+        "selectedSourceCount": 1024,
+        "reusedSourceCount": 0,
+        "recomputedSourceCount": 1024,
+        "removedSourceCount": 0,
+        "invalidations": {
+          "cache-missing": 1024
+        },
+        "writePerformed": true,
+        "networkRequestCount": 0
+      }
+    },
+    {
+      "id": "repository-evidence-warm-cache-scale-1024",
+      "comparison": "r2-calibration",
+      "state": "warm-explicit-compatible-cache",
+      "repositoryEvidence": true,
+      "sourceFileCount": 1024,
+      "utf8ByteCount": 535552,
+      "snapshotSHA256": "e6bfb6fcdf3638fe77ab0986fa98ce1e69fd20c15064c6d3a27555f0246ff41d",
+      "analysisUnitCounts": {
+        "dataClumpUnits": 3072,
+        "repeatedSwitchUnits": 2048
+      },
+      "expectedDetectionCounts": {
+        "swiftdebt.refactoring.data-clumps": 1,
+        "swiftdebt.refactoring.repeated-switches": 1024
+      },
+      "measuredStages": [
+        "end-to-end-including-unisolated-repository-analysis",
+        "discovery",
+        "parsing",
+        "structuralEvidence",
+        "graph",
+        "functionalEvidence",
+        "scoring",
+        "aggregation",
+        "rendering"
+      ],
+      "cacheState": "warm",
+      "expectedCacheActivity": {
+        "mode": "reuse",
+        "disposition": "warm-reuse",
+        "selectedSourceCount": 1024,
+        "reusedSourceCount": 1024,
+        "recomputedSourceCount": 0,
+        "removedSourceCount": 0,
+        "invalidations": {},
+        "writePerformed": false,
+        "networkRequestCount": 0
+      }
+    },
+    {
+      "id": "repository-evidence-one-file-edit-scale-1024",
+      "comparison": "r2-calibration",
+      "state": "warm-incremental-one-file-edit",
+      "repositoryEvidence": true,
+      "sourceFileCount": 1024,
+      "utf8ByteCount": 535609,
+      "snapshotSHA256": "52bde875da5ff358b263b3b7d559875fb9fa864b9d31ef361d844539a4e8454b",
+      "analysisUnitCounts": {
+        "dataClumpUnits": 3072,
+        "repeatedSwitchUnits": 2048
+      },
+      "expectedDetectionCounts": {
+        "swiftdebt.refactoring.data-clumps": 1,
+        "swiftdebt.refactoring.repeated-switches": 1024
+      },
+      "measuredStages": [
+        "end-to-end-including-unisolated-repository-analysis",
+        "discovery",
+        "parsing",
+        "structuralEvidence",
+        "graph",
+        "functionalEvidence",
+        "scoring",
+        "aggregation",
+        "rendering"
+      ],
+      "cacheState": "one-file-edit",
+      "expectedCacheActivity": {
+        "mode": "reuse",
+        "disposition": "partial-rebuild",
+        "selectedSourceCount": 1024,
+        "reusedSourceCount": 1023,
+        "recomputedSourceCount": 1,
+        "removedSourceCount": 0,
+        "invalidations": {
+          "source-content-changed": 1
+        },
+        "writePerformed": true,
+        "networkRequestCount": 0
+      },
+      "baseSnapshotSHA256": "e6bfb6fcdf3638fe77ab0986fa98ce1e69fd20c15064c6d3a27555f0246ff41d",
+      "standardEdit": {
+        "relativePath": "Scale0000.swift",
+        "operation": "append-comment",
+        "marker": "// swiftdebt standard one-file cache invalidation probe",
+        "changedSourceCount": 1
+      }
+    }
+  ],
+  "exhaustionScenario": {
+    "id": "repository-comparison-budget-exhaustion",
+    "state": "cold-fresh-process-and-derived-output",
+    "sourceFileCount": 1,
+    "utf8ByteCount": 41070,
+    "snapshotSHA256": "d147f99ef2e5ff9f801922b7773c0b4130ce4c4c562dc43858459e7cee2bb73d",
+    "analysisUnitCounts": {
+      "dataClumpUnits": 600,
+      "repeatedSwitchUnits": 0
+    },
+    "expectedExitStatus": 2,
+    "expectedIssueCode": "comparison-budget-exceeded"
+  },
+  "blockedScenarios": [
+    {
+      "id": "embedding-incremental-telemetry",
+      "state": "warm-and-one-file-edit",
+      "availability": "blocked",
+      "reason": "This deterministic cache retains syntax facts only; no embedding provider is initialized, so re-embedding counts remain unavailable.",
+      "requiredMeasurements": [
+        "reembedded-unit-count",
+        "embedding-provider-operation-count"
+      ],
+      "measurements": {
+        "availability": "unavailable"
+      }
+    },
+    {
+      "id": "sqvector-exact-index",
+      "state": "cold-and-warm",
+      "availability": "blocked",
+      "reason": "SQVectorStatic is pin-consumable, but the SwiftDebt adapter is unmerged and no frozen exact-index benchmark scenario or raw release evidence exists.",
+      "upstreamPin": {
+        "url": "https://github.com/brunogama/sqvector-swift.git",
+        "revision": "aafd9ae601826112978127c7cb611c94ab8a2e06",
+        "product": "SQVectorStatic",
+        "module": "SQVector"
+      },
+      "requiredMeasurements": [
+        "nearest-neighbor-latency-median-and-p95",
+        "peak-rss",
+        "index-size-bytes",
+        "maximum-candidate-count"
+      ],
+      "measurements": {
+        "availability": "unavailable"
+      }
+    },
+    {
+      "id": "sqvector-ann-recall-and-latency",
+      "state": "cold-and-warm",
+      "availability": "blocked",
+      "reason": "No ANN implementation is available; exact local retrieval cannot establish approximate recall or ANN latency.",
+      "requiredMeasurements": [
+        "approximate-recall",
+        "nearest-neighbor-latency-median-and-p95",
+        "peak-rss",
+        "index-size-bytes",
+        "maximum-candidate-count"
+      ],
+      "measurements": {
+        "availability": "unavailable"
+      }
+    }
+  ],
+  "observabilityGaps": [
+    "Repository analysis is included in end-to-end wall time and process RSS but has no dedicated AnalysisProfile phase.",
+    "The syntax-cache activity report proves zero cache network requests but the CLI has no embedding-provider or candidate-index operation telemetry.",
+    "Index size and candidate count are not applicable to measured similarity-disabled scenarios and unavailable for blocked index scenarios."
+  ],
+  "repositoryCacheCompatibility": {
+    "cacheSchemaVersion": 1,
+    "factSchemaVersion": 1,
+    "projectionRevision": "repository-syntax-facts-v1",
+    "provider": {
+      "name": "SwiftSyntax",
+      "packageVersion": "602.0.0",
+      "sourceRevision": "4799286537280063c85a32f09884cfbca301b1a1"
+    },
+    "rules": [
+      {
+        "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+        "semanticRevision": 2
+      },
+      {
+        "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+        "semanticRevision": 2
+      }
+    ],
+    "maximumAnalysisUnitsPerRule": 50000
+  },
+  "repositoryCacheDataClasses": [
+    "data-clump-syntax-facts",
+    "fact-budget-dependencies",
+    "parse-diagnostics",
+    "repeated-switch-syntax-facts",
+    "source-content-digests"
+  ],
+  "preflightPolicy": {
+    "durationSeconds": 30,
+    "sampleIntervalSeconds": 5,
+    "maximumOneMinuteLoad": 14.0,
+    "minimumCPUIdlePercent": 40.0,
+    "maximumDiskMegabytesPerSecond": 1.0,
+    "provenance": "Freeze a quiet-host window before sampling; the disk allowance is a fixed measurement-resolution floor, not a post-run adjustment."
+  }
+}
