@@ -106,3 +106,31 @@ struct SourcePathRecordingRule: TestDebtRule {
         recorder.path = context.sourcePath
     }
 }
+
+struct InvalidCompatibilityDirectionRule: TestDebtRule {
+    static let identity = RuleIdentity(
+        namespace: RuleNamespace(validated: "tests"),
+        id: RuleID(validated: "invalid-compatibility")
+    )
+    static let contract = RuleContract(
+        semanticRevision: .initial,
+        semantics: "Fixture with a non-earlier compatibility source.",
+        rationale: "Exercises the RuleEngine authority boundary.",
+        compatibilityDeclarations: [sameRevisionCompatibility]
+    )
+
+    func detect(in context: AnalysisContext, emit: DetectionEmitter) throws {}
+}
+
+private let sameRevisionCompatibility: SemanticCompatibilityDeclaration = {
+    guard
+        let declaration = SemanticCompatibilityDeclaration(
+            fromRevision: .initial,
+            supportedClaims: [.continuity],
+            rationale: "Invalid because the containing rule is also revision 1."
+        )
+    else {
+        preconditionFailure("The declaration value is structurally valid.")
+    }
+    return declaration
+}()

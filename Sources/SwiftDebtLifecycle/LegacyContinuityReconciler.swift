@@ -1,37 +1,35 @@
 import SwiftDebtCore
 
-struct ContinuityMatch {
+struct LegacyContinuityMatch {
     let finding: Finding
     let priorSnapshot: ObservationSnapshot
     let priorDetection: ObservedDetection
     let currentDetection: ObservedDetection
     let reasons: [LifecycleReason]
-    let semanticComparison: SemanticComparisonBasis
 }
 
-struct ContinuityUnresolvedGroup {
+struct LegacyContinuityUnresolvedGroup {
     let findings: [Finding]
     let detections: [ObservedDetection]
     let reasons: [LifecycleReason]
-    let semanticComparisons: [SemanticComparisonBasis]
     let isAmbiguous: Bool
 }
 
-struct ContinuityReconciliation {
-    let matches: [ContinuityMatch]
-    let unresolvedGroups: [ContinuityUnresolvedGroup]
+struct LegacyContinuityReconciliation {
+    let matches: [LegacyContinuityMatch]
+    let unresolvedGroups: [LegacyContinuityUnresolvedGroup]
     let newDetections: [ObservedDetection]
     let absentFindings: [Finding]
 }
 
-struct ContinuityReconciler {
+struct LegacyContinuityReconciler {
     func reconcile(
         findings: [Finding],
         detections: [ObservedDetection],
         snapshot: ObservationSnapshot,
         artifact: LifecycleArtifact
-    ) throws -> ContinuityReconciliation {
-        let candidates = try findings.map { finding -> Candidate in
+    ) throws -> LegacyContinuityReconciliation {
+        let candidates = try findings.map { finding -> LegacyCandidate in
             let reference = finding.latestDetectionReference
             guard let priorSnapshot = artifact.snapshot(id: reference.snapshotID),
                 let priorDetection = priorSnapshot.detection(id: reference.detectionID)
@@ -40,10 +38,10 @@ struct ContinuityReconciler {
                     "Finding \(finding.id) has no latest Detection evidence."
                 )
             }
-            return Candidate(finding: finding, snapshot: priorSnapshot, detection: priorDetection)
+            return LegacyCandidate(finding: finding, snapshot: priorSnapshot, detection: priorDetection)
         }
 
-        var relations: [Pair: PairRelation] = [:]
+        var relations: [LegacyPair: LegacyPairRelation] = [:]
         var candidateEdges = Array(repeating: Set<Int>(), count: candidates.count)
         var detectionEdges = Array(repeating: Set<Int>(), count: detections.count)
         for candidateIndex in candidates.indices {
@@ -54,7 +52,7 @@ struct ContinuityReconciler {
                     snapshot: snapshot
                 )
                 guard relation.isCredible else { continue }
-                let pair = Pair(candidate: candidateIndex, detection: detectionIndex)
+                let pair = LegacyPair(candidate: candidateIndex, detection: detectionIndex)
                 relations[pair] = relation
                 candidateEdges[candidateIndex].insert(detectionIndex)
                 detectionEdges[detectionIndex].insert(candidateIndex)
@@ -63,7 +61,6 @@ struct ContinuityReconciler {
         try addSameSourceDivergenceCandidates(
             candidates: candidates,
             detections: detections,
-            snapshot: snapshot,
             relations: &relations,
             candidateEdges: &candidateEdges,
             detectionEdges: &detectionEdges
@@ -71,21 +68,20 @@ struct ContinuityReconciler {
 
         var matchedCandidates = Set<Int>()
         var matchedDetections = Set<Int>()
-        var matches: [ContinuityMatch] = []
+        var matches: [LegacyContinuityMatch] = []
         for pair in relations.keys.sorted() {
-            guard case .supported(let reasons, let semanticComparison) = relations[pair],
+            guard case .supported(let reasons) = relations[pair],
                 candidateEdges[pair.candidate].count == 1,
                 detectionEdges[pair.detection].count == 1
             else { continue }
             let candidate = candidates[pair.candidate]
             matches.append(
-                ContinuityMatch(
+                LegacyContinuityMatch(
                     finding: candidate.finding,
                     priorSnapshot: candidate.snapshot,
                     priorDetection: candidate.detection,
                     currentDetection: detections[pair.detection],
-                    reasons: reasons,
-                    semanticComparison: semanticComparison
+                    reasons: reasons
                 )
             )
             matchedCandidates.insert(pair.candidate)
@@ -110,7 +106,7 @@ struct ContinuityReconciler {
                 group.detections.compactMap { detection in detections.firstIndex { $0.id == detection.id } }
             })
 
-        return ContinuityReconciliation(
+        return LegacyContinuityReconciliation(
             matches: matches.sorted { $0.finding.id.rawValue < $1.finding.id.rawValue },
             unresolvedGroups: groups,
             newDetections: detections.indices.compactMap { index in
@@ -127,10 +123,9 @@ struct ContinuityReconciler {
     /// has any structural edge, however, a same-source edit is enough to keep a
     /// possible predecessor unresolved instead of fabricating a split.
     private func addSameSourceDivergenceCandidates(
-        candidates: [Candidate],
+        candidates: [LegacyCandidate],
         detections: [ObservedDetection],
-        snapshot: ObservationSnapshot,
-        relations: inout [Pair: PairRelation],
+        relations: inout [LegacyPair: LegacyPairRelation],
         candidateEdges: inout [Set<Int>],
         detectionEdges: inout [Set<Int>]
     ) throws {
@@ -141,23 +136,13 @@ struct ContinuityReconciler {
             where candidates[candidateIndex].detection.location.sourcePath
                 == detections[detectionIndex].location.sourcePath
             {
-                let pair = Pair(candidate: candidateIndex, detection: detectionIndex)
-                let comparison = try SemanticComparisonEvaluator().assess(
-                    claim: .continuity,
-                    priorSnapshot: candidates[candidateIndex].snapshot,
-                    priorRule: candidates[candidateIndex].detection.rule,
-                    currentSnapshot: snapshot,
-                    currentRule: detections[detectionIndex].rule
-                )
-                relations[pair] = .ambiguous(
-                    comparison.reasons + [
-                        try reason(
-                            "same-source-structural-divergence",
-                            "Both structural digests changed within the same SourceUnit, so an edited occurrence cannot be ruled out."
-                        )
-                    ],
-                    comparison.basis
-                )
+                let pair = LegacyPair(candidate: candidateIndex, detection: detectionIndex)
+                relations[pair] = .ambiguous([
+                    try reason(
+                        "same-source-structural-divergence",
+                        "Both structural digests changed within the same SourceUnit, so an edited occurrence cannot be ruled out."
+                    )
+                ])
                 candidateEdges[candidateIndex].insert(detectionIndex)
                 detectionEdges[detectionIndex].insert(candidateIndex)
             }
@@ -169,27 +154,27 @@ struct ContinuityReconciler {
     }
 }
 
-struct Candidate {
+struct LegacyCandidate {
     let finding: Finding
     let snapshot: ObservationSnapshot
     let detection: ObservedDetection
 }
 
-struct Pair: Hashable, Comparable {
+struct LegacyPair: Hashable, Comparable {
     let candidate: Int
     let detection: Int
 
-    static func < (lhs: Pair, rhs: Pair) -> Bool {
+    static func < (lhs: LegacyPair, rhs: LegacyPair) -> Bool {
         lhs.candidate == rhs.candidate
             ? lhs.detection < rhs.detection : lhs.candidate < rhs.candidate
     }
 }
 
-enum PairRelation {
+enum LegacyPairRelation {
     case none
-    case supported([LifecycleReason], SemanticComparisonBasis)
-    case ambiguous([LifecycleReason], SemanticComparisonBasis)
-    case unverified([LifecycleReason], SemanticComparisonBasis)
+    case supported([LifecycleReason])
+    case ambiguous([LifecycleReason])
+    case unverified([LifecycleReason])
 
     var isCredible: Bool {
         if case .none = self { return false }
@@ -199,14 +184,7 @@ enum PairRelation {
     var reasons: [LifecycleReason] {
         switch self {
         case .none: []
-        case .supported(let reasons, _), .ambiguous(let reasons, _), .unverified(let reasons, _): reasons
-        }
-    }
-
-    var semanticComparison: SemanticComparisonBasis {
-        switch self {
-        case .supported(_, let basis), .ambiguous(_, let basis), .unverified(_, let basis): basis
-        case .none: preconditionFailure("A non-credible relation has no Semantic Comparison Basis.")
+        case .supported(let reasons), .ambiguous(let reasons), .unverified(let reasons): reasons
         }
     }
 

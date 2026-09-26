@@ -13,6 +13,9 @@ private struct SchemaOneEvent: Decodable {
 
 extension LifecycleArtifact {
     init(migratingSchemaOne values: KeyedDecodingContainer<CodingKeys>) throws {
+        guard !values.contains(.snapshotParentEdges), !values.contains(.legacyProcessedSnapshotIDs) else {
+            throw LifecycleContractError.invalidArtifact("Schema 1 contains fields from a later artifact version.")
+        }
         let reportKind = try values.decode(String.self, forKey: .reportKind)
         guard reportKind == LifecycleArtifactSchema.reportKind else {
             throw LifecycleContractError.invalidArtifact("Unexpected report kind \(reportKind).")
@@ -30,7 +33,8 @@ extension LifecycleArtifact {
                     id: event.id,
                     snapshotID: event.snapshotID,
                     basisEventIDs: priorEventID.map { [$0] } ?? [],
-                    transition: event.transition
+                    transition: event.transition,
+                    evidenceContract: .legacySchemaTwo
                 )
                 priorEventID = event.id
                 return value
@@ -60,9 +64,10 @@ extension LifecycleArtifact {
             unresolvedDetections: values.decode([UnresolvedDetection].self, forKey: .unresolvedDetections),
             processedSnapshotIDs: processed,
             introductionConclusions: values.decodeIfPresent(
-                [IntroductionConclusion].self,
+                [LegacyIntroductionConclusion].self,
                 forKey: .introductionConclusions
-            ) ?? []
+            )?.map(\.migrated) ?? [],
+            legacyProcessedSnapshotIDs: processed
         )
     }
 

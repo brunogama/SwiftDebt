@@ -1,5 +1,5 @@
 public enum LifecycleArtifactSchema {
-    public static let currentVersion = 2
+    public static let currentVersion = 3
     public static let reportKind = "swiftdebt-lifecycle"
 }
 
@@ -44,6 +44,7 @@ public struct LifecycleArtifact: Codable, Equatable, Sendable {
     public internal(set) var unresolvedDetections: [UnresolvedDetection]
     public internal(set) var processedSnapshotIDs: [SnapshotID]
     public internal(set) var introductionConclusions: [IntroductionConclusion]
+    public internal(set) var legacyProcessedSnapshotIDs: [SnapshotID]
 
     public init(generatorVersion: String) throws {
         guard hasLifecycleContent(generatorVersion) else {
@@ -58,6 +59,7 @@ public struct LifecycleArtifact: Codable, Equatable, Sendable {
         self.unresolvedDetections = []
         self.processedSnapshotIDs = []
         self.introductionConclusions = []
+        self.legacyProcessedSnapshotIDs = []
     }
 
     init(
@@ -69,7 +71,8 @@ public struct LifecycleArtifact: Codable, Equatable, Sendable {
         findings: [Finding],
         unresolvedDetections: [UnresolvedDetection],
         processedSnapshotIDs: [SnapshotID],
-        introductionConclusions: [IntroductionConclusion]
+        introductionConclusions: [IntroductionConclusion],
+        legacyProcessedSnapshotIDs: [SnapshotID] = []
     ) throws {
         guard schemaVersion == LifecycleArtifactSchema.currentVersion else {
             throw LifecycleContractError.invalidArtifact(
@@ -91,6 +94,7 @@ public struct LifecycleArtifact: Codable, Equatable, Sendable {
         self.unresolvedDetections = unresolvedDetections.sorted(by: Self.unresolvedOrder)
         self.processedSnapshotIDs = processedSnapshotIDs.sorted { $0.rawValue < $1.rawValue }
         self.introductionConclusions = introductionConclusions
+        self.legacyProcessedSnapshotIDs = legacyProcessedSnapshotIDs.sorted { $0.rawValue < $1.rawValue }
         try validate()
     }
 
@@ -150,6 +154,7 @@ public struct LifecycleArtifact: Codable, Equatable, Sendable {
         case processedSnapshotIDs
         case lineageHeads
         case introductionConclusions
+        case legacyProcessedSnapshotIDs
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -163,6 +168,7 @@ public struct LifecycleArtifact: Codable, Equatable, Sendable {
         try values.encode(unresolvedDetections, forKey: .unresolvedDetections)
         try values.encode(processedSnapshotIDs, forKey: .processedSnapshotIDs)
         try values.encode(introductionConclusions, forKey: .introductionConclusions)
+        try values.encode(legacyProcessedSnapshotIDs, forKey: .legacyProcessedSnapshotIDs)
     }
 
     public init(from decoder: any Decoder) throws {
@@ -183,8 +189,11 @@ public struct LifecycleArtifact: Codable, Equatable, Sendable {
                     introductionConclusions: values.decodeIfPresent(
                         [IntroductionConclusion].self,
                         forKey: .introductionConclusions
-                    ) ?? []
+                    ) ?? [],
+                    legacyProcessedSnapshotIDs: values.decode([SnapshotID].self, forKey: .legacyProcessedSnapshotIDs)
                 )
+            case 2:
+                try self.init(migratingSchemaTwo: values)
             case 1:
                 try self.init(migratingSchemaOne: values)
             default:

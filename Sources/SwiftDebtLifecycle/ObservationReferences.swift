@@ -3,10 +3,25 @@ import SwiftDebtCore
 public struct SnapshotRule: Equatable, Hashable, Sendable {
     public let identity: RuleIdentity
     public let semanticRevision: SemanticRevision
+    public let compatibilityDeclarations: [SemanticCompatibilityDeclaration]
 
     public init(identity: RuleIdentity, semanticRevision: SemanticRevision) {
         self.identity = identity
         self.semanticRevision = semanticRevision
+        self.compatibilityDeclarations = []
+    }
+
+    package init(
+        identity: RuleIdentity,
+        semanticRevision: SemanticRevision,
+        compatibilityDeclarations: [SemanticCompatibilityDeclaration]
+    ) throws {
+        self.identity = identity
+        self.semanticRevision = semanticRevision
+        self.compatibilityDeclarations = compatibilityDeclarations.sorted {
+            $0.fromRevision.rawValue < $1.fromRevision.rawValue
+        }
+        try validateCompatibility()
     }
 }
 
@@ -15,6 +30,7 @@ extension SnapshotRule: Codable {
         case namespace
         case id
         case semanticRevision
+        case compatibilityDeclarations
     }
 
     public init(from decoder: any Decoder) throws {
@@ -33,10 +49,34 @@ extension SnapshotRule: Codable {
                 debugDescription: "Snapshot rules require a valid identity and positive semantic revision."
             )
         }
-        self.init(
-            identity: RuleIdentity(namespace: namespace, id: id),
-            semanticRevision: semanticRevision
-        )
+        let declarations =
+            try values.decodeIfPresent(
+                [SemanticCompatibilityDeclaration].self,
+                forKey: .compatibilityDeclarations
+            ) ?? []
+        let canonicalDeclarations = declarations.sorted {
+            $0.fromRevision.rawValue < $1.fromRevision.rawValue
+        }
+        guard declarations == canonicalDeclarations else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .compatibilityDeclarations,
+                in: values,
+                debugDescription: "Rule compatibility declarations must use canonical revision order."
+            )
+        }
+        do {
+            try self.init(
+                identity: RuleIdentity(namespace: namespace, id: id),
+                semanticRevision: semanticRevision,
+                compatibilityDeclarations: declarations
+            )
+        } catch {
+            throw DecodingError.dataCorruptedError(
+                forKey: .compatibilityDeclarations,
+                in: values,
+                debugDescription: String(describing: error)
+            )
+        }
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -44,6 +84,21 @@ extension SnapshotRule: Codable {
         try values.encode(identity.namespace.rawValue, forKey: .namespace)
         try values.encode(identity.id.rawValue, forKey: .id)
         try values.encode(semanticRevision.rawValue, forKey: .semanticRevision)
+        if !compatibilityDeclarations.isEmpty {
+            try values.encode(compatibilityDeclarations, forKey: .compatibilityDeclarations)
+        }
+    }
+
+    private func validateCompatibility() throws {
+        guard Set(compatibilityDeclarations.map(\.fromRevision)).count == compatibilityDeclarations.count,
+            compatibilityDeclarations.allSatisfy({
+                $0.fromRevision.rawValue < semanticRevision.rawValue
+            })
+        else {
+            throw LifecycleContractError.invalidSnapshot(
+                "Rule compatibility must point from unique earlier Semantic Revisions."
+            )
+        }
     }
 }
 

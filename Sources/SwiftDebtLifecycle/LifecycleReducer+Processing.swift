@@ -93,7 +93,8 @@ extension LifecycleReducer {
                 ),
                 snapshotID: snapshot.id,
                 basisEventIDs: [basisEventID],
-                transition: transition
+                transition: transition,
+                semanticComparisons: [match.semanticComparison]
             )
         )
     }
@@ -129,7 +130,8 @@ extension LifecycleReducer {
                     ),
                     snapshotID: snapshot.id,
                     basisEventIDs: [basisEventID],
-                    transition: transition
+                    transition: transition,
+                    semanticComparisons: group.semanticComparisons
                 )
             )
         }
@@ -169,7 +171,7 @@ extension LifecycleReducer {
             let basisEventID = finding.events.last?.id
         else { return }
         switch assessment {
-        case .verified(let atomicObservationIDs, let reasons):
+        case .verified(let atomicObservationIDs, let reasons, let semanticComparisons):
             guard finding.lifecycleState == .open else { return }
             let transition = LifecycleTransition.resolved(
                 ResolutionEvidence(
@@ -183,10 +185,11 @@ extension LifecycleReducer {
                     id: try eventID(findingID: finding.id, snapshotID: snapshot.id, kind: transition.kind),
                     snapshotID: snapshot.id,
                     basisEventIDs: [basisEventID],
-                    transition: transition
+                    transition: transition,
+                    semanticComparisons: semanticComparisons
                 )
             )
-        case .unverified(let reasons):
+        case .unverified(let reasons, let semanticComparisons):
             guard finding.lifecycleState == .open else { return }
             let transition = LifecycleTransition.unverified(reasons)
             try artifact.findings[index].append(
@@ -194,7 +197,8 @@ extension LifecycleReducer {
                     id: try eventID(findingID: finding.id, snapshotID: snapshot.id, kind: transition.kind),
                     snapshotID: snapshot.id,
                     basisEventIDs: [basisEventID],
-                    transition: transition
+                    transition: transition,
+                    semanticComparisons: semanticComparisons
                 )
             )
         }

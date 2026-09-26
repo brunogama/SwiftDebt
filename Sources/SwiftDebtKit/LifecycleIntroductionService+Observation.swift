@@ -66,6 +66,7 @@ extension LifecycleIntroductionService {
             sourceIdentity: capture.sourceIdentity,
             scope: capture.scope,
             configuration: configuration,
+            rules: analysis.ruleDescriptors,
             capabilities: capabilities,
             engineVersion: SwiftDebtRelease.version,
             sourceSelection: capture.sourceSelection,

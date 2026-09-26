@@ -34,7 +34,7 @@ struct GitDivergentLineageCLIWorkflowTests {
         #expect(try analyze(fixture, artifact: reversedArtifact).status == 0)
 
         let artifact = try LifecycleArtifactStore(artifactURL: orderedArtifact).load()
-        #expect(artifact.schemaVersion == 2)
+        #expect(artifact.schemaVersion == 3)
         #expect(artifact.snapshots.count == 3)
         #expect(artifact.findings.count == 1)
         #expect(artifact.headSnapshotIDs.count == 2)

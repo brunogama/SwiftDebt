@@ -43,7 +43,14 @@ extension LifecycleArtifact {
                     "Finding \(finding.id) has no projection at one of its events."
                 )
             }
-            try validate(event.transition, finding: projection.finding, snapshot: snapshot, findings: findings)
+            try validate(
+                event.transition,
+                semanticComparisons: event.semanticComparisons,
+                evidenceContract: event.evidenceContract,
+                finding: projection.finding,
+                snapshot: snapshot,
+                findings: findings
+            )
         }
     }
 
@@ -90,13 +97,16 @@ extension LifecycleArtifact {
 
     private func validate(
         _ transition: LifecycleTransition,
+        semanticComparisons: [SemanticComparisonBasis],
+        evidenceContract: LifecycleEvidenceContract,
         finding: Finding,
         snapshot: ObservationSnapshot,
         findings: [FindingID: Finding]
     ) throws {
         switch transition {
         case .opened(let evidence):
-            guard let detection = snapshot.detection(id: evidence.detectionID),
+            guard semanticComparisons.isEmpty,
+                let detection = snapshot.detection(id: evidence.detectionID),
                 let atomic = snapshot.atomicObservation(id: evidence.atomicObservationID),
                 detection.rule == finding.rule,
                 atomic.rule == finding.rule,
@@ -108,25 +118,81 @@ extension LifecycleArtifact {
         case .observed(let evidence), .reopened(let evidence):
             try validateMatchedContinuity(
                 evidence,
+                semanticComparisons: semanticComparisons,
+                evidenceContract: evidenceContract,
                 finding: finding,
                 snapshot: snapshot
             )
         case .resolved(let evidence):
+            if evidenceContract == .legacySchemaTwo {
+                let assessment = try LegacyResolutionCoverageEvaluator().assess(
+                    finding: finding,
+                    snapshot: snapshot,
+                    artifact: self
+                )
+                guard case .verified(let atomicIDs, let reasons) = assessment,
+                    evidence.priorSnapshotID == finding.firstObservationSnapshotID,
+                    evidence.coveredAtomicObservationIDs == atomicIDs,
+                    evidence.reasons == reasons,
+                    semanticComparisons.isEmpty
+                else {
+                    throw LifecycleContractError.invalidArtifact("Legacy resolution evidence is invalid.")
+                }
+                break
+            }
             let assessment = try ResolutionCoverageEvaluator().assess(
                 finding: finding,
                 snapshot: snapshot,
                 artifact: self
             )
-            guard case .verified(let expectedAtomicIDs, let expectedReasons) = assessment,
+            guard
+                case .verified(
+                    let expectedAtomicIDs,
+                    let expectedReasons,
+                    let expectedComparisons
+                ) = assessment,
                 evidence.priorSnapshotID == finding.firstObservationSnapshotID,
                 evidence.coveredAtomicObservationIDs == expectedAtomicIDs,
-                evidence.reasons == expectedReasons
+                evidence.reasons == expectedReasons,
+                semanticComparisons == expectedComparisons
             else {
                 throw LifecycleContractError.invalidArtifact("A resolved event has incomplete evidence references.")
             }
         case .unverified(let reasons):
             guard !reasons.isEmpty else {
                 throw LifecycleContractError.invalidArtifact("An unverified event requires blockers.")
+            }
+            if evidenceContract == .legacySchemaTwo {
+                guard semanticComparisons.isEmpty else {
+                    throw LifecycleContractError.invalidArtifact("Legacy uncertainty cannot assert semantic bases.")
+                }
+                break
+            }
+            if !snapshot.detections.contains(where: { $0.rule.identity == finding.rule.identity }) {
+                guard let eventIndex = finding.events.firstIndex(where: { $0.snapshotID == snapshot.id }) else {
+                    throw LifecycleContractError.invalidArtifact(
+                        "An unverified event is missing from its Finding history."
+                    )
+                }
+                let findingAtAssessment = try Finding(
+                    id: finding.id,
+                    lineageID: finding.lineageID,
+                    rule: finding.rule,
+                    events: Array(finding.events[...eventIndex])
+                )
+                let assessment = try ResolutionCoverageEvaluator().assess(
+                    finding: findingAtAssessment,
+                    snapshot: snapshot,
+                    artifact: self
+                )
+                guard case .unverified(let expectedReasons, let expectedComparisons) = assessment,
+                    reasons == expectedReasons,
+                    semanticComparisons == expectedComparisons
+                else {
+                    throw LifecycleContractError.invalidArtifact(
+                        "An unverified absence event does not match its persisted comparison evidence."
+                    )
+                }
             }
         case .continuityAmbiguous(let evidence):
             let eligibleIDs = Set(

@@ -77,7 +77,8 @@ public struct LifecycleReducer: Sendable {
             findings: updated.findings,
             unresolvedDetections: updated.unresolvedDetections,
             processedSnapshotIDs: updated.processedSnapshotIDs,
-            introductionConclusions: updated.introductionConclusions
+            introductionConclusions: updated.introductionConclusions,
+            legacyProcessedSnapshotIDs: updated.legacyProcessedSnapshotIDs
         )
         return LifecycleReduction(
             artifact: updated,

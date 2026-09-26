@@ -1,13 +1,15 @@
 extension LifecycleArtifact {
     func validateMatchedContinuity(
         _ evidence: MatchedContinuityEvidence,
+        semanticComparisons: [SemanticComparisonBasis],
+        evidenceContract: LifecycleEvidenceContract,
         finding: Finding,
         snapshot: ObservationSnapshot
     ) throws {
         guard let currentDetection = snapshot.detection(id: evidence.currentDetection.detectionID),
             let currentAtomic = snapshot.atomicObservation(id: evidence.currentDetection.atomicObservationID),
-            currentDetection.rule == finding.rule,
-            currentAtomic.rule == finding.rule,
+            currentDetection.rule.identity == finding.rule.identity,
+            currentAtomic.rule == currentDetection.rule,
             currentAtomic.sourcePath == currentDetection.location.sourcePath,
             currentAtomic.outcome.references(currentDetection.id),
             let eventIndex = finding.events.firstIndex(where: { $0.snapshotID == snapshot.id }),
@@ -23,6 +25,35 @@ extension LifecycleArtifact {
                 "An observed or reopened event has broken Detection evidence."
             )
         }
+        if evidenceContract == .legacySchemaTwo {
+            guard semanticComparisons.isEmpty,
+                currentDetection.rule == finding.rule,
+                currentAtomic.rule == finding.rule
+            else {
+                throw LifecycleContractError.invalidArtifact("Legacy continuity evidence is invalid.")
+            }
+            let priorFindings = try parentFindingProjections(of: snapshot.id).map(\.finding)
+                .filter { $0.rule.identity == finding.rule.identity }
+            let currentDetections = snapshot.detections.filter { $0.rule.identity == finding.rule.identity }
+            let reconciliation = try LegacyContinuityReconciler().reconcile(
+                findings: priorFindings,
+                detections: currentDetections,
+                snapshot: snapshot,
+                artifact: self
+            )
+            guard
+                reconciliation.matches.contains(where: {
+                    $0.finding.id == finding.id
+                        && $0.priorSnapshot.id == priorSnapshot.id
+                        && $0.priorDetection.id == priorDetection.id
+                        && $0.currentDetection.id == currentDetection.id
+                        && $0.reasons == evidence.reasons
+                })
+            else {
+                throw LifecycleContractError.invalidArtifact("Legacy continuity assignment is invalid.")
+            }
+            return
+        }
         let candidate = Candidate(
             finding: finding,
             snapshot: priorSnapshot,
@@ -33,8 +64,9 @@ extension LifecycleArtifact {
             detection: currentDetection,
             snapshot: snapshot
         )
-        guard case .supported(let expectedReasons) = relation,
-            evidence.reasons == expectedReasons.sorted(by: lifecycleReasonOrder)
+        guard case .supported(let expectedReasons, let expectedComparison) = relation,
+            evidence.reasons == expectedReasons.sorted(by: lifecycleReasonOrder),
+            semanticComparisons == [expectedComparison]
         else {
             throw LifecycleContractError.invalidArtifact(
                 "An observed or reopened event lacks sufficient structural continuity evidence."

@@ -1,6 +1,6 @@
 import SwiftDebtCore
 
-struct IntroductionConclusionEvaluator {
+struct LegacyIntroductionConclusionEvaluator {
     func make(
         finding: Finding,
         attempt: UInt,
@@ -46,7 +46,8 @@ struct IntroductionConclusionEvaluator {
                 earliestPositiveRevision: nil,
                 reasons: unique(reasons),
                 evidence: evidence,
-                semanticComparisons: []
+                semanticComparisons: [],
+                evidenceContract: .legacySchemaTwo
             )
         }
 
@@ -56,9 +57,9 @@ struct IntroductionConclusionEvaluator {
             openingSnapshot: openingSnapshot,
             rule: finding.rule
         )
-        var traced: TraceResult
+        let traced: LegacyTraceResult
         switch startAssessment {
-        case .present(let comparison):
+        case .present:
             traced = try trace(
                 start,
                 records: records,
@@ -68,11 +69,8 @@ struct IntroductionConclusionEvaluator {
                 rule: finding.rule,
                 visited: []
             )
-            traced.semanticComparisons = uniqueSemanticComparisons(
-                traced.semanticComparisons + [comparison]
-            )
-        case .absent(let comparison):
-            traced = TraceResult(
+        case .absent:
+            traced = LegacyTraceResult(
                 kind: .unavailable,
                 exactRevision: nil,
                 earliestPositiveRevision: nil,
@@ -81,37 +79,17 @@ struct IntroductionConclusionEvaluator {
                         code: "opening-positive-not-reproduced",
                         message: "Committed history did not reproduce the Finding at its First Observation revision."
                     )
-                ],
-                semanticComparisons: [comparison]
+                ]
             )
-        case .incomplete(let reasons, let comparisons):
-            traced = TraceResult(
+        case .incomplete(let reasons):
+            traced = LegacyTraceResult(
                 kind: .unavailable,
                 exactRevision: nil,
                 earliestPositiveRevision: nil,
-                reasons: reasons,
-                semanticComparisons: comparisons
+                reasons: reasons
             )
         }
 
-        return try conclusion(
-            finding: finding,
-            attempt: attempt,
-            evidence: evidence,
-            openingSnapshot: openingSnapshot,
-            startRecord: startRecord,
-            traced: traced
-        )
-    }
-
-    private func conclusion(
-        finding: Finding,
-        attempt: UInt,
-        evidence: IntroductionHistoryEvidence,
-        openingSnapshot: ObservationSnapshot,
-        startRecord: IntroductionHistoryRevision,
-        traced: TraceResult
-    ) throws -> IntroductionConclusion {
         var blockers = try globalBlockers(openingSnapshot: openingSnapshot, evidence: evidence)
         if let startObservation = startRecord.observation,
             sourceDigest(of: startObservation) != sourceDigest(of: openingSnapshot)
@@ -141,7 +119,8 @@ struct IntroductionConclusionEvaluator {
             earliestPositiveRevision: traced.earliestPositiveRevision,
             reasons: unique(traced.reasons + blockers),
             evidence: evidence,
-            semanticComparisons: traced.semanticComparisons
+            semanticComparisons: [],
+            evidenceContract: .legacySchemaTwo
         )
     }
 
@@ -168,16 +147,15 @@ struct IntroductionConclusionEvaluator {
     }
 }
 
-enum RevisionAssessment {
-    case present(SemanticComparisonBasis)
-    case absent(SemanticComparisonBasis)
-    case incomplete([LifecycleReason], semanticComparisons: [SemanticComparisonBasis])
+enum LegacyRevisionAssessment {
+    case present
+    case absent
+    case incomplete([LifecycleReason])
 }
 
-struct TraceResult {
+struct LegacyTraceResult {
     var kind: IntroductionConclusionKind
     var exactRevision: GitRevisionID?
     var earliestPositiveRevision: GitRevisionID?
     var reasons: [LifecycleReason]
-    var semanticComparisons: [SemanticComparisonBasis]
 }

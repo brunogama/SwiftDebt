@@ -12,6 +12,11 @@ public enum FindingEvidenceState: String, Codable, Equatable, Hashable, Sendable
     case verifiedAbsent = "verified-absent"
 }
 
+public enum LifecycleEvidenceContract: String, Codable, Equatable, Sendable {
+    case legacySchemaTwo = "legacy-schema-2"
+    case semanticComparisonV1 = "semantic-comparison-v1"
+}
+
 public struct DetectionEvidence: Codable, Equatable, Sendable {
     public let detectionID: DetectionID
     public let atomicObservationID: AtomicObservationID
@@ -160,21 +165,74 @@ extension LifecycleTransition: Codable {
     }
 }
 
-public struct LifecycleEvent: Codable, Equatable, Sendable {
+public struct LifecycleEvent: Equatable, Sendable {
     public let id: LifecycleEventID
     public let snapshotID: SnapshotID
     public let basisEventIDs: [LifecycleEventID]
     public let transition: LifecycleTransition
+    public let semanticComparisons: [SemanticComparisonBasis]
+    public let evidenceContract: LifecycleEvidenceContract
 
     public init(
         id: LifecycleEventID,
         snapshotID: SnapshotID,
         basisEventIDs: [LifecycleEventID] = [],
-        transition: LifecycleTransition
+        transition: LifecycleTransition,
+        semanticComparisons: [SemanticComparisonBasis] = [],
+        evidenceContract: LifecycleEvidenceContract = .semanticComparisonV1
     ) {
         self.id = id
         self.snapshotID = snapshotID
         self.basisEventIDs = basisEventIDs.sorted { $0.rawValue < $1.rawValue }
         self.transition = transition
+        self.semanticComparisons = uniqueSemanticComparisons(semanticComparisons)
+        self.evidenceContract = evidenceContract
+    }
+}
+
+extension LifecycleEvent: Codable {
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case snapshotID
+        case basisEventIDs
+        case transition
+        case semanticComparisons
+        case evidenceContract
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        let comparisons =
+            try values.decodeIfPresent(
+                [SemanticComparisonBasis].self,
+                forKey: .semanticComparisons
+            ) ?? []
+        guard comparisons == uniqueSemanticComparisons(comparisons) else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .semanticComparisons,
+                in: values,
+                debugDescription: "Semantic comparison evidence must be unique and canonical."
+            )
+        }
+        self.init(
+            id: try values.decode(LifecycleEventID.self, forKey: .id),
+            snapshotID: try values.decode(SnapshotID.self, forKey: .snapshotID),
+            basisEventIDs: try values.decode([LifecycleEventID].self, forKey: .basisEventIDs),
+            transition: try values.decode(LifecycleTransition.self, forKey: .transition),
+            semanticComparisons: comparisons,
+            evidenceContract: try values.decode(LifecycleEvidenceContract.self, forKey: .evidenceContract)
+        )
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var values = encoder.container(keyedBy: CodingKeys.self)
+        try values.encode(id, forKey: .id)
+        try values.encode(snapshotID, forKey: .snapshotID)
+        try values.encode(basisEventIDs, forKey: .basisEventIDs)
+        try values.encode(transition, forKey: .transition)
+        try values.encode(evidenceContract, forKey: .evidenceContract)
+        if !semanticComparisons.isEmpty {
+            try values.encode(semanticComparisons, forKey: .semanticComparisons)
+        }
     }
 }

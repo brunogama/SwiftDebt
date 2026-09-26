@@ -104,11 +104,20 @@ public struct RuleContract: Equatable, Sendable {
     public let semanticRevision: SemanticRevision
     public let semantics: String
     public let rationale: String
+    public let compatibilityDeclarations: [SemanticCompatibilityDeclaration]
 
-    public init(semanticRevision: SemanticRevision, semantics: String, rationale: String) {
+    public init(
+        semanticRevision: SemanticRevision,
+        semantics: String,
+        rationale: String,
+        compatibilityDeclarations: [SemanticCompatibilityDeclaration] = []
+    ) {
         self.semanticRevision = semanticRevision
         self.semantics = semantics
         self.rationale = rationale
+        self.compatibilityDeclarations = compatibilityDeclarations.sorted {
+            $0.fromRevision.rawValue < $1.fromRevision.rawValue
+        }
     }
 }
 

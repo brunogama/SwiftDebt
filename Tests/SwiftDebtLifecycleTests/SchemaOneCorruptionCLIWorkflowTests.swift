@@ -19,6 +19,7 @@ struct SchemaOneCorruptionCLIWorkflowTests {
         var schemaOne = try artifactJSONObject(at: fixture.url)
         schemaOne["schemaVersion"] = 1
         schemaOne.removeValue(forKey: "snapshotParentEdges")
+        schemaOne.removeValue(forKey: "legacyProcessedSnapshotIDs")
         schemaOne["lineageHeads"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(artifact.lineageHeads))
         var snapshots = try #require(schemaOne["snapshots"] as? [[String: Any]])
         snapshots.append(snapshots[0])
@@ -28,6 +29,8 @@ struct SchemaOneCorruptionCLIWorkflowTests {
             var events = try #require(findings[index]["events"] as? [[String: Any]])
             for eventIndex in events.indices {
                 events[eventIndex].removeValue(forKey: "basisEventIDs")
+                events[eventIndex].removeValue(forKey: "evidenceContract")
+                events[eventIndex].removeValue(forKey: "semanticComparisons")
             }
             findings[index]["events"] = events
         }

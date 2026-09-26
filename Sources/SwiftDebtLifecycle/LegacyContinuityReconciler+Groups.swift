@@ -1,16 +1,16 @@
-extension ContinuityReconciler {
+extension LegacyContinuityReconciler {
     func unresolvedGroups(
-        candidates: [Candidate],
+        candidates: [LegacyCandidate],
         detections: [ObservedDetection],
-        relations: [Pair: PairRelation],
+        relations: [LegacyPair: LegacyPairRelation],
         candidateEdges: [Set<Int>],
         detectionEdges: [Set<Int>],
         excludingCandidates: Set<Int>,
         excludingDetections: Set<Int>
-    ) throws -> [ContinuityUnresolvedGroup] {
+    ) throws -> [LegacyContinuityUnresolvedGroup] {
         var visitedCandidates = excludingCandidates
         var visitedDetections = excludingDetections
-        var groups: [ContinuityUnresolvedGroup] = []
+        var groups: [LegacyContinuityUnresolvedGroup] = []
 
         for start in candidates.indices where !visitedCandidates.contains(start) && !candidateEdges[start].isEmpty {
             var candidateQueue = [start]
@@ -39,9 +39,6 @@ extension ContinuityReconciler {
                     && componentDetections.contains($0.key.detection)
             }
             var reasons = Set(pairs.values.flatMap(\.reasons))
-            let semanticComparisons = uniqueSemanticComparisons(
-                pairs.values.map(\.semanticComparison)
-            )
             let cardinalityAmbiguous =
                 pairs.values.contains(where: \.isAmbiguous)
                 && (componentCandidates.count > 1 || componentDetections.count > 1)
@@ -54,7 +51,7 @@ extension ContinuityReconciler {
                 )
             }
             groups.append(
-                ContinuityUnresolvedGroup(
+                LegacyContinuityUnresolvedGroup(
                     findings: componentCandidates.map { candidates[$0].finding }.sorted {
                         $0.id.rawValue < $1.id.rawValue
                     },
@@ -62,7 +59,6 @@ extension ContinuityReconciler {
                         $0.id.rawValue < $1.id.rawValue
                     },
                     reasons: reasons.sorted(by: lifecycleReasonOrder),
-                    semanticComparisons: semanticComparisons,
                     isAmbiguous: pairs.values.contains(where: \.isAmbiguous)
                 )
             )

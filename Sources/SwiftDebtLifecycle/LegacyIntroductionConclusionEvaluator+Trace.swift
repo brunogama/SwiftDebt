@@ -1,6 +1,6 @@
 import SwiftDebtCore
 
-extension IntroductionConclusionEvaluator {
+extension LegacyIntroductionConclusionEvaluator {
     func trace(
         _ revision: GitRevisionID,
         records: [GitRevisionID: IntroductionHistoryRevision],
@@ -9,7 +9,7 @@ extension IntroductionConclusionEvaluator {
         openingSnapshot: ObservationSnapshot,
         rule: SnapshotRule,
         visited: Set<GitRevisionID>
-    ) throws -> TraceResult {
+    ) throws -> LegacyTraceResult {
         guard !visited.contains(revision), let record = records[revision] else {
             return try bounded(
                 at: revision,
@@ -20,7 +20,7 @@ extension IntroductionConclusionEvaluator {
         var visited = visited
         visited.insert(revision)
         guard !record.parentRevisions.isEmpty else {
-            return TraceResult(
+            return LegacyTraceResult(
                 kind: .exact,
                 exactRevision: revision,
                 earliestPositiveRevision: revision,
@@ -29,14 +29,12 @@ extension IntroductionConclusionEvaluator {
                         code: "verified-repository-root",
                         message: "The comparable positive revision is a verified repository root."
                     )
-                ],
-                semanticComparisons: []
+                ]
             )
         }
 
         var positiveParents: [GitRevisionID] = []
         var blockers: [LifecycleReason] = []
-        var semanticComparisons: [SemanticComparisonBasis] = []
         for parent in record.parentRevisions {
             guard let parentRecord = records[parent] else {
                 let code = frontier.contains(parent) ? "history-budget-exhausted" : "history-parent-missing"
@@ -54,28 +52,24 @@ extension IntroductionConclusionEvaluator {
                 openingSnapshot: openingSnapshot,
                 rule: rule
             ) {
-            case .present(let comparison):
+            case .present:
                 positiveParents.append(parent)
-                semanticComparisons.append(comparison)
-            case .absent(let comparison):
-                semanticComparisons.append(comparison)
+            case .absent:
                 continue
-            case .incomplete(let reasons, let comparisons):
+            case .incomplete(let reasons):
                 blockers += reasons
-                semanticComparisons += comparisons
             }
         }
         if !blockers.isEmpty {
-            return TraceResult(
+            return LegacyTraceResult(
                 kind: .bounded,
                 exactRevision: nil,
                 earliestPositiveRevision: revision,
-                reasons: unique(blockers),
-                semanticComparisons: uniqueSemanticComparisons(semanticComparisons)
+                reasons: unique(blockers)
             )
         }
         if positiveParents.isEmpty {
-            return TraceResult(
+            return LegacyTraceResult(
                 kind: .exact,
                 exactRevision: revision,
                 earliestPositiveRevision: revision,
@@ -85,19 +79,16 @@ extension IntroductionConclusionEvaluator {
                         message:
                             "The Finding is present at \(revision.rawValue) and absent from every comparable parent."
                     )
-                ],
-                semanticComparisons: uniqueSemanticComparisons(semanticComparisons)
+                ]
             )
         }
         guard positiveParents.count == 1, let positiveParent = positiveParents.first else {
-            var result = try bounded(
+            return try bounded(
                 at: revision,
                 code: "multiple-positive-parent-lineages",
                 message:
                     "More than one parent contains the Finding, so this boundary does not identify one introduction path."
             )
-            result.semanticComparisons = uniqueSemanticComparisons(semanticComparisons)
-            return result
         }
         var result = try trace(
             positiveParent,
@@ -115,19 +106,15 @@ extension IntroductionConclusionEvaluator {
             )
         )
         result.reasons = unique(result.reasons)
-        result.semanticComparisons = uniqueSemanticComparisons(
-            result.semanticComparisons + semanticComparisons
-        )
         return result
     }
 
-    func bounded(at revision: GitRevisionID, code: String, message: String) throws -> TraceResult {
-        TraceResult(
+    func bounded(at revision: GitRevisionID, code: String, message: String) throws -> LegacyTraceResult {
+        LegacyTraceResult(
             kind: .bounded,
             exactRevision: nil,
             earliestPositiveRevision: revision,
-            reasons: [try LifecycleReason(code: code, message: message)],
-            semanticComparisons: []
+            reasons: [try LifecycleReason(code: code, message: message)]
         )
     }
 
