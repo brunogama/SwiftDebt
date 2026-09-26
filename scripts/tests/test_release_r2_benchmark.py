@@ -36,6 +36,7 @@ from run_r2_release_benchmarks import (  # noqa: E402
     validate_distinct_binaries,
     validate_manifest,
 )
+from validate_r2_release_calibration import validate_calibration  # noqa: E402
 
 
 class R2ReleaseBenchmarkTests(unittest.TestCase):
@@ -163,6 +164,17 @@ class R2ReleaseBenchmarkTests(unittest.TestCase):
             artifact["manifestSHA256"],
             "7622d7ae5ea95a7aa9af41f4b3d517b0eba1c8c624cc74d4b2b770541f30ef24",
         )
+
+    def test_ci_artifact_validator_rejects_measured_failure(self):
+        manifest_path = REPOSITORY_ROOT / "benchmarks/r2-release/manifest.v1.json"
+        failed = {
+            "schemaVersion": 1,
+            "manifestID": self.manifest["manifestID"],
+            "manifestSHA256": hashlib.sha256(manifest_path.read_bytes()).hexdigest(),
+            "calibrationState": "measured-fail",
+        }
+        with self.assertRaisesRegex(RuntimeError, "must be a measured pass"):
+            validate_calibration(self.manifest, manifest_path, failed)
 
     def test_atomic_artifact_write_never_exposes_partial_final_path(self):
         with tempfile.TemporaryDirectory() as temporary:

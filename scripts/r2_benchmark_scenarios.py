@@ -132,6 +132,7 @@ def measure_relative(
 ) -> dict[str, Any]:
     binaries = {"reference": reference, "candidate": candidate}
     progress(scenario["id"], f"running {measurement['warmupRuns']} paired warmups")
+    warmups_completed = 0
     for warmup in range(measurement["warmupRuns"]):
         for position, role in enumerate(paired_roles(warmup)):
             sample = run_cli_sample(
@@ -142,6 +143,7 @@ def measure_relative(
             )
             validate_sample(sample, scenario)
             enforce_sample_load(sample, policy)
+        warmups_completed += 1
     raw = []
     progress(scenario["id"], f"running {measurement['measuredRuns']} measured pairs")
     for pair_index in range(measurement["measuredRuns"]):
@@ -184,42 +186,27 @@ def measure_relative(
         policy,
         True,
     )
-    reference_stable = (
-        len({sample["reportSHA256"] for sample in reference_samples}) == 1
+    output_validation = relative_output_validation(
+        reference_samples, candidate_samples
     )
-    candidate_stable = (
-        len({sample["reportSHA256"] for sample in candidate_samples}) == 1
-    )
-    comparable = (
-        len(
-            {
-                sample["comparableReportSHA256"]
-                for sample in [*reference_samples, *candidate_samples]
-            }
-        )
-        == 1
-    )
-    output_validation = {
-        "referenceReportByteStable": reference_stable,
-        "candidateReportByteStable": candidate_stable,
-        "crossImplementationComparable": comparable,
-        "comparisonProjection": "canonical JSON excluding engineVersion",
-        "referenceEngineVersions": sorted(
-            {sample["reportEngineVersion"] for sample in reference_samples}
-        ),
-        "candidateEngineVersions": sorted(
-            {sample["reportEngineVersion"] for sample in candidate_samples}
-        ),
-    }
+    deterministic = output_validation["referenceReportByteStable"] and output_validation[
+        "candidateReportByteStable"
+    ]
+    comparable = output_validation["crossImplementationComparable"]
     return scenario_result(
         scenario,
         raw,
         reference_aggregate,
         candidate_aggregate,
         evaluations,
-        reference_stable and candidate_stable,
+        deterministic,
         comparable,
         output_validation,
+        {
+            "warmupRunsCompleted": warmups_completed,
+            "measuredPairsCompleted": len(reference_samples),
+            "inducedRegressionRunsCompleted": len(induced),
+        },
     )
 
 
@@ -250,6 +237,7 @@ def measure_repository(
         )
         enforce_sample_load(prepared_seed["sample"], policy)
     progress(scenario["id"], f"running {measurement['warmupRuns']} warmups")
+    warmups_completed = 0
     for warmup in range(measurement["warmupRuns"]):
         sample = run_repository_sample(
             candidate,
@@ -263,6 +251,7 @@ def measure_repository(
             prepared_seed,
         )
         enforce_sample_load(sample, policy)
+        warmups_completed += 1
     raw = []
     progress(scenario["id"], f"running {measurement['measuredRuns']} measured samples")
     for index in range(measurement["measuredRuns"]):
@@ -301,23 +290,81 @@ def measure_repository(
     )
     enforce_induced_load(induced, policy)
     evaluations = limits_and_proof(baseline, baseline, raw, raw, induced, policy, False)
-    report_stable = len({sample["reportSHA256"] for sample in raw}) == 1
-    sidecar_stable = len({sample["repositoryEvidenceSHA256"] for sample in raw}) == 1
-    cache_activity_stable = (
-        len(
+    output_validation = repository_output_validation(raw)
+    deterministic = all(
+        output_validation[key]
+        for key in (
+            "candidateReportByteStable",
+            "candidateRepositorySidecarByteStable",
+            "candidateCacheActivityCanonicalByteStable",
+            "candidateCacheStoreByteStable",
+        )
+    )
+    return scenario_result(
+        scenario,
+        raw,
+        baseline,
+        baseline,
+        evaluations,
+        deterministic,
+        True,
+        output_validation,
+        {
+            "warmupRunsCompleted": warmups_completed,
+            "measuredSamplesCompleted": len(raw),
+            "inducedRegressionRunsCompleted": len(induced),
+        },
+    )
+
+
+def relative_output_validation(
+    reference_samples: list[dict[str, Any]],
+    candidate_samples: list[dict[str, Any]],
+) -> dict[str, Any]:
+    return {
+        "referenceReportByteStable": len(
+            {sample["reportSHA256"] for sample in reference_samples}
+        )
+        == 1,
+        "candidateReportByteStable": len(
+            {sample["reportSHA256"] for sample in candidate_samples}
+        )
+        == 1,
+        "crossImplementationComparable": len(
             {
-                sample["comparableRepositoryCacheReportSHA256"]
-                for sample in raw
+                sample["comparableReportSHA256"]
+                for sample in [*reference_samples, *candidate_samples]
             }
         )
-        == 1
-    )
-    cache_store_stable = len({sample["cacheStoreSHA256After"] for sample in raw}) == 1
-    output_validation = {
-        "candidateReportByteStable": report_stable,
-        "candidateRepositorySidecarByteStable": sidecar_stable,
-        "candidateCacheActivityCanonicalByteStable": cache_activity_stable,
-        "candidateCacheStoreByteStable": cache_store_stable,
+        == 1,
+        "comparisonProjection": "canonical JSON excluding engineVersion",
+        "referenceEngineVersions": sorted(
+            {sample["reportEngineVersion"] for sample in reference_samples}
+        ),
+        "candidateEngineVersions": sorted(
+            {sample["reportEngineVersion"] for sample in candidate_samples}
+        ),
+    }
+
+
+def repository_output_validation(raw: list[dict[str, Any]]) -> dict[str, Any]:
+    return {
+        "candidateReportByteStable": len(
+            {sample["reportSHA256"] for sample in raw}
+        )
+        == 1,
+        "candidateRepositorySidecarByteStable": len(
+            {sample["repositoryEvidenceSHA256"] for sample in raw}
+        )
+        == 1,
+        "candidateCacheActivityCanonicalByteStable": len(
+            {sample["comparableRepositoryCacheReportSHA256"] for sample in raw}
+        )
+        == 1,
+        "candidateCacheStoreByteStable": len(
+            {sample["cacheStoreSHA256After"] for sample in raw}
+        )
+        == 1,
         "candidateEngineVersions": sorted(
             {sample["reportEngineVersion"] for sample in raw}
         ),
@@ -326,16 +373,6 @@ def measure_repository(
             "reason": "R1 has no repository-evidence command.",
         },
     }
-    return scenario_result(
-        scenario,
-        raw,
-        baseline,
-        baseline,
-        evaluations,
-        report_stable and sidecar_stable and cache_activity_stable and cache_store_stable,
-        True,
-        output_validation,
-    )
 
 
 def scenario_result(
@@ -347,6 +384,7 @@ def scenario_result(
     deterministic: bool,
     comparable: bool,
     output_validation: dict[str, Any],
+    sampling_evidence: dict[str, int],
 ) -> dict[str, Any]:
     current_pass = (
         evaluations["wallClock"]["verdict"] == "pass"
@@ -361,6 +399,7 @@ def scenario_result(
         "comparison": scenario["comparison"],
         "state": scenario["state"],
         "cacheState": scenario["cacheState"],
+        "samplingEvidence": sampling_evidence,
         "sourceSnapshot": {
             **{
                 key: scenario[key]

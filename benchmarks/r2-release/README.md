@@ -47,6 +47,9 @@ Raw report hashes and engine versions prove byte stability within each build.
 The cross-version comparison canonicalizes JSON and removes only
 `engineVersion`; the artifact records both engine versions separately. Any
 other report difference invalidates the paired scenario.
+Each scenario records completed warmup, measured, and induced-run counts in the
+generated artifact so CI can validate the checked-in 5+30 protocol without
+claiming to reproduce the host-specific timings.
 
 ---
 
