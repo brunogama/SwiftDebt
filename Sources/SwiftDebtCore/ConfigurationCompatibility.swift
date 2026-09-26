@@ -80,7 +80,7 @@ public struct ConfigurationCompatibilityDeclaration: Codable, Equatable, Hashabl
         rationale: String
     ) {
         let claims = Array(Set(supportedClaims)).sorted { $0.rawValue < $1.rawValue }
-        let conditions = Array(Set(conditions)).sorted { $0.rawValue < $1.rawValue }
+        let conditions = Array(Set(conditions))
         guard !claims.isEmpty, !conditions.isEmpty, Self.isValidRationale(rationale) else { return nil }
         self.fromRevision = fromRevision
         self.supportedClaims = claims
@@ -108,7 +108,7 @@ public struct ConfigurationCompatibilityDeclaration: Codable, Equatable, Hashabl
         let testEvidence = try values.decode(CompatibilityTestEvidence.self, forKey: .testEvidence)
         let rationale = try values.decode(String.self, forKey: .rationale)
         let canonicalClaims = Array(Set(claims)).sorted { $0.rawValue < $1.rawValue }
-        let canonicalConditions = Array(Set(conditions)).sorted { $0.rawValue < $1.rawValue }
+        let canonicalConditions = Array(Set(conditions))
         guard
             claims == canonicalClaims,
             conditions == canonicalConditions,
