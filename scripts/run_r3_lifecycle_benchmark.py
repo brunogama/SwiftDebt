@@ -228,6 +228,29 @@ def run_tier(binary: Path, source_count: int, runs: int, warmups: int) -> dict[s
         }
 
 
+def budget_failures(result: dict[str, object], budgets: dict[str, object]) -> list[str]:
+    if budgets["fixtureVersion"] != FIXTURE_VERSION:
+        raise RuntimeError("R3 lifecycle budget fixture version does not match this script")
+    environment = result["environment"]
+    if (budgets["platformFamily"] != sys.platform
+            or budgets["machine"] != platform.machine()
+            or budgets["cpuModel"] != environment["cpuModel"]
+            or budgets["swiftVersion"] != environment["swift"]):
+        raise RuntimeError("R3 lifecycle budget platform or toolchain does not match this run")
+    failures = []
+    for tier_name, tier in result["tiers"].items():
+        allowed = budgets["tiers"][tier_name]
+        artifact_bytes = largest_artifact_bytes(tier)
+        if artifact_bytes > allowed["maximumArtifactBytes"]:
+            failures.append(f"{tier_name}: artifact exceeds byte limit")
+        for name, metrics in tier["operations"].items():
+            if metrics["medianWallSeconds"] > allowed["maximumMedianWallSeconds"][name]:
+                failures.append(f"{tier_name}/{name}: median wall time exceeds limit")
+            if metrics["maximumPeakRSSBytes"] > allowed["maximumPeakRSSBytes"][name]:
+                failures.append(f"{tier_name}/{name}: peak RSS exceeds limit")
+    return failures
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--swift-debt", type=Path, required=True)
@@ -245,9 +268,17 @@ def main() -> int:
         parser.error("a budget gate requires at least three measured runs and one warmup")
     binary = args.swift_debt.resolve(strict=True)
     repository_root = Path(__file__).resolve().parent.parent
+    runner = Path(__file__).resolve()
+    support = runner.with_name("r3_lifecycle_benchmark_support.py")
     result = {
         "schemaVersion": 1, "swiftDebtCommit": command(["git", "rev-parse", "HEAD"], cwd=repository_root, capture=True).strip(),
         "binarySHA256": hashlib.sha256(binary.read_bytes()).hexdigest(),
+        "runnerDirty": bool(command(
+            ["git", "status", "--porcelain", "--untracked-files=no"],
+            cwd=repository_root, capture=True,
+        ).strip()),
+        "runnerSHA256": hashlib.sha256(runner.read_bytes()).hexdigest(),
+        "supportSHA256": hashlib.sha256(support.read_bytes()).hexdigest(),
         "environment": {"platform": platform.platform(), "machine": platform.machine(),
                         "cpuModel": cpu_model(), "memoryBytes": system_memory_bytes(),
                         "python": platform.python_version(),
@@ -261,24 +292,7 @@ def main() -> int:
     args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
     if args.budgets:
         budgets = json.loads(args.budgets.read_text())
-        if budgets["fixtureVersion"] != FIXTURE_VERSION:
-            raise RuntimeError("R3 lifecycle budget fixture version does not match this script")
-        if (budgets["platformFamily"] != sys.platform
-                or budgets["machine"] != platform.machine()
-                or budgets["cpuModel"] != result["environment"]["cpuModel"]
-                or budgets["swiftVersion"] != result["environment"]["swift"]):
-            raise RuntimeError("R3 lifecycle budget platform or toolchain does not match this run")
-        failures = []
-        for tier_name, tier in result["tiers"].items():
-            allowed = budgets["tiers"][tier_name]
-            artifact_bytes = largest_artifact_bytes(tier)
-            if artifact_bytes > allowed["maximumArtifactBytes"]:
-                failures.append(f"{tier_name}: artifact exceeds byte limit")
-            for name, metrics in tier["operations"].items():
-                if metrics["medianWallSeconds"] > allowed["maximumMedianWallSeconds"][name]:
-                    failures.append(f"{tier_name}/{name}: median wall time exceeds limit")
-                if metrics["maximumPeakRSSBytes"] > allowed["maximumPeakRSSBytes"][name]:
-                    failures.append(f"{tier_name}/{name}: peak RSS exceeds limit")
+        failures = budget_failures(result, budgets)
         if failures:
             raise RuntimeError("R3 lifecycle benchmark budget failed: " + "; ".join(failures))
     return 0
