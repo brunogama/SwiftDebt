@@ -77,7 +77,7 @@ let package = Package(
         .testTarget(
             name: "SwiftDebtKitTests",
             dependencies: ["SwiftDebtCore", "SwiftDebtKit", "SwiftDebtReporting"],
-            exclude: ["Fixtures/RepositoryAnalysis"],
+            exclude: ["Fixtures/RepositoryAnalysis", "Fixtures/RepositoryQualification"],
             resources: [.process("Fixtures")]
         ),
         .testTarget(

@@ -1,0 +1,328 @@
+{
+  "schemaVersion": 1,
+  "corpusID": "swiftdebt-r2-repository-rule-qualification-v1",
+  "authorLabelState": "provisional-pending-independent-review",
+  "review": {
+    "requiredQualifiedSwiftReviewers": 2,
+    "reviewerSlots": [
+      {
+        "slot": "reviewer-1",
+        "status": "pending"
+      },
+      {
+        "slot": "reviewer-2",
+        "status": "pending"
+      }
+    ],
+    "adjudicationStatus": "pending"
+  },
+  "rules": [
+    {
+      "identity": "swiftdebt.refactoring.data-clumps",
+      "semanticRevision": 2,
+      "observableScope": "Closed groups of at least three exact local-name and normalized-type elements in at least two supported parameter or stored-property units.",
+      "scopeExclusions": [
+        "Compiler-resolved typealias and generic identity",
+        "Semantic relationship between equal spellings in different binding contexts",
+        "Tuple destructuring, inferred property types, local variables, and closure parameters"
+      ],
+      "knownFalsePositiveRisks": [
+        "Equal local names and type spellings can describe unrelated concepts"
+      ],
+      "knownFalseNegativeRisks": [
+        "Equivalent compiler-resolved types with different source spellings do not match",
+        "Data groups outside supported declaration units are not observed"
+      ]
+    },
+    {
+      "identity": "swiftdebt.refactoring.repeated-switches",
+      "semanticRevision": 2,
+      "observableScope": "At least two switches in one textual module/type scope with the same simple discriminator and ordered normalized case-label shape.",
+      "scopeExclusions": [
+        "Compiler-resolved discriminator identity",
+        "Compound, call, subscript, tuple, and optional-chain discriminator expressions",
+        "Active-branch selection for conditional-compilation case elements"
+      ],
+      "knownFalsePositiveRisks": [
+        "Equal discriminator spelling in one textual scope can bind to different declarations"
+      ],
+      "knownFalseNegativeRisks": [
+        "Equivalent compiler-resolved discriminators with different source spelling do not match",
+        "Case order differences remain distinct even when behavior happens to be equivalent"
+      ]
+    }
+  ],
+  "repositoryShapes": [
+    {
+      "id": "flat-single-module",
+      "layout": "flat",
+      "description": "One flat source root discovered by the CLI as module Workspace.",
+      "families": [
+        {
+          "id": "dc-flat-functions-positive",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "authorLabel": "positive",
+          "count": 10,
+          "template": "data-clumps-functions-positive",
+          "rationale": "Two top-level functions repeat the same three named and typed parameters."
+        },
+        {
+          "id": "dc-flat-name-mismatch",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "authorLabel": "negative",
+          "count": 10,
+          "template": "data-clumps-name-mismatch",
+          "rationale": "One of three local parameter names differs, leaving only two exact elements."
+        },
+        {
+          "id": "dc-flat-type-mismatch",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "authorLabel": "negative",
+          "count": 10,
+          "template": "data-clumps-type-mismatch",
+          "rationale": "One of three parameter types differs, leaving only two exact elements."
+        },
+        {
+          "id": "rs-flat-methods-positive",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "authorLabel": "positive",
+          "count": 10,
+          "template": "repeated-switches-methods-positive",
+          "rationale": "Two methods in one nominal scope switch on the same identifier with the same ordered cases."
+        },
+        {
+          "id": "rs-flat-discriminator-mismatch",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "authorLabel": "negative",
+          "count": 10,
+          "template": "repeated-switches-discriminator-mismatch",
+          "rationale": "The switch shapes match but their simple discriminator identifiers differ."
+        },
+        {
+          "id": "rs-flat-case-order-mismatch",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "authorLabel": "out-of-scope",
+          "count": 10,
+          "template": "repeated-switches-case-order-mismatch",
+          "rationale": "The switches are candidate-equivalent dispatches whose disjoint cases appear in a different order. Semantic equivalence and reachability are outside the ordered syntax rule."
+        },
+        {
+          "id": "rs-flat-case-set-mismatch",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "authorLabel": "negative",
+          "count": 10,
+          "template": "repeated-switches-case-set-mismatch",
+          "rationale": "Two switches use the same simple discriminator but single out different values, ranges, patterns, or types, so their branch partitions are different."
+        }
+      ]
+    },
+    {
+      "id": "nested-source-tree",
+      "layout": "nested",
+      "description": "Sources are distributed under nested feature directories and discovered recursively.",
+      "families": [
+        {
+          "id": "dc-nested-properties-positive",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "authorLabel": "positive",
+          "count": 10,
+          "template": "data-clumps-properties-positive",
+          "rationale": "Two nominal types directly store the same three named and typed properties."
+        },
+        {
+          "id": "dc-nested-only-two-shared",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "authorLabel": "negative",
+          "count": 10,
+          "template": "data-clumps-only-two-shared",
+          "rationale": "Two property groups share only two elements and each has a distinct third property."
+        },
+        {
+          "id": "dc-nested-computed-properties",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "authorLabel": "negative",
+          "count": 10,
+          "template": "data-clumps-computed-properties",
+          "rationale": "The apparent second group consists only of computed properties, outside the stored-property scope."
+        },
+        {
+          "id": "rs-nested-types-positive",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "authorLabel": "positive",
+          "count": 10,
+          "template": "repeated-switches-nested-positive",
+          "rationale": "Two switches share a member-access discriminator and case shape inside one nested nominal scope."
+        },
+        {
+          "id": "rs-nested-scope-mismatch",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "authorLabel": "out-of-scope",
+          "count": 10,
+          "template": "repeated-switches-scope-mismatch",
+          "rationale": "The identical switches belong to distinct nominal or top-level textual scopes, which the rule explicitly does not compare, so they are excluded from the confusion matrix."
+        },
+        {
+          "id": "rs-nested-token-boundary",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "authorLabel": "negative",
+          "count": 10,
+          "template": "repeated-switches-token-boundary",
+          "rationale": "Case labels differ only by a token boundary and must remain distinct."
+        },
+        {
+          "id": "rs-nested-associated-pattern-mismatch",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "authorLabel": "negative",
+          "count": 10,
+          "template": "repeated-switches-associated-pattern-mismatch",
+          "rationale": "Two switches in one textual scope use the same simple discriminator but constrain different associated values, so their branch partitions are different."
+        }
+      ]
+    },
+    {
+      "id": "explicit-multi-module",
+      "layout": "manifest",
+      "description": "An explicit CLI source manifest assigns files to three modules in a workspace-shaped tree.",
+      "families": [
+        {
+          "id": "dc-modules-callable-kinds-positive",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "authorLabel": "positive",
+          "count": 10,
+          "template": "data-clumps-init-subscript-positive",
+          "rationale": "An initializer and subscript repeat the same three named and typed parameters."
+        },
+        {
+          "id": "dc-modules-unnamed-parameters",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "authorLabel": "negative",
+          "count": 10,
+          "template": "data-clumps-unnamed-parameters",
+          "rationale": "Wildcards and renamed locals leave fewer than three shared named-and-typed parameter elements."
+        },
+        {
+          "id": "dc-modules-token-boundary",
+          "ruleIdentity": "swiftdebt.refactoring.data-clumps",
+          "authorLabel": "negative",
+          "count": 10,
+          "template": "data-clumps-token-boundary",
+          "rationale": "Opaque-type token sequences and similarly spelled nominal types retain distinct token boundaries."
+        },
+        {
+          "id": "rs-modules-extensions-positive",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "authorLabel": "positive",
+          "count": 10,
+          "template": "repeated-switches-extensions-positive",
+          "rationale": "Two extensions of one type in the same module contain the same switch shape."
+        },
+        {
+          "id": "rs-modules-compound-discriminator",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "authorLabel": "out-of-scope",
+          "count": 10,
+          "template": "repeated-switches-compound-discriminator",
+          "rationale": "The repeated dispatch candidates use compound discriminator expressions that the rule explicitly does not resolve, so they are excluded from the confusion matrix."
+        },
+        {
+          "id": "rs-modules-where-clause",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "authorLabel": "negative",
+          "count": 10,
+          "template": "repeated-switches-where-clause",
+          "rationale": "The where predicates or their placement differ structurally and describe different branch conditions."
+        },
+        {
+          "id": "rs-modules-branch-partition-mismatch",
+          "ruleIdentity": "swiftdebt.refactoring.repeated-switches",
+          "authorLabel": "negative",
+          "count": 10,
+          "template": "repeated-switches-branch-partition-mismatch",
+          "rationale": "Two switches use the same simple discriminator but one has a strictly finer branch partition than the other."
+        }
+      ]
+    }
+  ],
+  "realWorldSnapshots": [
+    {
+      "id": "swift-argument-parser-cdc5f0c",
+      "repositoryURL": "https://github.com/apple/swift-argument-parser.git",
+      "commit": "cdc5f0c6e836de848699ae11f6480f2d99ac5ef1",
+      "license": "Apache-2.0 WITH Swift-exception",
+      "licensePath": "Snapshots/swift-argument-parser/LICENSE.txt",
+      "sourceRoot": "Snapshots/swift-argument-parser/Sources",
+      "sourceTreeDigest": "2b0ba695228d7f608f99b9bd8de9189c010b4b628f4246d09bf64167f47dcb9c",
+      "checkout": "git clone https://github.com/apple/swift-argument-parser.git && git checkout cdc5f0c6e836de848699ae11f6480f2d99ac5ef1",
+      "includedSources": [
+        {
+          "upstreamPath": "Sources/ArgumentParser/Parsable Types/CommandConfiguration.swift",
+          "vendoredPath": "CommandConfiguration.swift.snapshot",
+          "sha256": "142290814c62349a579f151ae7fec57a5ad5da9702d9be20ad60189551fe3633",
+          "analysisPath": "CommandConfiguration.swift"
+        },
+        {
+          "upstreamPath": "Sources/ArgumentParser/Parsing/InputKey.swift",
+          "vendoredPath": "InputKey.swift.snapshot",
+          "sha256": "e2398a6c53b73a44226dfcff7412610cce95d712ddaef70bf59d72a9196d6fc4",
+          "analysisPath": "InputKey.swift"
+        },
+        {
+          "upstreamPath": "Sources/ArgumentParser/Parsing/Name.swift",
+          "vendoredPath": "Name.swift.snapshot",
+          "sha256": "af8c38916518da7701d4272476ed27ec36fe490b3b4060026e0c762fdc64fb70",
+          "analysisPath": "Name.swift"
+        },
+        {
+          "upstreamPath": "Sources/ArgumentParser/Utilities/Tree.swift",
+          "vendoredPath": "Tree.swift.snapshot",
+          "sha256": "a626c0701c41eb88bbb2a6dd01267337f06720371de1f630d15644bf7c537c4c",
+          "analysisPath": "Tree.swift"
+        }
+      ],
+      "provisionalAuditNotes": [
+        "The four Data Clumps detections overlap the same CommandConfiguration property and initializer family; they are not four independent smell confirmations.",
+        "All snapshot observations remain unlabeled until the two qualified reviewers inspect the decisive locations."
+      ]
+    },
+    {
+      "id": "swift-algorithms-5b7143f",
+      "repositoryURL": "https://github.com/apple/swift-algorithms.git",
+      "commit": "5b7143f8e291dee0e14c118fd0212487f0b37af5",
+      "license": "Apache-2.0 WITH Swift-exception",
+      "licensePath": "Snapshots/swift-algorithms/LICENSE.txt",
+      "sourceRoot": "Snapshots/swift-algorithms/Sources",
+      "sourceTreeDigest": "04cd3aa20a16a594ae965952633e2e4dd1d63f1333dad6f591f585eb6456a52f",
+      "checkout": "git clone https://github.com/apple/swift-algorithms.git && git checkout 5b7143f8e291dee0e14c118fd0212487f0b37af5",
+      "includedSources": [
+        {
+          "upstreamPath": "Sources/Algorithms/AdjacentPairs.swift",
+          "vendoredPath": "AdjacentPairs.swift.snapshot",
+          "sha256": "3918587a45e298c5dd57e1f4adfcaaaa6d10a3301a5c759ec4a6f25cdc1ebce2",
+          "analysisPath": "AdjacentPairs.swift"
+        },
+        {
+          "upstreamPath": "Sources/Algorithms/Intersperse.swift",
+          "vendoredPath": "Intersperse.swift.snapshot",
+          "sha256": "61146a3f21af6feefdb723208588baad376f9e51b97456d2c8f830a0fe7e2ce6",
+          "analysisPath": "Intersperse.swift"
+        },
+        {
+          "upstreamPath": "Sources/Algorithms/Unique.swift",
+          "vendoredPath": "Unique.swift.snapshot",
+          "sha256": "ce9a7687a6268254a9acd8bd1449c900f29e2e8576fd6663d469f8a495422643",
+          "analysisPath": "Unique.swift"
+        },
+        {
+          "upstreamPath": "Sources/Algorithms/Windows.swift",
+          "vendoredPath": "Windows.swift.snapshot",
+          "sha256": "99a54563a42a1cefd2d2c183a797b387b2f7e59aaa5ce31accaebbddb5501bd1",
+          "analysisPath": "Windows.swift"
+        }
+      ],
+      "provisionalAuditNotes": [
+        "Both Data Clumps detections merge equal Index spellings from distinct nested collection types; these are likely false positives because source spelling does not prove type identity.",
+        "All snapshot observations remain unlabeled until the two qualified reviewers inspect the decisive locations."
+      ]
+    }
+  ]
+}

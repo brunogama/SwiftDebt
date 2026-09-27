@@ -157,8 +157,11 @@ one selection path and keeps the new wire contract independent.
 
 ## Remaining R2 release work
 
-This slice does not claim the two rules are release-qualified as Supported. The
-frozen 30-positive and 60-negative per-rule corpus, two-reviewer labels,
-precision and recall record, calibrated performance artifact, incremental fact
-cache, full relationship vocabulary, configurable policy gates, command/build
-plugin acceptance, and published release benchmark remain required by the PRD.
+This slice does not claim the two rules are release-qualified as Supported.
+`r2-rule-qualification.md` records the frozen 30-positive and 60-negative
+per-rule engineering corpus, provisional metrics, real-world snapshots, and
+determinism evidence. Its two independent reviewer slots and adjudication are
+still pending. Calibrated performance, incremental fact cache, full
+relationship vocabulary, configurable policy gates, command/build plugin
+acceptance, and the published release benchmark also remain required by the
+PRD.

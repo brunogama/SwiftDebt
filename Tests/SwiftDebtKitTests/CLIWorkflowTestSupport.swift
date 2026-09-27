@@ -27,7 +27,7 @@ func runSwiftDebt(_ arguments: [String], currentDirectory: URL? = nil) throws ->
     )
 }
 
-private func swiftDebtExecutableURL() throws -> URL {
+func swiftDebtExecutableURL() throws -> URL {
     let direct = repositoryRoot.appendingPathComponent(".build/debug/swift-debt")
     if FileManager.default.isExecutableFile(atPath: direct.path) { return direct }
     let build = repositoryRoot.appendingPathComponent(".build")
