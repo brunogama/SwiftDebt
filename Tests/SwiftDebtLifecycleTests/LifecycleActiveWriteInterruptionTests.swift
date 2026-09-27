@@ -7,6 +7,97 @@ import Testing
 
     @Suite("R3 active artifact write interruption")
     struct LifecycleActiveWriteInterruptionTests {
+        @Test("SIGKILL during temporary artifact byte writes preserves prior state and retry")
+        func killedTemporaryByteWriteFailsClosedAndCanRetry() throws {
+            let fixture = try TemporaryLifecycleGitRepository()
+            let openingRevision = try fixture.commit(source: detectedSource, message: "add forced try")
+            let resolvedRevision = try fixture.commit(source: resolvedSource, message: "remove forced try")
+            let expectedArtifact = fixture.directory.appendingPathComponent("expected.json")
+            let interruptedArtifact = fixture.directory.appendingPathComponent("interrupted.json")
+
+            try fixture.runGit(["checkout", openingRevision])
+            #expect(try analyze(fixture.repository, expectedArtifact).status == 0)
+            #expect(try analyze(fixture.repository, interruptedArtifact).status == 0)
+            let priorBytes = try Data(contentsOf: interruptedArtifact)
+            let priorPermissions = try #require(
+                try FileManager.default.attributesOfItem(atPath: interruptedArtifact.path)[
+                    .posixPermissions
+                ] as? NSNumber
+            ).uint16Value
+
+            try fixture.runGit(["checkout", resolvedRevision])
+            #expect(try analyze(fixture.repository, expectedArtifact).status == 0)
+            let expectedBytes = try Data(contentsOf: expectedArtifact)
+
+            let interposer = try compileLifecycleWriteInterposer(in: fixture.directory)
+            let captureDirectory = fixture.directory.appendingPathComponent("byte-write-capture")
+            try FileManager.default.createDirectory(
+                at: captureDirectory, withIntermediateDirectories: true
+            )
+            let marker = captureDirectory.appendingPathComponent("marker")
+            let errorURL = captureDirectory.appendingPathComponent("stderr")
+            _ = FileManager.default.createFile(atPath: errorURL.path, contents: nil)
+            let errorOutput = try FileHandle(forWritingTo: errorURL)
+            defer { try? errorOutput.close() }
+            let process = try startPausedLifecycleWrite(
+                repository: fixture.repository, artifact: interruptedArtifact,
+                interposer: interposer, marker: marker, boundary: .temporaryByteWrite,
+                errorOutput: errorOutput
+            )
+            defer {
+                if process.isRunning {
+                    _ = kill(process.processIdentifier, SIGKILL)
+                    process.waitUntilExit()
+                }
+            }
+
+            let progress = try awaitLifecycleByteWrite(
+                marker: marker, process: process,
+                errorOutput: errorOutput, errorURL: errorURL
+            )
+            #expect(try Data(contentsOf: marker).last == 0x0A)
+            #expect(!FileManager.default.fileExists(atPath: marker.path + ".pending"))
+            let temporaryArtifact = URL(fileURLWithPath: progress.path)
+            // Foundation keeps its in-progress sibling unreadable. The child is stopped, so grant
+            // owner access only to that sibling for exact on-disk prefix inspection.
+            try FileManager.default.setAttributes(
+                [.posixPermissions: 0o600], ofItemAtPath: temporaryArtifact.path
+            )
+            let partialBytes = try Data(contentsOf: temporaryArtifact)
+            #expect(progress.temporaryByteCount > 0)
+            #expect(progress.temporaryByteCount < expectedBytes.count)
+            #expect(progress.writtenByteCount > 0)
+            #expect(progress.writtenByteCount < progress.requestedByteCount)
+            #expect(partialBytes.count == progress.temporaryByteCount)
+            #expect(expectedBytes.starts(with: partialBytes))
+            #expect(try Data(contentsOf: interruptedArtifact) == priorBytes)
+            #expect(process.isRunning)
+
+            _ = kill(process.processIdentifier, SIGKILL)
+            process.waitUntilExit()
+            #expect(process.terminationReason == .uncaughtSignal)
+            #expect(try Data(contentsOf: interruptedArtifact) == priorBytes)
+            let preservedPermissions = try #require(
+                try FileManager.default.attributesOfItem(atPath: interruptedArtifact.path)[
+                    .posixPermissions
+                ] as? NSNumber
+            ).uint16Value
+            #expect(preservedPermissions == priorPermissions)
+            #expect(try LifecycleArtifactStore(artifactURL: interruptedArtifact).load().snapshots.count == 1)
+
+            let rejectedTemporary = try runLifecycleCLI([
+                "lifecycle", "inventory", temporaryArtifact.path, "--format", "json",
+            ])
+            #expect(rejectedTemporary.status == 2)
+            #expect(rejectedTemporary.standardOutput.isEmpty)
+            #expect(rejectedTemporary.standardError.contains("Unable to read lifecycle artifact"))
+
+            #expect(try analyze(fixture.repository, interruptedArtifact).status == 0)
+            #expect(try Data(contentsOf: interruptedArtifact) == expectedBytes)
+            #expect(try analyze(fixture.repository, interruptedArtifact).status == 0)
+            #expect(try Data(contentsOf: interruptedArtifact) == expectedBytes)
+        }
+
         @Test("SIGKILL before atomic replacement preserves the prior artifact and retry")
         func killedActiveWriteCanRetry() throws {
             let fixture = try TemporaryLifecycleGitRepository()
@@ -24,15 +115,16 @@ import Testing
             #expect(try analyze(fixture.repository, expectedArtifact).status == 0)
             let expectedBytes = try Data(contentsOf: expectedArtifact)
 
-            let interposer = try compileInterposer(in: fixture.directory)
+            let interposer = try compileLifecycleWriteInterposer(in: fixture.directory)
             let marker = fixture.directory.appendingPathComponent("atomic-rename-marker")
             let errorURL = fixture.directory.appendingPathComponent("interrupted-stderr")
             _ = FileManager.default.createFile(atPath: errorURL.path, contents: nil)
             let errorOutput = try FileHandle(forWritingTo: errorURL)
             defer { try? errorOutput.close() }
-            let process = try startPausedWrite(
+            let process = try startPausedLifecycleWrite(
                 repository: fixture.repository, artifact: interruptedArtifact,
-                interposer: interposer, marker: marker, errorOutput: errorOutput
+                interposer: interposer, marker: marker, boundary: .atomicRename,
+                errorOutput: errorOutput
             )
             defer {
                 if process.isRunning {
@@ -41,7 +133,7 @@ import Testing
                 }
             }
 
-            let temporaryName = try awaitRename(
+            let temporaryName = try awaitLifecycleRename(
                 marker: marker, process: process,
                 errorOutput: errorOutput, errorURL: errorURL
             )
@@ -66,82 +158,6 @@ import Testing
             #expect(try Data(contentsOf: interruptedArtifact) == expectedBytes)
         }
 
-        private func compileInterposer(in directory: URL) throws -> URL {
-            let interposer = directory.appendingPathComponent("atomic-rename.dylib")
-            let source = URL(fileURLWithPath: #filePath)
-                .deletingLastPathComponent().deletingLastPathComponent()
-                .appendingPathComponent("Fixtures/LifecycleAtomicRenameInterposer.c")
-            let compilation = try runLifecycleProcess(
-                executable: URL(fileURLWithPath: "/usr/bin/xcrun"),
-                arguments: [
-                    "clang", "-arch", "x86_64", "-arch", "arm64", "-arch", "arm64e",
-                    "-dynamiclib", source.path, "-o", interposer.path,
-                ],
-                directory: directory
-            )
-            #expect(compilation.status == 0, "\(compilation.standardError)")
-            return interposer
-        }
-
-        private func awaitRename(
-            marker: URL, process: Process, errorOutput: FileHandle, errorURL: URL
-        ) throws -> String {
-            // This bounds a deadlocked child, not normal analysis progress under coverage contention.
-            let watchdog = Date().addingTimeInterval(300)
-            while !FileManager.default.fileExists(atPath: marker.path) && process.isRunning {
-                if Date() >= watchdog {
-                    _ = kill(process.processIdentifier, SIGKILL)
-                    process.waitUntilExit()
-                    throw try renameFailure(
-                        "CLI did not reach atomic rename within five minutes",
-                        process: process, errorOutput: errorOutput, errorURL: errorURL
-                    )
-                }
-                Thread.sleep(forTimeInterval: 0.05)
-            }
-            guard FileManager.default.fileExists(atPath: marker.path) else {
-                process.waitUntilExit()
-                throw try renameFailure(
-                    "CLI exited before atomic rename",
-                    process: process, errorOutput: errorOutput, errorURL: errorURL
-                )
-            }
-            return try String(contentsOf: marker, encoding: .utf8)
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-        }
-
-        private func renameFailure(
-            _ reason: String, process: Process, errorOutput: FileHandle, errorURL: URL
-        ) throws -> NSError {
-            try errorOutput.synchronize()
-            let errorData = try Data(contentsOf: errorURL)
-            let errorText = String(bytes: errorData, encoding: .utf8) ?? "<invalid UTF-8>"
-            let detail = "\(reason); status \(process.terminationStatus); stderr: \(errorText)"
-            return NSError(
-                domain: "LifecycleActiveWriteInterruption", code: Int(process.terminationStatus),
-                userInfo: [NSLocalizedDescriptionKey: detail]
-            )
-        }
-
-        private func startPausedWrite(
-            repository: URL, artifact: URL, interposer: URL, marker: URL, errorOutput: FileHandle
-        ) throws -> Process {
-            let process = Process()
-            process.executableURL = try lifecycleExecutableURL()
-            process.arguments =
-                ["analyze", repository.path, "--format", "json"]
-                + ["--lifecycle-artifact", artifact.path]
-            var environment = ProcessInfo.processInfo.environment
-            environment["DYLD_INSERT_LIBRARIES"] = interposer.path
-            environment["SWIFTDEBT_AT22_ARTIFACT_NAME"] = artifact.lastPathComponent
-            environment["SWIFTDEBT_AT22_RENAME_MARKER"] = marker.path
-            process.environment = environment
-            process.standardOutput = FileHandle.nullDevice
-            process.standardError = errorOutput
-            try process.run()
-            return process
-        }
-
         private func analyze(_ repository: URL, _ artifact: URL) throws -> LifecycleCLIRunResult {
             try runLifecycleCLI(
                 ["analyze", repository.path, "--format", "json"]
@@ -159,4 +175,5 @@ import Testing
             func run() { _ = try? load() }
             """
     }
+
 #endif
