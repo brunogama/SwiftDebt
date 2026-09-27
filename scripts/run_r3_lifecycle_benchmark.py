@@ -245,6 +245,9 @@ def budget_failures(result: dict[str, object], budgets: dict[str, object]) -> li
         artifact_bytes = largest_artifact_bytes(tier)
         if artifact_bytes > allowed["maximumArtifactBytes"]:
             failures.append(f"{tier_name}: artifact exceeds byte limit")
+        reconciliation_seconds = tier["incrementalReconciliation"]["medianElapsedNanoseconds"] / 1_000_000_000
+        if reconciliation_seconds > allowed["maximumMedianReconciliationSeconds"]:
+            failures.append(f"{tier_name}: median reconciliation time exceeds limit")
         for name, metrics in tier["operations"].items():
             if metrics["medianWallSeconds"] > allowed["maximumMedianWallSeconds"][name]:
                 failures.append(f"{tier_name}/{name}: median wall time exceeds limit")

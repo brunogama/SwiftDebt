@@ -101,6 +101,7 @@ class R3LifecycleBenchmarkValidationTests(unittest.TestCase):
                 "coldArtifact": {"bytes": 100},
                 "incrementalArtifact": {"bytes": 180},
                 "introductionArtifact": {"bytes": 240},
+                "incrementalReconciliation": {"medianElapsedNanoseconds": 500_000_000},
                 "operations": {"cold": {
                     "medianWallSeconds": 1.0,
                     "maximumPeakRSSBytes": 1000,
@@ -115,6 +116,7 @@ class R3LifecycleBenchmarkValidationTests(unittest.TestCase):
             "swiftVersion": "fixture Swift",
             "tiers": {"small": {
                 "maximumArtifactBytes": 300,
+                "maximumMedianReconciliationSeconds": 1.0,
                 "maximumMedianWallSeconds": {"cold": 2.0},
                 "maximumPeakRSSBytes": {"cold": 1500},
             }},
@@ -128,9 +130,12 @@ class R3LifecycleBenchmarkValidationTests(unittest.TestCase):
         result["tiers"]["small"]["operations"]["cold"]["medianWallSeconds"] = 1.0
         result["tiers"]["small"]["operations"]["cold"]["maximumPeakRSSBytes"] = 1501
         result["tiers"]["small"]["incrementalArtifact"]["bytes"] = 301
+        result["tiers"]["small"]["incrementalReconciliation"]["medianElapsedNanoseconds"] = 1_000_000_001
         self.assertEqual(
             budget_failures(result, budgets),
-            ["small: artifact exceeds byte limit", "small/cold: peak RSS exceeds limit"],
+            ["small: artifact exceeds byte limit",
+             "small: median reconciliation time exceeds limit",
+             "small/cold: peak RSS exceeds limit"],
         )
         result["runnerDirty"] = True
         with self.assertRaisesRegex(RuntimeError, "clean runner checkout"):
