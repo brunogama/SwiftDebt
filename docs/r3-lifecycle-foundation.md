@@ -29,6 +29,8 @@ let result = try LifecycleArtifactStore(artifactURL: artifactURL).ingest(observa
 
 The store serializes one schema-versioned `swiftdebt-lifecycle` artifact. Schema 3 persists a snapshot parent graph, per-branch Finding event bases, and the evidence contract used for each lifecycle claim. Ingestion holds an advisory exclusive lock, writes by atomic replacement, orders pending snapshots by their explicit predecessor relationship, and leaves bytes unchanged when the same snapshot is retried. Validated schema 1 and schema 2 artifacts migrate in memory without changing their bytes; the next accepted atomic ingestion writes schema 3 while preserving every existing Snapshot, Finding, Detection, Lifecycle Event, and Introduction Conclusion ID. Legacy claims retain their original reasons and are checked under the frozen schema 2 contract. New claims use directional semantic comparison evidence; migration never invents that evidence for an older claim.
 
+For current claims, an unsupported, failed, excluded, or parse-blocked Atomic Observation keeps its engine-recorded `LifecycleReason` when Resolution Coverage becomes unverified. Text and JSON explanations therefore expose the same decisive reason recorded with the Atomic Observation. A committed observation with Detections still uses continuity evidence rather than a failure reason. Legacy schema-2 claims keep their frozen reason contract.
+
 The migrated snapshot boundary stays unchanged during later engine ingestions. Validation rejects a new directional claim marked as legacy when its semantic evidence remains present. A lifecycle artifact is a local, editable JSON file, not an authenticated record: a coordinated rewrite of both the legacy boundary and an otherwise legacy-valid claim cannot be distinguished from a genuine migration using the artifact alone. Keep the artifact in reviewed version control when its provenance matters.
 
 The supported CLI write path accepts only an artifact location:
@@ -200,14 +202,14 @@ All implemented acceptance tests use the real R1 `RuleEngine`, the public lifecy
 
 | PRD acceptance | Status in this slice | Evidence or gap |
 | --- | --- | --- |
-| AT-1 | Direct | A committed Detection opens while another Atomic Observation fails. |
+| AT-1 | Direct | A committed Detection remains visible while another rule fails; a prior Finding for the failed rule stays open and unverified with its recorded failure reason. |
 | AT-2 | Direct | Committed zero proves pair-level absence without implying repository Resolution Coverage. |
 | AT-3 | Direct | A real CLI/Git fixture inserts comments, preserves one Finding ID, records the new location, and explains the structural match and location move. |
 | AT-4 | Direct | A real `git mv` fixture preserves one Finding only when exact structural evidence and the direct-parent Git rename edge agree; explanation lists both. |
 | AT-5 | Direct | A real CLI fixture copies an anchored declaration into two files; both current Detections stay visible and unresolved, and the prior Finding remains open. |
 | AT-6 | Direct | A real CLI fixture collapses two structurally identical prior Findings into one current Detection; both Findings remain open and the complete candidate set is persisted. |
 | AT-7 | Direct | Complete comparable committed absence creates an audited resolution, including a real clean direct-child Git CLI run. |
-| AT-8 | Direct | A real parse failure records not-executed atomics and blocks resolution. |
+| AT-8 | Direct | A real CLI parse failure records not-executed atomics, blocks resolution, and names `source-parse-failed` in both text and JSON explanations. |
 | AT-9 | Direct | Real CLI/Git fixtures explicitly exclude the prior SourceUnit and select only another changed file through a manifest. Both keep the Finding open and record the exact selection gap and incomplete relocation coverage. |
 | AT-10 | Direct | Complete comparable repository coverage resolves direct-child Git deletion with other sources or with no remaining Swift SourceUnit. The persisted proof retains the selected rules, deletion edge, complete relocation coverage, and committed absence. Deletion evidence also survives an intermediate partial observation. |
 | AT-11 | Direct | The same direct-child deletion analyzed only through its containing directory stays open and unverified because relocation coverage is incomplete. |
