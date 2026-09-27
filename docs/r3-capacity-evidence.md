@@ -41,6 +41,8 @@ The following 2026-09-26 measurements used arm64 macOS 27.2, Apple Swift 6.4, an
 
 The 1,000-Snapshot attempt ingested 901 revisions and validated only the first 900 at checkpoints. It did not measure an accepted 1,000-Snapshot artifact. These figures expose scaling on the then-current artifact validator; a later engine optimization must be measured under its own exact binary and source identity.
 
+After the runner's fail-closed repair, a clean `0ae2591f33da` checkout and release binary SHA-256 `d0f7e03835c027911344afca726bf0dc3dd93753fa93607ead9667fa4f43a96c` attempted ten Snapshots with 10,000 Findings. Snapshot 2 passed public inventory validation with 10,000 open Findings in a 38,004,676-byte artifact. Snapshot 3 timed out while resolving them at the 300-second command ceiling. The run ended `failed` after 594.66 seconds; it did not establish a final 10,000-Finding artifact size. The evidence file `/tmp/swiftdebt-r3-capacity-10x10000-0ae2591.json` had SHA-256 `8e362c4f78b9ddc44fa18c7422c28463ab015d780299b7e6b26eae16372f6a09` on the measuring host. Host load was high during the run, so its wall times are diagnostic only.
+
 Use the bounded pilots to set explicit ceilings for the two independent capacity axes. The target commands are:
 
 ```sh
