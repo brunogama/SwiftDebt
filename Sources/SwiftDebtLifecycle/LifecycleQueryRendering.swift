@@ -68,12 +68,7 @@ extension LifecycleReadService {
             lines.append("Supporting Snapshot \(oneLine(snapshot.id.rawValue))")
             lines += renderSnapshotEvidence(snapshot)
         }
-        for unresolved in report.unresolvedDetections {
-            lines.append("Unresolved Detection \(oneLine(unresolved.detectionID.rawValue))")
-            let candidates = unresolved.candidateFindingIDs.map { oneLine($0.rawValue) }.joined(separator: ", ")
-            lines.append("  Candidate Findings: \(candidates)")
-            lines += unresolved.reasons.map { "  \(oneLine($0.code)): \(oneLine($0.message))" }
-        }
+        lines += report.unresolvedDetections.flatMap { renderUnresolvedDetection($0) }
         for conclusion in report.introductionConclusions {
             lines.append(renderIntroduction(conclusion))
             lines.append("History budget: \(conclusion.evidence.boundary.maximumRevisions) revisions")
