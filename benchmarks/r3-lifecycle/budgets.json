@@ -1,0 +1,75 @@
+{
+  "cpuModel": "Apple M4 Max",
+  "fixtureVersion": 3,
+  "machine": "arm64",
+  "platformFamily": "darwin",
+  "swiftVersion": "Apple Swift version 6.4 (swiftlang-6.4.0.27.1 clang-2100.3.27.1)\nTarget: arm64-apple-macosx27.2.0",
+  "tiers": {
+    "large": {
+      "maximumArtifactBytes": 27459584,
+      "maximumMedianReconciliationSeconds": 0.08,
+      "maximumMedianWallSeconds": {
+        "cold": 2.75,
+        "explain": 0.9,
+        "incremental": 4.4,
+        "introduction": 5.75,
+        "introductionRepeat": 7.8,
+        "inventory": 0.7,
+        "replay": 3.65
+      },
+      "maximumPeakRSSBytes": {
+        "cold": 293601280,
+        "explain": 125829120,
+        "incremental": 377487360,
+        "introduction": 285212672,
+        "introductionRepeat": 301989888,
+        "inventory": 92274688,
+        "replay": 293601280
+      }
+    },
+    "medium": {
+      "maximumArtifactBytes": 2818048,
+      "maximumMedianReconciliationSeconds": 0.01,
+      "maximumMedianWallSeconds": {
+        "cold": 0.4,
+        "explain": 0.1,
+        "incremental": 0.55,
+        "introduction": 0.8,
+        "introductionRepeat": 0.9,
+        "inventory": 0.1,
+        "replay": 0.4
+      },
+      "maximumPeakRSSBytes": {
+        "cold": 58720256,
+        "explain": 33554432,
+        "incremental": 75497472,
+        "introduction": 67108864,
+        "introductionRepeat": 58720256,
+        "inventory": 25165824,
+        "replay": 67108864
+      }
+    },
+    "small": {
+      "maximumArtifactBytes": 327680,
+      "maximumMedianReconciliationSeconds": 0.005,
+      "maximumMedianWallSeconds": {
+        "cold": 0.3,
+        "explain": 0.1,
+        "incremental": 0.3,
+        "introduction": 0.45,
+        "introductionRepeat": 0.45,
+        "inventory": 0.1,
+        "replay": 0.35
+      },
+      "maximumPeakRSSBytes": {
+        "cold": 33554432,
+        "explain": 25165824,
+        "incremental": 33554432,
+        "introduction": 33554432,
+        "introductionRepeat": 33554432,
+        "inventory": 25165824,
+        "replay": 33554432
+      }
+    }
+  }
+}

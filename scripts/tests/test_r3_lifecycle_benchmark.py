@@ -1,4 +1,5 @@
 import json
+import platform
 import sys
 import unittest
 from pathlib import Path
@@ -13,6 +14,7 @@ from r3_lifecycle_benchmark_support import (  # noqa: E402
     validate_introduction_profile,
     validate_inventory,
 )
+from run_r3_lifecycle_benchmark import FIXTURE_VERSION, budget_failures  # noqa: E402
 
 
 class R3LifecycleBenchmarkValidationTests(unittest.TestCase):
@@ -90,6 +92,54 @@ class R3LifecycleBenchmarkValidationTests(unittest.TestCase):
             "introductionArtifact": {"bytes": 240},
         }
         self.assertEqual(largest_artifact_bytes(tier), 240)
+
+    def test_calibrated_budget_rejects_measured_regression(self) -> None:
+        result = {
+            "runnerDirty": False,
+            "environment": {"cpuModel": "fixture CPU", "swift": "fixture Swift"},
+            "tiers": {"small": {
+                "coldArtifact": {"bytes": 100},
+                "incrementalArtifact": {"bytes": 180},
+                "introductionArtifact": {"bytes": 240},
+                "incrementalReconciliation": {"medianElapsedNanoseconds": 500_000_000},
+                "operations": {"cold": {
+                    "medianWallSeconds": 1.0,
+                    "maximumPeakRSSBytes": 1000,
+                }},
+            }},
+        }
+        budgets = {
+            "fixtureVersion": FIXTURE_VERSION,
+            "platformFamily": sys.platform,
+            "machine": platform.machine(),
+            "cpuModel": "fixture CPU",
+            "swiftVersion": "fixture Swift",
+            "tiers": {"small": {
+                "maximumArtifactBytes": 300,
+                "maximumMedianReconciliationSeconds": 1.0,
+                "maximumMedianWallSeconds": {"cold": 2.0},
+                "maximumPeakRSSBytes": {"cold": 1500},
+            }},
+        }
+        self.assertEqual(budget_failures(result, budgets), [])
+        result["tiers"]["small"]["operations"]["cold"]["medianWallSeconds"] = 2.01
+        self.assertEqual(
+            budget_failures(result, budgets),
+            ["small/cold: median wall time exceeds limit"],
+        )
+        result["tiers"]["small"]["operations"]["cold"]["medianWallSeconds"] = 1.0
+        result["tiers"]["small"]["operations"]["cold"]["maximumPeakRSSBytes"] = 1501
+        result["tiers"]["small"]["incrementalArtifact"]["bytes"] = 301
+        result["tiers"]["small"]["incrementalReconciliation"]["medianElapsedNanoseconds"] = 1_000_000_001
+        self.assertEqual(
+            budget_failures(result, budgets),
+            ["small: artifact exceeds byte limit",
+             "small: median reconciliation time exceeds limit",
+             "small/cold: peak RSS exceeds limit"],
+        )
+        result["runnerDirty"] = True
+        with self.assertRaisesRegex(RuntimeError, "clean runner checkout"):
+            budget_failures(result, budgets)
 
     def test_introduction_profile_is_bound_to_persisted_history(self) -> None:
         conclusion = {

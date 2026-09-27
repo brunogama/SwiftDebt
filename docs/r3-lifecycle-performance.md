@@ -28,12 +28,12 @@ Use a clean checkout at the candidate release commit. Resolve dependencies befor
 swift build -c release --jobs 2
 python3 scripts/run_r3_lifecycle_benchmark.py \
   --swift-debt .build/release/swift-debt \
-  --output benchmarks/r3-lifecycle/evidence/MEASUREMENT.json \
+  --output /tmp/swiftdebt-r3-check.json \
   --runs 3 --warmups 1 \
   --budgets benchmarks/r3-lifecycle/budgets.json
 ```
 
-`--budgets` requires all three tiers, one warmup, and at least three measured runs. It checks the fixture version, OS family, architecture, CPU model, and Swift version before comparing each tier's median wall time, maximum sampled peak RSS, and the largest cold, incremental, or introduction artifact with calibrated ceilings. The script writes raw evidence before returning a budget failure. The budget file and measurements must come from calibration on the integrated release candidate; they are not included in this draft. Omit `--budgets` only while calibrating a new release platform or workload. Record the candidate binary and source commit with each passing result; a result from another binary, machine class, or artifact schema is not evidence for this release.
+`--budgets` requires all three tiers, one warmup, and at least three measured runs. It checks the fixture version, OS family, architecture, CPU model, and Swift version before comparing each tier's median wall time, maximum sampled peak RSS, reconciliation-stage median, and the largest cold, incremental, or introduction artifact with calibrated ceilings. The script writes raw evidence before returning a budget failure. The checked-in budget applies only to the recorded Apple M4 Max and Swift 6.4 environment; another machine or toolchain requires its own measured budget. Record the candidate binary and source commit with each passing result.
 
 For a bounded public-CLI proof of the reconciliation sidecar before calibration, run:
 
@@ -50,10 +50,30 @@ The evidence JSON records the Swift version, OS, architecture, CPU label, binary
 
 ---
 
+## Apple M4 Max calibration
+
+The checked-in evidence under `benchmarks/r3-lifecycle/evidence/` contains two independent raw runs and one passing budget-gate run. Each run used the same clean source commit and Release binary, with one warmup and three measured samples for every operation in each tier. The environment is macOS 27.2, arm64, Apple M4 Max, 36 GiB RAM, and Apple Swift 6.4. The JSON records the exact source commit and binary SHA-256; those fields, rather than the filename, establish provenance.
+
+The table shows the larger median from the two raw runs and the budget ceiling, in seconds. The gate run is independent of those calibration runs.
+
+| Operation | Small observed / limit | Medium observed / limit | Large observed / limit |
+| --- | ---: | ---: | ---: |
+| Cold ingestion | 0.139 / 0.30 | 0.193 / 0.40 | 1.361 / 2.75 |
+| Identical replay | 0.151 / 0.35 | 0.195 / 0.40 | 1.809 / 3.65 |
+| Incremental ingestion | 0.140 / 0.30 | 0.257 / 0.55 | 2.199 / 4.40 |
+| Inventory | 0.012 / 0.10 | 0.030 / 0.10 | 0.338 / 0.70 |
+| Explanation | 0.013 / 0.10 | 0.034 / 0.10 | 0.441 / 0.90 |
+| Introduction inference | 0.218 / 0.45 | 0.399 / 0.80 | 2.856 / 5.75 |
+| Identical introduction query | 0.211 / 0.45 | 0.428 / 0.90 | 3.894 / 7.80 |
+
+Wall ceilings are twice the larger observed median, rounded up to 0.05 seconds with a 0.10-second floor. Peak RSS ceilings are 1.5 times the larger observed maximum, rounded up to 8 MiB with a 24 MiB floor. Artifact ceilings are 1.1 times the largest observed artifact, rounded up to 64 KiB. Reconciliation-stage ceilings are four times the larger observed median, rounded up to 5 ms with a 5 ms floor: 5 ms, 10 ms, and 80 ms for the three tiers. The complete numeric limits and all raw samples are in the JSON files.
+
+---
+
 ## Interpretation and limits
 
 The three tiers are deterministic synthetic source shapes. Once calibrated, they establish repeatable CLI budgets for these shapes; they do not establish throughput for arbitrary Swift repositories or compare SwiftDebt with another analyzer. The one-file edit leaves the other source contents unchanged, so its incremental result measures a narrow continuity case. Report its observed and ambiguous event counts alongside time rather than optimizing for a higher automatic match rate.
 
-Artifact sizes in the evidence are actual sizes at one and two Snapshots and 10, 100, or 1,000 Findings. Dividing these values by the observed counts may help plan capacity, but extrapolating them to 1,000 Snapshots or 10,000 Findings is not a measured scale result. The PRD's explicit large-history and large-Finding capacity requirement remains open until product-generated artifacts at those cardinalities are measured. The reconciliation sidecar measures the affected prior Finding candidates in this single-rule fixture; it does not establish candidate-set behavior on representative multi-rule repositories. Its numeric stage ceiling remains uncalibrated. Representative ambiguity rates, representative introduction reuse across mixed hits and invalidations, and a numeric introduction-cache budget also remain open. Passing these CLI budgets alone does not satisfy all R3 release-performance requirements in PRD sections 9.3, 12.2, and 12.4.
+Artifact sizes in this benchmark are actual sizes at one and two Snapshots and 10, 100, or 1,000 Findings. Separate public CLI capacity probes have already measured product-generated artifacts at 1,000 Snapshots with zero Findings (10,123,749 bytes) and ten Snapshots with 10,000 Findings (112,073,433 bytes); see [R3 capacity evidence](r3-capacity-evidence.md). Those single runs do not measure the combined cardinalities or establish latency and memory distributions at either scale. The reconciliation sidecar here measures affected prior Finding candidates in a single-rule fixture; it does not establish candidate-set behavior on representative multi-rule repositories. Representative ambiguity rates, representative introduction reuse across mixed hits and invalidations, and a numeric introduction-cache budget also remain open. Passing these CLI budgets alone does not satisfy all R3 release-performance requirements in PRD sections 9.3, 12.2, and 12.4.
 
 Budgets are machine-class specific. A changed Swift toolchain, SwiftSyntax version, artifact schema, fixture shape, or hardware class requires a new calibration with raw evidence and documented ceilings. A release cannot claim this gate merely because the script exits successfully on a different environment.
