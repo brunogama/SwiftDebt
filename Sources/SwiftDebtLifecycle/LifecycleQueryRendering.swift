@@ -9,24 +9,26 @@ extension LifecycleReadService {
 
     func renderInventory(_ report: LifecycleInventoryReport) -> String {
         var lines = ["SwiftDebt lifecycle inventory"]
-        lines += report.headSnapshotIDs.map { "Graph head: \($0.rawValue)" }
+        lines += report.headSnapshotIDs.map { "Graph head: \(oneLine($0.rawValue))" }
         for finding in report.findings {
             let location = finding.lastKnownLocation
             lines.append(
-                "\(finding.id.rawValue) head=\(finding.headSnapshotID.rawValue) "
+                "\(oneLine(finding.id.rawValue)) head=\(oneLine(finding.headSnapshotID.rawValue)) "
                     + "\(finding.lifecycleState.rawValue) \(finding.evidenceState.rawValue) "
-                    + "\(finding.rule.identity) \(location.sourcePath.rawValue):\(location.line):\(location.column)"
+                    + "\(oneLine(finding.rule.identity.description)) "
+                    + "\(oneLine(location.sourcePath.rawValue)):\(location.line):\(location.column)"
             )
-            lines.append("  First Observation: \(finding.firstObservationSnapshotID.rawValue)")
+            lines.append("  First Observation: \(oneLine(finding.firstObservationSnapshotID.rawValue))")
             if let introduction = finding.introductionConclusion {
                 lines.append("  \(renderIntroduction(introduction))")
             }
         }
         for unresolved in report.unresolvedDetections {
-            let candidates = unresolved.candidateFindingIDs.map(\.rawValue).joined(separator: ",")
-            let reasons = unresolved.reasons.map(\.code).joined(separator: ",")
+            let candidates = unresolved.candidateFindingIDs.map { oneLine($0.rawValue) }.joined(separator: ",")
+            let reasons = unresolved.reasons.map { oneLine($0.code) }.joined(separator: ",")
             lines.append(
-                "unresolved \(unresolved.snapshotID.rawValue) \(unresolved.detectionID.rawValue) "
+                "unresolved \(oneLine(unresolved.snapshotID.rawValue)) "
+                    + "\(oneLine(unresolved.detectionID.rawValue)) "
                     + "candidates=\(candidates) reasons=\(reasons)"
             )
         }
@@ -35,11 +37,11 @@ extension LifecycleReadService {
 
     func renderExplanation(_ report: FindingExplanationReport) -> String {
         var lines = [
-            "Finding \(report.finding.id.rawValue)",
-            "First Observation: \(report.finding.firstObservationSnapshotID.rawValue)",
+            "Finding \(oneLine(report.finding.id.rawValue))",
+            "First Observation: \(oneLine(report.finding.firstObservationSnapshotID.rawValue))",
         ]
         for projection in report.projections {
-            lines.append("Graph head: \(projection.snapshotID.rawValue)")
+            lines.append("Graph head: \(oneLine(projection.snapshotID.rawValue))")
             lines.append("State: \(projection.lifecycleState.rawValue)")
             lines.append("Evidence: \(projection.evidenceState.rawValue)")
             for event in projection.finding.events {
@@ -49,30 +51,35 @@ extension LifecycleReadService {
                 }
             }
         }
+        for snapshot in report.supportingSnapshots {
+            lines.append("Supporting Snapshot \(oneLine(snapshot.id.rawValue))")
+            lines += renderSnapshotEvidence(snapshot)
+        }
         for unresolved in report.unresolvedDetections {
-            lines.append("Unresolved Detection \(unresolved.detectionID.rawValue)")
-            let candidates = unresolved.candidateFindingIDs.map(\.rawValue).joined(separator: ", ")
+            lines.append("Unresolved Detection \(oneLine(unresolved.detectionID.rawValue))")
+            let candidates = unresolved.candidateFindingIDs.map { oneLine($0.rawValue) }.joined(separator: ", ")
             lines.append("  Candidate Findings: \(candidates)")
-            lines += unresolved.reasons.map { "  \($0.code): \($0.message)" }
+            lines += unresolved.reasons.map { "  \(oneLine($0.code)): \(oneLine($0.message))" }
         }
         for conclusion in report.introductionConclusions {
             lines.append(renderIntroduction(conclusion))
             lines.append("History budget: \(conclusion.evidence.boundary.maximumRevisions) revisions")
             lines.append(
-                "History boundary: head=\(conclusion.evidence.boundary.repositoryHeadRevision.rawValue) "
+                "History boundary: head=\(oneLine(conclusion.evidence.boundary.repositoryHeadRevision.rawValue)) "
                     + "state=\(conclusion.evidence.boundary.workingTreeState.rawValue) "
                     + "shallow=\(conclusion.evidence.boundary.isShallow)"
             )
             for revision in conclusion.evidence.revisions {
-                let parents = revision.parentRevisions.map(\.rawValue).joined(separator: ",")
+                let parents = revision.parentRevisions.map { oneLine($0.rawValue) }.joined(separator: ",")
                 let state = revision.observation == nil ? "unavailable" : "observed"
-                lines.append("History revision \(revision.revision.rawValue): \(state) parents=\(parents)")
+                lines.append("History revision \(oneLine(revision.revision.rawValue)): \(state) parents=\(parents)")
             }
             if !conclusion.evidence.boundary.frontierRevisions.isEmpty {
-                let frontier = conclusion.evidence.boundary.frontierRevisions.map(\.rawValue).joined(separator: ",")
+                let frontier = conclusion.evidence.boundary.frontierRevisions.map { oneLine($0.rawValue) }
+                    .joined(separator: ",")
                 lines.append("History frontier: \(frontier)")
             }
-            lines += conclusion.reasons.map { "  \($0.code): \($0.message)" }
+            lines += conclusion.reasons.map { "  \(oneLine($0.code)): \(oneLine($0.message))" }
             for comparison in conclusion.semanticComparisons {
                 lines += renderSemanticComparison(comparison)
             }
@@ -83,25 +90,35 @@ extension LifecycleReadService {
     func renderSnapshot(_ report: SnapshotInspectionReport) -> String {
         let snapshot = report.snapshot
         var lines = [
-            "Snapshot \(snapshot.id.rawValue)",
-            "Graph parent: \(report.parentSnapshotID?.rawValue ?? "none")",
-            "Graph children: \(report.childSnapshotIDs.map(\.rawValue).joined(separator: ","))",
+            "Snapshot \(oneLine(snapshot.id.rawValue))",
+            "Graph parent: \(report.parentSnapshotID.map { oneLine($0.rawValue) } ?? "none")",
+            "Graph children: \(report.childSnapshotIDs.map { oneLine($0.rawValue) }.joined(separator: ","))",
             "Graph head: \(report.isHead)",
-            "Legacy lineage: \(snapshot.provenance.lineage.lineageID.rawValue) #\(snapshot.provenance.lineage.sequence)",
+        ]
+        lines += renderSnapshotEvidence(snapshot)
+        lines += report.affectedFindingIDs.map { renderAffectedFinding($0) }
+        lines += report.unresolvedDetections.flatMap { renderUnresolvedDetection($0) }
+        return lines.joined(separator: "\n") + "\n"
+    }
+
+    private func renderSnapshotEvidence(_ snapshot: ObservationSnapshot) -> [String] {
+        var lines = [
+            "Legacy lineage: \(oneLine(snapshot.provenance.lineage.lineageID.rawValue)) "
+                + "#\(snapshot.provenance.lineage.sequence)",
             renderSourceIdentity(snapshot.provenance.sourceIdentity),
             "Scope: \(renderScope(snapshot.provenance.scope))",
             "Configuration: \(snapshot.provenance.configurationFingerprint.value)",
-            "Engine: \(snapshot.provenance.engineVersion)",
+            "Engine: \(oneLine(snapshot.provenance.engineVersion))",
             "Atomic observations complete: \(snapshot.isAtomicallyComplete)",
             "Repository absence supported: \(snapshot.supportsRepositoryAbsence)",
         ]
         if let selection = snapshot.provenance.sourceSelection {
             lines.append(
                 "Source selection: \(selection.kind.rawValue) root="
-                    + (selection.repositoryRelativeRoot?.rawValue ?? ".")
+                    + oneLine(selection.repositoryRelativeRoot?.rawValue ?? ".")
             )
             lines += selection.excludedPathPrefixes.map {
-                "Excluded source prefix: \($0.rawValue)"
+                "Excluded source prefix: \(oneLine($0.rawValue))"
             }
         }
         if let configuration = snapshot.provenance.effectiveConfiguration {
@@ -111,22 +128,23 @@ extension LifecycleReadService {
             )
             lines.append(
                 "Effective configuration exclusions: "
-                    + configuration.excludedSourcePrefixes.joined(separator: ",")
+                    + configuration.excludedSourcePrefixes.map(oneLine).joined(separator: ",")
             )
             lines.append(
                 "Effective configuration rules: "
-                    + configuration.selectedRuleIdentities.map(\.description).joined(separator: ",")
+                    + configuration.selectedRuleIdentities.map { oneLine($0.description) }.joined(separator: ",")
             )
         }
         lines += snapshot.provenance.capabilities.map {
-            "Capability \($0.name): \(renderCapabilityState($0.state))"
+            "Capability \(oneLine($0.name)): \(renderCapabilityState($0.state))"
         }
         lines += snapshot.rules.map {
-            "Selected rule: \($0.identity) semantic-revision=\($0.semanticRevision.rawValue)"
+            "Selected rule: \(oneLine($0.identity.description)) "
+                + "semantic-revision=\($0.semanticRevision.rawValue)"
         }
         lines += snapshot.rules.flatMap { rule in
             rule.compatibilityDeclarations.map { declaration in
-                "Semantic compatibility: \(rule.identity) revisions="
+                "Semantic compatibility: \(oneLine(rule.identity.description)) revisions="
                     + "\(declaration.fromRevision.rawValue)->\(rule.semanticRevision.rawValue) "
                     + "claims=\(declaration.supportedClaims.map(\.rawValue).joined(separator: ","))"
             }
@@ -138,25 +156,24 @@ extension LifecycleReadService {
                 let revisions = "\(declaration.fromRevision.rawValue)->\(rule.semanticRevision.rawValue)"
                 let test = declaration.testEvidence
                 lines.append(
-                    "Configuration compatibility: \(rule.identity) revisions=\(revisions) "
+                    "Configuration compatibility: \(oneLine(rule.identity.description)) revisions=\(revisions) "
                         + "claims=\(claims) conditions=\(conditions) "
-                        + "test=\(test.identifier) test-summary=\(test.summary)"
+                        + "test=\(oneLine(test.identifier)) test-summary=\(oneLine(test.summary))"
                 )
             }
         }
         lines += snapshot.provenance.sourceRenames.map {
-            "Renamed SourceUnit: \($0.priorSourcePath.rawValue) -> \($0.currentSourcePath.rawValue) "
+            "Renamed SourceUnit: \(oneLine($0.priorSourcePath.rawValue)) "
+                + "-> \(oneLine($0.currentSourcePath.rawValue)) "
                 + "(\($0.similarityPercentage)%)"
         }
         lines += snapshot.provenance.sourceDeletions.map {
-            "Deleted SourceUnit: \($0.priorSourcePath.rawValue)"
+            "Deleted SourceUnit: \(oneLine($0.priorSourcePath.rawValue))"
         }
         lines += snapshot.sources.flatMap { renderSourceObservation($0) }
         lines += snapshot.atomicObservations.flatMap { renderAtomicObservation($0) }
         lines += snapshot.detections.map { renderDetection($0) }
-        lines += report.affectedFindingIDs.map { renderAffectedFinding($0) }
-        lines += report.unresolvedDetections.flatMap { renderUnresolvedDetection($0) }
-        return lines.joined(separator: "\n") + "\n"
+        return lines
     }
 
     private func renderSourceIdentity(_ identity: SnapshotSourceIdentity) -> String {
@@ -166,32 +183,32 @@ extension LifecycleReadService {
         case .contentDigest(let digest):
             "Source SHA-256: \(digest.value) (Git unavailable)"
         case .unavailable(let reason):
-            "Source identity unavailable: \(reason.code): \(reason.message)"
+            "Source identity unavailable: \(oneLine(reason.code)): \(oneLine(reason.message))"
         }
     }
 
     private func renderScope(_ scope: ObservationScope) -> String {
         switch scope {
         case .repository: "repository"
-        case .partial(let reason): "partial (\(reason.code): \(reason.message))"
+        case .partial(let reason): "partial (\(oneLine(reason.code)): \(oneLine(reason.message)))"
         }
     }
 
     private func renderCapabilityState(_ state: SnapshotCapabilityState) -> String {
         switch state {
         case .available: "available"
-        case .unavailable(let reason): "unavailable (\(reason.code): \(reason.message))"
-        case .ambiguous(let reason): "ambiguous (\(reason.code): \(reason.message))"
+        case .unavailable(let reason): "unavailable (\(oneLine(reason.code)): \(oneLine(reason.message)))"
+        case .ambiguous(let reason): "ambiguous (\(oneLine(reason.code)): \(oneLine(reason.message)))"
         }
     }
 
     private func renderIntroduction(_ conclusion: IntroductionConclusion) -> String {
         switch conclusion.kind {
         case .exact:
-            return "Introduction: exact \(conclusion.exactRevision?.rawValue ?? "invalid")"
+            return "Introduction: exact \(oneLine(conclusion.exactRevision?.rawValue ?? "invalid"))"
         case .bounded:
             let revision = conclusion.earliestPositiveRevision?.rawValue ?? "unknown"
-            return "Introduction: bounded earliest-positive=\(revision)"
+            return "Introduction: bounded earliest-positive=\(oneLine(revision))"
         case .unavailable:
             return "Introduction: unavailable"
         }
@@ -203,17 +220,18 @@ extension LifecycleReadService {
                 + "\(comparison.priorRule.semanticRevision.rawValue)->"
                 + "\(comparison.currentRule.semanticRevision.rawValue) "
                 + comparison.decision.rawValue,
-            "    Snapshots: \(comparison.priorSnapshotID.rawValue) -> "
-                + comparison.currentSnapshotID.rawValue,
+            "    Snapshots: \(oneLine(comparison.priorSnapshotID.rawValue)) -> "
+                + oneLine(comparison.currentSnapshotID.rawValue),
             "    Configuration: \(comparison.priorConfigurationFingerprint.value) -> "
                 + comparison.currentConfigurationFingerprint.value,
-            "    Engine: \(comparison.priorEngineVersion) -> \(comparison.currentEngineVersion)",
+            "    Engine: \(oneLine(comparison.priorEngineVersion)) -> "
+                + oneLine(comparison.currentEngineVersion),
         ]
         if let declaration = comparison.compatibilityDeclaration {
             lines.append(
                 "    Declaration: claims="
                     + declaration.supportedClaims.map(\.rawValue).joined(separator: ",")
-                    + " rationale=\(declaration.rationale)"
+                    + " rationale=\(oneLine(declaration.rationale))"
             )
         }
         if let prior = comparison.priorEffectiveConfiguration,
@@ -228,9 +246,9 @@ extension LifecycleReadService {
                 "    Configuration declaration: claims="
                     + declaration.supportedClaims.map(\.rawValue).joined(separator: ",")
                     + " conditions=\(declaration.conditions.map(\.rawValue).joined(separator: ","))"
-                    + " test=\(declaration.testEvidence.identifier)"
-                    + " test-summary=\(declaration.testEvidence.summary)"
-                    + " rationale=\(declaration.rationale)"
+                    + " test=\(oneLine(declaration.testEvidence.identifier))"
+                    + " test-summary=\(oneLine(declaration.testEvidence.summary))"
+                    + " rationale=\(oneLine(declaration.rationale))"
             )
         }
         return lines

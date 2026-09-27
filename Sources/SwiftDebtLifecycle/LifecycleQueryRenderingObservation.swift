@@ -4,9 +4,9 @@ extension LifecycleReadService {
     func renderSourceObservation(_ source: SourceObservation) -> [String] {
         switch source.parseOutcome {
         case .parsed:
-            return ["SourceUnit \(source.sourcePath.rawValue): parsed"]
+            return ["SourceUnit \(oneLine(source.sourcePath.rawValue)): parsed"]
         case .failed(let diagnostics):
-            return ["SourceUnit \(source.sourcePath.rawValue): parse-failed"]
+            return ["SourceUnit \(oneLine(source.sourcePath.rawValue)): parse-failed"]
                 + diagnostics.map {
                     "  \(oneLine($0.location.file)):\($0.location.line):\($0.location.column) "
                         + "\($0.severity.rawValue): \(oneLine($0.message))"
@@ -16,13 +16,15 @@ extension LifecycleReadService {
 
     func renderAtomicObservation(_ observation: AtomicObservation) -> [String] {
         var lines = [
-            "Atomic Observation \(observation.id.rawValue) "
-                + "\(observation.rule.identity) \(observation.sourcePath.rawValue) "
+            "Atomic Observation \(oneLine(observation.id.rawValue)) "
+                + "\(oneLine(observation.rule.identity.description)) "
+                + "\(oneLine(observation.sourcePath.rawValue)) "
                 + observation.outcome.kind.rawValue
         ]
         switch observation.outcome {
         case .committed(let detectionIDs):
-            lines.append("  Committed Detection IDs: \(detectionIDs.map(\.rawValue).joined(separator: ","))")
+            lines.append(
+                "  Committed Detection IDs: \(detectionIDs.map { oneLine($0.rawValue) }.joined(separator: ","))")
         case .unsupported(let reason), .failed(let reason), .excluded(let reason), .notExecuted(let reason):
             lines.append("  \(oneLine(reason.code)): \(oneLine(reason.message))")
         }
@@ -31,8 +33,9 @@ extension LifecycleReadService {
 
     func renderDetection(_ detection: ObservedDetection) -> String {
         let location = detection.location
-        return "Detection \(detection.id.rawValue) \(detection.rule.identity) "
-            + "\(location.sourcePath.rawValue):\(location.line):\(location.column) "
+        return "Detection \(oneLine(detection.id.rawValue)) "
+            + "\(oneLine(detection.rule.identity.description)) "
+            + "\(oneLine(location.sourcePath.rawValue)):\(location.line):\(location.column) "
             + "\(detection.severity.rawValue): \(oneLine(detection.message))"
     }
 
