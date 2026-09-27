@@ -45,6 +45,10 @@ import Testing
                 marker: marker, process: process,
                 errorOutput: errorOutput, errorURL: errorURL
             )
+            let markerData = try Data(contentsOf: marker)
+            #expect(markerData.last == 0x0A)
+            #expect(String(bytes: markerData, encoding: .utf8) == temporaryName + "\n")
+            #expect(!FileManager.default.fileExists(atPath: marker.path + ".pending"))
             let temporaryArtifact = interruptedArtifact.deletingLastPathComponent()
                 .appendingPathComponent(temporaryName)
             #expect(try Data(contentsOf: temporaryArtifact) == expectedBytes)

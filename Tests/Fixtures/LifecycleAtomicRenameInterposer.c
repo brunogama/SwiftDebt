@@ -16,11 +16,20 @@ static int pause_before_artifact_rename(
     const char *artifact_name = getenv("SWIFTDEBT_AT22_ARTIFACT_NAME");
     const char *marker_path = getenv("SWIFTDEBT_AT22_RENAME_MARKER");
     if (artifact_name && marker_path && strcmp(destination, artifact_name) == 0) {
-        FILE *marker = fopen(marker_path, "w");
-        if (marker) {
-            fprintf(marker, "%s\n", source);
-            fclose(marker);
-            raise(SIGSTOP);
+        size_t pending_capacity = strlen(marker_path) + sizeof(".pending");
+        char *pending_path = malloc(pending_capacity);
+        if (pending_path) {
+            // Publish complete marker bytes in one rename before stopping the child.
+            snprintf(pending_path, pending_capacity, "%s.pending", marker_path);
+            FILE *pending = fopen(pending_path, "w");
+            if (pending) {
+                int wrote = fprintf(pending, "%s\n", source) > 0;
+                int closed = fclose(pending) == 0;
+                if (wrote && closed && rename(pending_path, marker_path) == 0) {
+                    raise(SIGSTOP);
+                }
+            }
+            free(pending_path);
         }
     }
     return original_renameat(
