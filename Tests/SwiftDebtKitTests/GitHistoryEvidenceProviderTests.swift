@@ -6,6 +6,46 @@ import Testing
 
 @Suite("Git history evidence provider")
 struct GitHistoryEvidenceProviderTests {
+    @Test func defaultDeadlineRetainsEvidenceAfterShortGitLogDelay() throws {
+        let root = try temporaryGitTestDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try initializeGitRepository(at: root)
+        try writeGitFixture("struct Delayed {}\n", name: "Sources/Delayed.swift", root: root)
+        try commitGitFixture(
+            root: root,
+            message: "feat: add delayed source",
+            authorEmail: "delayed@example.test",
+            timestamp: "2026-09-01T00:00:00Z"
+        )
+        let wrapper = root.appendingPathComponent("delayed-git.sh")
+        try """
+        #!/bin/sh
+        case " $* " in
+            *" log "*) sleep 6 ;;
+        esac
+        exec /usr/bin/env git "$@"
+        """.write(to: wrapper, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: wrapper.path)
+        let referenceTime = try #require(ISO8601DateFormatter().date(from: "2026-09-12T00:00:00Z"))
+        let provider = GitHistoryEvidenceProvider(
+            executableURL: wrapper,
+            baseArguments: [],
+            runner: GitHistorySubprocessRunner()
+        )
+
+        let result = provider.evidence(
+            for: .init(
+                repositoryRoot: root.path,
+                referenceTime: referenceTime,
+                entities: [gitFixtureEntity(id: "file:Sources/Delayed.swift", file: "Sources/Delayed.swift")]
+            )
+        )
+
+        #expect(result.diagnostics.isEmpty)
+        #expect(result.evidence.count == 4)
+        #expect(result.evidence.allSatisfy { $0.availability.isAvailable })
+    }
+
     @Test func temporaryRepositoryWithFrozenTimestampsProducesHistoryEvidence() throws {
         let root = try temporaryGitTestDirectory()
         defer { try? FileManager.default.removeItem(at: root) }

@@ -43,7 +43,7 @@ public struct GitHistoryEvidenceProvider: Sendable {
     private let timeoutSeconds: TimeInterval
     private let runner: any GitHistoryProcessRunning
 
-    public init(timeoutSeconds: TimeInterval = 5) {
+    public init(timeoutSeconds: TimeInterval = 30) {
         self.init(
             executableURL: URL(fileURLWithPath: "/usr/bin/env"),
             baseArguments: ["git"],
@@ -55,7 +55,7 @@ public struct GitHistoryEvidenceProvider: Sendable {
     init(
         executableURL: URL = URL(fileURLWithPath: "/usr/bin/env"),
         baseArguments: [String] = ["git"],
-        timeoutSeconds: TimeInterval = 5,
+        timeoutSeconds: TimeInterval = 30,
         runner: any GitHistoryProcessRunning
     ) {
         self.executableURL = executableURL
