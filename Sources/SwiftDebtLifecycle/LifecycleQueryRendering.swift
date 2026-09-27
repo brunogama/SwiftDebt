@@ -87,9 +87,9 @@ extension LifecycleReadService {
     func renderSnapshot(_ report: SnapshotInspectionReport) -> String {
         let snapshot = report.snapshot
         var lines = [
-            "Snapshot \(snapshot.id.rawValue)",
-            "Graph parent: \(report.parentSnapshotID?.rawValue ?? "none")",
-            "Graph children: \(report.childSnapshotIDs.map(\.rawValue).joined(separator: ","))",
+            "Snapshot \(oneLine(snapshot.id.rawValue))",
+            "Graph parent: \(report.parentSnapshotID.map { oneLine($0.rawValue) } ?? "none")",
+            "Graph children: \(report.childSnapshotIDs.map { oneLine($0.rawValue) }.joined(separator: ","))",
             "Graph head: \(report.isHead)",
         ]
         lines += renderSnapshotEvidence(snapshot)
@@ -100,7 +100,8 @@ extension LifecycleReadService {
 
     private func renderSnapshotEvidence(_ snapshot: ObservationSnapshot) -> [String] {
         var lines = [
-            "Legacy lineage: \(snapshot.provenance.lineage.lineageID.rawValue) #\(snapshot.provenance.lineage.sequence)",
+            "Legacy lineage: \(oneLine(snapshot.provenance.lineage.lineageID.rawValue)) "
+                + "#\(snapshot.provenance.lineage.sequence)",
             renderSourceIdentity(snapshot.provenance.sourceIdentity),
             "Scope: \(renderScope(snapshot.provenance.scope))",
             "Configuration: \(snapshot.provenance.configurationFingerprint.value)",
@@ -111,10 +112,10 @@ extension LifecycleReadService {
         if let selection = snapshot.provenance.sourceSelection {
             lines.append(
                 "Source selection: \(selection.kind.rawValue) root="
-                    + (selection.repositoryRelativeRoot?.rawValue ?? ".")
+                    + oneLine(selection.repositoryRelativeRoot?.rawValue ?? ".")
             )
             lines += selection.excludedPathPrefixes.map {
-                "Excluded source prefix: \($0.rawValue)"
+                "Excluded source prefix: \(oneLine($0.rawValue))"
             }
         }
         if let configuration = snapshot.provenance.effectiveConfiguration {
@@ -124,22 +125,23 @@ extension LifecycleReadService {
             )
             lines.append(
                 "Effective configuration exclusions: "
-                    + configuration.excludedSourcePrefixes.joined(separator: ",")
+                    + configuration.excludedSourcePrefixes.map(oneLine).joined(separator: ",")
             )
             lines.append(
                 "Effective configuration rules: "
-                    + configuration.selectedRuleIdentities.map(\.description).joined(separator: ",")
+                    + configuration.selectedRuleIdentities.map { oneLine($0.description) }.joined(separator: ",")
             )
         }
         lines += snapshot.provenance.capabilities.map {
-            "Capability \($0.name): \(renderCapabilityState($0.state))"
+            "Capability \(oneLine($0.name)): \(renderCapabilityState($0.state))"
         }
         lines += snapshot.rules.map {
-            "Selected rule: \($0.identity) semantic-revision=\($0.semanticRevision.rawValue)"
+            "Selected rule: \(oneLine($0.identity.description)) "
+                + "semantic-revision=\($0.semanticRevision.rawValue)"
         }
         lines += snapshot.rules.flatMap { rule in
             rule.compatibilityDeclarations.map { declaration in
-                "Semantic compatibility: \(rule.identity) revisions="
+                "Semantic compatibility: \(oneLine(rule.identity.description)) revisions="
                     + "\(declaration.fromRevision.rawValue)->\(rule.semanticRevision.rawValue) "
                     + "claims=\(declaration.supportedClaims.map(\.rawValue).joined(separator: ","))"
             }
@@ -151,18 +153,19 @@ extension LifecycleReadService {
                 let revisions = "\(declaration.fromRevision.rawValue)->\(rule.semanticRevision.rawValue)"
                 let test = declaration.testEvidence
                 lines.append(
-                    "Configuration compatibility: \(rule.identity) revisions=\(revisions) "
+                    "Configuration compatibility: \(oneLine(rule.identity.description)) revisions=\(revisions) "
                         + "claims=\(claims) conditions=\(conditions) "
-                        + "test=\(test.identifier) test-summary=\(test.summary)"
+                        + "test=\(oneLine(test.identifier)) test-summary=\(oneLine(test.summary))"
                 )
             }
         }
         lines += snapshot.provenance.sourceRenames.map {
-            "Renamed SourceUnit: \($0.priorSourcePath.rawValue) -> \($0.currentSourcePath.rawValue) "
+            "Renamed SourceUnit: \(oneLine($0.priorSourcePath.rawValue)) "
+                + "-> \(oneLine($0.currentSourcePath.rawValue)) "
                 + "(\($0.similarityPercentage)%)"
         }
         lines += snapshot.provenance.sourceDeletions.map {
-            "Deleted SourceUnit: \($0.priorSourcePath.rawValue)"
+            "Deleted SourceUnit: \(oneLine($0.priorSourcePath.rawValue))"
         }
         lines += snapshot.sources.flatMap { renderSourceObservation($0) }
         lines += snapshot.atomicObservations.flatMap { renderAtomicObservation($0) }
@@ -177,22 +180,22 @@ extension LifecycleReadService {
         case .contentDigest(let digest):
             "Source SHA-256: \(digest.value) (Git unavailable)"
         case .unavailable(let reason):
-            "Source identity unavailable: \(reason.code): \(reason.message)"
+            "Source identity unavailable: \(oneLine(reason.code)): \(oneLine(reason.message))"
         }
     }
 
     private func renderScope(_ scope: ObservationScope) -> String {
         switch scope {
         case .repository: "repository"
-        case .partial(let reason): "partial (\(reason.code): \(reason.message))"
+        case .partial(let reason): "partial (\(oneLine(reason.code)): \(oneLine(reason.message)))"
         }
     }
 
     private func renderCapabilityState(_ state: SnapshotCapabilityState) -> String {
         switch state {
         case .available: "available"
-        case .unavailable(let reason): "unavailable (\(reason.code): \(reason.message))"
-        case .ambiguous(let reason): "ambiguous (\(reason.code): \(reason.message))"
+        case .unavailable(let reason): "unavailable (\(oneLine(reason.code)): \(oneLine(reason.message)))"
+        case .ambiguous(let reason): "ambiguous (\(oneLine(reason.code)): \(oneLine(reason.message)))"
         }
     }
 
@@ -214,8 +217,8 @@ extension LifecycleReadService {
                 + "\(comparison.priorRule.semanticRevision.rawValue)->"
                 + "\(comparison.currentRule.semanticRevision.rawValue) "
                 + comparison.decision.rawValue,
-            "    Snapshots: \(comparison.priorSnapshotID.rawValue) -> "
-                + comparison.currentSnapshotID.rawValue,
+            "    Snapshots: \(oneLine(comparison.priorSnapshotID.rawValue)) -> "
+                + oneLine(comparison.currentSnapshotID.rawValue),
             "    Configuration: \(comparison.priorConfigurationFingerprint.value) -> "
                 + comparison.currentConfigurationFingerprint.value,
             "    Engine: \(oneLine(comparison.priorEngineVersion)) -> "
@@ -225,7 +228,7 @@ extension LifecycleReadService {
             lines.append(
                 "    Declaration: claims="
                     + declaration.supportedClaims.map(\.rawValue).joined(separator: ",")
-                    + " rationale=\(declaration.rationale)"
+                    + " rationale=\(oneLine(declaration.rationale))"
             )
         }
         if let prior = comparison.priorEffectiveConfiguration,
@@ -240,9 +243,9 @@ extension LifecycleReadService {
                 "    Configuration declaration: claims="
                     + declaration.supportedClaims.map(\.rawValue).joined(separator: ",")
                     + " conditions=\(declaration.conditions.map(\.rawValue).joined(separator: ","))"
-                    + " test=\(declaration.testEvidence.identifier)"
-                    + " test-summary=\(declaration.testEvidence.summary)"
-                    + " rationale=\(declaration.rationale)"
+                    + " test=\(oneLine(declaration.testEvidence.identifier))"
+                    + " test-summary=\(oneLine(declaration.testEvidence.summary))"
+                    + " rationale=\(oneLine(declaration.rationale))"
             )
         }
         return lines
