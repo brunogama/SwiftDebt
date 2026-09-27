@@ -7,6 +7,7 @@ import json
 import os
 import shutil
 import subprocess
+import time
 from pathlib import Path
 
 
@@ -86,7 +87,7 @@ def require_inventory_shape(inventory: dict, *, findings: int, state: str) -> li
 
 
 def run(
-    command: list[str], *, cwd: Path | None = None, timeout: int = 300
+    command: list[str], *, cwd: Path | None = None, timeout: float = 300
 ) -> subprocess.CompletedProcess[str]:
     result = subprocess.run(
         command, cwd=cwd, text=True, capture_output=True, timeout=timeout, check=False
@@ -120,13 +121,22 @@ def preflight(directory: Path, minimum_free_gib: float) -> int:
     return free
 
 
-def git(repo: Path, *arguments: str) -> str:
-    return run(["git", *arguments], cwd=repo).stdout.strip()
+def bounded_timeout(deadline: float, command_limit: float) -> float:
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise RuntimeError("Elapsed-time ceiling exceeded")
+    return min(remaining, command_limit)
 
 
-def commit(repo: Path, content: str, sequence: int) -> str:
+def git(repo: Path, *arguments: str, timeout: float = 300) -> str:
+    return run(["git", *arguments], cwd=repo, timeout=timeout).stdout.strip()
+
+
+def commit(
+    repo: Path, content: str, sequence: int, *, deadline: float, command_limit: float
+) -> str:
     (repo / "Capacity.swift").write_text(content)
-    git(repo, "add", "Capacity.swift")
+    git(repo, "add", "Capacity.swift", timeout=bounded_timeout(deadline, command_limit))
     git(
         repo,
         "-c",
@@ -136,19 +146,30 @@ def commit(repo: Path, content: str, sequence: int) -> str:
         "commit",
         "-m",
         f"test(capacity): observe snapshot {sequence}",
+        timeout=bounded_timeout(deadline, command_limit),
     )
-    return git(repo, "rev-parse", "HEAD")
+    return git(
+        repo, "rev-parse", "HEAD", timeout=bounded_timeout(deadline, command_limit)
+    )
 
 
 def inspect(
-    artifact_path: Path, cli: Path, *, snapshots: int, findings: int, state: str
+    artifact_path: Path,
+    cli: Path,
+    *,
+    snapshots: int,
+    findings: int,
+    state: str,
+    deadline: float,
+    command_limit: float,
 ) -> dict:
     data = artifact_path.read_bytes()
     shape = require_artifact_shape(
         json.loads(data), snapshots=snapshots, findings=findings
     )
     result = run(
-        [str(cli), "lifecycle", "inventory", str(artifact_path), "--format", "json"]
+        [str(cli), "lifecycle", "inventory", str(artifact_path), "--format", "json"],
+        timeout=bounded_timeout(deadline, command_limit),
     )
     inventory_ids = require_inventory_shape(
         json.loads(result.stdout), findings=findings, state=state
