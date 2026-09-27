@@ -6,7 +6,7 @@ import Testing
 
 @Suite("Lifecycle introduction history reuse")
 struct LifecycleIntroductionHistoryReuseTests {
-    @Test("Only complete unambiguous observations with current severity are reusable")
+    @Test("Only complete unambiguous zero-detection observations are reusable")
     func incompleteConflictingAndStaleCandidatesMiss() throws {
         let sourcePath = try SourcePath("Sources/Input.swift")
         let descriptor = RuleDescriptor(
@@ -96,8 +96,7 @@ struct LifecycleIntroductionHistoryReuseTests {
             snapshotID: snapshotID,
             provenance: provenance,
             rules: committed.rules,
-            sourcePaths: [sourcePath],
-            defaultSeverities: [descriptor.identity: .warning]
+            sourcePaths: [sourcePath]
         )
 
         #expect(identity.matchingObservation(among: [committed]) == committed)
@@ -105,6 +104,7 @@ struct LifecycleIntroductionHistoryReuseTests {
         #expect(identity.matchingObservation(among: [failed]) == nil)
         #expect(identity.matchingObservation(among: [unsupported]) == nil)
         #expect(identity.matchingObservation(among: [parseFailed]) == nil)
+        #expect(identity.matchingObservation(among: [detected]) == nil)
         #expect(identity.matchingObservation(among: [staleSeverity]) == nil)
         #expect(identity.matchingObservation(among: [committed, detected]) == nil)
     }

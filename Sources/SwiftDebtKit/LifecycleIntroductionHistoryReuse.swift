@@ -68,23 +68,21 @@ struct LifecycleIntroductionObservationIdentity: Sendable {
     let provenance: SnapshotProvenance
     let rules: [SnapshotRule]
     let sourcePaths: [SourcePath]
-    let defaultSeverities: [RuleIdentity: RuleSeverity]
 
     func matchingObservation(
         among candidates: [ObservationSnapshot]
     ) -> ObservationSnapshot? {
-        let compatible = candidates.filter {
-            $0.isAtomicallyComplete
-                && $0.id == snapshotID
+        let matchingIdentity = candidates.filter {
+            $0.id == snapshotID
                 && $0.provenance == provenance
                 && $0.rules == rules
                 && $0.sources.map(\.sourcePath) == sourcePaths
-                && $0.detections.allSatisfy {
-                    defaultSeverities[$0.rule.identity] == $0.severity
-                }
         }
-        guard let first = compatible.first,
-            compatible.dropFirst().allSatisfy({ $0 == first })
+        guard let first = matchingIdentity.first,
+            matchingIdentity.allSatisfy({
+                $0.isAtomicallyComplete && $0.detections.isEmpty
+            }),
+            matchingIdentity.dropFirst().allSatisfy({ $0 == first })
         else {
             return nil
         }

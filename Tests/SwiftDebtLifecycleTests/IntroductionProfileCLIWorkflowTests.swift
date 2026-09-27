@@ -51,8 +51,8 @@ struct IntroductionProfileCLIWorkflowTests {
         let alreadyPresent = try introductionProfile(at: profileURL)
         #expect(alreadyPresent["recordingStatus"] as? String == "already-present")
         #expect(alreadyPresent["evidenceRevisionCount"] as? Int == 2)
-        #expect(alreadyPresent["analyzedRevisionCount"] as? Int == 0)
-        #expect(alreadyPresent["reusedRevisionCount"] as? Int == 2)
+        #expect(alreadyPresent["analyzedRevisionCount"] as? Int == 1)
+        #expect(alreadyPresent["reusedRevisionCount"] as? Int == 1)
         #expect(repeated.standardOutput == first.standardOutput)
         #expect(try Data(contentsOf: fixture.artifact) == exactBytes)
 
@@ -121,8 +121,8 @@ struct IntroductionProfileCLIWorkflowTests {
         #expect(repeated.status == 0, "\(repeated.standardError)")
         let warm = try introductionProfile(at: profileURL)
         #expect(warm["recordingStatus"] as? String == "already-present")
-        #expect(warm["analyzedRevisionCount"] as? Int == 0)
-        #expect(warm["reusedRevisionCount"] as? Int == 2)
+        #expect(warm["analyzedRevisionCount"] as? Int == 1)
+        #expect(warm["reusedRevisionCount"] as? Int == 1)
     }
 
     @Test("Dirty repository state never reuses clean persisted history")

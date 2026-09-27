@@ -114,12 +114,7 @@ extension LifecycleIntroductionService {
             snapshotID: snapshotID,
             provenance: provenance,
             rules: rules.snapshotRules,
-            sourcePaths: sourcePaths,
-            defaultSeverities: Dictionary(
-                uniqueKeysWithValues: rules.descriptors.map {
-                    ($0.identity, $0.metadata.defaultSeverity)
-                }
-            )
+            sourcePaths: sourcePaths
         )
         if let observation = identity.matchingObservation(among: reuseCandidates) {
             return HistoricalObservationResult(observation: observation, reused: true)
