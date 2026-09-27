@@ -187,6 +187,8 @@ public struct AnalysisRequest: Sendable {
     public let repositoryCachePath: String?
     public let repositoryCacheReportOutputPath: String?
     public let repositoryCacheMode: RepositorySyntaxCacheMode
+    public let agedForceTry: Bool
+    public let gitBlameProviderPath: String?
 
     public init(
         path: String = ".", manifestPath: String? = nil, configurationPath: String? = nil,
@@ -202,7 +204,9 @@ public struct AnalysisRequest: Sendable {
         repositoryEvidenceOutputPath: String? = nil,
         repositoryCachePath: String? = nil,
         repositoryCacheReportOutputPath: String? = nil,
-        repositoryCacheMode: RepositorySyntaxCacheMode = .reuse
+        repositoryCacheMode: RepositorySyntaxCacheMode = .reuse,
+        agedForceTry: Bool = false,
+        gitBlameProviderPath: String? = nil
     ) {
         self.path = path
         self.manifestPath = manifestPath
@@ -229,6 +233,8 @@ public struct AnalysisRequest: Sendable {
         self.repositoryCachePath = repositoryCachePath
         self.repositoryCacheReportOutputPath = repositoryCacheReportOutputPath
         self.repositoryCacheMode = repositoryCacheMode
+        self.agedForceTry = agedForceTry
+        self.gitBlameProviderPath = gitBlameProviderPath
     }
 }
 

@@ -69,6 +69,16 @@ The concurrency observations identify assumptions that deserve review. They do n
 
 The other built-in rules inspect all conditional-compilation branches. The state-across-await rule inspects direct actor properties and methods in the parsed declaration; it does not evaluate `#if` conditions. JSON and the other non-text formats retain their existing schema and do not include rule observations.
 
+Opt into the Git-backed aged force-try rule with an absolute Git executable path:
+
+```sh
+.build/release/swift-debt analyze /path/to/project \
+  --aged-force-try \
+  --git-blame-provider /absolute/path/to/git
+```
+
+`swiftdebt.aged-force-try` reports a `try!` whose line predates the clean captured `HEAD`. Read <doc:AgedForceTry> for its evidence boundary, remediation guidance, and lifecycle behavior. The rule remains selected when the provider option is omitted from a later run; that run is incomplete instead of treating missing Git evidence as absence.
+
 ---
 
 ## Interpret completion

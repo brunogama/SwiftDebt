@@ -17,6 +17,8 @@ All routes share the same analysis engine and deterministic report formats. Read
 
 The built-in <doc:CodeSmells> rules report concrete syntax signals and suggest Swift-specific changes. Their detections are advisory unless `--fail-on-violation` is enabled.
 
+The opt-in <doc:AgedForceTry> rule adds source-validated Git blame evidence without changing the default rule catalog.
+
 ### Code Smells
 
 - <doc:CodeSmells>
@@ -26,6 +28,10 @@ The built-in <doc:CodeSmells> rules report concrete syntax signals and suggest S
 - <doc:LargeClass>
 - <doc:DataClumps>
 - <doc:RepeatedSwitches>
+
+### Optional Evidence Rules
+
+- <doc:AgedForceTry>
 
 ---
 

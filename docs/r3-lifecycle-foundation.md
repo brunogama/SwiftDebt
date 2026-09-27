@@ -39,6 +39,20 @@ The supported CLI write path accepts only an artifact location:
 swift-debt analyze PATH --lifecycle-artifact ARTIFACT
 ```
 
+An optional historical rule can add validated Git blame evidence:
+
+```text
+swift-debt analyze PATH --aged-force-try \
+  --git-blame-provider /absolute/path/to/git \
+  --lifecycle-artifact ARTIFACT
+```
+
+`swiftdebt.aged-force-try` has Semantic Revision 1. It reports a syntactic `try!` only when `git-blame-v1` establishes that the line's last-change revision is a strict ancestor of the clean captured `HEAD`. The rule recommends handling or propagating the error. It is omitted from the default rule catalog and selected only by `--aged-force-try`.
+
+The executable is a trusted CLI integration input. SwiftDebt invokes it directly with an argument vector and validates its observed `HEAD`, tracked-tree cleanliness, committed source bytes, line mapping, and blamed-revision ancestry. The lifecycle artifact does not attest the executable path or bytes. A provider with different semantics requires a new versioned capability contract instead of reusing `git-blame-v1`.
+
+When the selected rule has no provider, or the provider is missing, failing, malformed, stale, or source-mismatched, the Atomic Observation is unsupported and `git-blame-v1` is unavailable. The run exits 2, a prior Finding stays open and unverified, and explanation output retains the capability reason. Restoring the provider can later establish comparable committed absence. Capability comparison is currently snapshot-wide, so an unavailable optional capability conservatively blocks cross-snapshot claims for other rules in the same snapshot. Introduction inference does not reconstruct the provider and reports historical comparison as unavailable.
+
 `AnalysisService` derives the Observation Snapshot from the same in-memory `SourceUnit` values passed to `RuleEngine` and `Analyzer`. It computes the source digest, typed effective configuration and fingerprint, capability state, engine version, Git source state, and lineage. None of those values are accepted as CLI input.
 
 ## Authority boundary
@@ -102,7 +116,7 @@ The analyze-to-artifact path records:
 | Git source identity | Full validated `HEAD` commit ID, clean or modified state, and the source content digest. Git state is captured immediately before and after the one source read. |
 | Observation scope | Repository only for a directory analysis rooted at the Git repository root with no configured exclusions and no skipped symbolic links; otherwise partial with reasons. |
 | Configuration fingerprint | Versioned SHA-256 over source selection kind, effective exclusions, maximum file size, and the exact selected Rule Identities. Semantic rule contracts are bound separately into the snapshot identity. |
-| Capability availability | `syntax-analysis` available. Parse and rule failures remain explicit source and Atomic Observation outcomes rather than unavailable capability claims. |
+| Capability availability | `syntax-analysis` is available. When `--aged-force-try` selects the optional rule, `git-blame-v1` records available or unavailable with a specific reason. Parse and other rule failures remain explicit source and Atomic Observation outcomes. |
 | Engine identity | The schema-2 report engine version produced by the same analysis run. |
 | Snapshot graph | Existing edge for an exact retry, or one clean single-parent Git edge to the unique persisted snapshot of that parent revision. The parent does not need to remain a graph head. |
 | Source rename evidence | Canonical Git rename edges between the direct parent and current revision, captured from the same clean repository state. |
@@ -232,7 +246,7 @@ All implemented acceptance tests use the real R1 `RuleEngine`, the public lifecy
 | AT-23 | Partial | Persisted human and JSON queries expose blockers; real CLI tests prove text and JSON parity for every ambiguity candidate and blocker and for unverified reasons. CLI snapshot inspection shows derived Git, configuration, capability, engine, scope, selected-rule, rename, parse, Atomic Observation, and Detection evidence. A real CLI regression proves a newline in a persisted diagnostic filename cannot forge a text observation line. A read-only CLI export emits the complete validated canonical artifact. Full human/machine audit parity remains open. |
 | AT-24 | Direct | Unknown schema, broken references, reference-valid false resolution proof, and invalid candidate references fail closed. |
 | AT-25 | Direct | A real CLI fixture compares schema-2 stdout byte for byte with lifecycle disabled and verifies `--fail-on-violation` keeps status 1 while retrying the same lifecycle snapshot without mutation. |
-| AT-26 | Partial | Capability provenance is validated and unavailable capability cannot support decoded resolution; a real optional-provider run remains open. |
+| AT-26 | Direct | A real four-commit CLI Git fixture detects `swiftdebt.aged-force-try` from source-validated blame evidence, retains the Finding as open and unverified when the selected rule omits its provider, exposes the unavailable capability and unsupported Atomic Observation in explanation output, and verifies absence after the provider returns. The same fixture proves historical replay reports unavailable instead of reconstructing missing provider evidence. Focused provider tests reject malformed blame output and source-byte mismatch. |
 | AT-27 | Direct | A real CLI fixture reuses the exact path, line, and column after resolution with different subject and declaration structure; the old Finding retains its Verified Resolution and the current Detection remains separately unresolved. An edited subject in the same declaration also stays unresolved. |
 
 ## Remaining product gaps

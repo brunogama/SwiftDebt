@@ -51,6 +51,8 @@ struct CLIOptions {
           --output PATH                  Write a report atomically instead of stdout.
           --profile-output PATH          Write machine-readable operational profiling JSON.
           --lifecycle-artifact PATH      Append an engine-owned Observation Snapshot to this artifact.
+          --aged-force-try               Select the optional Git-aged force-try rule.
+          --git-blame-provider PATH      Absolute Git executable path used by --aged-force-try.
           --repository-evidence PATH     Run experimental repository smells and write the schema 1 sidecar.
           --repository-cache PATH        Store repository syntax facts at an explicit local path.
           --repository-cache-report PATH Write the schema 1 cache activity report.
@@ -128,13 +130,14 @@ struct CLIOptions {
         var pluginEvidenceLimitations = false
         var rebuildRepositoryCache = false
         var disableRepositoryCache = false
+        var agedForceTry = false
         var literal = false
         var index = 0
         let valuedOptions: Set<String> = [
             "--config", "--format", "--output", "--profile-output", "--type-scope", "--scoring", "--jobs",
             "--manifest", "--stamp", "--exclude", "--threshold", "--lcov", "--debt-reference-time",
             "--max-file-bytes", "--lifecycle-artifact", "--repository-evidence", "--repository-cache",
-            "--repository-cache-report",
+            "--repository-cache-report", "--git-blame-provider",
         ]
         while index < arguments.count {
             let argument = arguments[index]
@@ -172,6 +175,11 @@ struct CLIOptions {
             if !literal && argument == "--no-repository-cache" {
                 guard !disableRepositoryCache else { throw CLIError("Duplicate --no-repository-cache") }
                 disableRepositoryCache = true
+                continue
+            }
+            if !literal && argument == "--aged-force-try" {
+                guard !agedForceTry else { throw CLIError("Duplicate --aged-force-try") }
+                agedForceTry = true
                 continue
             }
             if !literal && argument.hasPrefix("-") {
@@ -229,6 +237,9 @@ struct CLIOptions {
         if disableRepositoryCache && values["--repository-cache"] != nil {
             throw CLIError("--repository-cache cannot be combined with --no-repository-cache")
         }
+        if values["--git-blame-provider"] != nil && !agedForceTry {
+            throw CLIError("--git-blame-provider requires --aged-force-try")
+        }
         let repositoryCacheMode: RepositorySyntaxCacheMode =
             disableRepositoryCache ? .disabled : (rebuildRepositoryCache ? .rebuild : .reuse)
         let format: ReportFormat? = try decode(values["--format"], named: "format")
@@ -272,7 +283,9 @@ struct CLIOptions {
                 repositoryEvidenceOutputPath: values["--repository-evidence"],
                 repositoryCachePath: values["--repository-cache"],
                 repositoryCacheReportOutputPath: values["--repository-cache-report"],
-                repositoryCacheMode: repositoryCacheMode
+                repositoryCacheMode: repositoryCacheMode,
+                agedForceTry: agedForceTry,
+                gitBlameProviderPath: values["--git-blame-provider"]
             ),
             interactiveDebt: interactiveDebt
         )

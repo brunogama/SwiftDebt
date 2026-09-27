@@ -55,7 +55,7 @@ public struct AnalysisService: Sendable {
                 request: request, root: root, excludes: exclusions)
             let gitProvider: LifecycleGitSnapshotProvider?
             let gitBeforeRead: LifecycleGitSnapshot?
-            if lifecycleArtifactURL != nil {
+            if lifecycleArtifactURL != nil || request.agedForceTry {
                 let provider = LifecycleGitSnapshotProvider()
                 gitProvider = provider
                 gitBeforeRead = try provider.capture(
@@ -110,6 +110,11 @@ public struct AnalysisService: Sendable {
         if let lcovURL {
             protectedPaths.insert(filesystemPathIdentity(lcovURL))
         }
+        if let gitBlameProviderPath = request.gitBlameProviderPath {
+            protectedPaths.insert(
+                filesystemPathIdentity(URL(fileURLWithPath: gitBlameProviderPath))
+            )
+        }
         if let lifecycleArtifactURL {
             let lifecycleArtifactIdentity = filesystemPathIdentity(lifecycleArtifactURL)
             var isDirectory: ObjCBool = false
@@ -152,9 +157,14 @@ public struct AnalysisService: Sendable {
                 protectedPaths: &protectedPaths
             )
         }
+        let ruleSelection = try OptionalRuleSelection.make(
+            request: request,
+            capture: lifecycleCapture,
+            sources: sources
+        )
         let ruleAnalysisSnapshot: AnalysisSnapshot?
-        if format == .text || failOnViolation || lifecycleArtifactURL != nil {
-            ruleAnalysisSnapshot = try RuleEngine().analyze(sources, using: BuiltInRuleCatalog.all)
+        if format == .text || failOnViolation || lifecycleArtifactURL != nil || request.agedForceTry {
+            ruleAnalysisSnapshot = try RuleEngine().analyze(sources, using: ruleSelection.rules)
         } else {
             ruleAnalysisSnapshot = nil
         }
@@ -270,6 +280,7 @@ public struct AnalysisService: Sendable {
                 capture: lifecycleCapture,
                 engineVersion: report.engineVersion,
                 artifactURL: lifecycleArtifactURL,
+                capabilities: ruleSelection.capabilities,
                 profileReconciliation: profiler != nil
             )
         } else {
