@@ -7,7 +7,7 @@ extension CLIOptions {
         var literal = false
         var index = 0
         let valuedOptions: Set<String> = [
-            "--repository", "--max-revisions", "--max-file-bytes", "--format",
+            "--repository", "--max-revisions", "--max-file-bytes", "--profile-output", "--format",
         ]
         while index < arguments.count {
             let argument = arguments[index]
@@ -52,7 +52,7 @@ extension CLIOptions {
             throw CLIError(
                 "Usage: swift-debt lifecycle infer-introduction ARTIFACT FINDING_ID "
                     + "--repository PATH --max-revisions INTEGER [--max-file-bytes INTEGER] "
-                    + "[--format text|json]"
+                    + "[--profile-output PATH] [--format text|json]"
             )
         }
         let maximumFileBytes: Int
@@ -81,6 +81,7 @@ extension CLIOptions {
                     repositoryPath: repository,
                     maximumRevisions: maximumRevisions,
                     maximumFileBytes: maximumFileBytes,
+                    profileOutputPath: values["--profile-output"],
                     format: format
                 )
             )

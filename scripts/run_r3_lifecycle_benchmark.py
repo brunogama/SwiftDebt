@@ -21,13 +21,16 @@ from typing import Callable
 from r3_lifecycle_benchmark_support import (
     PADDING_LINES, artifact_info, commit, fixture, largest_artifact_bytes,
     validate_explanation, validate_incremental_artifact, validate_incremental_profile,
-    validate_inventory,
+    validate_introduction_profile, validate_inventory,
 )
 
 TIERS = {"small": 10, "medium": 100, "large": 1_000}
-FIXTURE_VERSION = 2
+FIXTURE_VERSION = 3
 COMMAND_TIMEOUT_SECONDS = 600
-OPERATIONS = ("cold", "replay", "incremental", "inventory", "explain", "introduction")
+OPERATIONS = (
+    "cold", "replay", "incremental", "inventory", "explain", "introduction",
+    "introductionRepeat",
+)
 
 
 def command(argv: list[str], *, cwd: Path | None = None, capture: bool = False) -> str:
@@ -46,7 +49,7 @@ def command(argv: list[str], *, cwd: Path | None = None, capture: bool = False) 
 
 def measured(
     argv: list[str], *, validate_output: Callable[[str], None] | None = None
-) -> dict[str, float | int]:
+) -> dict[str, object]:
     time_flag = "-l" if sys.platform == "darwin" else "-v"
     started = time.monotonic_ns()
     process = subprocess.Popen(
@@ -78,7 +81,7 @@ def measured(
     return {"wallSeconds": elapsed, "peakRSSBytes": int(match.group(1)) * (1 if sys.platform == "darwin" else 1024)}
 
 
-def summary(samples: list[dict[str, float | int]]) -> dict[str, object]:
+def summary(samples: list[dict[str, object]]) -> dict[str, object]:
     return {
         "samples": samples,
         "medianWallSeconds": statistics.median(sample["wallSeconds"] for sample in samples),
@@ -118,7 +121,7 @@ def run_tier(binary: Path, source_count: int, runs: int, warmups: int) -> dict[s
         artifact = root / "lifecycle.json"
         analyze = [str(binary), "analyze", str(repository), "--format", "json", "--jobs", "1",
                    "--lifecycle-artifact", str(artifact)]
-        samples: dict[str, list[dict[str, float | int]]] = {name: [] for name in OPERATIONS}
+        samples: dict[str, list[dict[str, object]]] = {name: [] for name in OPERATIONS}
         cold_bytes = b""
         for index in range(warmups + runs):
             artifact.unlink(missing_ok=True)
@@ -151,19 +154,42 @@ def run_tier(binary: Path, source_count: int, runs: int, warmups: int) -> dict[s
                     raise RuntimeError(f"{name} changed lifecycle artifact bytes")
                 if index >= warmups:
                     samples[name].append(sample)
+        introduction_profile = root / "introduction-profile.json"
         introduction = [str(binary), "lifecycle", "infer-introduction", str(artifact), finding_id,
-                        "--repository", str(repository), "--max-revisions", "4", "--format", "json"]
-        introduction_info = {}
+                        "--repository", str(repository), "--max-revisions", "4",
+                        "--profile-output", str(introduction_profile), "--format", "json"]
+        introduced_bytes = b""
         for index in range(warmups + runs):
             artifact.write_bytes(cold_bytes)
+            introduction_profile.unlink(missing_ok=True)
             sample = measured(introduction)
-            introduction_info = artifact_info(artifact)
+            introduced_bytes = artifact.read_bytes()
+            conclusion = json.loads(introduced_bytes)["introductionConclusions"]
+            if len(conclusion) != 1 or conclusion[0]["kind"] != "exact":
+                raise RuntimeError("bounded introduction query did not establish the expected exact conclusion")
+            sample["history"] = validate_introduction_profile(
+                introduction_profile.read_text(), conclusion[0], finding_id=finding_id,
+                maximum_revisions=4, maximum_file_bytes=16 * 1_024 * 1_024,
+                recording_status="accepted",
+            )
             if index >= warmups:
                 samples["introduction"].append(sample)
-        conclusions = json.loads(artifact.read_bytes()).get("introductionConclusions", [])
-        if len(conclusions) != 1 or conclusions[0]["kind"] != "exact":
-            raise RuntimeError("bounded introduction query did not establish the expected exact conclusion")
-        history = conclusions[0]["evidence"]
+        for index in range(warmups + runs):
+            artifact.write_bytes(introduced_bytes)
+            introduction_profile.unlink(missing_ok=True)
+            sample = measured(introduction)
+            if artifact.read_bytes() != introduced_bytes:
+                raise RuntimeError("identical introduction query changed lifecycle artifact bytes")
+            conclusion = json.loads(introduced_bytes)["introductionConclusions"][0]
+            sample["history"] = validate_introduction_profile(
+                introduction_profile.read_text(), conclusion, finding_id=finding_id,
+                maximum_revisions=4, maximum_file_bytes=16 * 1_024 * 1_024,
+                recording_status="already-present",
+            )
+            if index >= warmups:
+                samples["introductionRepeat"].append(sample)
+        introduction_info = artifact_info(artifact)
+        history = json.loads(introduced_bytes)["introductionConclusions"][0]["evidence"]
         introduction_info["examinedRevisions"] = len(history["revisions"])
         introduction_info["frontierRevisions"] = len(history["boundary"]["frontierRevisions"])
 

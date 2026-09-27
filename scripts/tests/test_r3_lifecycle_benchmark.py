@@ -10,6 +10,7 @@ from r3_lifecycle_benchmark_support import (  # noqa: E402
     validate_explanation,
     validate_incremental_artifact,
     validate_incremental_profile,
+    validate_introduction_profile,
     validate_inventory,
 )
 
@@ -89,6 +90,68 @@ class R3LifecycleBenchmarkValidationTests(unittest.TestCase):
             "introductionArtifact": {"bytes": 240},
         }
         self.assertEqual(largest_artifact_bytes(tier), 240)
+
+    def test_introduction_profile_is_bound_to_persisted_history(self) -> None:
+        conclusion = {
+            "findingID": "finding-1",
+            "evidence": {
+                "revisions": [{"revision": "a"}, {"revision": "b"}],
+                "boundary": {"maximumRevisions": 4, "frontierRevisions": []},
+            }
+        }
+        profile = {
+            "reportKind": "swiftdebt-lifecycle-introduction-profile",
+            "schemaVersion": 1,
+            "findingID": "finding-1",
+            "maximumRevisions": 4,
+            "maximumFileBytes": 16 * 1_024 * 1_024,
+            "evidenceRevisionCount": 2,
+            "analyzedRevisionCount": 2,
+            "reusedRevisionCount": 0,
+            "frontierRevisionCount": 0,
+            "recordingStatus": "already-present",
+            "operationElapsedNanoseconds": 1,
+        }
+        self.assertEqual(
+            validate_introduction_profile(
+                json.dumps(profile), conclusion, finding_id="finding-1",
+                maximum_revisions=4, maximum_file_bytes=16 * 1_024 * 1_024,
+                recording_status="already-present",
+            )["reusedRevisionCount"],
+            0,
+        )
+        for key, value in (
+            ("reportKind", "other"),
+            ("evidenceRevisionCount", 1),
+            ("analyzedRevisionCount", 1),
+            ("reusedRevisionCount", -1),
+            ("frontierRevisionCount", 1),
+            ("operationElapsedNanoseconds", 0),
+            ("recordingStatus", "accepted"),
+        ):
+            changed = dict(profile, **{key: value})
+            with self.subTest(key=key), self.assertRaisesRegex(RuntimeError, "introduction profile"):
+                validate_introduction_profile(
+                    json.dumps(changed), conclusion, finding_id="finding-1",
+                    maximum_revisions=4, maximum_file_bytes=16 * 1_024 * 1_024,
+                    recording_status="already-present",
+                )
+        for changed_conclusion in (
+            dict(conclusion, findingID="finding-2"),
+            dict(
+                conclusion,
+                evidence=dict(
+                    conclusion["evidence"],
+                    boundary={"maximumRevisions": 8, "frontierRevisions": []},
+                ),
+            ),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "introduction profile"):
+                validate_introduction_profile(
+                    json.dumps(profile), changed_conclusion, finding_id="finding-1",
+                    maximum_revisions=4, maximum_file_bytes=16 * 1_024 * 1_024,
+                    recording_status="already-present",
+                )
 
     def test_reconciliation_profile_is_bound_to_observed_continuity(self) -> None:
         record = {

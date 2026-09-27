@@ -68,10 +68,12 @@ Introduction inference is a separate, explicit artifact mutation:
 ```text
 swift-debt lifecycle infer-introduction ARTIFACT FINDING_ID \
   --repository PATH --max-revisions INTEGER [--max-file-bytes INTEGER] \
-  [--format text|json]
+  [--profile-output PATH] [--format text|json]
 ```
 
 Normal `analyze` runs never traverse history. The inference command has a required positive revision budget and analyzes committed trees through `git archive` without checking out or modifying them. It appends an immutable Introduction Conclusion attempt and then renders the same validated explanation used by the read-only command. An identical retry leaves artifact bytes unchanged.
+
+The optional operational sidecar and its current cache-reuse boundary are documented in [R3 introduction profiling](r3-introduction-profile.md).
 
 ## Git introduction evidence
 
