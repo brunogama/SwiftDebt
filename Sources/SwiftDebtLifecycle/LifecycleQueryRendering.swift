@@ -8,7 +8,9 @@ extension LifecycleReadService {
     }
 
     func renderInventory(_ report: LifecycleInventoryReport) -> String {
-        var lines = ["SwiftDebt lifecycle inventory"]
+        var lines = [
+            "SwiftDebt lifecycle inventory schema=\(report.schemaVersion) kind=\(report.reportKind)"
+        ]
         lines += report.headSnapshotIDs.map { "Graph head: \(oneLine($0.rawValue))" }
         for finding in report.findings {
             let location = finding.lastKnownLocation
@@ -18,10 +20,20 @@ extension LifecycleReadService {
                     + "\(oneLine(finding.rule.identity.description)) "
                     + "\(oneLine(location.sourcePath.rawValue)):\(location.line):\(location.column)"
             )
+            lines.append("  Lineage: \(oneLine(finding.lineageID.rawValue))")
+            lines.append("  Semantic revision: \(finding.rule.semanticRevision.rawValue)")
             lines.append("  First Observation: \(oneLine(finding.firstObservationSnapshotID.rawValue))")
             if let introduction = finding.introductionConclusion {
                 lines.append("  \(renderIntroduction(introduction))")
+                lines.append(
+                    "  Introduction attempt: \(introduction.attempt) "
+                        + "contract=\(introduction.evidenceContract.rawValue)"
+                )
+                lines += introduction.reasons.map {
+                    "  Introduction reason: \(oneLine($0.code)): \(oneLine($0.message))"
+                }
             }
+            lines.append("  Full evidence: swift-debt lifecycle explain ARTIFACT FINDING_ID")
         }
         for unresolved in report.unresolvedDetections {
             let candidates = unresolved.candidateFindingIDs.map { oneLine($0.rawValue) }.joined(separator: ",")
@@ -31,6 +43,7 @@ extension LifecycleReadService {
                     + "\(oneLine(unresolved.detectionID.rawValue)) "
                     + "candidates=\(candidates) reasons=\(reasons)"
             )
+            lines += unresolved.reasons.map { "  Reason: \(oneLine($0.code)): \(oneLine($0.message))" }
         }
         return lines.joined(separator: "\n") + "\n"
     }
