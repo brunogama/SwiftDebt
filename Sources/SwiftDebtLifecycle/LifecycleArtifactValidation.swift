@@ -50,6 +50,9 @@ extension LifecycleArtifact {
                 "The snapshot graph supports at most one parent per snapshot; merge nodes are unsupported."
             )
         }
+        let edgeByChild = Dictionary(
+            uniqueKeysWithValues: snapshotParentEdges.map { ($0.childSnapshotID, $0) }
+        )
         for edge in snapshotParentEdges {
             guard edge.childSnapshotID != edge.parentSnapshotID,
                 let child = snapshotByID[edge.childSnapshotID]
@@ -71,7 +74,7 @@ extension LifecycleArtifact {
         }
         for snapshot in snapshots {
             let declaredParent = snapshot.provenance.lineage.predecessorSnapshotID
-            let edge = parentEdge(of: snapshot.id)
+            let edge = edgeByChild[snapshot.id]
             if let declaredParent {
                 guard edge?.parentSnapshotID == declaredParent else {
                     throw LifecycleContractError.invalidArtifact(
@@ -87,15 +90,17 @@ extension LifecycleArtifact {
                 )
             }
         }
+        var verified: Set<SnapshotID> = []
         for snapshotID in snapshotByID.keys {
             var cursor: SnapshotID? = snapshotID
             var visited: Set<SnapshotID> = []
-            while let current = cursor {
+            while let current = cursor, !verified.contains(current) {
                 guard visited.insert(current).inserted else {
                     throw LifecycleContractError.invalidArtifact("Snapshot graph contains a cycle.")
                 }
-                cursor = parentSnapshotID(of: current)
+                cursor = edgeByChild[current]?.parentSnapshotID
             }
+            verified.formUnion(visited)
         }
     }
 
