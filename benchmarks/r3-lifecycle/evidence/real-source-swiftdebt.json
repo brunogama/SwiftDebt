@@ -10,13 +10,13 @@
         "frontierRevisionCount": 0,
         "maximumFileBytes": 1048576,
         "maximumRevisions": 3,
-        "operationElapsedNanoseconds": 212168459,
+        "operationElapsedNanoseconds": 209972000,
         "recordingStatus": "accepted",
         "reportKind": "swiftdebt-lifecycle-introduction-profile",
         "reusedRevisionCount": 0,
         "schemaVersion": 1
       },
-      "wallNanoseconds": 224861583
+      "wallNanoseconds": 222754750
     },
     "findingID": "finding:snapshot-27dee68c8abcdbed1db12ee0b6c5e6b27c8a13513e3f7ce9cc0ded3855b43f55:snapshot-27dee68c8abcdbed1db12ee0b6c5e6b27c8a13513e3f7ce9cc0ded3855b43f55:detection:0",
     "forcedCold": {
@@ -28,13 +28,13 @@
         "frontierRevisionCount": 0,
         "maximumFileBytes": 2097152,
         "maximumRevisions": 3,
-        "operationElapsedNanoseconds": 209710625,
+        "operationElapsedNanoseconds": 215559458,
         "recordingStatus": "accepted",
         "reportKind": "swiftdebt-lifecycle-introduction-profile",
         "reusedRevisionCount": 0,
         "schemaVersion": 1
       },
-      "wallNanoseconds": 222310458
+      "wallNanoseconds": 226761250
     },
     "invalidated": {
       "artifactSHA256": "2069b8cf0de27e0d3d3e102148fcd8fb0e45bbd4ae179c4e91df0570c3d4264a",
@@ -45,13 +45,13 @@
         "frontierRevisionCount": 0,
         "maximumFileBytes": 2097152,
         "maximumRevisions": 3,
-        "operationElapsedNanoseconds": 228248500,
+        "operationElapsedNanoseconds": 216394584,
         "recordingStatus": "accepted",
         "reportKind": "swiftdebt-lifecycle-introduction-profile",
         "reusedRevisionCount": 0,
         "schemaVersion": 1
       },
-      "wallNanoseconds": 241299709
+      "wallNanoseconds": 231941834
     },
     "maximumRevisions": 3,
     "mixedWarm": {
@@ -63,13 +63,13 @@
         "frontierRevisionCount": 0,
         "maximumFileBytes": 1048576,
         "maximumRevisions": 3,
-        "operationElapsedNanoseconds": 312492417,
+        "operationElapsedNanoseconds": 234149625,
         "recordingStatus": "already-present",
         "reportKind": "swiftdebt-lifecycle-introduction-profile",
         "reusedRevisionCount": 1,
         "schemaVersion": 1
       },
-      "wallNanoseconds": 328327416
+      "wallNanoseconds": 245677791
     },
     "sourceRevision": "a4a3c6d680feb2a221f417048b4e34de65175234",
     "sourceStates": [
@@ -86,9 +86,9 @@
     ]
   },
   "reportKind": "swiftdebt-r3-real-source-evidence",
-  "runnerCommit": "0043bae2289b787c2f7ec74ff33ff3373d8ee0af",
+  "runnerCommit": "9f8381f52eb7e724bb08b9f17dcd115d97de11b3",
   "runnerDirty": false,
-  "runnerSHA256": "e4b8a9aec47bdc10563807e90e8d2ba711ecdda260ba73ca0cd269cf1e2e4177",
+  "runnerSHA256": "19d310fe3be76b2d3cfc40d8b01661b3610c99573e92d9809279959c6ab75883",
   "schemaVersion": 1,
   "snapshots": [
     {
@@ -103,7 +103,7 @@
         "swiftdebt.refactoring.long-parameter-list@1": 55
       },
       "detections": 94,
-      "ingestionWallNanoseconds": 1448396834,
+      "ingestionWallNanoseconds": 2905081791,
       "newFindings": 94,
       "rates": {
         "continuityAmbiguitiesPerDetection": 0.0,
@@ -129,7 +129,7 @@
         "swiftdebt.refactoring.long-parameter-list@1": 88
       },
       "detections": 195,
-      "ingestionWallNanoseconds": 2114990375,
+      "ingestionWallNanoseconds": 3915611125,
       "newFindings": 84,
       "rates": {
         "continuityAmbiguitiesPerDetection": 0.2512820512820513,
@@ -155,7 +155,7 @@
         "swiftdebt.refactoring.long-parameter-list@1": 88
       },
       "detections": 198,
-      "ingestionWallNanoseconds": 3348419834,
+      "ingestionWallNanoseconds": 3577496416,
       "newFindings": 3,
       "rates": {
         "continuityAmbiguitiesPerDetection": 0.3686868686868687,
@@ -189,6 +189,6 @@
       "sourceSHA256": "1e472e7019c53542fe466b76316717bfbf4c91d52c58c361ef8e6a6e1043dca7"
     }
   ],
-  "supportSHA256": "a89f3582f914a551f14f62e2e6d0accf3a389d8425ba6bdfeed49992f85012e2",
+  "supportSHA256": "af6da6424d53a73e7dcdecc1c5889421ee6be462bf041d92c122220b2ffcb0f8",
   "swiftDebtBinarySHA256": "94b1ca70e873075d051022e030d109fcff664ca3f47bb42650cb61b92fd1eaa2"
 }

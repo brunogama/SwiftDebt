@@ -38,7 +38,7 @@ Per Snapshot, the runner counts canonical Detections by Rule Identity and Semant
 
 ## Observed results
 
-The checked-in [raw evidence](../benchmarks/r3-lifecycle/evidence/real-source-swiftdebt.json) was produced at clean runner commit `0043bae2289b787c2f7ec74ff33ff3373d8ee0af` with Release binary SHA-256 `94b1ca70e873075d051022e030d109fcff664ca3f47bb42650cb61b92fd1eaa2`. Public canonical export matched the persisted artifact after each of the three analyses. Ten rules were selected per Snapshot; six distinct Rule Identities emitted Detections, all at SemanticRevision 1.
+The checked-in [raw evidence](../benchmarks/r3-lifecycle/evidence/real-source-swiftdebt.json) was produced at clean runner commit `9f8381f52eb7e724bb08b9f17dcd115d97de11b3` with Release binary SHA-256 `94b1ca70e873075d051022e030d109fcff664ca3f47bb42650cb61b92fd1eaa2`. Public canonical export matched the persisted artifact after each of the three analyses. Ten rules were selected per Snapshot; six distinct Rule Identities emitted Detections, all at SemanticRevision 1.
 
 | Snapshot | Detections | Unique continuations | New Findings | Unresolved Detections | Ambiguity Events |
 | --- | ---: | ---: | ---: | ---: | ---: |
