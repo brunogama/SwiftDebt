@@ -3,6 +3,7 @@ import SwiftDebtKit
 import SwiftDebtLifecycle
 
 enum LifecycleCLIRequest {
+    case export(artifactPath: String)
     case inventory(artifactPath: String, headSnapshotID: SnapshotID?, format: LifecycleReadFormat)
     case explain(
         artifactPath: String,
@@ -24,6 +25,8 @@ enum LifecycleCLIRequest {
     func run() throws -> String {
         let service = LifecycleReadService()
         switch self {
+        case .export(let artifactPath):
+            return try service.exportAudit(at: URL(fileURLWithPath: artifactPath))
         case .inventory(let artifactPath, let headSnapshotID, let format):
             return try service.inventory(
                 at: URL(fileURLWithPath: artifactPath),
@@ -77,7 +80,7 @@ enum LifecycleCLIRequest {
 extension CLIOptions {
     func parseLifecycle(_ arguments: [String]) throws -> CLIAction {
         guard let command = arguments.first else {
-            throw CLIError("Expected lifecycle inventory, explain, snapshot, or infer-introduction")
+            throw CLIError("Expected lifecycle export, inventory, explain, snapshot, or infer-introduction")
         }
         if command == "infer-introduction" {
             return try parseLifecycleIntroduction(Array(arguments.dropFirst()))
@@ -144,6 +147,11 @@ extension CLIOptions {
         }
 
         switch command {
+        case "export":
+            guard positional.count == 1, headSnapshotID == nil, !sawFormat else {
+                throw CLIError("Usage: swift-debt lifecycle export ARTIFACT")
+            }
+            return .lifecycle(.export(artifactPath: positional[0]))
         case "inventory":
             guard positional.count == 1 else {
                 throw CLIError(
