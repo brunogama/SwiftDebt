@@ -20,9 +20,12 @@ struct GitHistoryEvidenceProviderTests {
         let wrapper = root.appendingPathComponent("delayed-git.sh")
         try """
         #!/bin/sh
-        case " $* " in
-            *" log "*) sleep 6 ;;
-        esac
+        for argument in "$@"; do
+            if [ "$argument" = log ]; then
+                sleep 6
+                break
+            fi
+        done
         exec /usr/bin/env git "$@"
         """.write(to: wrapper, atomically: true, encoding: .utf8)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: wrapper.path)
