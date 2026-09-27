@@ -4,6 +4,7 @@ extension LifecycleArtifact {
         processed: Set<SnapshotID>
     ) throws {
         try validateLegacyReconciliationProjection(snapshots: snapshots, processed: processed)
+        let openingCounts = openingDispositionCounts()
         for snapshotID in processed where !legacyProcessedSnapshotIDs.contains(snapshotID) {
             guard let snapshot = snapshots[snapshotID] else { continue }
             let priorFindings = try parentFindingProjections(of: snapshotID).map(\.finding)
@@ -17,7 +18,7 @@ extension LifecycleArtifact {
                 guard !detections.isEmpty else { continue }
                 if candidates.isEmpty {
                     for detection in detections {
-                        try requireOpening(of: detection, snapshotID: snapshot.id)
+                        try requireOpening(of: detection, snapshotID: snapshot.id, counts: openingCounts)
                     }
                     continue
                 }
@@ -32,26 +33,12 @@ extension LifecycleArtifact {
                     try require(group: group, snapshotID: snapshot.id)
                 }
                 for detection in reconciliation.newDetections {
-                    try requireOpening(of: detection, snapshotID: snapshot.id)
+                    try requireOpening(of: detection, snapshotID: snapshot.id, counts: openingCounts)
                 }
                 for finding in reconciliation.absentFindings {
                     try requireAbsence(of: finding, snapshot: snapshot)
                 }
             }
-        }
-    }
-
-    private func requireOpening(of detection: ObservedDetection, snapshotID: SnapshotID) throws {
-        let openings = findings.filter { finding in
-            guard let first = finding.events.first, first.snapshotID == snapshotID,
-                case .opened(let evidence) = first.transition
-            else { return false }
-            return evidence.detectionID == detection.id
-        }
-        guard openings.count == 1 else {
-            throw LifecycleContractError.invalidArtifact(
-                "Detection \(detection.id) must open exactly one new Finding."
-            )
         }
     }
 
