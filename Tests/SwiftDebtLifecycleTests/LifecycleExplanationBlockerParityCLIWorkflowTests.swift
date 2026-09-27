@@ -131,10 +131,14 @@ struct LifecycleExplanationBlockerParityCLIWorkflowTests {
             return
         }
         #expect(!blockers.isEmpty)
-        #expect(text.standardOutput.contains("Event \(event.id.rawValue) snapshot=\(event.snapshotID.rawValue)"))
-        for blocker in blockers {
-            #expect(text.standardOutput.contains("  \(blocker.code): \(blocker.message)"))
-        }
+        let basis = event.basisEventIDs.map(\.rawValue).joined(separator: ", ")
+        let reasons = blockers.map { "  \($0.code): \($0.message)" }.joined(separator: "\n")
+        let expected =
+            "Event \(event.id.rawValue) snapshot=\(event.snapshotID.rawValue) "
+            + "unverified contract=\(event.evidenceContract.rawValue)\n"
+            + "  Basis Events: \(basis.isEmpty ? "none" : basis)\n"
+            + reasons + "\n"
+        #expect(text.standardOutput.contains(expected))
         #expect(try Data(contentsOf: fixture.url) == before)
     }
 }
