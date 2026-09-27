@@ -11,7 +11,9 @@ from pathlib import Path
 SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SCRIPTS))
 
-from r3_representative_evidence_support import introduction_profile, snapshot_metrics  # noqa: E402
+from r3_representative_evidence_support import (  # noqa: E402
+    introduction_profile, require_cache_work, snapshot_metrics,
+)
 from r3_representative_fixture import (  # noqa: E402
     CACHE_CLEAN_PATH, CACHE_DETECTED_PATH, SOURCE_REVISIONS, cache_source_states,
     source_digest, source_snapshot,
@@ -19,6 +21,20 @@ from r3_representative_fixture import (  # noqa: E402
 
 
 class RepresentativeEvidenceTests(unittest.TestCase):
+    def test_cache_work_requires_exact_two_revision_profile(self) -> None:
+        profile = {"recordingStatus": "already-present", "evidenceRevisionCount": 2,
+                   "analyzedRevisionCount": 1, "reusedRevisionCount": 1,
+                   "frontierRevisionCount": 0}
+        require_cache_work(profile, status="already-present", analyzed=1, reused=1)
+        for field, value in (("evidenceRevisionCount", 1),
+                             ("analyzedRevisionCount", 2),
+                             ("reusedRevisionCount", 0),
+                             ("frontierRevisionCount", 1),
+                             ("recordingStatus", "accepted")):
+            invalid = {**profile, field: value}
+            with self.subTest(field=field), self.assertRaisesRegex(RuntimeError, "cache work"):
+                require_cache_work(invalid, status="already-present", analyzed=1, reused=1)
+
     def test_fixed_revisions_contain_real_changed_swift_sources(self) -> None:
         checkout = SCRIPTS.parent
         sources = [source_snapshot(checkout, revision) for revision in SOURCE_REVISIONS]

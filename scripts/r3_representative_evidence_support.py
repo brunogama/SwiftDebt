@@ -92,6 +92,14 @@ def introduction_profile(path: Path, conclusion: dict, *, finding_id: str,
     return profile
 
 
+def require_cache_work(profile: dict, *, status: str, analyzed: int, reused: int) -> None:
+    expected = {"recordingStatus": status, "evidenceRevisionCount": 2,
+                "analyzedRevisionCount": analyzed, "reusedRevisionCount": reused,
+                "frontierRevisionCount": 0}
+    if any(profile.get(field) != value for field, value in expected.items()):
+        raise RuntimeError(f"Introduction cache work differs from exact two-revision expectation: {expected}")
+
+
 def conclusion_for(artifact: dict, finding_id: str) -> dict:
     matches = [item for item in artifact.get("introductionConclusions", [])
                if item.get("findingID") == finding_id]

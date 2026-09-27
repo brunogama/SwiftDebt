@@ -14,7 +14,8 @@ from r3_representative_fixture import (
     run, source_digest, source_snapshot,
 )
 from r3_representative_evidence_support import (
-    conclusion_for, digest, introduction_profile, require_document, snapshot_metrics,
+    conclusion_for, digest, introduction_profile, require_cache_work, require_document,
+    snapshot_metrics,
 )
 
 MAXIMUM_REVISIONS = 3
@@ -80,25 +81,18 @@ def run_cache_probe(binary: Path, checkout: Path, root: Path) -> dict:
     original = artifact.read_bytes()
     profile = root / "introduction-profile.json"
     cold = query_introduction(binary, artifact, repository, finding_id, profile, SMALL_FILE_BUDGET)
+    require_cache_work(cold["profile"], status="accepted", analyzed=2, reused=0)
     warm = query_introduction(binary, artifact, repository, finding_id, profile, SMALL_FILE_BUDGET)
-    if (cold["profile"]["recordingStatus"] != "accepted"
-            or cold["profile"]["reusedRevisionCount"] != 0
-            or warm["profile"]["recordingStatus"] != "already-present"
-            or warm["profile"]["reusedRevisionCount"] < 1
-            or warm["profile"]["analyzedRevisionCount"] < 1
-            or warm["artifactSHA256"] != cold["artifactSHA256"]):
-        raise RuntimeError("identical Introduction query did not prove mixed reuse and byte-identical replay")
+    require_cache_work(warm["profile"], status="already-present", analyzed=1, reused=1)
+    if warm["artifactSHA256"] != cold["artifactSHA256"]:
+        raise RuntimeError("identical Introduction query changed the lifecycle artifact bytes")
     invalidated = query_introduction(binary, artifact, repository, finding_id, profile, LARGE_FILE_BUDGET)
-    if (invalidated["profile"]["recordingStatus"] != "accepted"
-            or invalidated["profile"]["reusedRevisionCount"] != 0):
-        raise RuntimeError("changed file-size budget reused stale Introduction history")
+    require_cache_work(invalidated["profile"], status="accepted", analyzed=2, reused=0)
     oracle_artifact = root / "forced-cold-lifecycle.json"
     oracle_artifact.write_bytes(original)
     forced_cold = query_introduction(binary, oracle_artifact, repository, finding_id,
                                      root / "forced-cold-profile.json", LARGE_FILE_BUDGET)
-    if (forced_cold["profile"]["recordingStatus"] != "accepted"
-            or forced_cold["profile"]["reusedRevisionCount"] != 0):
-        raise RuntimeError("forced-cold Introduction oracle did not analyze all revisions")
+    require_cache_work(forced_cold["profile"], status="accepted", analyzed=2, reused=0)
     expected = {key: value for key, value in forced_cold["conclusion"].items() if key != "attempt"}
     observed = {key: value for key, value in invalidated["conclusion"].items() if key != "attempt"}
     if expected != observed:

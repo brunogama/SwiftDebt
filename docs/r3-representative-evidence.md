@@ -8,9 +8,9 @@ This probe measures lifecycle outcomes on three fixed revisions of SwiftDebt's o
 
 | Order | SwiftDebt source revision | Swift files | Role |
 | --- | --- | ---: | --- |
-| 1 | `c509396a5492106f94e74df718c84edfe2dbd894` | 195 | Initial source state |
-| 2 | `9c7d1c2d38c1c975786fd70b3a3d83c1428cf5af` | 345 | Broad feature and rule evolution |
-| 3 | `a4a3c6d680feb2a221f417048b4e34de65175234` | 354 | Later source state |
+| 1 | `c509396a5492106f94e74df718c84edfe2dbd894` | 188 | Initial source state |
+| 2 | `9c7d1c2d38c1c975786fd70b3a3d83c1428cf5af` | 322 | Broad feature and rule evolution |
+| 3 | `a4a3c6d680feb2a221f417048b4e34de65175234` | 331 | Later source state |
 
 The runner reads `Sources/**/*.swift` and `Tests/**/*.swift` from these exact Git objects. It copies those bytes into three commits of a disposable Git repository, preserving relative paths. It records a SHA-256 over paths and contents for each source state, each disposable Git revision, the runner, fixture, and evidence support scripts, and the `swift-debt` executable. The source revisions must be present in the local Git object database; a shallow checkout missing them fails rather than selecting nearby revisions.
 
@@ -61,10 +61,10 @@ The runner selects that canonical Finding and runs the same public bounded query
 
 | Query | Artifact input | Per-file limit | Required result |
 | --- | --- | ---: | --- |
-| Cold | Pre-query lifecycle artifact | 1 MiB | Accepted, zero reused revisions |
-| Mixed warm | Cold result | 1 MiB | Already present, at least one analyzed and one reused revision, byte-identical artifact |
-| Invalidated | Warm result | 2 MiB | Accepted, zero reused revisions |
-| Forced cold oracle | Pre-query artifact copy | 2 MiB | Accepted, zero reused revisions, same conclusion and evidence as invalidated |
+| Cold | Pre-query lifecycle artifact | 1 MiB | Accepted, two analyzed and zero reused revisions |
+| Mixed warm | Cold result | 1 MiB | Already present, one analyzed and one reused revision, byte-identical artifact |
+| Invalidated | Warm result | 2 MiB | Accepted, two analyzed and zero reused revisions |
+| Forced cold oracle | Pre-query artifact copy | 2 MiB | Accepted, two analyzed and zero reused revisions, same conclusion and evidence as invalidated |
 
 Each query has an explicit maximum of **three Git revisions** for this two-commit history. The profile must account for all evidence revisions as analyzed plus reused, stay within the limit, match the persisted Introduction Conclusion, and report a positive operation duration. The source file limit changes the effective historical analysis contract and must invalidate the previous cache entry. Forced cold means starting from the saved pre-query artifact; there is no hidden CLI flag.
 
