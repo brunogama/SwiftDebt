@@ -1,9 +1,12 @@
+import SwiftDebtCore
+
 extension LifecycleArtifact {
     func validateDerivedState(
         snapshots: [SnapshotID: ObservationSnapshot],
         processed: Set<SnapshotID>
     ) throws {
         var observedCounts: [DetectionDispositionKey: Int] = [:]
+        var priorFindingsByOpeningSnapshot: [SnapshotID: [RuleIdentity: [Finding]]] = [:]
         for finding in findings {
             let firstEvent = finding.openingEvent
             guard case .opened(let evidence) = firstEvent.transition,
@@ -29,9 +32,22 @@ extension LifecycleArtifact {
                     break
                 }
             }
+            let priorFindingsByRule: [RuleIdentity: [Finding]]
+            if let cached = priorFindingsByOpeningSnapshot[openingSnapshot.id] {
+                priorFindingsByRule = cached
+            } else {
+                let projections = try parentFindingProjections(of: openingSnapshot.id)
+                let grouped = Dictionary(
+                    grouping: projections.map(\.finding),
+                    by: { $0.rule.identity }
+                )
+                priorFindingsByOpeningSnapshot[openingSnapshot.id] = grouped
+                priorFindingsByRule = grouped
+            }
             try validateOpeningEligibility(
                 finding: finding,
-                openingSnapshot: openingSnapshot
+                openingSnapshot: openingSnapshot,
+                priorFindings: priorFindingsByRule[finding.rule.identity] ?? []
             )
             try validateRequiredEventCoverage(finding: finding)
         }
@@ -61,14 +77,11 @@ extension LifecycleArtifact {
 
     private func validateOpeningEligibility(
         finding: Finding,
-        openingSnapshot: ObservationSnapshot
+        openingSnapshot: ObservationSnapshot,
+        priorFindings: [Finding]
     ) throws {
         guard let openingDetection = openingSnapshot.detection(id: finding.openingDetectionID) else {
             throw LifecycleContractError.invalidArtifact("Finding \(finding.id) has no opening Detection.")
-        }
-        let priorFindings = try parentFindingProjections(of: openingSnapshot.id).compactMap { projection in
-            let candidate = projection.finding
-            return candidate.rule.identity == finding.rule.identity ? candidate : nil
         }
         guard !priorFindings.isEmpty else { return }
         let newDetectionIDs: [DetectionID]
