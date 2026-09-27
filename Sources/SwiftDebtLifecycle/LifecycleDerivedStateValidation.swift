@@ -32,23 +32,25 @@ extension LifecycleArtifact {
                     break
                 }
             }
-            let priorFindingsByRule: [RuleIdentity: [Finding]]
-            if let cached = priorFindingsByOpeningSnapshot[openingSnapshot.id] {
-                priorFindingsByRule = cached
-            } else {
-                let projections = try parentFindingProjections(of: openingSnapshot.id)
-                let grouped = Dictionary(
-                    grouping: projections.map(\.finding),
-                    by: { $0.rule.identity }
+            if legacyProcessedSnapshotIDs.contains(openingSnapshot.id) {
+                let priorFindingsByRule: [RuleIdentity: [Finding]]
+                if let cached = priorFindingsByOpeningSnapshot[openingSnapshot.id] {
+                    priorFindingsByRule = cached
+                } else {
+                    let projections = try parentFindingProjections(of: openingSnapshot.id)
+                    let grouped = Dictionary(
+                        grouping: projections.map(\.finding),
+                        by: { $0.rule.identity }
+                    )
+                    priorFindingsByOpeningSnapshot[openingSnapshot.id] = grouped
+                    priorFindingsByRule = grouped
+                }
+                try validateLegacyOpeningEligibility(
+                    finding: finding,
+                    openingSnapshot: openingSnapshot,
+                    priorFindings: priorFindingsByRule[finding.rule.identity] ?? []
                 )
-                priorFindingsByOpeningSnapshot[openingSnapshot.id] = grouped
-                priorFindingsByRule = grouped
             }
-            try validateOpeningEligibility(
-                finding: finding,
-                openingSnapshot: openingSnapshot,
-                priorFindings: priorFindingsByRule[finding.rule.identity] ?? []
-            )
             try validateRequiredEventCoverage(finding: finding)
         }
 
@@ -75,7 +77,7 @@ extension LifecycleArtifact {
         try validateReconciliationProjection(snapshots: snapshots, processed: processed)
     }
 
-    private func validateOpeningEligibility(
+    private func validateLegacyOpeningEligibility(
         finding: Finding,
         openingSnapshot: ObservationSnapshot,
         priorFindings: [Finding]
@@ -84,24 +86,13 @@ extension LifecycleArtifact {
             throw LifecycleContractError.invalidArtifact("Finding \(finding.id) has no opening Detection.")
         }
         guard !priorFindings.isEmpty else { return }
-        let newDetectionIDs: [DetectionID]
-        if legacyProcessedSnapshotIDs.contains(openingSnapshot.id) {
-            let reconciliation = try LegacyContinuityReconciler().reconcile(
-                findings: priorFindings,
-                detections: [openingDetection],
-                snapshot: openingSnapshot,
-                artifact: self
-            )
-            newDetectionIDs = reconciliation.newDetections.map(\.id)
-        } else {
-            let reconciliation = try ContinuityReconciler().reconcile(
-                findings: priorFindings,
-                detections: [openingDetection],
-                snapshot: openingSnapshot,
-                artifact: self
-            )
-            newDetectionIDs = reconciliation.newDetections.map(\.id)
-        }
+        let reconciliation = try LegacyContinuityReconciler().reconcile(
+            findings: priorFindings,
+            detections: [openingDetection],
+            snapshot: openingSnapshot,
+            artifact: self
+        )
+        let newDetectionIDs = reconciliation.newDetections.map(\.id)
         guard newDetectionIDs == [openingDetection.id] else {
             throw LifecycleContractError.invalidArtifact(
                 "Finding \(finding.id) opened despite a credible continuity candidate."
