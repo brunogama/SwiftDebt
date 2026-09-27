@@ -9,24 +9,26 @@ extension LifecycleReadService {
 
     func renderInventory(_ report: LifecycleInventoryReport) -> String {
         var lines = ["SwiftDebt lifecycle inventory"]
-        lines += report.headSnapshotIDs.map { "Graph head: \($0.rawValue)" }
+        lines += report.headSnapshotIDs.map { "Graph head: \(oneLine($0.rawValue))" }
         for finding in report.findings {
             let location = finding.lastKnownLocation
             lines.append(
-                "\(finding.id.rawValue) head=\(finding.headSnapshotID.rawValue) "
+                "\(oneLine(finding.id.rawValue)) head=\(oneLine(finding.headSnapshotID.rawValue)) "
                     + "\(finding.lifecycleState.rawValue) \(finding.evidenceState.rawValue) "
-                    + "\(finding.rule.identity) \(location.sourcePath.rawValue):\(location.line):\(location.column)"
+                    + "\(oneLine(finding.rule.identity.description)) "
+                    + "\(oneLine(location.sourcePath.rawValue)):\(location.line):\(location.column)"
             )
-            lines.append("  First Observation: \(finding.firstObservationSnapshotID.rawValue)")
+            lines.append("  First Observation: \(oneLine(finding.firstObservationSnapshotID.rawValue))")
             if let introduction = finding.introductionConclusion {
                 lines.append("  \(renderIntroduction(introduction))")
             }
         }
         for unresolved in report.unresolvedDetections {
-            let candidates = unresolved.candidateFindingIDs.map(\.rawValue).joined(separator: ",")
-            let reasons = unresolved.reasons.map(\.code).joined(separator: ",")
+            let candidates = unresolved.candidateFindingIDs.map { oneLine($0.rawValue) }.joined(separator: ",")
+            let reasons = unresolved.reasons.map { oneLine($0.code) }.joined(separator: ",")
             lines.append(
-                "unresolved \(unresolved.snapshotID.rawValue) \(unresolved.detectionID.rawValue) "
+                "unresolved \(oneLine(unresolved.snapshotID.rawValue)) "
+                    + "\(oneLine(unresolved.detectionID.rawValue)) "
                     + "candidates=\(candidates) reasons=\(reasons)"
             )
         }
@@ -35,11 +37,11 @@ extension LifecycleReadService {
 
     func renderExplanation(_ report: FindingExplanationReport) -> String {
         var lines = [
-            "Finding \(report.finding.id.rawValue)",
-            "First Observation: \(report.finding.firstObservationSnapshotID.rawValue)",
+            "Finding \(oneLine(report.finding.id.rawValue))",
+            "First Observation: \(oneLine(report.finding.firstObservationSnapshotID.rawValue))",
         ]
         for projection in report.projections {
-            lines.append("Graph head: \(projection.snapshotID.rawValue)")
+            lines.append("Graph head: \(oneLine(projection.snapshotID.rawValue))")
             lines.append("State: \(projection.lifecycleState.rawValue)")
             lines.append("Evidence: \(projection.evidenceState.rawValue)")
             for event in projection.finding.events {
@@ -54,29 +56,30 @@ extension LifecycleReadService {
             lines += renderSnapshotEvidence(snapshot)
         }
         for unresolved in report.unresolvedDetections {
-            lines.append("Unresolved Detection \(unresolved.detectionID.rawValue)")
-            let candidates = unresolved.candidateFindingIDs.map(\.rawValue).joined(separator: ", ")
+            lines.append("Unresolved Detection \(oneLine(unresolved.detectionID.rawValue))")
+            let candidates = unresolved.candidateFindingIDs.map { oneLine($0.rawValue) }.joined(separator: ", ")
             lines.append("  Candidate Findings: \(candidates)")
-            lines += unresolved.reasons.map { "  \($0.code): \($0.message)" }
+            lines += unresolved.reasons.map { "  \(oneLine($0.code)): \(oneLine($0.message))" }
         }
         for conclusion in report.introductionConclusions {
             lines.append(renderIntroduction(conclusion))
             lines.append("History budget: \(conclusion.evidence.boundary.maximumRevisions) revisions")
             lines.append(
-                "History boundary: head=\(conclusion.evidence.boundary.repositoryHeadRevision.rawValue) "
+                "History boundary: head=\(oneLine(conclusion.evidence.boundary.repositoryHeadRevision.rawValue)) "
                     + "state=\(conclusion.evidence.boundary.workingTreeState.rawValue) "
                     + "shallow=\(conclusion.evidence.boundary.isShallow)"
             )
             for revision in conclusion.evidence.revisions {
-                let parents = revision.parentRevisions.map(\.rawValue).joined(separator: ",")
+                let parents = revision.parentRevisions.map { oneLine($0.rawValue) }.joined(separator: ",")
                 let state = revision.observation == nil ? "unavailable" : "observed"
-                lines.append("History revision \(revision.revision.rawValue): \(state) parents=\(parents)")
+                lines.append("History revision \(oneLine(revision.revision.rawValue)): \(state) parents=\(parents)")
             }
             if !conclusion.evidence.boundary.frontierRevisions.isEmpty {
-                let frontier = conclusion.evidence.boundary.frontierRevisions.map(\.rawValue).joined(separator: ",")
+                let frontier = conclusion.evidence.boundary.frontierRevisions.map { oneLine($0.rawValue) }
+                    .joined(separator: ",")
                 lines.append("History frontier: \(frontier)")
             }
-            lines += conclusion.reasons.map { "  \($0.code): \($0.message)" }
+            lines += conclusion.reasons.map { "  \(oneLine($0.code)): \(oneLine($0.message))" }
             for comparison in conclusion.semanticComparisons {
                 lines += renderSemanticComparison(comparison)
             }
@@ -202,10 +205,10 @@ extension LifecycleReadService {
     private func renderIntroduction(_ conclusion: IntroductionConclusion) -> String {
         switch conclusion.kind {
         case .exact:
-            return "Introduction: exact \(conclusion.exactRevision?.rawValue ?? "invalid")"
+            return "Introduction: exact \(oneLine(conclusion.exactRevision?.rawValue ?? "invalid"))"
         case .bounded:
             let revision = conclusion.earliestPositiveRevision?.rawValue ?? "unknown"
-            return "Introduction: bounded earliest-positive=\(revision)"
+            return "Introduction: bounded earliest-positive=\(oneLine(revision))"
         case .unavailable:
             return "Introduction: unavailable"
         }

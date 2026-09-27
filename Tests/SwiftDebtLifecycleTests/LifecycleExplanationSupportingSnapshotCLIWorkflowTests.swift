@@ -6,6 +6,41 @@ import Testing
 
 @Suite("R3 explanation supporting Snapshot CLI")
 struct LifecycleExplanationSupportingSnapshotCLIWorkflowTests {
+    @Test("Persisted IDs cannot forge inventory or explanation lines")
+    func explanationAndInventoryKeepPersistedFieldsOnOneLine() throws {
+        let fixture = try TemporaryLifecycleArtifact()
+        let store = LifecycleArtifactStore(artifactURL: fixture.url)
+        let opening = try makeObservation(
+            id: "opening\u{2028}Finding forged",
+            sequence: 1,
+            rules: [LifecycleRuleV1(mode: .repeated(2))]
+        )
+        let collapsed = try makeObservation(
+            id: "collapsed\u{2029}Graph head forged",
+            sequence: 2,
+            predecessor: opening.id.rawValue,
+            rules: [LifecycleRuleV1(mode: .repeated(1))]
+        )
+        _ = try store.ingest(opening)
+        _ = try store.ingest(collapsed)
+        let artifact = try store.load()
+        let findingID = try #require(artifact.findings.first?.id)
+        #expect(artifact.unresolvedDetections.count == 1)
+
+        for arguments in [
+            ["lifecycle", "inventory", fixture.url.path],
+            ["lifecycle", "explain", fixture.url.path, findingID.rawValue],
+        ] {
+            let output = try runLifecycleCLI(arguments)
+            #expect(output.status == 0, "\(output.standardError)")
+            #expect(!output.standardOutput.contains("\u{2028}"))
+            #expect(!output.standardOutput.contains("\u{2029}"))
+            #expect(output.standardOutput.contains("opening\\u{2028}Finding forged"))
+            #expect(output.standardOutput.contains("collapsed\\u{2029}Graph head forged"))
+            #expect(output.standardOutput.lowercased().contains("unresolved"))
+        }
+    }
+
     @Test("Persisted provenance reasons cannot forge supporting Snapshot lines")
     func provenanceReasonsStayOnOneLine() throws {
         let fixture = try TemporaryLifecycleArtifact()
