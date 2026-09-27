@@ -73,7 +73,10 @@ import Testing
                 .appendingPathComponent("Fixtures/LifecycleAtomicRenameInterposer.c")
             let compilation = try runLifecycleProcess(
                 executable: URL(fileURLWithPath: "/usr/bin/xcrun"),
-                arguments: ["clang", "-dynamiclib", source.path, "-o", interposer.path],
+                arguments: [
+                    "clang", "-arch", "x86_64", "-arch", "arm64", "-arch", "arm64e",
+                    "-dynamiclib", source.path, "-o", interposer.path,
+                ],
                 directory: directory
             )
             #expect(compilation.status == 0, "\(compilation.standardError)")
