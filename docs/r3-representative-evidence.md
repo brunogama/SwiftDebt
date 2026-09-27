@@ -36,6 +36,20 @@ Per Snapshot, the runner counts canonical Detections by Rule Identity and Semant
 
 ---
 
+## Observed results
+
+The checked-in [raw evidence](../benchmarks/r3-lifecycle/evidence/real-source-swiftdebt.json) was produced at clean runner commit `0043bae2289b787c2f7ec74ff33ff3373d8ee0af` with Release binary SHA-256 `94b1ca70e873075d051022e030d109fcff664ca3f47bb42650cb61b92fd1eaa2`. Public canonical export matched the persisted artifact after each of the three analyses. Ten rules were selected per Snapshot; six distinct Rule Identities emitted Detections, all at SemanticRevision 1.
+
+| Snapshot | Detections | Unique continuations | New Findings | Unresolved Detections | Ambiguity Events |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 1: `c509396` | 94 | 0 | 94 | 0 | 0 |
+| 2: `9c7d1c2` | 195 | 45 (23.08%) | 84 (43.08%) | 66 (33.85%) | 49 (25.13%) |
+| 3: `a4a3c6d` | 198 | 105 (53.03%) | 3 (1.52%) | 90 (45.45%) | 73 (36.87%) |
+
+Each row's continuations, new Findings, and unresolved Detections sum to its Detection count. Ambiguity Events are a separate Finding-transition count and can overlap unresolved Detection groups; dividing Events by Detections does not make them another mutually exclusive Detection outcome. The raw evidence records all six rule-specific counts, source digests, fixture revisions, artifact hashes and sizes, and single-run wall times. These observations describe this fixed SwiftDebt history, not a cross-project population or calibrated latency distribution.
+
+---
+
 ## Bounded Introduction cache proof
 
 The whole-source corpus contains Detections in historical revisions. SwiftDebt's current cache only reuses atomically complete historical Observation Snapshots with **zero** Detections, so a warm query against that corpus should not claim a hit. The cache probe uses a separate disposable repository with two commits made from unmodified real SwiftDebt files at revision `a4a3c6d680feb2a221f417048b4e34de65175234`:
@@ -55,6 +69,8 @@ The runner selects that canonical Finding and runs the same public bounded query
 Each query has an explicit maximum of **three Git revisions** for this two-commit history. The profile must account for all evidence revisions as analyzed plus reused, stay within the limit, match the persisted Introduction Conclusion, and report a positive operation duration. The source file limit changes the effective historical analysis contract and must invalidate the previous cache entry. Forced cold means starting from the saved pre-query artifact; there is no hidden CLI flag.
 
 These are numeric **work and reuse** budgets. They are not calibrated wall-time ceilings. The script records raw wall time and in-process duration for all four queries; a latency ceiling needs repeated uncontended samples on an identified machine class before it can be called a release budget.
+
+The Release run recorded two analyzed and zero reused revisions for the cold query, one analyzed and one reused for the identical warm query, and two analyzed and zero reused after changing the file limit. The forced-cold oracle also analyzed two and reused zero. The warm query left the artifact byte-identical; the invalidated and forced-cold conclusions matched. All four operations stayed within the three-revision work budget.
 
 ---
 
