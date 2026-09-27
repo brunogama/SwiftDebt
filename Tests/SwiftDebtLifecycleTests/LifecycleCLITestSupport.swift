@@ -1,10 +1,27 @@
 import Foundation
 import SwiftDebtLifecycle
 
-struct LifecycleCLIRunResult {
+struct LifecycleCLIRunResult: Sendable {
     let status: Int32
     let standardOutput: String
     let standardError: String
+}
+
+func runLifecycleCLIWithFileSizeLimit(_ arguments: [String]) throws -> LifecycleCLIRunResult {
+    let executable = try lifecycleExecutableURL()
+    let result = try runLifecycleProcess(
+        executable: URL(fileURLWithPath: "/bin/sh"),
+        arguments: [
+            "-c", "trap '' XFSZ; ulimit -f 1; exec \"$@\"",
+            "swift-debt", executable.path,
+        ] + arguments,
+        directory: repositoryRoot
+    )
+    return LifecycleCLIRunResult(
+        status: result.status,
+        standardOutput: result.standardOutput,
+        standardError: result.standardError
+    )
 }
 
 func runLifecycleCLI(
@@ -28,7 +45,7 @@ private let repositoryRoot = URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent()
     .deletingLastPathComponent()
 
-private func lifecycleExecutableURL() throws -> URL {
+func lifecycleExecutableURL() throws -> URL {
     #if DEBUG
         let configuration = "debug"
     #else

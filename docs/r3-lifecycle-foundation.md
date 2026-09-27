@@ -225,7 +225,7 @@ All implemented acceptance tests use the real R1 `RuleEngine`, the public lifecy
 | AT-19 | Direct | A real merge that introduces the Detection after both parents prove absence is exact at the merge. |
 | AT-20 | Direct | Real dirty-worktree and shallow-clone fixtures retain First Observation and block exact attribution with specific reasons. |
 | AT-21 | Direct | A real Git fixture analyzes one root and two sibling children in both arrival orders. One branch resolves the shared Finding while the other keeps it open; both retain one Finding ID, independent event projections, explicit graph heads, head-scoped CLI output, byte-identical replay, and no sibling evidence leakage. Dirty, merge, disconnected, and broken-parent inputs fail closed. |
-| AT-22 | Partial | Retry and reverse-arrival replay preserve canonical bytes, and real CLI replay is byte-identical; concurrent replay and interruption injection remain open. |
+| AT-22 | Direct | Real CLI analyses ingest the same ordered Git revisions with one analysis job and with four simultaneous duplicate processes using four jobs each. Canonical bytes, Finding IDs, event IDs, and unresolved Detections match without duplicates. A process file-size limit fails the successor artifact write after the write starts; prior bytes remain intact and retry matches the ordered baseline. Separately, killing a CLI after its pre-ingestion profile is written while another process holds the lifecycle lock leaves the artifact intact and retry is idempotent. |
 | AT-23 | Partial | Persisted human and JSON queries expose blockers; real CLI tests prove text and JSON parity for every ambiguity candidate and blocker and for unverified reasons. CLI snapshot inspection shows derived Git, configuration, capability, engine, scope, selected-rule, and rename provenance. Full human/machine audit parity remains open. |
 | AT-24 | Direct | Unknown schema, broken references, reference-valid false resolution proof, and invalid candidate references fail closed. |
 | AT-25 | Direct | A real CLI fixture compares schema-2 stdout byte for byte with lifecycle disabled and verifies `--fail-on-violation` keeps status 1 while retrying the same lifecycle snapshot without mutation. |
@@ -244,7 +244,7 @@ The current slice completes the first-observation, line-move, corroborated file-
 - historical configuration reproduction beyond the default directory selection and maximum-file-size input;
 - archived cross-file introduction continuity with persisted Git rename corroboration;
 - complete human and machine audit parity;
-- concurrent replay and interrupted-write fault injection; and
+- process termination during an active artifact write, beyond the tested write failure and lock-wait termination; and
 - measured artifact and query performance budgets.
 
 Lifecycle framing and repository evidence share SwiftDebtCore's `RepositorySHA256` implementation. A canonical digest fixture locks the existing lifecycle configuration bytes across that consolidation.
