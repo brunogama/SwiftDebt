@@ -26,9 +26,13 @@ import Testing
 
             let interposer = try compileInterposer(in: fixture.directory)
             let marker = fixture.directory.appendingPathComponent("atomic-rename-marker")
+            let errorURL = fixture.directory.appendingPathComponent("interrupted-stderr")
+            _ = FileManager.default.createFile(atPath: errorURL.path, contents: nil)
+            let errorOutput = try FileHandle(forWritingTo: errorURL)
+            defer { try? errorOutput.close() }
             let process = try startPausedWrite(
                 repository: fixture.repository, artifact: interruptedArtifact,
-                interposer: interposer, marker: marker
+                interposer: interposer, marker: marker, errorOutput: errorOutput
             )
             defer {
                 if process.isRunning {
@@ -37,14 +41,10 @@ import Testing
                 }
             }
 
-            let deadline = Date().addingTimeInterval(15)
-            while !FileManager.default.fileExists(atPath: marker.path) && process.isRunning && Date() < deadline {
-                Thread.sleep(forTimeInterval: 0.01)
-            }
-            #expect(FileManager.default.fileExists(atPath: marker.path))
-            guard FileManager.default.fileExists(atPath: marker.path) else { return }
-            let temporaryName = try String(contentsOf: marker, encoding: .utf8)
-                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let temporaryName = try awaitRename(
+                marker: marker, process: process,
+                errorOutput: errorOutput, errorURL: errorURL
+            )
             let temporaryArtifact = interruptedArtifact.deletingLastPathComponent()
                 .appendingPathComponent(temporaryName)
             #expect(try Data(contentsOf: temporaryArtifact) == expectedBytes)
@@ -76,8 +76,48 @@ import Testing
             return interposer
         }
 
+        private func awaitRename(
+            marker: URL, process: Process, errorOutput: FileHandle, errorURL: URL
+        ) throws -> String {
+            // This bounds a deadlocked child, not normal analysis progress under coverage contention.
+            let watchdog = Date().addingTimeInterval(300)
+            while !FileManager.default.fileExists(atPath: marker.path) && process.isRunning {
+                if Date() >= watchdog {
+                    _ = kill(process.processIdentifier, SIGKILL)
+                    process.waitUntilExit()
+                    throw try renameFailure(
+                        "CLI did not reach atomic rename within five minutes",
+                        process: process, errorOutput: errorOutput, errorURL: errorURL
+                    )
+                }
+                Thread.sleep(forTimeInterval: 0.05)
+            }
+            guard FileManager.default.fileExists(atPath: marker.path) else {
+                process.waitUntilExit()
+                throw try renameFailure(
+                    "CLI exited before atomic rename",
+                    process: process, errorOutput: errorOutput, errorURL: errorURL
+                )
+            }
+            return try String(contentsOf: marker, encoding: .utf8)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        private func renameFailure(
+            _ reason: String, process: Process, errorOutput: FileHandle, errorURL: URL
+        ) throws -> NSError {
+            try errorOutput.synchronize()
+            let errorData = try Data(contentsOf: errorURL)
+            let errorText = String(bytes: errorData, encoding: .utf8) ?? "<invalid UTF-8>"
+            let detail = "\(reason); status \(process.terminationStatus); stderr: \(errorText)"
+            return NSError(
+                domain: "LifecycleActiveWriteInterruption", code: Int(process.terminationStatus),
+                userInfo: [NSLocalizedDescriptionKey: detail]
+            )
+        }
+
         private func startPausedWrite(
-            repository: URL, artifact: URL, interposer: URL, marker: URL
+            repository: URL, artifact: URL, interposer: URL, marker: URL, errorOutput: FileHandle
         ) throws -> Process {
             let process = Process()
             process.executableURL = try lifecycleExecutableURL()
@@ -90,7 +130,7 @@ import Testing
             environment["SWIFTDEBT_AT22_RENAME_MARKER"] = marker.path
             process.environment = environment
             process.standardOutput = FileHandle.nullDevice
-            process.standardError = FileHandle.nullDevice
+            process.standardError = errorOutput
             try process.run()
             return process
         }
