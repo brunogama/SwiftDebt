@@ -75,16 +75,17 @@ class CapacityProbeTests(unittest.TestCase):
                     "--maximum-artifact-gib",
                     "0.001",
                     "--maximum-elapsed-seconds",
-                    "1",
+                    "3",
                 ],
                 capture_output=True,
                 text=True,
                 check=False,
-                timeout=5,
+                timeout=7,
             )
             self.assertEqual(result.returncode, 1)
             recorded = json.loads(evidence.read_text())
             self.assertEqual(recorded["status"], "failed")
+            self.assertEqual(recorded["checkpoints"][-1]["sequence"], 3)
             self.assertIn("timed out", recorded["failure"])
             self.assertNotIn("replayWallSeconds", recorded)
 
@@ -221,7 +222,7 @@ if args[0] == "analyze":
     count = int(counter.read_text()) + 1 if counter.exists() else 1
     counter.write_text(str(count))
     if count == 4:
-        time.sleep(2)
+        time.sleep(5)
     ids = [f"s{index}" for index in range(1, min(count, 3) + 1)]
     artifact.write_text(json.dumps({"reportKind": "swiftdebt-lifecycle", "schemaVersion": 3,
         "snapshots": [{"id": value} for value in ids], "findings": [],
