@@ -36,6 +36,19 @@ extension LifecycleReadService {
             + "\(detection.severity.rawValue): \(oneLine(detection.message))"
     }
 
+    func renderAffectedFinding(_ id: FindingID) -> String {
+        "Affected Finding \(oneLine(id.rawValue))"
+    }
+
+    func renderUnresolvedDetection(_ unresolved: UnresolvedDetection) -> [String] {
+        let candidates = unresolved.candidateFindingIDs.map { oneLine($0.rawValue) }.joined(separator: ", ")
+        return [
+            "Unresolved Detection \(oneLine(unresolved.snapshotID.rawValue)) "
+                + oneLine(unresolved.detectionID.rawValue),
+            "  Candidate Findings: \(candidates)",
+        ] + unresolved.reasons.map { "  \(oneLine($0.code)): \(oneLine($0.message))" }
+    }
+
     private func oneLine(_ value: String) -> String {
         var result = ""
         for scalar in value.unicodeScalars {

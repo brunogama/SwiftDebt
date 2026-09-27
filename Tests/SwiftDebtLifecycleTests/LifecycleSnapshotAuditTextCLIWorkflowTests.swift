@@ -1,10 +1,90 @@
 import Foundation
-import SwiftDebtLifecycle
 import SwiftDebtSyntax
 import Testing
+@testable import SwiftDebtLifecycle
 
 @Suite("R3 snapshot audit text CLI")
 struct LifecycleSnapshotAuditTextCLIWorkflowTests {
+    @Test("Snapshot text preserves affected Findings and every unresolved Detection in JSON")
+    func snapshotTextPreservesDownstreamEffects() throws {
+        let fixture = try TemporaryLifecycleArtifact()
+        let store = LifecycleArtifactStore(artifactURL: fixture.url)
+        let original = try makeObservation(
+            id: "snapshot-effects-original",
+            sequence: 1,
+            rules: [LifecycleRuleV1(mode: .repeated(2))]
+        )
+        let collapsed = try makeObservation(
+            id: "snapshot-effects-collapsed",
+            sequence: 2,
+            predecessor: original.id.rawValue,
+            rules: [LifecycleRuleV1(mode: .repeated(1))]
+        )
+        _ = try store.ingest(original)
+        _ = try store.ingest(collapsed)
+        let before = try Data(contentsOf: fixture.url)
+        let arguments = ["lifecycle", "snapshot", fixture.url.path, collapsed.id.rawValue]
+
+        let json = try runLifecycleCLI(arguments + ["--format", "json"])
+        let text = try runLifecycleCLI(arguments + ["--format", "text"])
+
+        #expect(json.status == 0)
+        #expect(text.status == 0)
+        let report = try JSONDecoder().decode(
+            SnapshotInspectionReport.self,
+            from: Data(json.standardOutput.utf8)
+        )
+        #expect(report.affectedFindingIDs.count == 2)
+        #expect(report.unresolvedDetections.count == 1)
+        for findingID in report.affectedFindingIDs {
+            #expect(text.standardOutput.contains("Affected Finding \(findingID.rawValue)"))
+        }
+        for unresolved in report.unresolvedDetections {
+            #expect(
+                text.standardOutput.contains(
+                    "Unresolved Detection \(unresolved.snapshotID.rawValue) \(unresolved.detectionID.rawValue)"
+                )
+            )
+            #expect(
+                text.standardOutput.contains(
+                    "  Candidate Findings: "
+                        + unresolved.candidateFindingIDs.map(\.rawValue).joined(separator: ", ")
+                )
+            )
+            for reason in unresolved.reasons {
+                #expect(text.standardOutput.contains("\(reason.code): \(reason.message)"))
+            }
+        }
+        #expect(try Data(contentsOf: fixture.url) == before)
+    }
+
+    @Test("Unresolved text escapes line separators in new audit fields")
+    func unresolvedTextCannotForgeAuditLines() throws {
+        let unresolved = UnresolvedDetection(
+            snapshotID: try SnapshotID("snapshot\u{2028}injected"),
+            detectionID: try DetectionID("detection\u{2028}injected"),
+            candidateFindingIDs: [try FindingID("finding\u{2028}injected")],
+            reasons: [
+                try LifecycleReason(
+                    code: "ambiguous\u{2028}injected",
+                    message: "Needs review.\u{2028}Unresolved Detection forged"
+                )
+            ]
+        )
+
+        let lines = LifecycleReadService().renderUnresolvedDetection(unresolved)
+        let affected = LifecycleReadService().renderAffectedFinding(
+            try FindingID("finding\u{2028}injected")
+        )
+
+        #expect(lines.count == 3)
+        #expect(lines.allSatisfy { !$0.contains("\u{2028}") })
+        #expect(affected == "Affected Finding finding\\u{2028}injected")
+        #expect(lines[0].contains("snapshot\\u{2028}injected detection\\u{2028}injected"))
+        #expect(lines[1].contains("finding\\u{2028}injected"))
+        #expect(lines[2].contains("ambiguous\\u{2028}injected: Needs review.\\u{2028}"))
+    }
+
     @Test("Text snapshot inspection keeps a diagnostic filename on one evidence line")
     func newlineInDiagnosticFilenameCannotForgeEvidence() throws {
         let fixture = try TemporaryLifecycleGitRepository()

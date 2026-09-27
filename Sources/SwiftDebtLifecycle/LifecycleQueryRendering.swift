@@ -155,6 +155,8 @@ extension LifecycleReadService {
         lines += snapshot.sources.flatMap { renderSourceObservation($0) }
         lines += snapshot.atomicObservations.flatMap { renderAtomicObservation($0) }
         lines += snapshot.detections.map { renderDetection($0) }
+        lines += report.affectedFindingIDs.map { renderAffectedFinding($0) }
+        lines += report.unresolvedDetections.flatMap { renderUnresolvedDetection($0) }
         return lines.joined(separator: "\n") + "\n"
     }
 
