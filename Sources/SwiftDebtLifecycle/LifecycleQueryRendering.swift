@@ -49,6 +49,10 @@ extension LifecycleReadService {
                 }
             }
         }
+        for snapshot in report.supportingSnapshots {
+            lines.append("Supporting Snapshot \(oneLine(snapshot.id.rawValue))")
+            lines += renderSnapshotEvidence(snapshot)
+        }
         for unresolved in report.unresolvedDetections {
             lines.append("Unresolved Detection \(unresolved.detectionID.rawValue)")
             let candidates = unresolved.candidateFindingIDs.map(\.rawValue).joined(separator: ", ")
@@ -87,11 +91,20 @@ extension LifecycleReadService {
             "Graph parent: \(report.parentSnapshotID?.rawValue ?? "none")",
             "Graph children: \(report.childSnapshotIDs.map(\.rawValue).joined(separator: ","))",
             "Graph head: \(report.isHead)",
+        ]
+        lines += renderSnapshotEvidence(snapshot)
+        lines += report.affectedFindingIDs.map { renderAffectedFinding($0) }
+        lines += report.unresolvedDetections.flatMap { renderUnresolvedDetection($0) }
+        return lines.joined(separator: "\n") + "\n"
+    }
+
+    private func renderSnapshotEvidence(_ snapshot: ObservationSnapshot) -> [String] {
+        var lines = [
             "Legacy lineage: \(snapshot.provenance.lineage.lineageID.rawValue) #\(snapshot.provenance.lineage.sequence)",
             renderSourceIdentity(snapshot.provenance.sourceIdentity),
             "Scope: \(renderScope(snapshot.provenance.scope))",
             "Configuration: \(snapshot.provenance.configurationFingerprint.value)",
-            "Engine: \(snapshot.provenance.engineVersion)",
+            "Engine: \(oneLine(snapshot.provenance.engineVersion))",
             "Atomic observations complete: \(snapshot.isAtomicallyComplete)",
             "Repository absence supported: \(snapshot.supportsRepositoryAbsence)",
         ]
@@ -154,9 +167,7 @@ extension LifecycleReadService {
         lines += snapshot.sources.flatMap { renderSourceObservation($0) }
         lines += snapshot.atomicObservations.flatMap { renderAtomicObservation($0) }
         lines += snapshot.detections.map { renderDetection($0) }
-        lines += report.affectedFindingIDs.map { renderAffectedFinding($0) }
-        lines += report.unresolvedDetections.flatMap { renderUnresolvedDetection($0) }
-        return lines.joined(separator: "\n") + "\n"
+        return lines
     }
 
     private func renderSourceIdentity(_ identity: SnapshotSourceIdentity) -> String {
@@ -207,7 +218,8 @@ extension LifecycleReadService {
                 + comparison.currentSnapshotID.rawValue,
             "    Configuration: \(comparison.priorConfigurationFingerprint.value) -> "
                 + comparison.currentConfigurationFingerprint.value,
-            "    Engine: \(comparison.priorEngineVersion) -> \(comparison.currentEngineVersion)",
+            "    Engine: \(oneLine(comparison.priorEngineVersion)) -> "
+                + oneLine(comparison.currentEngineVersion),
         ]
         if let declaration = comparison.compatibilityDeclaration {
             lines.append(
