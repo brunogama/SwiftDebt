@@ -152,9 +152,9 @@ extension LifecycleReadService {
         lines += snapshot.provenance.sourceDeletions.map {
             "Deleted SourceUnit: \($0.priorSourcePath.rawValue)"
         }
-        lines += snapshot.atomicObservations.map {
-            "\($0.rule.identity) \($0.sourcePath.rawValue) \($0.outcome.kind.rawValue)"
-        }
+        lines += snapshot.sources.flatMap { renderSourceObservation($0) }
+        lines += snapshot.atomicObservations.flatMap { renderAtomicObservation($0) }
+        lines += snapshot.detections.map { renderDetection($0) }
         return lines.joined(separator: "\n") + "\n"
     }
 
