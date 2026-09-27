@@ -11,6 +11,20 @@ extension ContinuityReconciler {
             currentSnapshot: snapshot,
             currentRule: detection.rule
         )
+        return try relation(
+            candidate: candidate,
+            detection: detection,
+            snapshot: snapshot,
+            comparison: comparison
+        )
+    }
+
+    func relation(
+        candidate: Candidate,
+        detection: ObservedDetection,
+        snapshot: ObservationSnapshot,
+        comparison: SemanticComparisonAssessment
+    ) throws -> PairRelation {
         guard comparison.isCompatible else {
             return .unverified(comparison.reasons, comparison.basis)
         }

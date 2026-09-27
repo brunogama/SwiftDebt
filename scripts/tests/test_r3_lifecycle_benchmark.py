@@ -177,6 +177,23 @@ class R3LifecycleBenchmarkValidationTests(unittest.TestCase):
                     self.encoded(self.incremental), 1,
                 )
 
+    def test_reconciliation_profile_counts_assessed_pairs_not_cartesian_pairs(self) -> None:
+        incremental = json.loads(json.dumps(self.incremental))
+        second = json.loads(json.dumps(incremental["snapshots"][-1]["detections"][0]))
+        second["location"]["sourcePath"] = "Sources/File00001.swift"
+        incremental["snapshots"][-1]["detections"].append(second)
+        record = {
+            "snapshotID": "snapshot-2", "detections": 2, "candidates": 2,
+            "evaluatedPairs": 2, "crediblePairs": 2, "uniqueContinuities": 2,
+            "newFindings": 0, "unresolvedDetections": 0, "ambiguousGroups": 0,
+            "processingElapsedNanoseconds": 200, "reconciliationElapsedNanoseconds": 100,
+        }
+        profile = {"schemaVersion": 1, "lifecycleReconciliation": [record]}
+        validate_incremental_profile(self.encoded(profile), self.encoded(incremental), 2)
+        record["evaluatedPairs"] = 4
+        with self.assertRaisesRegex(RuntimeError, "incremental profile"):
+            validate_incremental_profile(self.encoded(profile), self.encoded(incremental), 2)
+
 
 if __name__ == "__main__":
     unittest.main()

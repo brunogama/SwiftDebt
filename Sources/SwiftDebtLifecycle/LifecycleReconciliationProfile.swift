@@ -7,7 +7,8 @@ public struct LifecycleReconciliationProfile: Codable, Equatable, Sendable {
     public let detections: Int
     /// Prior Findings considered across the snapshot's Rule Identities.
     public let candidates: Int
-    /// Candidate-Detection pairs evaluated by the continuity relation.
+    /// Distinct Candidate-Detection pairs assessed by the continuity relation
+    /// or retained by the same-source divergence rule.
     public let evaluatedPairs: Int
     /// Credible relation edges after same-source divergence augmentation.
     public let crediblePairs: Int
