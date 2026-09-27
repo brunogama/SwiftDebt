@@ -36,7 +36,7 @@ struct CLIOptions {
                swift-debt lifecycle snapshot ARTIFACT SNAPSHOT_ID [--format text|json]
                swift-debt lifecycle infer-introduction ARTIFACT FINDING_ID
                    --repository PATH --max-revisions INTEGER [--max-file-bytes INTEGER]
-                   [--format text|json]
+                   [--profile-output PATH] [--format text|json]
                swift-debt --help
                swift-debt --version
 
@@ -48,7 +48,7 @@ struct CLIOptions {
                                          debt-dashboard.
           --interactive-debt             Open ranked debt explorer when terminal supports it.
           --output PATH                  Write a report atomically instead of stdout.
-          --profile-output PATH          Write machine-readable phase profiling JSON.
+          --profile-output PATH          Write machine-readable operational profiling JSON.
           --lifecycle-artifact PATH      Append an engine-owned Observation Snapshot to this artifact.
           --repository-evidence PATH     Run experimental repository smells and write the schema 1 sidecar.
           --repository-cache PATH        Store repository syntax facts at an explicit local path.

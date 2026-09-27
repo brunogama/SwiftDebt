@@ -17,6 +17,7 @@ enum LifecycleCLIRequest {
         repositoryPath: String,
         maximumRevisions: Int,
         maximumFileBytes: Int,
+        profileOutputPath: String?,
         format: LifecycleReadFormat
     )
 
@@ -48,18 +49,26 @@ enum LifecycleCLIRequest {
             let repositoryPath,
             let maximumRevisions,
             let maximumFileBytes,
+            let profileOutputPath,
             let format
         ):
             let artifactURL = URL(fileURLWithPath: artifactPath)
-            _ = try LifecycleIntroductionService().infer(
-                LifecycleIntroductionRequest(
-                    artifactURL: artifactURL,
-                    repositoryURL: URL(fileURLWithPath: repositoryPath),
-                    findingID: findingID,
-                    maximumRevisions: maximumRevisions,
-                    maximumFileBytes: maximumFileBytes
-                )
+            let profileOutputURL = profileOutputPath.map {
+                URL(fileURLWithPath: $0).standardizedFileURL.resolvingSymlinksInPath()
+            }
+            let request = LifecycleIntroductionRequest(
+                artifactURL: artifactURL,
+                repositoryURL: URL(fileURLWithPath: repositoryPath),
+                findingID: findingID,
+                maximumRevisions: maximumRevisions,
+                maximumFileBytes: maximumFileBytes,
+                profileOutputURL: profileOutputURL
             )
+            if profileOutputURL != nil {
+                _ = try LifecycleIntroductionService().inferProfiled(request)
+            } else {
+                _ = try LifecycleIntroductionService().infer(request)
+            }
             return try service.explain(findingID: findingID, at: artifactURL, format: format)
         }
     }

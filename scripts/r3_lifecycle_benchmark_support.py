@@ -108,6 +108,62 @@ def validate_explanation(output: str, finding: dict, snapshot_id: str) -> None:
         raise RuntimeError("explanation JSON did not describe the selected Finding")
 
 
+def validate_introduction_profile(
+    profile_json: str,
+    conclusion: dict,
+    *,
+    finding_id: str,
+    maximum_revisions: int,
+    maximum_file_bytes: int,
+    recording_status: str,
+) -> dict[str, int | str]:
+    profile = json.loads(profile_json)
+    evidence = conclusion.get("evidence", {})
+    revisions = evidence.get("revisions")
+    boundary = evidence.get("boundary", {})
+    frontier = boundary.get("frontierRevisions")
+    numeric_fields = (
+        "evidenceRevisionCount",
+        "analyzedRevisionCount",
+        "reusedRevisionCount",
+        "frontierRevisionCount",
+        "operationElapsedNanoseconds",
+    )
+    if (
+        profile.get("reportKind") != "swiftdebt-lifecycle-introduction-profile"
+        or profile.get("schemaVersion") != 1
+        or profile.get("findingID") != finding_id
+        or conclusion.get("findingID") != finding_id
+        or profile.get("maximumRevisions") != maximum_revisions
+        or boundary.get("maximumRevisions") != maximum_revisions
+        or profile.get("maximumFileBytes") != maximum_file_bytes
+        or profile.get("recordingStatus") != recording_status
+        or not isinstance(revisions, list)
+        or not isinstance(frontier, list)
+        or any(type(profile.get(field)) is not int for field in numeric_fields)
+        or any(profile[field] < 0 for field in numeric_fields)
+        or profile["operationElapsedNanoseconds"] == 0
+        or profile["evidenceRevisionCount"] != len(revisions)
+        or profile["frontierRevisionCount"] != len(frontier)
+        or profile["evidenceRevisionCount"]
+        != profile["analyzedRevisionCount"] + profile["reusedRevisionCount"]
+        or profile["evidenceRevisionCount"] > maximum_revisions
+    ):
+        raise RuntimeError("introduction profile does not match persisted bounded history evidence")
+    return {
+        field: profile[field]
+        for field in (
+            "reportKind",
+            "schemaVersion",
+            "findingID",
+            "maximumRevisions",
+            "maximumFileBytes",
+            *numeric_fields,
+            "recordingStatus",
+        )
+    }
+
+
 def validate_incremental_artifact(cold_bytes: bytes, incremental_bytes: bytes, source_count: int) -> None:
     cold = json.loads(cold_bytes)
     incremental = json.loads(incremental_bytes)
