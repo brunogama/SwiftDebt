@@ -85,13 +85,13 @@ def main() -> int:
                     parent, args.minimum_free_gib + 2 * args.maximum_artifact_gib
                 ),
                 "swiftDebtBinarySHA256": file_sha256(cli),
-                "sourceCommit": git(
+                "runnerCommit": git(
                     script_repository,
                     "rev-parse",
                     "HEAD",
                     timeout=bounded_timeout(deadline, args.command_timeout_seconds),
                 ),
-                "sourceDirty": bool(
+                "runnerDirty": bool(
                     git(
                         script_repository,
                         "status",
