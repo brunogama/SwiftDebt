@@ -48,6 +48,7 @@ def main() -> int:
     report_path = coverage_path(root, options.coverage_json)
     report = json.loads(report_path.read_text(encoding="utf-8"))
     rows: dict[str, tuple[int, int]] = {}
+    zero_count_regions: dict[str, list[int]] = {}
     for dataset in report.get("data", []):
         for file_report in dataset.get("files", []):
             source = Path(file_report["filename"]).resolve()
@@ -60,6 +61,11 @@ def main() -> int:
             if name in rows:
                 raise RuntimeError(f"duplicate coverage record for {name}")
             rows[name] = (int(lines["covered"]), int(lines["count"]))
+            zero_count_regions[name] = sorted({
+                int(segment[0])
+                for segment in file_report.get("segments", [])
+                if len(segment) >= 4 and segment[3] and segment[2] == 0
+            })
 
     if not rows:
         raise RuntimeError(f"no executable coverage records found under {domain}")
@@ -77,6 +83,15 @@ def main() -> int:
     total_percent = 100 * covered_total / line_total if line_total else 100
     print(f"TOTAL {total_percent:.2f}% {covered_total}/{line_total}")
     if missed_total:
+        for name in sorted(rows):
+            covered, count = rows[name]
+            if covered == count:
+                continue
+            starts = zero_count_regions[name]
+            preview = ", ".join(str(line) for line in starts[:20])
+            if len(starts) > 20:
+                preview += f", ... ({len(starts) - 20} more)"
+            print(f"{name}: zero-count coverage regions start at lines {preview}", file=sys.stderr)
         print(f"domain coverage: FAIL ({missed_total} executable lines uncovered)", file=sys.stderr)
         return 1
     print("domain coverage: PASS")
