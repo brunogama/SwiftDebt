@@ -33,10 +33,21 @@ struct ContinuityReconciler {
         snapshot: ObservationSnapshot,
         artifact: LifecycleArtifact
     ) throws -> ContinuityReconciliation {
+        let snapshotsByID = Dictionary(uniqueKeysWithValues: artifact.snapshots.map { ($0.id, $0) })
+        var detectionIndexBySnapshot: [SnapshotID: [DetectionID: ObservedDetection]] = [:]
         let candidates = try findings.map { finding -> Candidate in
             let reference = finding.latestDetectionReference
-            guard let priorSnapshot = artifact.snapshot(id: reference.snapshotID),
-                let priorDetection = priorSnapshot.detection(id: reference.detectionID)
+            guard let priorSnapshot = snapshotsByID[reference.snapshotID] else {
+                throw LifecycleContractError.invalidArtifact(
+                    "Finding \(finding.id) has no latest Detection evidence."
+                )
+            }
+            if detectionIndexBySnapshot[reference.snapshotID] == nil {
+                detectionIndexBySnapshot[reference.snapshotID] = Dictionary(
+                    uniqueKeysWithValues: priorSnapshot.detections.map { ($0.id, $0) }
+                )
+            }
+            guard let priorDetection = detectionIndexBySnapshot[reference.snapshotID]?[reference.detectionID]
             else {
                 throw LifecycleContractError.invalidArtifact(
                     "Finding \(finding.id) has no latest Detection evidence."
@@ -48,18 +59,38 @@ struct ContinuityReconciler {
         var relations: [Pair: PairRelation] = [:]
         var candidateEdges = Array(repeating: Set<Int>(), count: candidates.count)
         var detectionEdges = Array(repeating: Set<Int>(), count: detections.count)
+        let index = ContinuityCandidateIndex(detections: detections)
+        let currentRules = index.rules
+        var evaluatedPairs: Set<Pair> = []
         for candidateIndex in candidates.indices {
-            for detectionIndex in detections.indices {
-                let relation = try relation(
-                    candidate: candidates[candidateIndex],
-                    detection: detections[detectionIndex],
-                    snapshot: snapshot
+            let candidate = candidates[candidateIndex]
+            for currentRule in currentRules {
+                let comparison = try SemanticComparisonEvaluator().assess(
+                    claim: .continuity,
+                    priorSnapshot: candidate.snapshot,
+                    priorRule: candidate.detection.rule,
+                    currentSnapshot: snapshot,
+                    currentRule: currentRule
                 )
-                guard relation.isCredible else { continue }
-                let pair = Pair(candidate: candidateIndex, detection: detectionIndex)
-                relations[pair] = relation
-                candidateEdges[candidateIndex].insert(detectionIndex)
-                detectionEdges[detectionIndex].insert(candidateIndex)
+                let possible = index.possibleDetections(
+                    for: candidate,
+                    currentRule: currentRule,
+                    semanticsCompatible: comparison.isCompatible
+                )
+                for detectionIndex in possible {
+                    let pair = Pair(candidate: candidateIndex, detection: detectionIndex)
+                    evaluatedPairs.insert(pair)
+                    let relation = try relation(
+                        candidate: candidate,
+                        detection: detections[detectionIndex],
+                        snapshot: snapshot,
+                        comparison: comparison
+                    )
+                    guard relation.isCredible else { continue }
+                    relations[pair] = relation
+                    candidateEdges[candidateIndex].insert(detectionIndex)
+                    detectionEdges[detectionIndex].insert(candidateIndex)
+                }
             }
         }
         try addSameSourceDivergenceCandidates(
@@ -68,7 +99,8 @@ struct ContinuityReconciler {
             snapshot: snapshot,
             relations: &relations,
             candidateEdges: &candidateEdges,
-            detectionEdges: &detectionEdges
+            detectionEdges: &detectionEdges,
+            evaluatedPairs: &evaluatedPairs
         )
 
         var matchedCandidates = Set<Int>()
@@ -122,55 +154,11 @@ struct ContinuityReconciler {
                 matchedCandidates.contains(index) || groupedCandidates.contains(index)
                     ? nil : candidates[index].finding
             },
-            evaluatedPairs: candidates.count * detections.count,
+            evaluatedPairs: evaluatedPairs.count,
             crediblePairs: relations.count
         )
     }
 
-    /// A SourceUnit path is insufficient to prove continuity. When neither side
-    /// has any structural edge, however, a same-source edit is enough to keep a
-    /// possible predecessor unresolved instead of fabricating a split.
-    private func addSameSourceDivergenceCandidates(
-        candidates: [Candidate],
-        detections: [ObservedDetection],
-        snapshot: ObservationSnapshot,
-        relations: inout [Pair: PairRelation],
-        candidateEdges: inout [Set<Int>],
-        detectionEdges: inout [Set<Int>]
-    ) throws {
-        let disconnectedCandidates = candidateEdges.indices.filter { candidateEdges[$0].isEmpty }
-        let disconnectedDetections = detectionEdges.indices.filter { detectionEdges[$0].isEmpty }
-        for candidateIndex in disconnectedCandidates {
-            for detectionIndex in disconnectedDetections
-            where candidates[candidateIndex].detection.location.sourcePath
-                == detections[detectionIndex].location.sourcePath
-            {
-                let pair = Pair(candidate: candidateIndex, detection: detectionIndex)
-                let comparison = try SemanticComparisonEvaluator().assess(
-                    claim: .continuity,
-                    priorSnapshot: candidates[candidateIndex].snapshot,
-                    priorRule: candidates[candidateIndex].detection.rule,
-                    currentSnapshot: snapshot,
-                    currentRule: detections[detectionIndex].rule
-                )
-                relations[pair] = .ambiguous(
-                    comparison.reasons + [
-                        try reason(
-                            "same-source-structural-divergence",
-                            "Both structural digests changed within the same SourceUnit, so an edited occurrence cannot be ruled out."
-                        )
-                    ],
-                    comparison.basis
-                )
-                candidateEdges[candidateIndex].insert(detectionIndex)
-                detectionEdges[detectionIndex].insert(candidateIndex)
-            }
-        }
-    }
-
-    private func reason(_ code: String, _ message: String) throws -> LifecycleReason {
-        try LifecycleReason(code: code, message: message)
-    }
 }
 
 struct Candidate {
