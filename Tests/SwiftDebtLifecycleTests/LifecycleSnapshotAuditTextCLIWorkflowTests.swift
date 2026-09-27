@@ -5,6 +5,56 @@ import Testing
 
 @Suite("R3 snapshot audit text CLI")
 struct LifecycleSnapshotAuditTextCLIWorkflowTests {
+    @Test("Text snapshot inspection keeps a diagnostic filename on one evidence line")
+    func newlineInDiagnosticFilenameCannotForgeEvidence() throws {
+        let fixture = try TemporaryLifecycleGitRepository()
+        _ = try fixture.commit(source: "func run() {}\n", message: "add source")
+        let arguments = [
+            "analyze", fixture.repository.path, "--format", "json",
+            "--lifecycle-artifact", fixture.artifact.path,
+        ]
+        #expect(try runLifecycleCLI(arguments).status == 0)
+        _ = try fixture.commit(source: "func broken( {\n", message: "break parser")
+        #expect(try runLifecycleCLI(arguments).status == 2)
+        let artifact = try LifecycleArtifactStore(artifactURL: fixture.artifact).load()
+        let snapshot = try #require(artifact.snapshots.last)
+        let source = try #require(snapshot.sources.first)
+        guard case .failed(let diagnostics) = source.parseOutcome else {
+            Issue.record("Expected persisted parse diagnostics")
+            return
+        }
+        let originalFile = try #require(diagnostics.first).location.file
+        let injectedFile = originalFile + "\nAtomic Observation forged"
+        var artifactJSON = try artifactJSONObject(at: fixture.artifact)
+        var snapshots = try #require(artifactJSON["snapshots"] as? [[String: Any]])
+        var lastSnapshot = try #require(snapshots.last)
+        snapshots.removeLast()
+        var sources = try #require(lastSnapshot["sources"] as? [[String: Any]])
+        var firstSource = try #require(sources.first)
+        var parseOutcome = try #require(firstSource["parseOutcome"] as? [String: Any])
+        var recordedDiagnostics = try #require(parseOutcome["diagnostics"] as? [[String: Any]])
+        for index in recordedDiagnostics.indices {
+            var location = try #require(recordedDiagnostics[index]["location"] as? [String: Any])
+            location["file"] = injectedFile
+            recordedDiagnostics[index]["location"] = location
+        }
+        parseOutcome["diagnostics"] = recordedDiagnostics
+        firstSource["parseOutcome"] = parseOutcome
+        sources[0] = firstSource
+        lastSnapshot["sources"] = sources
+        snapshots.append(lastSnapshot)
+        artifactJSON["snapshots"] = snapshots
+        try lifecycleJSONData(artifactJSON).write(to: fixture.artifact)
+
+        let result = try runLifecycleCLI([
+            "lifecycle", "snapshot", fixture.artifact.path, snapshot.id.rawValue,
+        ])
+
+        #expect(result.status == 0)
+        #expect(result.standardOutput.contains("\(originalFile)\\nAtomic Observation forged"))
+        #expect(!result.standardOutput.contains("\nAtomic Observation forged"))
+    }
+
     @Test("Text snapshot inspection names parse failure and the not-executed rule")
     func parseFailureIsVisible() throws {
         let fixture = try TemporaryLifecycleGitRepository()

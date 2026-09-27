@@ -8,7 +8,7 @@ extension LifecycleReadService {
         case .failed(let diagnostics):
             return ["SourceUnit \(source.sourcePath.rawValue): parse-failed"]
                 + diagnostics.map {
-                    "  \($0.location.file):\($0.location.line):\($0.location.column) "
+                    "  \(oneLine($0.location.file)):\($0.location.line):\($0.location.column) "
                         + "\($0.severity.rawValue): \(oneLine($0.message))"
                 }
         }
@@ -24,7 +24,7 @@ extension LifecycleReadService {
         case .committed(let detectionIDs):
             lines.append("  Committed Detection IDs: \(detectionIDs.map(\.rawValue).joined(separator: ","))")
         case .unsupported(let reason), .failed(let reason), .excluded(let reason), .notExecuted(let reason):
-            lines.append("  \(reason.code): \(reason.message)")
+            lines.append("  \(oneLine(reason.code)): \(oneLine(reason.message))")
         }
         return lines
     }
@@ -33,11 +33,23 @@ extension LifecycleReadService {
         let location = detection.location
         return "Detection \(detection.id.rawValue) \(detection.rule.identity) "
             + "\(location.sourcePath.rawValue):\(location.line):\(location.column) "
-            + "\(detection.severity.rawValue): \(detection.message)"
+            + "\(detection.severity.rawValue): \(oneLine(detection.message))"
     }
 
     private func oneLine(_ value: String) -> String {
-        value.replacingOccurrences(of: "\r", with: "\\r")
-            .replacingOccurrences(of: "\n", with: "\\n")
+        var result = ""
+        for scalar in value.unicodeScalars {
+            switch scalar.value {
+            case 9: result += "\\t"
+            case 10: result += "\\n"
+            case 13: result += "\\r"
+            case 92: result += "\\\\"
+            case 0..<32, 127..<160, 0x2028, 0x2029:
+                result += "\\u{\(String(scalar.value, radix: 16, uppercase: true))}"
+            default:
+                result.append(String(scalar))
+            }
+        }
+        return result
     }
 }
