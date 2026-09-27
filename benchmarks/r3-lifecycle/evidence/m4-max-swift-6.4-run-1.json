@@ -1,0 +1,1085 @@
+{
+  "binarySHA256": "591c5bbee75ff02f9a3f48a89bc2bcb742474ea2d95e058a7c5fccc1844e2c3b",
+  "environment": {
+    "cpuModel": "Apple M4 Max",
+    "machine": "arm64",
+    "memoryBytes": 38654705664,
+    "platform": "macOS-27.2-arm64-arm-64bit-Mach-O",
+    "python": "3.13.14",
+    "swift": "Apple Swift version 6.4 (swiftlang-6.4.0.27.1 clang-2100.3.27.1)\nTarget: arm64-apple-macosx27.2.0"
+  },
+  "method": {
+    "fixtureVersion": 3,
+    "historyRevisionBudget": 4,
+    "jobs": 1,
+    "paddingLinesPerFile": 48,
+    "runs": 3,
+    "warmups": 1
+  },
+  "runnerDirty": false,
+  "runnerSHA256": "fc6a6c6d73b0d18baa285dc683fb02a572ab2c1921b2c7d744594522e342fe6d",
+  "schemaVersion": 1,
+  "supportSHA256": "d8f278604d720cb51d315136ac21dc5908be8a62fc22d3e63af57eeba416b78c",
+  "swiftDebtCommit": "dc1b1b51afeb6012bd085ddec1e0de98b71bdf1f",
+  "tiers": {
+    "large": {
+      "coldArtifact": {
+        "bytes": 9232017,
+        "eventKinds": {
+          "continuity-ambiguous": 0,
+          "observed": 0,
+          "opened": 1000,
+          "reopened": 0,
+          "resolved": 0,
+          "unverified": 0
+        },
+        "events": 1000,
+        "findings": 1000,
+        "introductionConclusions": 0,
+        "sha256": "87d3096ef2a7183ddb67a61db700882ae9533dff4073c62e3cc237a3024b379a",
+        "snapshots": 1,
+        "unresolvedDetections": 0
+      },
+      "gitRevisions": {
+        "absent": "4945ed707d45761cd456d82c5ccdd29c5f52db78",
+        "detected": "0399b3490dc46bd5771c3cb6835b15b03ae343ad",
+        "edited": "c9ee0dc113940ea011251e8fdcf05ccc0f1d62ef"
+      },
+      "incrementalArtifact": {
+        "bytes": 24171243,
+        "eventKinds": {
+          "continuity-ambiguous": 0,
+          "observed": 1000,
+          "opened": 1000,
+          "reopened": 0,
+          "resolved": 0,
+          "unverified": 0
+        },
+        "events": 2000,
+        "findings": 1000,
+        "introductionConclusions": 0,
+        "sha256": "8848ce84a837f7636365d84d4a5ee62da64f27afe0d11830f3fa979287cf7829",
+        "snapshots": 2,
+        "unresolvedDetections": 0
+      },
+      "incrementalReconciliation": {
+        "affectedCandidates": 1000,
+        "medianElapsedNanoseconds": 19680583,
+        "samples": [
+          {
+            "ambiguousGroups": 0,
+            "candidates": 1000,
+            "crediblePairs": 1000,
+            "detections": 1000,
+            "evaluatedPairs": 1000,
+            "newFindings": 0,
+            "processingElapsedNanoseconds": 45702083,
+            "reconciliationElapsedNanoseconds": 20505791,
+            "uniqueContinuities": 1000,
+            "unresolvedDetections": 0
+          },
+          {
+            "ambiguousGroups": 0,
+            "candidates": 1000,
+            "crediblePairs": 1000,
+            "detections": 1000,
+            "evaluatedPairs": 1000,
+            "newFindings": 0,
+            "processingElapsedNanoseconds": 52801250,
+            "reconciliationElapsedNanoseconds": 17865417,
+            "uniqueContinuities": 1000,
+            "unresolvedDetections": 0
+          },
+          {
+            "ambiguousGroups": 0,
+            "candidates": 1000,
+            "crediblePairs": 1000,
+            "detections": 1000,
+            "evaluatedPairs": 1000,
+            "newFindings": 0,
+            "processingElapsedNanoseconds": 43754667,
+            "reconciliationElapsedNanoseconds": 19680583,
+            "uniqueContinuities": 1000,
+            "unresolvedDetections": 0
+          }
+        ]
+      },
+      "introductionArtifact": {
+        "bytes": 24914872,
+        "eventKinds": {
+          "continuity-ambiguous": 0,
+          "observed": 0,
+          "opened": 1000,
+          "reopened": 0,
+          "resolved": 0,
+          "unverified": 0
+        },
+        "events": 1000,
+        "examinedRevisions": 2,
+        "findings": 1000,
+        "frontierRevisions": 0,
+        "introductionConclusions": 1,
+        "sha256": "709fbe1c7e82ea7485b6590dae9d87653a83c580c96584d9b1e427c8ffba51fe",
+        "snapshots": 1,
+        "unresolvedDetections": 0
+      },
+      "operations": {
+        "cold": {
+          "maximumPeakRSSBytes": 190775296,
+          "maximumWallSeconds": 1.445034792,
+          "medianWallSeconds": 1.313745375,
+          "samples": [
+            {
+              "peakRSSBytes": 188055552,
+              "wallSeconds": 1.303908583
+            },
+            {
+              "peakRSSBytes": 190775296,
+              "wallSeconds": 1.313745375
+            },
+            {
+              "peakRSSBytes": 190316544,
+              "wallSeconds": 1.445034792
+            }
+          ]
+        },
+        "explain": {
+          "maximumPeakRSSBytes": 81920000,
+          "maximumWallSeconds": 0.4945045,
+          "medianWallSeconds": 0.440883458,
+          "samples": [
+            {
+              "peakRSSBytes": 80429056,
+              "wallSeconds": 0.421286167
+            },
+            {
+              "peakRSSBytes": 80969728,
+              "wallSeconds": 0.440883458
+            },
+            {
+              "peakRSSBytes": 81920000,
+              "wallSeconds": 0.4945045
+            }
+          ]
+        },
+        "incremental": {
+          "maximumPeakRSSBytes": 248774656,
+          "maximumWallSeconds": 2.222476375,
+          "medianWallSeconds": 2.198667083,
+          "samples": [
+            {
+              "peakRSSBytes": 248774656,
+              "reconciliation": {
+                "ambiguousGroups": 0,
+                "candidates": 1000,
+                "crediblePairs": 1000,
+                "detections": 1000,
+                "evaluatedPairs": 1000,
+                "newFindings": 0,
+                "processingElapsedNanoseconds": 45702083,
+                "reconciliationElapsedNanoseconds": 20505791,
+                "uniqueContinuities": 1000,
+                "unresolvedDetections": 0
+              },
+              "wallSeconds": 2.222476375
+            },
+            {
+              "peakRSSBytes": 245268480,
+              "reconciliation": {
+                "ambiguousGroups": 0,
+                "candidates": 1000,
+                "crediblePairs": 1000,
+                "detections": 1000,
+                "evaluatedPairs": 1000,
+                "newFindings": 0,
+                "processingElapsedNanoseconds": 52801250,
+                "reconciliationElapsedNanoseconds": 17865417,
+                "uniqueContinuities": 1000,
+                "unresolvedDetections": 0
+              },
+              "wallSeconds": 2.198667083
+            },
+            {
+              "peakRSSBytes": 247676928,
+              "reconciliation": {
+                "ambiguousGroups": 0,
+                "candidates": 1000,
+                "crediblePairs": 1000,
+                "detections": 1000,
+                "evaluatedPairs": 1000,
+                "newFindings": 0,
+                "processingElapsedNanoseconds": 43754667,
+                "reconciliationElapsedNanoseconds": 19680583,
+                "uniqueContinuities": 1000,
+                "unresolvedDetections": 0
+              },
+              "wallSeconds": 2.139058
+            }
+          ]
+        },
+        "introduction": {
+          "maximumPeakRSSBytes": 187793408,
+          "maximumWallSeconds": 2.856867125,
+          "medianWallSeconds": 2.855565,
+          "samples": [
+            {
+              "history": {
+                "analyzedRevisionCount": 2,
+                "evidenceRevisionCount": 2,
+                "findingID": "finding:snapshot-6d242e33f18c67a7cbc42c40bd4a0d16603544f4dfd745387bbc89cb9b91cf9e:snapshot-6d242e33f18c67a7cbc42c40bd4a0d16603544f4dfd745387bbc89cb9b91cf9e:detection:0",
+                "frontierRevisionCount": 0,
+                "maximumFileBytes": 16777216,
+                "maximumRevisions": 4,
+                "operationElapsedNanoseconds": 1924499792,
+                "recordingStatus": "accepted",
+                "reportKind": "swiftdebt-lifecycle-introduction-profile",
+                "reusedRevisionCount": 0,
+                "schemaVersion": 1
+              },
+              "peakRSSBytes": 187793408,
+              "wallSeconds": 2.776082667
+            },
+            {
+              "history": {
+                "analyzedRevisionCount": 2,
+                "evidenceRevisionCount": 2,
+                "findingID": "finding:snapshot-6d242e33f18c67a7cbc42c40bd4a0d16603544f4dfd745387bbc89cb9b91cf9e:snapshot-6d242e33f18c67a7cbc42c40bd4a0d16603544f4dfd745387bbc89cb9b91cf9e:detection:0",
+                "frontierRevisionCount": 0,
+                "maximumFileBytes": 16777216,
+                "maximumRevisions": 4,
+                "operationElapsedNanoseconds": 1969927458,
+                "recordingStatus": "accepted",
+                "reportKind": "swiftdebt-lifecycle-introduction-profile",
+                "reusedRevisionCount": 0,
+                "schemaVersion": 1
+              },
+              "peakRSSBytes": 185794560,
+              "wallSeconds": 2.855565
+            },
+            {
+              "history": {
+                "analyzedRevisionCount": 2,
+                "evidenceRevisionCount": 2,
+                "findingID": "finding:snapshot-6d242e33f18c67a7cbc42c40bd4a0d16603544f4dfd745387bbc89cb9b91cf9e:snapshot-6d242e33f18c67a7cbc42c40bd4a0d16603544f4dfd745387bbc89cb9b91cf9e:detection:0",
+                "frontierRevisionCount": 0,
+                "maximumFileBytes": 16777216,
+                "maximumRevisions": 4,
+                "operationElapsedNanoseconds": 1978402834,
+                "recordingStatus": "accepted",
+                "reportKind": "swiftdebt-lifecycle-introduction-profile",
+                "reusedRevisionCount": 0,
+                "schemaVersion": 1
+              },
+              "peakRSSBytes": 181682176,
+              "wallSeconds": 2.856867125
+            }
+          ]
+        },
+        "introductionRepeat": {
+          "maximumPeakRSSBytes": 194412544,
+          "maximumWallSeconds": 4.225162666,
+          "medianWallSeconds": 3.893847875,
+          "samples": [
+            {
+              "history": {
+                "analyzedRevisionCount": 1,
+                "evidenceRevisionCount": 2,
+                "findingID": "finding:snapshot-6d242e33f18c67a7cbc42c40bd4a0d16603544f4dfd745387bbc89cb9b91cf9e:snapshot-6d242e33f18c67a7cbc42c40bd4a0d16603544f4dfd745387bbc89cb9b91cf9e:detection:0",
+                "frontierRevisionCount": 0,
+                "maximumFileBytes": 16777216,
+                "maximumRevisions": 4,
+                "operationElapsedNanoseconds": 2741633458,
+                "recordingStatus": "already-present",
+                "reportKind": "swiftdebt-lifecycle-introduction-profile",
+                "reusedRevisionCount": 1,
+                "schemaVersion": 1
+              },
+              "peakRSSBytes": 193052672,
+              "wallSeconds": 4.225162666
+            },
+            {
+              "history": {
+                "analyzedRevisionCount": 1,
+                "evidenceRevisionCount": 2,
+                "findingID": "finding:snapshot-6d242e33f18c67a7cbc42c40bd4a0d16603544f4dfd745387bbc89cb9b91cf9e:snapshot-6d242e33f18c67a7cbc42c40bd4a0d16603544f4dfd745387bbc89cb9b91cf9e:detection:0",
+                "frontierRevisionCount": 0,
+                "maximumFileBytes": 16777216,
+                "maximumRevisions": 4,
+                "operationElapsedNanoseconds": 2912201250,
+                "recordingStatus": "already-present",
+                "reportKind": "swiftdebt-lifecycle-introduction-profile",
+                "reusedRevisionCount": 1,
+                "schemaVersion": 1
+              },
+              "peakRSSBytes": 194412544,
+              "wallSeconds": 3.893847875
+            },
+            {
+              "history": {
+                "analyzedRevisionCount": 1,
+                "evidenceRevisionCount": 2,
+                "findingID": "finding:snapshot-6d242e33f18c67a7cbc42c40bd4a0d16603544f4dfd745387bbc89cb9b91cf9e:snapshot-6d242e33f18c67a7cbc42c40bd4a0d16603544f4dfd745387bbc89cb9b91cf9e:detection:0",
+                "frontierRevisionCount": 0,
+                "maximumFileBytes": 16777216,
+                "maximumRevisions": 4,
+                "operationElapsedNanoseconds": 2355702292,
+                "recordingStatus": "already-present",
+                "reportKind": "swiftdebt-lifecycle-introduction-profile",
+                "reusedRevisionCount": 1,
+                "schemaVersion": 1
+              },
+              "peakRSSBytes": 192380928,
+              "wallSeconds": 3.213913583
+            }
+          ]
+        },
+        "inventory": {
+          "maximumPeakRSSBytes": 59359232,
+          "maximumWallSeconds": 0.358320417,
+          "medianWallSeconds": 0.3378065,
+          "samples": [
+            {
+              "peakRSSBytes": 56852480,
+              "wallSeconds": 0.3378065
+            },
+            {
+              "peakRSSBytes": 57212928,
+              "wallSeconds": 0.331065625
+            },
+            {
+              "peakRSSBytes": 59359232,
+              "wallSeconds": 0.358320417
+            }
+          ]
+        },
+        "replay": {
+          "maximumPeakRSSBytes": 191102976,
+          "maximumWallSeconds": 2.082576333,
+          "medianWallSeconds": 1.8092995,
+          "samples": [
+            {
+              "peakRSSBytes": 191102976,
+              "wallSeconds": 2.082576333
+            },
+            {
+              "peakRSSBytes": 186253312,
+              "wallSeconds": 1.802683666
+            },
+            {
+              "peakRSSBytes": 190087168,
+              "wallSeconds": 1.8092995
+            }
+          ]
+        }
+      },
+      "sourceFiles": 1000,
+      "sourceLines": 50000
+    },
+    "medium": {
+      "coldArtifact": {
+        "bytes": 925817,
+        "eventKinds": {
+          "continuity-ambiguous": 0,
+          "observed": 0,
+          "opened": 100,
+          "reopened": 0,
+          "resolved": 0,
+          "unverified": 0
+        },
+        "events": 100,
+        "findings": 100,
+        "introductionConclusions": 0,
+        "sha256": "cf50ecf5a4e5f25af86afb8516134eafe47bd6565c793aa514207ebcadbda1fa",
+        "snapshots": 1,
+        "unresolvedDetections": 0
+      },
+      "gitRevisions": {
+        "absent": "de18dcf4f53d76bc1d1b0f1c983c6443dfc6652f",
+        "detected": "c6f17617e25e273f84448e3386e48d0dd17b8211",
+        "edited": "ce29b919d6be394d65f11e9ad7f6fca114a6a7d7"
+      },
+      "incrementalArtifact": {
+        "bytes": 2422543,
+        "eventKinds": {
+          "continuity-ambiguous": 0,
+          "observed": 100,
+          "opened": 100,
+          "reopened": 0,
+          "resolved": 0,
+          "unverified": 0
+        },
+        "events": 200,
+        "findings": 100,
+        "introductionConclusions": 0,
+        "sha256": "5d873ea6c2c2392d590eb454de0edbf489591eae6bd9ea15c2f036427e64b44a",
+        "snapshots": 2,
+        "unresolvedDetections": 0
+      },
+      "incrementalReconciliation": {
+        "affectedCandidates": 100,
+        "medianElapsedNanoseconds": 1800458,
+        "samples": [
+          {
+            "ambiguousGroups": 0,
+            "candidates": 100,
+            "crediblePairs": 100,
+            "detections": 100,
+            "evaluatedPairs": 100,
+            "newFindings": 0,
+            "processingElapsedNanoseconds": 3311500,
+            "reconciliationElapsedNanoseconds": 1800458,
+            "uniqueContinuities": 100,
+            "unresolvedDetections": 0
+          },
+          {
+            "ambiguousGroups": 0,
+            "candidates": 100,
+            "crediblePairs": 100,
+            "detections": 100,
+            "evaluatedPairs": 100,
+            "newFindings": 0,
+            "processingElapsedNanoseconds": 3325375,
+            "reconciliationElapsedNanoseconds": 1827625,
+            "uniqueContinuities": 100,
+            "unresolvedDetections": 0
+          },
+          {
+            "ambiguousGroups": 0,
+            "candidates": 100,
+            "crediblePairs": 100,
+            "detections": 100,
+            "evaluatedPairs": 100,
+            "newFindings": 0,
+            "processingElapsedNanoseconds": 3277875,
+            "reconciliationElapsedNanoseconds": 1799125,
+            "uniqueContinuities": 100,
+            "unresolvedDetections": 0
+          }
+        ]
+      },
+      "introductionArtifact": {
+        "bytes": 2512872,
+        "eventKinds": {
+          "continuity-ambiguous": 0,
+          "observed": 0,
+          "opened": 100,
+          "reopened": 0,
+          "resolved": 0,
+          "unverified": 0
+        },
+        "events": 100,
+        "examinedRevisions": 2,
+        "findings": 100,
+        "frontierRevisions": 0,
+        "introductionConclusions": 1,
+        "sha256": "c1ee0271455e8fbbc04c7f7f2da19864ce4d96d240d473fa99808f4fe8157adb",
+        "snapshots": 1,
+        "unresolvedDetections": 0
+      },
+      "operations": {
+        "cold": {
+          "maximumPeakRSSBytes": 36962304,
+          "maximumWallSeconds": 0.21206775,
+          "medianWallSeconds": 0.192632667,
+          "samples": [
+            {
+              "peakRSSBytes": 36225024,
+              "wallSeconds": 0.192632667
+            },
+            {
+              "peakRSSBytes": 36962304,
+              "wallSeconds": 0.21206775
+            },
+            {
+              "peakRSSBytes": 36274176,
+              "wallSeconds": 0.189524125
+            }
+          ]
+        },
+        "explain": {
+          "maximumPeakRSSBytes": 17432576,
+          "maximumWallSeconds": 0.033307458,
+          "medianWallSeconds": 0.033285417,
+          "samples": [
+            {
+              "peakRSSBytes": 17432576,
+              "wallSeconds": 0.03274425
+            },
+            {
+              "peakRSSBytes": 17367040,
+              "wallSeconds": 0.033285417
+            },
+            {
+              "peakRSSBytes": 17416192,
+              "wallSeconds": 0.033307458
+            }
+          ]
+        },
+        "incremental": {
+          "maximumPeakRSSBytes": 42762240,
+          "maximumWallSeconds": 0.234697625,
+          "medianWallSeconds": 0.233281,
+          "samples": [
+            {
+              "peakRSSBytes": 42696704,
+              "reconciliation": {
+                "ambiguousGroups": 0,
+                "candidates": 100,
+                "crediblePairs": 100,
+                "detections": 100,
+                "evaluatedPairs": 100,
+                "newFindings": 0,
+                "processingElapsedNanoseconds": 3311500,
+                "reconciliationElapsedNanoseconds": 1800458,
+                "uniqueContinuities": 100,
+                "unresolvedDetections": 0
+              },
+              "wallSeconds": 0.233281
+            },
+            {
+              "peakRSSBytes": 42614784,
+              "reconciliation": {
+                "ambiguousGroups": 0,
+                "candidates": 100,
+                "crediblePairs": 100,
+                "detections": 100,
+                "evaluatedPairs": 100,
+                "newFindings": 0,
+                "processingElapsedNanoseconds": 3325375,
+                "reconciliationElapsedNanoseconds": 1827625,
+                "uniqueContinuities": 100,
+                "unresolvedDetections": 0
+              },
+              "wallSeconds": 0.234697625
+            },
+            {
+              "peakRSSBytes": 42762240,
+              "reconciliation": {
+                "ambiguousGroups": 0,
+                "candidates": 100,
+                "crediblePairs": 100,
+                "detections": 100,
+                "evaluatedPairs": 100,
+                "newFindings": 0,
+                "processingElapsedNanoseconds": 3277875,
+                "reconciliationElapsedNanoseconds": 1799125,
+                "uniqueContinuities": 100,
+                "unresolvedDetections": 0
+              },
+              "wallSeconds": 0.230102458
+            }
+          ]
+        },
+        "introduction": {
+          "maximumPeakRSSBytes": 40255488,
+          "maximumWallSeconds": 0.3582385,
+          "medianWallSeconds": 0.354130541,
+          "samples": [
+            {
+              "history": {
+                "analyzedRevisionCount": 2,
+                "evidenceRevisionCount": 2,
+                "findingID": "finding:snapshot-0592e666b68c971a0f0af71a64fabcdf0234ca0981c8b87c13d294a2e0ae9356:snapshot-0592e666b68c971a0f0af71a64fabcdf0234ca0981c8b87c13d294a2e0ae9356:detection:0",
+                "frontierRevisionCount": 0,
+                "maximumFileBytes": 16777216,
+                "maximumRevisions": 4,
+                "operationElapsedNanoseconds": 291624125,
+                "recordingStatus": "accepted",
+                "reportKind": "swiftdebt-lifecycle-introduction-profile",
+                "reusedRevisionCount": 0,
+                "schemaVersion": 1
+              },
+              "peakRSSBytes": 40157184,
+              "wallSeconds": 0.353879708
+            },
+            {
+              "history": {
+                "analyzedRevisionCount": 2,
+                "evidenceRevisionCount": 2,
+                "findingID": "finding:snapshot-0592e666b68c971a0f0af71a64fabcdf0234ca0981c8b87c13d294a2e0ae9356:snapshot-0592e666b68c971a0f0af71a64fabcdf0234ca0981c8b87c13d294a2e0ae9356:detection:0",
+                "frontierRevisionCount": 0,
+                "maximumFileBytes": 16777216,
+                "maximumRevisions": 4,
+                "operationElapsedNanoseconds": 290857125,
+                "recordingStatus": "accepted",
+                "reportKind": "swiftdebt-lifecycle-introduction-profile",
+                "reusedRevisionCount": 0,
+                "schemaVersion": 1
+              },
+              "peakRSSBytes": 40239104,
+              "wallSeconds": 0.354130541
+            },
+            {
+              "history": {
+                "analyzedRevisionCount": 2,
+                "evidenceRevisionCount": 2,
+                "findingID": "finding:snapshot-0592e666b68c971a0f0af71a64fabcdf0234ca0981c8b87c13d294a2e0ae9356:snapshot-0592e666b68c971a0f0af71a64fabcdf0234ca0981c8b87c13d294a2e0ae9356:detection:0",
+                "frontierRevisionCount": 0,
+                "maximumFileBytes": 16777216,
+                "maximumRevisions": 4,
+                "operationElapsedNanoseconds": 294979542,
+                "recordingStatus": "accepted",
+                "reportKind": "swiftdebt-lifecycle-introduction-profile",
+                "reusedRevisionCount": 0,
+                "schemaVersion": 1
+              },
+              "peakRSSBytes": 40255488,
+              "wallSeconds": 0.3582385
+            }
+          ]
+        },
+        "introductionRepeat": {
+          "maximumPeakRSSBytes": 35110912,
+          "maximumWallSeconds": 0.379541,
+          "medianWallSeconds": 0.372339459,
+          "samples": [
+            {
+              "history": {
+                "analyzedRevisionCount": 1,
+                "evidenceRevisionCount": 2,
+                "findingID": "finding:snapshot-0592e666b68c971a0f0af71a64fabcdf0234ca0981c8b87c13d294a2e0ae9356:snapshot-0592e666b68c971a0f0af71a64fabcdf0234ca0981c8b87c13d294a2e0ae9356:detection:0",
+                "frontierRevisionCount": 0,
+                "maximumFileBytes": 16777216,
+                "maximumRevisions": 4,
+                "operationElapsedNanoseconds": 306755709,
+                "recordingStatus": "already-present",
+                "reportKind": "swiftdebt-lifecycle-introduction-profile",
+                "reusedRevisionCount": 1,
+                "schemaVersion": 1
+              },
+              "peakRSSBytes": 34734080,
+              "wallSeconds": 0.370408625
+            },
+            {
+              "history": {
+                "analyzedRevisionCount": 1,
+                "evidenceRevisionCount": 2,
+                "findingID": "finding:snapshot-0592e666b68c971a0f0af71a64fabcdf0234ca0981c8b87c13d294a2e0ae9356:snapshot-0592e666b68c971a0f0af71a64fabcdf0234ca0981c8b87c13d294a2e0ae9356:detection:0",
+                "frontierRevisionCount": 0,
+                "maximumFileBytes": 16777216,
+                "maximumRevisions": 4,
+                "operationElapsedNanoseconds": 315328541,
+                "recordingStatus": "already-present",
+                "reportKind": "swiftdebt-lifecycle-introduction-profile",
+                "reusedRevisionCount": 1,
+                "schemaVersion": 1
+              },
+              "peakRSSBytes": 34897920,
+              "wallSeconds": 0.379541
+            },
+            {
+              "history": {
+                "analyzedRevisionCount": 1,
+                "evidenceRevisionCount": 2,
+                "findingID": "finding:snapshot-0592e666b68c971a0f0af71a64fabcdf0234ca0981c8b87c13d294a2e0ae9356:snapshot-0592e666b68c971a0f0af71a64fabcdf0234ca0981c8b87c13d294a2e0ae9356:detection:0",
+                "frontierRevisionCount": 0,
+                "maximumFileBytes": 16777216,
+                "maximumRevisions": 4,
+                "operationElapsedNanoseconds": 308376500,
+                "recordingStatus": "already-present",
+                "reportKind": "swiftdebt-lifecycle-introduction-profile",
+                "reusedRevisionCount": 1,
+                "schemaVersion": 1
+              },
+              "peakRSSBytes": 35110912,
+              "wallSeconds": 0.372339459
+            }
+          ]
+        },
+        "inventory": {
+          "maximumPeakRSSBytes": 15122432,
+          "maximumWallSeconds": 0.034374709,
+          "medianWallSeconds": 0.028559625,
+          "samples": [
+            {
+              "peakRSSBytes": 15073280,
+              "wallSeconds": 0.034374709
+            },
+            {
+              "peakRSSBytes": 15024128,
+              "wallSeconds": 0.028253208
+            },
+            {
+              "peakRSSBytes": 15122432,
+              "wallSeconds": 0.028559625
+            }
+          ]
+        },
+        "replay": {
+          "maximumPeakRSSBytes": 37208064,
+          "maximumWallSeconds": 0.251831875,
+          "medianWallSeconds": 0.19122875,
+          "samples": [
+            {
+              "peakRSSBytes": 37142528,
+              "wallSeconds": 0.190469542
+            },
+            {
+              "peakRSSBytes": 37208064,
+              "wallSeconds": 0.251831875
+            },
+            {
+              "peakRSSBytes": 37093376,
+              "wallSeconds": 0.19122875
+            }
+          ]
+        }
+      },
+      "sourceFiles": 100,
+      "sourceLines": 5000
+    },
+    "small": {
+      "coldArtifact": {
+        "bytes": 96637,
+        "eventKinds": {
+          "continuity-ambiguous": 0,
+          "observed": 0,
+          "opened": 10,
+          "reopened": 0,
+          "resolved": 0,
+          "unverified": 0
+        },
+        "events": 10,
+        "findings": 10,
+        "introductionConclusions": 0,
+        "sha256": "93a44ffc0b0b127c07875463ad1ee3206496c1fb73dc06627a22d381d5a7b24a",
+        "snapshots": 1,
+        "unresolvedDetections": 0
+      },
+      "gitRevisions": {
+        "absent": "3835306dd71756a4c1b3a0bd1eb5076fd2b54994",
+        "detected": "5c3eec08fd98a636056d9218bce42a401ffe0c23",
+        "edited": "17bc418c0c2411f3838d3845ac01f701332c967e"
+      },
+      "incrementalArtifact": {
+        "bytes": 250643,
+        "eventKinds": {
+          "continuity-ambiguous": 0,
+          "observed": 10,
+          "opened": 10,
+          "reopened": 0,
+          "resolved": 0,
+          "unverified": 0
+        },
+        "events": 20,
+        "findings": 10,
+        "introductionConclusions": 0,
+        "sha256": "5a79c0b3236254d8d0f0687d13262690a2453c2c0fd2804a5e679158811613d9",
+        "snapshots": 2,
+        "unresolvedDetections": 0
+      },
+      "incrementalReconciliation": {
+        "affectedCandidates": 10,
+        "medianElapsedNanoseconds": 277000,
+        "samples": [
+          {
+            "ambiguousGroups": 0,
+            "candidates": 10,
+            "crediblePairs": 10,
+            "detections": 10,
+            "evaluatedPairs": 10,
+            "newFindings": 0,
+            "processingElapsedNanoseconds": 421916,
+            "reconciliationElapsedNanoseconds": 262959,
+            "uniqueContinuities": 10,
+            "unresolvedDetections": 0
+          },
+          {
+            "ambiguousGroups": 0,
+            "candidates": 10,
+            "crediblePairs": 10,
+            "detections": 10,
+            "evaluatedPairs": 10,
+            "newFindings": 0,
+            "processingElapsedNanoseconds": 436000,
+            "reconciliationElapsedNanoseconds": 277000,
+            "uniqueContinuities": 10,
+            "unresolvedDetections": 0
+          },
+          {
+            "ambiguousGroups": 0,
+            "candidates": 10,
+            "crediblePairs": 10,
+            "detections": 10,
+            "evaluatedPairs": 10,
+            "newFindings": 0,
+            "processingElapsedNanoseconds": 444542,
+            "reconciliationElapsedNanoseconds": 284000,
+            "uniqueContinuities": 10,
+            "unresolvedDetections": 0
+          }
+        ]
+      },
+      "introductionArtifact": {
+        "bytes": 276092,
+        "eventKinds": {
+          "continuity-ambiguous": 0,
+          "observed": 0,
+          "opened": 10,
+          "reopened": 0,
+          "resolved": 0,
+          "unverified": 0
+        },
+        "events": 10,
+        "examinedRevisions": 2,
+        "findings": 10,
+        "frontierRevisions": 0,
+        "introductionConclusions": 1,
+        "sha256": "39531b72da2d7496e178da1d6f0f9946dbb517ccd3a75bc6a0723871bc942955",
+        "snapshots": 1,
+        "unresolvedDetections": 0
+      },
+      "operations": {
+        "cold": {
+          "maximumPeakRSSBytes": 20135936,
+          "maximumWallSeconds": 0.148882875,
+          "medianWallSeconds": 0.139125417,
+          "samples": [
+            {
+              "peakRSSBytes": 20135936,
+              "wallSeconds": 0.148882875
+            },
+            {
+              "peakRSSBytes": 20103168,
+              "wallSeconds": 0.139125417
+            },
+            {
+              "peakRSSBytes": 19759104,
+              "wallSeconds": 0.132828
+            }
+          ]
+        },
+        "explain": {
+          "maximumPeakRSSBytes": 11124736,
+          "maximumWallSeconds": 0.015803541,
+          "medianWallSeconds": 0.012987209,
+          "samples": [
+            {
+              "peakRSSBytes": 11124736,
+              "wallSeconds": 0.011908583
+            },
+            {
+              "peakRSSBytes": 10944512,
+              "wallSeconds": 0.012987209
+            },
+            {
+              "peakRSSBytes": 11042816,
+              "wallSeconds": 0.015803541
+            }
+          ]
+        },
+        "incremental": {
+          "maximumPeakRSSBytes": 20742144,
+          "maximumWallSeconds": 0.133401167,
+          "medianWallSeconds": 0.132252208,
+          "samples": [
+            {
+              "peakRSSBytes": 20742144,
+              "reconciliation": {
+                "ambiguousGroups": 0,
+                "candidates": 10,
+                "crediblePairs": 10,
+                "detections": 10,
+                "evaluatedPairs": 10,
+                "newFindings": 0,
+                "processingElapsedNanoseconds": 421916,
+                "reconciliationElapsedNanoseconds": 262959,
+                "uniqueContinuities": 10,
+                "unresolvedDetections": 0
+              },
+              "wallSeconds": 0.1316925
+            },
+            {
+              "peakRSSBytes": 20627456,
+              "reconciliation": {
+                "ambiguousGroups": 0,
+                "candidates": 10,
+                "crediblePairs": 10,
+                "detections": 10,
+                "evaluatedPairs": 10,
+                "newFindings": 0,
+                "processingElapsedNanoseconds": 436000,
+                "reconciliationElapsedNanoseconds": 277000,
+                "uniqueContinuities": 10,
+                "unresolvedDetections": 0
+              },
+              "wallSeconds": 0.133401167
+            },
+            {
+              "peakRSSBytes": 20709376,
+              "reconciliation": {
+                "ambiguousGroups": 0,
+                "candidates": 10,
+                "crediblePairs": 10,
+                "detections": 10,
+                "evaluatedPairs": 10,
+                "newFindings": 0,
+                "processingElapsedNanoseconds": 444542,
+                "reconciliationElapsedNanoseconds": 284000,
+                "uniqueContinuities": 10,
+                "unresolvedDetections": 0
+              },
+              "wallSeconds": 0.132252208
+            }
+          ]
+        },
+        "introduction": {
+          "maximumPeakRSSBytes": 19791872,
+          "maximumWallSeconds": 0.213564709,
+          "medianWallSeconds": 0.21245525,
+          "samples": [
+            {
+              "history": {
+                "analyzedRevisionCount": 2,
+                "evidenceRevisionCount": 2,
+                "findingID": "finding:snapshot-c496266d6115a9307c83aa31dd618d362b744e1ddc54a37d15b6a047ae6e785c:snapshot-c496266d6115a9307c83aa31dd618d362b744e1ddc54a37d15b6a047ae6e785c:detection:0",
+                "frontierRevisionCount": 0,
+                "maximumFileBytes": 16777216,
+                "maximumRevisions": 4,
+                "operationElapsedNanoseconds": 197066291,
+                "recordingStatus": "accepted",
+                "reportKind": "swiftdebt-lifecycle-introduction-profile",
+                "reusedRevisionCount": 0,
+                "schemaVersion": 1
+              },
+              "peakRSSBytes": 19693568,
+              "wallSeconds": 0.213564709
+            },
+            {
+              "history": {
+                "analyzedRevisionCount": 2,
+                "evidenceRevisionCount": 2,
+                "findingID": "finding:snapshot-c496266d6115a9307c83aa31dd618d362b744e1ddc54a37d15b6a047ae6e785c:snapshot-c496266d6115a9307c83aa31dd618d362b744e1ddc54a37d15b6a047ae6e785c:detection:0",
+                "frontierRevisionCount": 0,
+                "maximumFileBytes": 16777216,
+                "maximumRevisions": 4,
+                "operationElapsedNanoseconds": 196173125,
+                "recordingStatus": "accepted",
+                "reportKind": "swiftdebt-lifecycle-introduction-profile",
+                "reusedRevisionCount": 0,
+                "schemaVersion": 1
+              },
+              "peakRSSBytes": 19791872,
+              "wallSeconds": 0.21245525
+            },
+            {
+              "history": {
+                "analyzedRevisionCount": 2,
+                "evidenceRevisionCount": 2,
+                "findingID": "finding:snapshot-c496266d6115a9307c83aa31dd618d362b744e1ddc54a37d15b6a047ae6e785c:snapshot-c496266d6115a9307c83aa31dd618d362b744e1ddc54a37d15b6a047ae6e785c:detection:0",
+                "frontierRevisionCount": 0,
+                "maximumFileBytes": 16777216,
+                "maximumRevisions": 4,
+                "operationElapsedNanoseconds": 192671750,
+                "recordingStatus": "accepted",
+                "reportKind": "swiftdebt-lifecycle-introduction-profile",
+                "reusedRevisionCount": 0,
+                "schemaVersion": 1
+              },
+              "peakRSSBytes": 19660800,
+              "wallSeconds": 0.209724917
+            }
+          ]
+        },
+        "introductionRepeat": {
+          "maximumPeakRSSBytes": 19628032,
+          "maximumWallSeconds": 0.201641333,
+          "medianWallSeconds": 0.197684125,
+          "samples": [
+            {
+              "history": {
+                "analyzedRevisionCount": 1,
+                "evidenceRevisionCount": 2,
+                "findingID": "finding:snapshot-c496266d6115a9307c83aa31dd618d362b744e1ddc54a37d15b6a047ae6e785c:snapshot-c496266d6115a9307c83aa31dd618d362b744e1ddc54a37d15b6a047ae6e785c:detection:0",
+                "frontierRevisionCount": 0,
+                "maximumFileBytes": 16777216,
+                "maximumRevisions": 4,
+                "operationElapsedNanoseconds": 182482333,
+                "recordingStatus": "already-present",
+                "reportKind": "swiftdebt-lifecycle-introduction-profile",
+                "reusedRevisionCount": 1,
+                "schemaVersion": 1
+              },
+              "peakRSSBytes": 19595264,
+              "wallSeconds": 0.201641333
+            },
+            {
+              "history": {
+                "analyzedRevisionCount": 1,
+                "evidenceRevisionCount": 2,
+                "findingID": "finding:snapshot-c496266d6115a9307c83aa31dd618d362b744e1ddc54a37d15b6a047ae6e785c:snapshot-c496266d6115a9307c83aa31dd618d362b744e1ddc54a37d15b6a047ae6e785c:detection:0",
+                "frontierRevisionCount": 0,
+                "maximumFileBytes": 16777216,
+                "maximumRevisions": 4,
+                "operationElapsedNanoseconds": 181426292,
+                "recordingStatus": "already-present",
+                "reportKind": "swiftdebt-lifecycle-introduction-profile",
+                "reusedRevisionCount": 1,
+                "schemaVersion": 1
+              },
+              "peakRSSBytes": 19628032,
+              "wallSeconds": 0.197684125
+            },
+            {
+              "history": {
+                "analyzedRevisionCount": 1,
+                "evidenceRevisionCount": 2,
+                "findingID": "finding:snapshot-c496266d6115a9307c83aa31dd618d362b744e1ddc54a37d15b6a047ae6e785c:snapshot-c496266d6115a9307c83aa31dd618d362b744e1ddc54a37d15b6a047ae6e785c:detection:0",
+                "frontierRevisionCount": 0,
+                "maximumFileBytes": 16777216,
+                "maximumRevisions": 4,
+                "operationElapsedNanoseconds": 178841416,
+                "recordingStatus": "already-present",
+                "reportKind": "swiftdebt-lifecycle-introduction-profile",
+                "reusedRevisionCount": 1,
+                "schemaVersion": 1
+              },
+              "peakRSSBytes": 19562496,
+              "wallSeconds": 0.194300958
+            }
+          ]
+        },
+        "inventory": {
+          "maximumPeakRSSBytes": 10797056,
+          "maximumWallSeconds": 0.012218625,
+          "medianWallSeconds": 0.011799959,
+          "samples": [
+            {
+              "peakRSSBytes": 10797056,
+              "wallSeconds": 0.011799959
+            },
+            {
+              "peakRSSBytes": 10780672,
+              "wallSeconds": 0.012218625
+            },
+            {
+              "peakRSSBytes": 10698752,
+              "wallSeconds": 0.011563333
+            }
+          ]
+        },
+        "replay": {
+          "maximumPeakRSSBytes": 20201472,
+          "maximumWallSeconds": 0.145988667,
+          "medianWallSeconds": 0.139064041,
+          "samples": [
+            {
+              "peakRSSBytes": 20201472,
+              "wallSeconds": 0.145988667
+            },
+            {
+              "peakRSSBytes": 19775488,
+              "wallSeconds": 0.139064041
+            },
+            {
+              "peakRSSBytes": 19955712,
+              "wallSeconds": 0.134826666
+            }
+          ]
+        }
+      },
+      "sourceFiles": 10,
+      "sourceLines": 500
+    }
+  }
+}
