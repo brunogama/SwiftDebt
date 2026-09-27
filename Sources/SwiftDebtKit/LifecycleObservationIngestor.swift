@@ -31,10 +31,9 @@ struct LifecycleObservationIngestor: Sendable {
         capture: LifecycleAnalysisCapture,
         engineVersion: String,
         artifactURL: URL,
+        capabilities: [SnapshotCapability],
         profileReconciliation: Bool = false
     ) throws -> LifecycleReduction {
-        let capability = try SnapshotCapability(name: "syntax-analysis", state: .available)
-        let capabilities = [capability]
         let effectiveConfiguration = try LifecycleCanonicalDigest.effectiveConfiguration(
             analysis: analysis,
             capture: capture
