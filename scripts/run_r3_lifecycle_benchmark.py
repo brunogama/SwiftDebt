@@ -229,6 +229,8 @@ def run_tier(binary: Path, source_count: int, runs: int, warmups: int) -> dict[s
 
 
 def budget_failures(result: dict[str, object], budgets: dict[str, object]) -> list[str]:
+    if result.get("runnerDirty"):
+        raise RuntimeError("R3 lifecycle budget requires a clean runner checkout")
     if budgets["fixtureVersion"] != FIXTURE_VERSION:
         raise RuntimeError("R3 lifecycle budget fixture version does not match this script")
     environment = result["environment"]

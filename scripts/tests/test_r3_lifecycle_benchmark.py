@@ -95,6 +95,7 @@ class R3LifecycleBenchmarkValidationTests(unittest.TestCase):
 
     def test_calibrated_budget_rejects_measured_regression(self) -> None:
         result = {
+            "runnerDirty": False,
             "environment": {"cpuModel": "fixture CPU", "swift": "fixture Swift"},
             "tiers": {"small": {
                 "coldArtifact": {"bytes": 100},
@@ -131,6 +132,9 @@ class R3LifecycleBenchmarkValidationTests(unittest.TestCase):
             budget_failures(result, budgets),
             ["small: artifact exceeds byte limit", "small/cold: peak RSS exceeds limit"],
         )
+        result["runnerDirty"] = True
+        with self.assertRaisesRegex(RuntimeError, "clean runner checkout"):
+            budget_failures(result, budgets)
 
     def test_introduction_profile_is_bound_to_persisted_history(self) -> None:
         conclusion = {
