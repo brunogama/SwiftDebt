@@ -4,7 +4,7 @@ import Testing
 
 @Suite("R3 Git introduction profile CLI acceptance")
 struct IntroductionProfileCLIWorkflowTests {
-    @Test("Introduction profiling reports repeated analysis without claiming cache reuse")
+    @Test("Introduction profiling reuses matching persisted history without changing evidence")
     func introductionProfileMeasuresCurrentReuseTruthfully() throws {
         let fixture = try TemporaryLifecycleGitRepository()
         _ = try fixture.commit(source: Self.absentSource, message: "add clean implementation")
@@ -13,6 +13,8 @@ struct IntroductionProfileCLIWorkflowTests {
         let original = try LifecycleArtifactStore(artifactURL: fixture.artifact).load()
         let finding = try #require(original.findings.first)
         let profileURL = fixture.directory.appendingPathComponent("introduction-profile.json")
+        let forcedColdProfile = fixture.directory.appendingPathComponent("forced-cold-profile.json")
+        let initialArtifactBytes = try Data(contentsOf: fixture.artifact)
 
         let first = try inferIntroduction(
             finding.id,
@@ -49,10 +51,112 @@ struct IntroductionProfileCLIWorkflowTests {
         let alreadyPresent = try introductionProfile(at: profileURL)
         #expect(alreadyPresent["recordingStatus"] as? String == "already-present")
         #expect(alreadyPresent["evidenceRevisionCount"] as? Int == 2)
-        #expect(alreadyPresent["analyzedRevisionCount"] as? Int == 2)
-        #expect(alreadyPresent["reusedRevisionCount"] as? Int == 0)
+        #expect(alreadyPresent["analyzedRevisionCount"] as? Int == 0)
+        #expect(alreadyPresent["reusedRevisionCount"] as? Int == 2)
         #expect(repeated.standardOutput == first.standardOutput)
         #expect(try Data(contentsOf: fixture.artifact) == exactBytes)
+
+        try initialArtifactBytes.write(to: fixture.artifact, options: .atomic)
+        let forcedCold = try inferIntroduction(
+            finding.id,
+            repository: fixture.repository,
+            artifact: fixture.artifact,
+            maximumRevisions: 4,
+            profile: forcedColdProfile
+        )
+
+        #expect(forcedCold.status == 0, "\(forcedCold.standardError)")
+        let coldOracle = try introductionProfile(at: forcedColdProfile)
+        #expect(coldOracle["recordingStatus"] as? String == "accepted")
+        #expect(coldOracle["analyzedRevisionCount"] as? Int == 2)
+        #expect(coldOracle["reusedRevisionCount"] as? Int == 0)
+        #expect(forcedCold.standardOutput == repeated.standardOutput)
+        #expect(try Data(contentsOf: fixture.artifact) == exactBytes)
+    }
+
+    @Test("File budget changes invalidate persisted history without poisoning later reuse")
+    func fileBudgetInvalidatesReuse() throws {
+        let fixture = try TemporaryLifecycleGitRepository()
+        _ = try fixture.commit(source: Self.absentSource, message: "add clean implementation")
+        _ = try fixture.commit(source: Self.detectedSource, message: "introduce forced try")
+        #expect(try analyze(repository: fixture.repository, artifact: fixture.artifact).status == 0)
+        let artifact = try LifecycleArtifactStore(artifactURL: fixture.artifact).load()
+        let finding = try #require(artifact.findings.first)
+        let profileURL = fixture.directory.appendingPathComponent("introduction-profile.json")
+
+        let first = try inferIntroduction(
+            finding.id,
+            repository: fixture.repository,
+            artifact: fixture.artifact,
+            maximumRevisions: 4,
+            maximumFileBytes: 1_024,
+            profile: profileURL
+        )
+        #expect(first.status == 0, "\(first.standardError)")
+
+        let changed = try inferIntroduction(
+            finding.id,
+            repository: fixture.repository,
+            artifact: fixture.artifact,
+            maximumRevisions: 4,
+            maximumFileBytes: 2_048,
+            profile: profileURL
+        )
+
+        #expect(changed.status == 0, "\(changed.standardError)")
+        let cold = try introductionProfile(at: profileURL)
+        #expect(cold["recordingStatus"] as? String == "accepted")
+        #expect(cold["analyzedRevisionCount"] as? Int == 2)
+        #expect(cold["reusedRevisionCount"] as? Int == 0)
+
+        let repeated = try inferIntroduction(
+            finding.id,
+            repository: fixture.repository,
+            artifact: fixture.artifact,
+            maximumRevisions: 4,
+            maximumFileBytes: 2_048,
+            profile: profileURL
+        )
+
+        #expect(repeated.status == 0, "\(repeated.standardError)")
+        let warm = try introductionProfile(at: profileURL)
+        #expect(warm["recordingStatus"] as? String == "already-present")
+        #expect(warm["analyzedRevisionCount"] as? Int == 0)
+        #expect(warm["reusedRevisionCount"] as? Int == 2)
+    }
+
+    @Test("Dirty repository state never reuses clean persisted history")
+    func dirtyRepositoryInvalidatesReuse() throws {
+        let fixture = try TemporaryLifecycleGitRepository()
+        _ = try fixture.commit(source: Self.absentSource, message: "add clean implementation")
+        _ = try fixture.commit(source: Self.detectedSource, message: "introduce forced try")
+        #expect(try analyze(repository: fixture.repository, artifact: fixture.artifact).status == 0)
+        let artifact = try LifecycleArtifactStore(artifactURL: fixture.artifact).load()
+        let finding = try #require(artifact.findings.first)
+        let profileURL = fixture.directory.appendingPathComponent("introduction-profile.json")
+        let first = try inferIntroduction(
+            finding.id,
+            repository: fixture.repository,
+            artifact: fixture.artifact,
+            maximumRevisions: 4,
+            profile: profileURL
+        )
+        #expect(first.status == 0, "\(first.standardError)")
+        try fixture.write(source: Self.detectedSource + "\n// uncommitted\n")
+
+        let dirty = try inferIntroduction(
+            finding.id,
+            repository: fixture.repository,
+            artifact: fixture.artifact,
+            maximumRevisions: 4,
+            profile: profileURL
+        )
+
+        #expect(dirty.status == 0, "\(dirty.standardError)")
+        let profile = try introductionProfile(at: profileURL)
+        #expect(profile["recordingStatus"] as? String == "accepted")
+        #expect(profile["analyzedRevisionCount"] as? Int == 2)
+        #expect(profile["reusedRevisionCount"] as? Int == 0)
     }
 
     @Test("A failure after profile preparation cannot leave stale passing measurements")
@@ -161,6 +265,7 @@ struct IntroductionProfileCLIWorkflowTests {
         repository: URL,
         artifact: URL,
         maximumRevisions: Int,
+        maximumFileBytes: Int = 16 * 1_024 * 1_024,
         profile: URL
     ) throws -> LifecycleCLIRunResult {
         try runLifecycleCLI([
@@ -169,6 +274,7 @@ struct IntroductionProfileCLIWorkflowTests {
             findingID.rawValue,
             "--repository", repository.path,
             "--max-revisions", String(maximumRevisions),
+            "--max-file-bytes", String(maximumFileBytes),
             "--profile-output", profile.path,
         ])
     }

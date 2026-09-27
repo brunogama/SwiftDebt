@@ -84,7 +84,7 @@ public struct LifecycleIntroductionService: Sendable {
                 maximumFileBytes: request.maximumFileBytes,
                 evidenceRevisionCount: evidence.revisions.count,
                 analyzedRevisionCount: result.analyzedRevisionCount,
-                reusedRevisionCount: 0,
+                reusedRevisionCount: result.reusedRevisionCount,
                 frontierRevisionCount: evidence.boundary.frontierRevisions.count,
                 recordingStatus: result.recording.status,
                 operationElapsedNanoseconds: elapsed
@@ -102,6 +102,7 @@ public struct LifecycleIntroductionService: Sendable {
     private func perform(_ request: LifecycleIntroductionRequest) throws -> (
         recording: IntroductionRecording,
         analyzedRevisionCount: Int,
+        reusedRevisionCount: Int,
         repositoryURL: URL
     ) {
         guard request.maximumRevisions > 0, request.maximumFileBytes > 0 else {
@@ -158,11 +159,26 @@ public struct LifecycleIntroductionService: Sendable {
             headRevision: headRevision,
             repositoryURL: repositoryURL
         )
+        let status = try LifecycleDigest(value: statusDigest)
+        let reuse = LifecycleIntroductionHistoryReuse(
+            artifact: artifact,
+            findingID: request.findingID,
+            query: LifecycleIntroductionReuseQuery(
+                startingRevision: startingRevision,
+                repositoryHeadRevision: headRevision,
+                workingTreeState: workingTreeState,
+                workingTreeStatusDigest: status,
+                isShallow: shallow,
+                maximumRevisions: request.maximumRevisions,
+                limitingReasons: limitingReasons
+            )
+        )
         let captured = try captureHistory(
             startingRevision: startingRevision,
             repositoryURL: repositoryURL,
             maximumRevisions: request.maximumRevisions,
-            maximumFileBytes: request.maximumFileBytes
+            maximumFileBytes: request.maximumFileBytes,
+            reuse: reuse
         )
         let gitAfterTraversal = try gitProvider.capture(
             root: request.repositoryURL,
@@ -175,7 +191,7 @@ public struct LifecycleIntroductionService: Sendable {
             startingRevision: startingRevision,
             repositoryHeadRevision: headRevision,
             workingTreeState: workingTreeState,
-            workingTreeStatusDigest: try LifecycleDigest(value: statusDigest),
+            workingTreeStatusDigest: status,
             isShallow: shallow,
             maximumRevisions: request.maximumRevisions,
             frontierRevisions: captured.frontier,
@@ -185,6 +201,11 @@ public struct LifecycleIntroductionService: Sendable {
             IntroductionHistoryEvidence(boundary: boundary, revisions: captured.revisions),
             for: request.findingID
         )
-        return (recording, captured.revisions.count, repositoryURL)
+        return (
+            recording,
+            captured.analyzedRevisionCount,
+            captured.reusedRevisionCount,
+            repositoryURL
+        )
     }
 }

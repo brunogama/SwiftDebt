@@ -4,16 +4,33 @@ import SwiftDebtLifecycle
 import SwiftDebtSyntax
 
 extension LifecycleIntroductionService {
+    struct HistoryCapture: Sendable {
+        let revisions: [IntroductionHistoryRevision]
+        let frontier: [GitRevisionID]
+        let analyzedRevisionCount: Int
+        let reusedRevisionCount: Int
+    }
+
     func captureHistory(
         startingRevision: GitRevisionID?,
         repositoryURL: URL,
         maximumRevisions: Int,
-        maximumFileBytes: Int
-    ) throws -> (revisions: [IntroductionHistoryRevision], frontier: [GitRevisionID]) {
-        guard let startingRevision else { return ([], []) }
+        maximumFileBytes: Int,
+        reuse: LifecycleIntroductionHistoryReuse
+    ) throws -> HistoryCapture {
+        guard let startingRevision else {
+            return HistoryCapture(
+                revisions: [],
+                frontier: [],
+                analyzedRevisionCount: 0,
+                reusedRevisionCount: 0
+            )
+        }
         var queue = [startingRevision]
         var scheduled: Set<GitRevisionID> = [startingRevision]
         var revisions: [IntroductionHistoryRevision] = []
+        var analyzedRevisionCount = 0
+        var reusedRevisionCount = 0
 
         while revisions.count < maximumRevisions, !queue.isEmpty {
             let revision = queue.removeFirst()
@@ -22,6 +39,7 @@ extension LifecycleIntroductionService {
                 repositoryURL: repositoryURL
             )
             guard parentsResult.exitCode == 0, !parentsResult.timedOut else {
+                analyzedRevisionCount += 1
                 revisions.append(
                     IntroductionHistoryRevision(
                         revision: revision,
@@ -40,6 +58,7 @@ extension LifecycleIntroductionService {
                     try GitRevisionID(String($0))
                 }.sorted { $0.rawValue < $1.rawValue }
             } catch {
+                analyzedRevisionCount += 1
                 revisions.append(
                     IntroductionHistoryRevision(
                         revision: revision,
@@ -53,20 +72,27 @@ extension LifecycleIntroductionService {
                 continue
             }
             do {
-                let observation = try observe(
+                let result = try observe(
                     revision: revision,
                     parents: parents,
                     repositoryURL: repositoryURL,
-                    maximumFileBytes: maximumFileBytes
+                    maximumFileBytes: maximumFileBytes,
+                    reuseCandidates: reuse.candidates(for: revision, parents: parents)
                 )
+                if result.reused {
+                    reusedRevisionCount += 1
+                } else {
+                    analyzedRevisionCount += 1
+                }
                 revisions.append(
                     IntroductionHistoryRevision(
                         revision: revision,
                         parentRevisions: parents,
-                        observation: observation
+                        observation: result.observation
                     )
                 )
             } catch {
+                analyzedRevisionCount += 1
                 revisions.append(
                     IntroductionHistoryRevision(
                         revision: revision,
@@ -82,7 +108,12 @@ extension LifecycleIntroductionService {
                 queue.append(parent)
             }
         }
-        return (revisions, queue.sorted { $0.rawValue < $1.rawValue })
+        return HistoryCapture(
+            revisions: revisions,
+            frontier: queue.sorted { $0.rawValue < $1.rawValue },
+            analyzedRevisionCount: analyzedRevisionCount,
+            reusedRevisionCount: reusedRevisionCount
+        )
     }
 
     func ancestryReasons(
