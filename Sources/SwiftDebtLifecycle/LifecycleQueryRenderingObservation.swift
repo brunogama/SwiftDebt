@@ -49,7 +49,7 @@ extension LifecycleReadService {
         ] + unresolved.reasons.map { "  \(oneLine($0.code)): \(oneLine($0.message))" }
     }
 
-    private func oneLine(_ value: String) -> String {
+    func oneLine(_ value: String) -> String {
         var result = ""
         for scalar in value.unicodeScalars {
             switch scalar.value {

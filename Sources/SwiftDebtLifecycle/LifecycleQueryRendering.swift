@@ -43,8 +43,7 @@ extension LifecycleReadService {
             lines.append("State: \(projection.lifecycleState.rawValue)")
             lines.append("Evidence: \(projection.evidenceState.rawValue)")
             for event in projection.finding.events {
-                lines.append("\(event.snapshotID.rawValue) \(event.transition.kind.rawValue)")
-                lines += reasons(for: event.transition).map { "  \($0.code): \($0.message)" }
+                lines += renderEvent(event)
                 for comparison in event.semanticComparisons {
                     lines += renderSemanticComparison(comparison)
                 }
@@ -183,16 +182,6 @@ extension LifecycleReadService {
         case .available: "available"
         case .unavailable(let reason): "unavailable (\(reason.code): \(reason.message))"
         case .ambiguous(let reason): "ambiguous (\(reason.code): \(reason.message))"
-        }
-    }
-
-    private func reasons(for transition: LifecycleTransition) -> [LifecycleReason] {
-        switch transition {
-        case .opened: []
-        case .observed(let evidence), .reopened(let evidence): evidence.reasons
-        case .resolved(let evidence): evidence.reasons
-        case .unverified(let reasons): reasons
-        case .continuityAmbiguous(let evidence): evidence.reasons
         }
     }
 
