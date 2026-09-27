@@ -72,32 +72,7 @@ extension LifecycleArtifact {
                 "An observed or reopened event lacks sufficient structural continuity evidence."
             )
         }
-
-        let priorFindings = try parentFindingProjections(of: snapshot.id).compactMap { projection in
-            let candidate = projection.finding
-            return candidate.rule.identity == finding.rule.identity ? candidate : nil
-        }
-        let currentDetections = snapshot.detections.filter {
-            $0.rule.identity == finding.rule.identity
-        }
-        let reconciliation = try ContinuityReconciler().reconcile(
-            findings: priorFindings,
-            detections: currentDetections,
-            snapshot: snapshot,
-            artifact: self
-        )
-        guard
-            reconciliation.matches.contains(where: {
-                $0.finding.id == finding.id
-                    && $0.priorSnapshot.id == evidence.priorSnapshotID
-                    && $0.priorDetection.id == evidence.priorDetectionID
-                    && $0.currentDetection.id == evidence.currentDetection.detectionID
-            })
-        else {
-            throw LifecycleContractError.invalidArtifact(
-                "An observed or reopened event does not have one unique structural assignment."
-            )
-        }
+        // Derived-state validation checks unique assignments once per snapshot and rule.
     }
 
     private func priorDetectionReference(
