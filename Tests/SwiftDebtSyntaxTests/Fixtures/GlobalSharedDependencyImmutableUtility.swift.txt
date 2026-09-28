@@ -1,0 +1,22 @@
+final class NumberFormatterUtility {
+    static let shared = NumberFormatterUtility()
+
+    let locale: String = "en_US"
+    let groupingSeparator: String = ","
+
+    func format(_ value: Int) -> String {
+        "\(value)"
+    }
+}
+
+func renderTotal(_ value: Int) -> String {
+    NumberFormatterUtility.shared.format(value)
+}
+
+func renderSubtotal(_ value: Int) -> String {
+    NumberFormatterUtility.shared.format(value)
+}
+
+func renderTax(_ value: Int) -> String {
+    NumberFormatterUtility.shared.format(value)
+}
