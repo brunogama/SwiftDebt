@@ -118,16 +118,25 @@ struct DogfoodWorkflowTests {
 
     private func swiftDebtCoreSourceNames() throws -> [String] {
         let directory = dogfoodRepositoryRoot.appendingPathComponent("Sources/SwiftDebtCore")
-        return try FileManager.default.contentsOfDirectory(
-            at: directory,
-            includingPropertiesForKeys: [.isRegularFileKey]
-        )
-        .filter { url in
-            url.pathExtension == "swift"
-                && (try? url.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true
+        guard
+            let enumerator = FileManager.default.enumerator(
+                at: directory,
+                includingPropertiesForKeys: [.isRegularFileKey]
+            )
+        else {
+            return []
         }
-        .map(\.lastPathComponent)
-        .sorted()
+        var names: [String] = []
+        for case let url as URL in enumerator {
+            guard url.pathExtension == "swift",
+                (try? url.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true
+            else {
+                continue
+            }
+            let relative = url.path.replacingOccurrences(of: directory.path + "/", with: "")
+            names.append(relative)
+        }
+        return names.sorted()
     }
 
     private func hasGitHistory(file: String) throws -> Bool {
