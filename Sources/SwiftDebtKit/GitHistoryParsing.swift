@@ -11,9 +11,12 @@ struct GitCommitRecord: Sendable {
 func parseCommits(_ output: String) -> [GitCommitRecord] {
     let formatter = ISO8601DateFormatter()
     return output.split(separator: "\u{1e}").compactMap { rawRecord in
-        var lines = rawRecord.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+        var lines = rawRecord.split(separator: "\n", omittingEmptySubsequences: false).map(
+            String.init)
         guard !lines.isEmpty else { return nil }
-        let fields = lines.removeFirst().split(separator: "\u{1f}", omittingEmptySubsequences: false).map(String.init)
+        let fields = lines.removeFirst().split(
+            separator: "\u{1f}", omittingEmptySubsequences: false
+        ).map(String.init)
         guard fields.count == 4, let timestamp = formatter.date(from: fields[2]) else { return nil }
         return GitCommitRecord(
             sha: fields[0],

@@ -45,7 +45,8 @@ public struct DebtAnalysisOptions: Codable, Equatable, Sendable {
         self.top = top
         self.head = head
         self.tail = tail
-        self.problematicItemScoreThreshold = problematicItemScoreThreshold ?? Self.defaultProblematicThreshold(for: preset)
+        self.problematicItemScoreThreshold =
+            problematicItemScoreThreshold ?? Self.defaultProblematicThreshold(for: preset)
         self.scoringPolicy = scoringPolicy ?? Self.defaultScoringPolicy(for: preset)
     }
 
@@ -68,13 +69,16 @@ public struct DebtAnalysisOptions: Codable, Equatable, Sendable {
         let known = Set(CodingKeys.allCases.map(\.rawValue))
         let unknown = raw.allKeys.map(\.stringValue).filter { !known.contains($0) }.sorted()
         guard unknown.isEmpty else {
-            throw AnalysisFailure.invalidConfiguration("Unknown debt analysis configuration keys: \(unknown.joined(separator: ", "))")
+            throw AnalysisFailure.invalidConfiguration(
+                "Unknown debt analysis configuration keys: \(unknown.joined(separator: ", "))")
         }
         let values = try decoder.container(keyedBy: CodingKeys.self)
-        let preset = try values.decodeIfPresent(DebtAnalysisPreset.self, forKey: .preset) ?? .balanced
+        let preset =
+            try values.decodeIfPresent(DebtAnalysisPreset.self, forKey: .preset) ?? .balanced
         self.init(
             preset: preset,
-            aggregationStrategy: try values.decodeIfPresent(DebtAggregationStrategy.self, forKey: .aggregationStrategy) ?? .file,
+            aggregationStrategy: try values.decodeIfPresent(
+                DebtAggregationStrategy.self, forKey: .aggregationStrategy) ?? .file,
             minScore: try values.decodeIfPresent(Double.self, forKey: .minScore),
             minPriority: try values.decodeIfPresent(Priority.self, forKey: .minPriority),
             categories: try values.decodeIfPresent([String].self, forKey: .categories) ?? [],
@@ -82,8 +86,10 @@ public struct DebtAnalysisOptions: Codable, Equatable, Sendable {
             top: try values.decodeIfPresent(Int.self, forKey: .top),
             head: try values.decodeIfPresent(Int.self, forKey: .head),
             tail: try values.decodeIfPresent(Int.self, forKey: .tail),
-            problematicItemScoreThreshold: try values.decodeIfPresent(Double.self, forKey: .problematicItemScoreThreshold),
-            scoringPolicy: try values.decodeIfPresent(DebtScoringPolicy.self, forKey: .scoringPolicy)
+            problematicItemScoreThreshold: try values.decodeIfPresent(
+                Double.self, forKey: .problematicItemScoreThreshold),
+            scoringPolicy: try values.decodeIfPresent(
+                DebtScoringPolicy.self, forKey: .scoringPolicy)
         )
     }
 
@@ -105,11 +111,13 @@ public struct DebtAnalysisOptions: Codable, Equatable, Sendable {
     private static func defaultScoringPolicy(for preset: DebtAnalysisPreset) -> DebtScoringPolicy {
         switch preset {
         case .strict:
-            DebtScoringPolicy(priorityThresholds: PriorityThresholds(medium: 25, high: 50, critical: 75))
+            DebtScoringPolicy(
+                priorityThresholds: PriorityThresholds(medium: 25, high: 50, critical: 75))
         case .balanced:
             DebtScoringPolicy(priorityThresholds: PriorityThresholds())
         case .lenient:
-            DebtScoringPolicy(priorityThresholds: PriorityThresholds(medium: 55, high: 80, critical: 92))
+            DebtScoringPolicy(
+                priorityThresholds: PriorityThresholds(medium: 55, high: 80, critical: 92))
         }
     }
 }

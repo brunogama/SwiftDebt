@@ -9,6 +9,11 @@ struct FunctionalEvidenceTests {
         SwiftSyntaxParser().parse(SourceUnit(path: "Input.swift", content: code))
     }
 
+    private func parseTestSource(_ code: String) -> ParsedSource {
+        SwiftSyntaxParser().parse(
+            SourceUnit(path: "Tests/ScenarioTests.swift", module: "AppTests", content: code))
+    }
+
     @Test(arguments: [
         (
             "mutation",
@@ -209,6 +214,70 @@ struct FunctionalEvidenceTests {
 
         #expect(result.isValid)
         #expect(function.riskFacts.contains { $0.category == .unsafeEscapeHatch })
+    }
+
+    @Test func errorHandlingPatternsProduceSwiftNativeRiskEvidence() throws {
+        let result = parse(
+            """
+            func scenario() {
+              _ = try? load()
+              do {
+                try load()
+              } catch {
+              }
+              try! load()
+              let value: Any = 1
+              _ = value as! Int
+              _ = optional!
+              fatalError("unreachable")
+            }
+            """)
+        let function = try #require(result.functions.first)
+        let risks = function.riskFacts
+
+        #expect(result.isValid)
+        #expect(risks.filter { $0.category == .errorSwallowing }.count == 2)
+        #expect(risks.filter { $0.category == .errorTermination }.count == 4)
+        #expect(risks.allSatisfy { $0.confidence == .measuredSyntax })
+    }
+
+    @Test func errorHandlingEvidenceUsesDedicatedKinds() throws {
+        let result = parse(
+            """
+            func scenario() {
+              _ = try? load()
+              preconditionFailure("unreachable")
+            }
+            """)
+
+        let evidence = DebtFunctionalEvidenceBuilder().evidence(for: [result])
+        let kinds = Set(evidence.map(\.kind))
+
+        #expect(kinds.contains("swift.error-handling.swallowing"))
+        #expect(kinds.contains("swift.error-handling.termination"))
+        #expect(evidence.allSatisfy { $0.note?.contains("not compiler semantic proof") == true })
+    }
+
+    @Test func testSynchronizationEvidenceIsScopedToSwiftTestSources() throws {
+        let testSource = parseTestSource(
+            """
+            func testEventuallyLoads() async throws {
+              try await Task.sleep(for: .milliseconds(10))
+              sleep(1)
+            }
+            """)
+        let productionSource = parse(
+            """
+            func waitForRetry() async throws {
+              try await Task.sleep(for: .milliseconds(10))
+            }
+            """)
+
+        let testFunction = try #require(testSource.functions.first)
+        let productionFunction = try #require(productionSource.functions.first)
+
+        #expect(testFunction.riskFacts.filter { $0.category == .testSynchronization }.count == 2)
+        #expect(!productionFunction.riskFacts.contains { $0.category == .testSynchronization })
     }
 
     @Test func knownBenignFunctionalCompositionDoesNotBecomeSideEffectEvidence() throws {

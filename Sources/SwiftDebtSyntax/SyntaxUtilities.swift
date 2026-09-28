@@ -15,7 +15,9 @@ func nominalName(_ node: Syntax) -> String? {
 }
 
 func typeName(_ node: TypeSyntax) -> String? {
-    if let identifier = node.as(IdentifierTypeSyntax.self) { return cleanName(identifier.name.text) }
+    if let identifier = node.as(IdentifierTypeSyntax.self) {
+        return cleanName(identifier.name.text)
+    }
     if let member = node.as(MemberTypeSyntax.self), let base = typeName(member.baseType) {
         return base + "." + cleanName(member.name.text)
     }
@@ -34,7 +36,7 @@ private let unsafeStandardLibraryTypeNames: Set<String> = [
     "UnsafePointer",
     "UnsafeRawBufferPointer",
     "UnsafeRawPointer",
-    "UnsafeThrowingContinuation"
+    "UnsafeThrowingContinuation",
 ]
 
 func isUnsafeStandardLibraryTypeName(_ name: String) -> Bool {
@@ -60,13 +62,17 @@ private final class UnsafeTypeVisitor: SyntaxVisitor {
 }
 
 func expressionName(_ node: ExprSyntax) -> String? {
-    if let reference = node.as(DeclReferenceExprSyntax.self) { return cleanName(reference.baseName.text) }
+    if let reference = node.as(DeclReferenceExprSyntax.self) {
+        return cleanName(reference.baseName.text)
+    }
     if let member = node.as(MemberAccessExprSyntax.self), let base = member.base,
         let prefix = expressionName(base)
     {
         return prefix + "." + cleanName(member.declName.baseName.text)
     }
-    if let special = node.as(GenericSpecializationExprSyntax.self) { return expressionName(special.expression) }
+    if let special = node.as(GenericSpecializationExprSyntax.self) {
+        return expressionName(special.expression)
+    }
     return nil
 }
 
@@ -137,7 +143,7 @@ struct SourceLines {
             var index = 0
             func record() {
                 guard part.contains(where: { $0 != 32 && $0 != 9 }) else { return }
-                let text = String(decoding: part, as: UTF8.self)
+                guard let text = String(bytes: part, encoding: .utf8) else { return }
                 fragments[line, default: []].append("\(part.count):\(text)")
             }
             while index < bytes.count {
@@ -145,7 +151,9 @@ struct SourceLines {
                 if byte == 10 || byte == 13 {
                     record()
                     part.removeAll(keepingCapacity: true)
-                    if byte == 13 && index + 1 < bytes.count && bytes[index + 1] == 10 { index += 1 }
+                    if byte == 13 && index + 1 < bytes.count && bytes[index + 1] == 10 {
+                        index += 1
+                    }
                     line += 1
                 } else {
                     part.append(byte)

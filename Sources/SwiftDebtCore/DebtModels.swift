@@ -29,7 +29,9 @@ public struct DebtEntity: Codable, Hashable, Sendable {
     public let level: DebtAggregationLevel
     public let location: DebtLocation
 
-    public init(id: String, displayName: String, level: DebtAggregationLevel, location: DebtLocation) {
+    public init(
+        id: String, displayName: String, level: DebtAggregationLevel, location: DebtLocation
+    ) {
         self.id = id
         self.displayName = displayName
         self.level = level
@@ -67,12 +69,12 @@ public struct DebtEvidenceAvailability: Codable, Equatable, Sendable {
         self.reason = reason
     }
 
-    public static var available: DebtEvidenceAvailability {
-        DebtEvidenceAvailability(state: .available)
+    public static var available: Self {
+        Self(state: .available)
     }
 
-    public static func unavailable(reason: String? = nil) -> DebtEvidenceAvailability {
-        DebtEvidenceAvailability(state: .unavailable, reason: reason)
+    public static func unavailable(reason: String? = nil) -> Self {
+        Self(state: .unavailable, reason: reason)
     }
 
     public var isAvailable: Bool {

@@ -6,13 +6,16 @@ extension DebtDashboardApplication {
             box.replaceChildren();
             const graph = report.dependencyGraph;
             if (!graph || !Array.isArray(graph.nodes) || !Array.isArray(graph.edges)) {
-              box.append(el("p", "No dependency or call graph is present in this report.", "empty"));
+              box.append(el("p", "No dependency or call graph is present in this report.", \
+        "empty"));
               return;
             }
             const statistics = graph.statistics || {};
             box.append(el(
               "p",
-              `${score(statistics.nodeCount)} nodes; ${score(statistics.edgeCount)} edges; ${score(statistics.resolvedEdgeCount)} resolved; ${score(statistics.ambiguousEdgeCount)} ambiguous; ${score(statistics.unresolvedEdgeCount)} unresolved.`
+              `${score(statistics.nodeCount)} nodes; ${score(statistics.edgeCount)} edges; $\
+        {score(statistics.resolvedEdgeCount)} resolved; ${score(statistics.ambiguousEdgeCount)} \
+        ambiguous; ${score(statistics.unresolvedEdgeCount)} unresolved.`
             ));
             if (statistics.syntaxOnlyNote) box.append(el("p", statistics.syntaxOnlyNote, "meta"));
             if (!graph.edges.length) {
@@ -25,12 +28,15 @@ extension DebtDashboardApplication {
             graph.edges.forEach(edge => {
               const source = nodes.get(edge.source)?.displayName || edge.source;
               const resolvedTarget = edge.target && nodes.get(edge.target);
-              let target = resolvedTarget?.displayName || edge.target || edge.unresolvedName || "unresolved";
+              let target = resolvedTarget?.displayName || edge.target || edge.unresolvedName || \
+        "unresolved";
               if (!edge.target && edge.targetCandidates && edge.targetCandidates.length) {
-                const candidates = edge.targetCandidates.map(id => nodes.get(id)?.displayName || id);
+                const candidates = edge.targetCandidates.map(id => nodes.get(id)?.displayName || \
+        id);
                 target += ` [candidates: ${candidates.join(", ")}]`;
               }
-              const value = `${source} -> ${target} (${edge.kind}, ${edge.confidence}) at ${location(edge.location)}`;
+              const value = `${source} -> ${target} (${edge.kind}, ${edge.confidence}) at $\
+        {location(edge.location)}`;
               list.append(el("li", value, "edge"));
             });
             box.append(list);

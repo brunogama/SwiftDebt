@@ -9,7 +9,9 @@ struct DebtValidationOptions: Sendable {
 
 extension CLIOptions {
     func parseDebt(_ input: [String]) throws -> CLIAction {
-        guard let command = input.first else { throw CLIError("Missing debt command: analyze or validate") }
+        guard let command = input.first else {
+            throw CLIError("Missing debt command: analyze or validate")
+        }
         let arguments = Array(input.dropFirst())
         if arguments == ["--help"] || arguments == ["-h"] || arguments == ["help"] { return .help }
         switch command {
@@ -18,7 +20,9 @@ extension CLIOptions {
             return .analyze(parsed.request, interactiveDebt: false)
         case "validate":
             let parsed = try parseDebtArguments(arguments, validates: true)
-            guard let validation = parsed.validation else { throw CLIError("Missing validation options") }
+            guard let validation = parsed.validation else {
+                throw CLIError("Missing validation options")
+            }
             return .debtValidate(parsed.request, validation)
         case "--help", "-h", "help":
             return .help
@@ -27,102 +31,111 @@ extension CLIOptions {
         }
     }
 
-    private func parseDebtArguments(_ arguments: [String], validates: Bool) throws -> DebtParsedArguments {
-        var values: [String: String] = [:]
-        var exclusions: [String] = []
-        var categories: [String] = []
-        var levels: [DebtAggregationLevel] = []
-        var path: String?
-        var literal = false
-        var quiet = false
-        var pluginEvidenceLimitations = false
-        var index = 0
-        let valuedOptions: Set<String> = [
-            "--config", "--format", "--output", "--profile-output", "--jobs", "--manifest", "--stamp", "--exclude",
-            "--lcov", "--coverage", "--preset", "--aggregation", "--top", "--head", "--tail", "--min-score",
-            "--min-priority", "--category", "--level", "--max-score", "--debt-reference-time", "--max-file-bytes",
-        ]
-        while index < arguments.count {
-            let argument = arguments[index]
-            index += 1
-            if !literal && (argument == "--help" || argument == "-h") { throw CLIError("Use 'swift-debt debt \(validates ? "validate" : "analyze") --help'") }
-            if !literal && argument == "--" {
-                literal = true
-                continue
+    private func parseDebtArguments(_ arguments: [String], validates: Bool) throws
+        -> DebtParsedArguments
+    {
+        let parsed = try parseRawDebtArguments(arguments, validates: validates)
+        let values = parsed.values
+        let categories = parsed.repeated["--category", default: []]
+        let levels = try parsed.repeated["--level", default: []].map { value in
+            guard let level = DebtAggregationLevel(rawValue: value) else {
+                throw CLIError("Invalid debt level: \(value)")
             }
-            if !literal && argument == "--plain" {
-                try setUnique(&values, key: "--format", value: "plain")
-                continue
-            }
-            if !literal && argument == "--compact" {
-                try setUnique(&values, key: "--format", value: "compact")
-                continue
-            }
-            if !literal && argument == "--quiet" {
-                guard validates else { throw CLIError("--quiet is only valid for debt validate") }
-                guard !quiet else { throw CLIError("Duplicate --quiet") }
-                quiet = true
-                continue
-            }
-            if !literal && argument == "--plugin-evidence-limitations" {
-                guard !pluginEvidenceLimitations else { throw CLIError("Duplicate --plugin-evidence-limitations") }
-                pluginEvidenceLimitations = true
-                continue
-            }
-            if !literal && argument.hasPrefix("-") {
-                let split = argument.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false).map(
-                    String.init)
-                let key = split[0]
-                guard valuedOptions.contains(key) else { throw CLIError("Unknown option: \(key)") }
-                let value: String
-                if split.count == 2 {
-                    value = split[1]
-                } else {
-                    guard index < arguments.count, !arguments[index].hasPrefix("--") else {
-                        throw CLIError("Missing value for \(key)")
-                    }
-                    value = arguments[index]
-                    index += 1
-                }
-                guard !value.isEmpty else { throw CLIError("Empty value for \(key)") }
-                switch key {
-                case "--exclude":
-                    exclusions.append(value)
-                case "--coverage":
-                    try setUnique(&values, key: "--lcov", value: value)
-                case "--category":
-                    categories.append(value)
-                case "--level":
-                    guard let level = DebtAggregationLevel(rawValue: value) else {
-                        throw CLIError("Invalid debt level: \(value)")
-                    }
-                    levels.append(level)
-                default:
-                    try setUnique(&values, key: key, value: value)
-                }
-                continue
-            }
-            guard path == nil else { throw CLIError("Only one input path is accepted") }
-            path = argument
+            return level
         }
+        let path = parsed.paths.first
+        let quiet = parsed.flags.contains("--quiet")
+        if quiet, !validates { throw CLIError("--quiet is only valid for debt validate") }
         if values["--manifest"] != nil && path != nil {
             throw CLIError("Use either an input path or --manifest, not both")
         }
-        if !validates, values["--max-score"] != nil { throw CLIError("--max-score is only valid for debt validate") }
+        if !validates, values["--max-score"] != nil {
+            throw CLIError("--max-score is only valid for debt validate")
+        }
+        return try buildDebtArguments(
+            parsed: parsed, validates: validates, levels: levels, categories: categories)
+    }
+
+    private func parseRawDebtArguments(
+        _ arguments: [String], validates: Bool
+    ) throws -> ParsedCLIArguments {
+        let valuedOptions: Set<String> = [
+            "--config", "--format", "--output", "--profile-output", "--jobs", "--manifest",
+            "--stamp", "--exclude",
+            "--lcov", "--coverage", "--preset", "--aggregation", "--top", "--head", "--tail",
+            "--min-score",
+            "--min-priority", "--category", "--level", "--max-score", "--debt-reference-time",
+            "--max-file-bytes", "--git-executable",
+        ]
+        let parsed = try parseArguments(
+            arguments,
+            schema: CLIArgumentSchema(
+                valuedOptions: valuedOptions,
+                repeatableOptions: ["--exclude", "--category", "--level"],
+                flags: ["--quiet", "--plugin-evidence-limitations"],
+                flagValues: [
+                    "--plain": ("--format", "plain"),
+                    "--compact": ("--format", "compact"),
+                ],
+                aliases: ["--coverage": "--lcov"]))
+        if parsed.requestedHelp {
+            throw CLIError("Use 'swift-debt debt \(validates ? "validate" : "analyze") --help'")
+        }
+        guard parsed.paths.count <= 1 else { throw CLIError("Only one input path is accepted") }
+        return parsed
+    }
+
+    private func buildDebtArguments(
+        parsed: ParsedCLIArguments, validates: Bool,
+        levels: [DebtAggregationLevel], categories: [String]
+    ) throws -> DebtParsedArguments {
+        let values = parsed.values
+        let exclusions = parsed.repeated["--exclude", default: []]
+        let path = parsed.paths.first
+        let quiet = parsed.flags.contains("--quiet")
+        let pluginEvidenceLimitations = parsed.flags.contains("--plugin-evidence-limitations")
         let format = try debtFormat(values["--format"], validates: validates)
         let jobs = try optionalInteger(values["--jobs"], named: "--jobs", range: 1...64)
         let maximumFileBytes = try optionalInteger(
             values["--max-file-bytes"], named: "--max-file-bytes", range: 1...Int.max)
-        let preset = try optionalRaw(DebtAnalysisPreset.self, values["--preset"], named: "debt preset")
-        let aggregation = try optionalRaw(DebtAggregationStrategy.self, values["--aggregation"], named: "debt aggregation")
-        let minPriority = try optionalRaw(Priority.self, values["--min-priority"], named: "minimum priority")
+        let options = try debtAnalysisOptions(
+            values: values, categories: categories, levels: levels)
+        let request = AnalysisRequest(
+            path: path ?? ".", manifestPath: values["--manifest"],
+            configurationPath: values["--config"], outputPath: values["--output"],
+            stampPath: values["--stamp"], format: format, jobs: jobs, exclude: exclusions,
+            debtAnalysisOptions: options, enableDebtAnalysis: true, lcovPath: values["--lcov"],
+            debtReferenceTime: try parseDebtReferenceTime(values["--debt-reference-time"]),
+            gitExecutablePath: try parseGitExecutablePath(values["--git-executable"]),
+            profileOutputPath: values["--profile-output"],
+            pluginEvidenceLimitations: pluginEvidenceLimitations,
+            maximumFileBytes: maximumFileBytes)
+        let maxScore = try optionalScore(values["--max-score"], named: "--max-score")
+        if validates, maxScore == nil {
+            throw CLIError("Missing required --max-score for debt validate")
+        }
+        let validation = maxScore.map { DebtValidationOptions(maxScore: $0, quiet: quiet) }
+        return DebtParsedArguments(request: request, validation: validation)
+    }
+
+    private func debtAnalysisOptions(
+        values: [String: String], categories: [String], levels: [DebtAggregationLevel]
+    ) throws -> DebtAnalysisOptions? {
+        let preset = try optionalRaw(
+            DebtAnalysisPreset.self, values["--preset"], named: "debt preset")
+        let aggregation = try optionalRaw(
+            DebtAggregationStrategy.self, values["--aggregation"], named: "debt aggregation")
+        let minPriority = try optionalRaw(
+            Priority.self, values["--min-priority"], named: "minimum priority")
         let minScore = try optionalScore(values["--min-score"], named: "--min-score")
         let top = try optionalInteger(values["--top"], named: "--top", range: 0...Int.max)
         let head = try optionalInteger(values["--head"], named: "--head", range: 0...Int.max)
         let tail = try optionalInteger(values["--tail"], named: "--tail", range: 0...Int.max)
-        let hasDebtOverrides = preset != nil || aggregation != nil || minScore != nil || minPriority != nil
+        let hasDebtOverrides =
+            preset != nil || aggregation != nil || minScore != nil || minPriority != nil
             || !categories.isEmpty || !levels.isEmpty || top != nil || head != nil || tail != nil
-        let options = hasDebtOverrides
+        let options =
+            hasDebtOverrides
             ? DebtAnalysisOptions(
                 preset: preset ?? .balanced,
                 aggregationStrategy: aggregation ?? .file,
@@ -135,69 +148,9 @@ extension CLIOptions {
                 tail: tail
             )
             : nil
-        let request = AnalysisRequest(
-            path: path ?? ".",
-            manifestPath: values["--manifest"],
-            configurationPath: values["--config"],
-            outputPath: values["--output"],
-            stampPath: values["--stamp"],
-            format: format,
-            jobs: jobs,
-            exclude: exclusions,
-            debtAnalysisOptions: options,
-            enableDebtAnalysis: true,
-            lcovPath: values["--lcov"],
-            debtReferenceTime: try parseDebtReferenceTime(values["--debt-reference-time"]),
-            profileOutputPath: values["--profile-output"],
-            pluginEvidenceLimitations: pluginEvidenceLimitations,
-            maximumFileBytes: maximumFileBytes
-        )
-        let maxScore = try optionalScore(values["--max-score"], named: "--max-score")
-        if validates, maxScore == nil { throw CLIError("Missing required --max-score for debt validate") }
-        let validation = maxScore.map { DebtValidationOptions(maxScore: $0, quiet: quiet) }
-        return DebtParsedArguments(request: request, validation: validation)
+        return options
     }
 
-    private func debtFormat(_ value: String?, validates: Bool) throws -> ReportFormat {
-        guard let value else { return validates ? .debtCompact : .debtText }
-        switch value {
-        case "json", "debt-json": return .debtJSON
-        case "markdown", "md", "debt-markdown": return .debtMarkdown
-        case "dot", "debt-dot": return .debtDot
-        case "text", "plain", "debt-text": return .debtText
-        case "compact", "debt-compact": return .debtCompact
-        case "debtmap-json": return .debtmapJSON
-        default: throw CLIError("Invalid debt format: \(value)")
-        }
-    }
-
-    private func optionalRaw<T: RawRepresentable>(_ type: T.Type, _ value: String?, named name: String) throws -> T?
-    where T.RawValue == String {
-        guard let value else { return nil }
-        guard let decoded = T(rawValue: value) else { throw CLIError("Invalid \(name): \(value)") }
-        return decoded
-    }
-
-    private func optionalInteger(_ value: String?, named name: String, range: ClosedRange<Int>) throws -> Int? {
-        guard let value else { return nil }
-        guard let number = Int(value), range.contains(number) else {
-            throw CLIError("Invalid integer for \(name): \(value)")
-        }
-        return number
-    }
-
-    private func optionalScore(_ value: String?, named name: String) throws -> Double? {
-        guard let value else { return nil }
-        guard let score = Double(value), (0...100).contains(score) else {
-            throw CLIError("Invalid score for \(name): \(value)")
-        }
-        return score
-    }
-
-    private func setUnique(_ values: inout [String: String], key: String, value: String) throws {
-        guard values[key] == nil else { throw CLIError("Duplicate option: \(key)") }
-        values[key] = value
-    }
 }
 
 private struct DebtParsedArguments {

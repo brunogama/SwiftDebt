@@ -44,6 +44,49 @@ struct HistoryReferenceCLIWorkflowTests {
         )
     }
 
+    @Test func explicitGitExecutableWorksOutsidePath() throws {
+        let directory = try makeTemporaryGitProject()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let systemGit = "/usr/bin/git"
+        let installedGit = try #require(
+            FileManager.default.isExecutableFile(atPath: systemGit)
+                ? systemGit
+                : ProcessInfo.processInfo.environment["PATH"]?
+                    .split(separator: ":")
+                    .map { URL(fileURLWithPath: String($0)).appendingPathComponent("git").path }
+                    .first { FileManager.default.isExecutableFile(atPath: $0) })
+        let customDirectory = directory.appendingPathComponent("custom-tools", isDirectory: true)
+        try FileManager.default.createDirectory(at: customDirectory, withIntermediateDirectories: true)
+        let customGit = customDirectory.appendingPathComponent("git")
+        try FileManager.default.createSymbolicLink(atPath: customGit.path, withDestinationPath: installedGit)
+        let arguments = [
+            "debt", "analyze", directory.path, "--format", "json", "--aggregation", "none",
+            "--jobs", "1", "--debt-reference-time", "2026-09-12T00:00:00Z",
+        ]
+        let withoutGit = try runSwiftDebt(arguments, environment: ["PATH": "/nonexistent"])
+        let withGit = try runSwiftDebt(
+            arguments + ["--git-executable", customGit.path], environment: ["PATH": "/nonexistent"])
+        let defaultReport = try JSONDecoder().decode(DebtReport.self, from: Data(withoutGit.stdout.utf8))
+        let explicitReport = try JSONDecoder().decode(DebtReport.self, from: Data(withGit.stdout.utf8))
+        let defaultHistory = defaultReport.items.flatMap(\.evidence).filter { $0.kind.hasPrefix("git-history.") }
+        let explicitHistory = explicitReport.items.flatMap(\.evidence).filter { $0.kind.hasPrefix("git-history.") }
+
+        #expect(withoutGit.status == 0)
+        #expect(withGit.status == 0)
+        #expect(!defaultHistory.isEmpty)
+        #expect(defaultHistory.allSatisfy { !$0.availability.isAvailable })
+        #expect(!explicitHistory.isEmpty)
+        #expect(explicitHistory.allSatisfy { $0.availability.isAvailable }, "\(explicitReport.missingEvidence)")
+    }
+
+    @Test(arguments: [["analyze"], ["debt", "analyze"], ["debt", "validate", "--max-score", "100"]])
+    func gitExecutableRequiresAbsolutePath(command: [String]) throws {
+        let result = try runSwiftDebt(command + ["--git-executable", "relative/git"])
+
+        #expect(result.status == 2)
+        #expect(result.stderr.contains("--git-executable requires an absolute path"))
+    }
+
     @Test func configuredReferenceTimeControlsGitRecency() throws {
         let directory = try makeTemporaryGitProject()
         defer { try? FileManager.default.removeItem(at: directory) }

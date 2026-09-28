@@ -13,53 +13,69 @@ import SwiftDebtKit
 struct SwiftDebtCommand {
     static func main() async {
         do {
-            switch try CLIOptions().parse(Array(CommandLine.arguments.dropFirst())) {
-            case .help:
-                print(CLIOptions.help)
-            case .version:
-                print("SwiftDebt \(SwiftDebtRelease.version)")
-            case .analyze(let request, let interactiveDebt):
-                let result = try await AnalysisService().run(request)
-                if interactiveDebt, let rankedDebtAnalysis = result.rankedDebtAnalysis {
-                    try TerminalDebtExplorer.run(
-                        rankedDebtAnalysis,
-                        environment: .current(),
-                        fallbackOutput: result.standardOutput,
-                        dependencies: .live(sourceRoot: interactiveSourceRoot(for: request))
-                    )
-                } else {
-                    FileHandle.standardOutput.write(Data(result.standardOutput.utf8))
-                }
-                exit(result.exitStatus)
-            case .debtValidate(let request, let validation):
-                let result = try await AnalysisService().run(request)
-                let outcome = DebtValidationOutcome(analysis: result.rankedDebtAnalysis, validation: validation)
-                if !validation.quiet {
-                    FileHandle.standardOutput.write(Data(outcome.summary.utf8))
-                }
-                exit(result.exitStatus == 2 ? 2 : outcome.exitStatus)
-            case .compare(let request):
-                let result = try DebtImprovementService().compare(request)
-                FileHandle.standardOutput.write(Data(result.standardOutput.utf8))
-                exit(result.exitStatus)
-            case .validateImprovement(let request):
-                let result = try DebtImprovementService().validateImprovement(request)
-                FileHandle.standardOutput.write(Data(result.standardOutput.utf8))
-                exit(result.exitStatus)
-            case .explainCoverage(let request):
-                let result = try CoverageExplanationService().run(request)
-                FileHandle.standardOutput.write(Data(result.standardOutput.utf8))
-                exit(0)
-            case .performanceGate(let request):
-                let result = try PerformanceGateCLI.run(request)
-                FileHandle.standardOutput.write(Data(result.output.utf8))
-                exit(result.exitStatus)
-            }
+            try await run(CLIOptions().parse(Array(CommandLine.arguments.dropFirst())))
         } catch {
             let message = "swift-debt: error: \(error)\n"
             FileHandle.standardError.write(Data(message.utf8))
             exit(2)
         }
+    }
+
+    private static func run(_ action: CLIAction) async throws {
+        switch action {
+        case .help:
+            write(CLIOptions.help + "\n")
+        case .version:
+            write("SwiftDebt \(SwiftDebtRelease.version)\n")
+        case .analyze(let request, let interactiveDebt):
+            try await runAnalysis(request, interactiveDebt: interactiveDebt)
+        case .debtValidate(let request, let validation):
+            try await runValidation(request, validation: validation)
+        case .compare(let request):
+            let result = try DebtImprovementService().compare(request)
+            write(result.standardOutput)
+            exit(result.exitStatus)
+        case .validateImprovement(let request):
+            let result = try DebtImprovementService().validateImprovement(request)
+            write(result.standardOutput)
+            exit(result.exitStatus)
+        case .explainCoverage(let request):
+            let result = try CoverageExplanationService().run(request)
+            write(result.standardOutput)
+            exit(0)
+        case .performanceGate(let request):
+            let result = try PerformanceGateCLI.run(request)
+            write(result.output)
+            exit(result.exitStatus)
+        }
+    }
+
+    private static func runAnalysis(
+        _ request: AnalysisRequest, interactiveDebt: Bool
+    ) async throws {
+        let result = try await AnalysisService().run(request)
+        if interactiveDebt, let ranked = result.rankedDebtAnalysis {
+            try TerminalDebtExplorer.run(
+                ranked, environment: .current(), fallbackOutput: result.standardOutput,
+                dependencies: .live(sourceRoot: interactiveSourceRoot(for: request)))
+        } else {
+            write(result.standardOutput)
+        }
+        exit(result.exitStatus)
+    }
+
+    private static func runValidation(
+        _ request: AnalysisRequest, validation: DebtValidationOptions
+    ) async throws {
+        let result = try await AnalysisService().run(request)
+        let outcome = DebtValidationOutcome(
+            analysis: result.rankedDebtAnalysis, validation: validation)
+        if !validation.quiet { write(outcome.summary) }
+        exit(result.exitStatus == 2 ? 2 : outcome.exitStatus)
+    }
+
+    private static func write(_ value: String) {
+        FileHandle.standardOutput.write(Data(value.utf8))
     }
 
     private static func interactiveSourceRoot(for request: AnalysisRequest) -> URL? {
@@ -72,7 +88,9 @@ struct SwiftDebtCommand {
 
         let input = URL(fileURLWithPath: request.path).standardizedFileURL.resolvingSymlinksInPath()
         var isDirectory: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: input.path, isDirectory: &isDirectory) else { return nil }
+        guard FileManager.default.fileExists(atPath: input.path, isDirectory: &isDirectory) else {
+            return nil
+        }
         return isDirectory.boolValue ? input : input.deletingLastPathComponent()
     }
 }

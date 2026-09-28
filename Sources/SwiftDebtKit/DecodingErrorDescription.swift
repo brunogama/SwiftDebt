@@ -7,7 +7,8 @@ func decodingErrorDescription(_ error: DecodingError) -> String {
     }
 
     switch error {
-    case .typeMismatch(_, let context), .valueNotFound(_, let context), .keyNotFound(_, let context),
+    case .typeMismatch(_, let context), .valueNotFound(_, let context),
+        .keyNotFound(_, let context),
         .dataCorrupted(let context):
         return path(context)
     @unknown default: return "\(error)"

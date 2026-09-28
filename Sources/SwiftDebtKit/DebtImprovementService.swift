@@ -19,7 +19,10 @@ public struct DebtValidationRequest: Sendable {
     public let minimumImprovement: Double
     public let outputPath: String?
 
-    public init(beforePath: String, afterPath: String, minimumImprovement: Double = 0, outputPath: String? = nil) {
+    public init(
+        beforePath: String, afterPath: String, minimumImprovement: Double = 0,
+        outputPath: String? = nil
+    ) {
         self.beforePath = beforePath
         self.afterPath = afterPath
         self.minimumImprovement = minimumImprovement
@@ -41,18 +44,26 @@ public struct DebtImprovementService: Sendable {
     public init() {}
 
     public func compare(_ request: DebtComparisonRequest) throws -> DebtWorkflowRunResult {
-        let comparison = try loadComparison(beforePath: request.beforePath, afterPath: request.afterPath)
+        let comparison = try loadComparison(
+            beforePath: request.beforePath, afterPath: request.afterPath)
         let rendered = try renderJSON(comparison)
-        try writeIfRequested(rendered, outputPath: request.outputPath, protectedPaths: [request.beforePath, request.afterPath])
-        return DebtWorkflowRunResult(standardOutput: request.outputPath == nil ? rendered : "", exitStatus: 0)
+        try writeIfRequested(
+            rendered, outputPath: request.outputPath,
+            protectedPaths: [request.beforePath, request.afterPath])
+        return DebtWorkflowRunResult(
+            standardOutput: request.outputPath == nil ? rendered : "", exitStatus: 0)
     }
 
-    public func validateImprovement(_ request: DebtValidationRequest) throws -> DebtWorkflowRunResult {
+    public func validateImprovement(_ request: DebtValidationRequest) throws
+        -> DebtWorkflowRunResult
+    {
         guard request.minimumImprovement >= 0 else {
             throw AnalysisFailure.invalidConfiguration("minimum improvement must be nonnegative")
         }
-        let comparison = try loadComparison(beforePath: request.beforePath, afterPath: request.afterPath)
-        let observedImprovement = comparison.summary.beforeTotalScore - comparison.summary.afterTotalScore
+        let comparison = try loadComparison(
+            beforePath: request.beforePath, afterPath: request.afterPath)
+        let observedImprovement =
+            comparison.summary.beforeTotalScore - comparison.summary.afterTotalScore
         let passed = observedImprovement >= request.minimumImprovement
         let status: Int32 = passed ? 0 : 1
         let validation = DebtImprovementValidation(
@@ -63,11 +74,16 @@ public struct DebtImprovementService: Sendable {
             comparisonSummary: comparison.summary
         )
         let rendered = try renderJSON(validation)
-        try writeIfRequested(rendered, outputPath: request.outputPath, protectedPaths: [request.beforePath, request.afterPath])
-        return DebtWorkflowRunResult(standardOutput: request.outputPath == nil ? rendered : "", exitStatus: status)
+        try writeIfRequested(
+            rendered, outputPath: request.outputPath,
+            protectedPaths: [request.beforePath, request.afterPath])
+        return DebtWorkflowRunResult(
+            standardOutput: request.outputPath == nil ? rendered : "", exitStatus: status)
     }
 
-    private func loadComparison(beforePath: String, afterPath: String) throws -> DebtReportComparison {
+    private func loadComparison(beforePath: String, afterPath: String) throws
+        -> DebtReportComparison
+    {
         let before: DebtReport = try loadDebtReport(path: beforePath, label: "before")
         let after: DebtReport = try loadDebtReport(path: afterPath, label: "after")
         return try DebtReportComparator().compare(before: before, after: after)
@@ -80,7 +96,8 @@ public struct DebtImprovementService: Sendable {
         } catch let failure as AnalysisFailure {
             throw failure
         } catch let failure as DecodingError {
-            throw AnalysisFailure.invalidConfiguration("Invalid \(label) debt report \(path): \(decodingErrorDescription(failure))")
+            throw AnalysisFailure.invalidConfiguration(
+                "Invalid \(label) debt report \(path): \(decodingErrorDescription(failure))")
         } catch {
             throw WorkspaceError("Unable to read \(label) debt report \(path): \(error)")
         }
@@ -89,17 +106,28 @@ public struct DebtImprovementService: Sendable {
     private func renderJSON<T: Encodable>(_ value: T) throws -> String {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
-        return String(decoding: try encoder.encode(value), as: UTF8.self) + "\n"
+        let encoded = try encoder.encode(value)
+        guard let json = String(bytes: encoded, encoding: .utf8) else {
+            throw AnalysisFailure.invalidConfiguration("Encoded debt report is not valid UTF-8")
+        }
+        return json + "\n"
     }
 
-    private func writeIfRequested(_ content: String, outputPath: String?, protectedPaths: [String]) throws {
+    private func writeIfRequested(_ content: String, outputPath: String?, protectedPaths: [String])
+        throws
+    {
         guard let outputPath else { return }
-        let outputURL = URL(fileURLWithPath: outputPath).standardizedFileURL.resolvingSymlinksInPath()
-        let protected = Set(protectedPaths.map { URL(fileURLWithPath: $0).standardizedFileURL.resolvingSymlinksInPath().path })
+        let outputURL = URL(fileURLWithPath: outputPath).standardizedFileURL
+            .resolvingSymlinksInPath()
+        let protected = Set(
+            protectedPaths.map {
+                URL(fileURLWithPath: $0).standardizedFileURL.resolvingSymlinksInPath().path
+            })
         guard !protected.contains(outputURL.path), outputURL.pathExtension != "swift" else {
             throw WorkspaceError("Refusing to overwrite an input report or Swift file")
         }
-        try FileManager.default.createDirectory(at: outputURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(
+            at: outputURL.deletingLastPathComponent(), withIntermediateDirectories: true)
         try content.write(to: outputURL, atomically: true, encoding: .utf8)
     }
 

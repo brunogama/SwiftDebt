@@ -29,7 +29,8 @@ struct DebtValidationOutcome {
         if failing.isEmpty {
             summary = "Debt validation passed: max-score \(threshold); worst \(worstText).\n"
         } else {
-            summary = "Debt validation failed: max-score \(threshold); worst \(worstText); failures \(failing.count).\n"
+            summary =
+                "Debt validation failed: max-score \(threshold); worst \(worstText); failures \(failing.count).\n"
         }
     }
 

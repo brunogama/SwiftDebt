@@ -22,9 +22,11 @@ extension ReportRenderer {
         case .debtmapJSON:
             return try encode(builder.projection(from: analysis))
         case .debtDashboard:
-            return try renderDebtDashboard(builder.nativeReport(from: analysis, dependencyGraph: graph))
+            return try renderDebtDashboard(
+                builder.nativeReport(from: analysis, dependencyGraph: graph))
         case .text, .json, .csv, .html, .diagnostics:
-            throw AnalysisFailure.invalidConfiguration("Use a debt report format for ranked debt output")
+            throw AnalysisFailure.invalidConfiguration(
+                "Use a debt report format for ranked debt output")
         }
     }
 
@@ -123,7 +125,8 @@ extension ReportRenderer {
             lines.append("  \"\(dotEscape(node.id))\" [label=\"\(dotEscape(node.displayName))\"];")
         }
         for edge in graph.edges.sorted(by: edgeOrder) {
-            let target = edge.target ?? edge.unresolvedName.map { "unresolved:\($0)" } ?? "unresolved"
+            let target =
+                edge.target ?? edge.unresolvedName.map { "unresolved:\($0)" } ?? "unresolved"
             let source = dotEscape(edge.source)
             let destination = dotEscape(target)
             let label = dotEscape(edge.kind.rawValue)
@@ -135,7 +138,9 @@ extension ReportRenderer {
 
     private func edgeOrder(_ lhs: SwiftGraphEdge, _ rhs: SwiftGraphEdge) -> Bool {
         if lhs.source != rhs.source { return lhs.source < rhs.source }
-        if (lhs.target ?? "") != (rhs.target ?? "") { return (lhs.target ?? "") < (rhs.target ?? "") }
+        if (lhs.target ?? "") != (rhs.target ?? "") {
+            return (lhs.target ?? "") < (rhs.target ?? "")
+        }
         if lhs.kind.rawValue != rhs.kind.rawValue { return lhs.kind.rawValue < rhs.kind.rawValue }
         return (lhs.unresolvedName ?? "") < (rhs.unresolvedName ?? "")
     }

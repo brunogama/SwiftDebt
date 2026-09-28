@@ -20,7 +20,9 @@ final class TypeFactsVisitor: SyntaxVisitor {
         return .visitChildren
     }
     override func visit(_ node: IdentifierTypeSyntax) -> SyntaxVisitorContinueKind {
-        if node.parent?.is(MemberTypeSyntax.self) != true { references.insert(cleanName(node.name.text)) }
+        if node.parent?.is(MemberTypeSyntax.self) != true {
+            references.insert(cleanName(node.name.text))
+        }
         return .visitChildren
     }
     override func visit(_ node: MemberTypeSyntax) -> SyntaxVisitorContinueKind {

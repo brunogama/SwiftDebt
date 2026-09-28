@@ -53,12 +53,8 @@ public struct CoverageExplanationService: Sendable {
         let configurationURL =
             request.configurationPath.map { URL(fileURLWithPath: $0) }
             ?? root.appendingPathComponent(".swift-debt.json")
-        var configuration = WorkspaceConfiguration()
-        let hasConfiguration = FileManager.default.fileExists(atPath: configurationURL.path)
-        if request.configurationPath != nil || hasConfiguration {
-            let data = try Data(contentsOf: configurationURL)
-            configuration = try JSONDecoder().decode(WorkspaceConfiguration.self, from: data)
-        }
+        let configuration = try configuration(
+            at: configurationURL, explicitlyRequested: request.configurationPath != nil)
         _ = try configuration.analysisOptions(overrides: analysisRequest)
         let selection = try discovery.select(
             request: analysisRequest,
@@ -70,18 +66,30 @@ public struct CoverageExplanationService: Sendable {
             maximumFileBytes: request.maximumFileBytes ?? configuration.maximumFileBytes
         )
         let parser = SwiftSyntaxParser()
-        let entities = sources
+        let entities =
+            sources
             .map { parser.parse($0) }
             .filter(\.isValid)
             .flatMap(entities)
             .sorted { $0.id < $1.id }
         let lcov = try String(contentsOf: URL(fileURLWithPath: request.lcovPath), encoding: .utf8)
         let report = LcovParser().parse(lcov)
-        let matching = CoverageMatcher().match(report: report, entities: entities, repositoryRoot: root.path)
+        let matching = CoverageMatcher().match(
+            report: report, entities: entities, repositoryRoot: root.path)
         return CoverageExplanationResult(
             matching: matching,
             standardOutput: CoverageMatcher().renderDiagnostics(matching.diagnostics)
         )
+    }
+
+    private func configuration(at url: URL, explicitlyRequested: Bool) throws
+        -> WorkspaceConfiguration
+    {
+        guard explicitlyRequested || FileManager.default.fileExists(atPath: url.path) else {
+            return WorkspaceConfiguration()
+        }
+        return try JSONDecoder().decode(
+            WorkspaceConfiguration.self, from: Data(contentsOf: url))
     }
 
     private func entities(for source: ParsedSource) -> [DebtEntity] {

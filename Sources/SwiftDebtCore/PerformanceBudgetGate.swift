@@ -89,10 +89,12 @@ public enum PerformanceBudgetGate: Sendable {
         )
         var reasons: [String] = []
         if wallClockRegression > budget.maximumWallClockRegressionPercent {
-            reasons.append("wall-clock regression exceeds \(budget.maximumWallClockRegressionPercent)%")
+            reasons.append(
+                "wall-clock regression exceeds \(budget.maximumWallClockRegressionPercent)%")
         }
         if memoryRegression > budget.maximumPeakMemoryRegressionPercent {
-            reasons.append("peak-memory regression exceeds \(budget.maximumPeakMemoryRegressionPercent)%")
+            reasons.append(
+                "peak-memory regression exceeds \(budget.maximumPeakMemoryRegressionPercent)%")
         }
         return PerformanceBudgetEvaluation(
             comparable: true,

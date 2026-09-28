@@ -10,31 +10,18 @@ struct PerformanceGateRequest: Sendable {
 
 extension CLIOptions {
     func parsePerformanceGate(_ arguments: [String]) throws -> CLIAction {
-        var paths: [String] = []
-        var values: [String: String] = [:]
-        var index = 0
         let options = Set([
             "--name",
             "--max-wall-clock-regression",
             "--max-peak-memory-regression",
             "--output",
         ])
-        while index < arguments.count {
-            let argument = arguments[index]
-            index += 1
-            if argument.hasPrefix("--") {
-                guard options.contains(argument) else { throw CLIError("Unknown option: \(argument)") }
-                guard index < arguments.count else { throw CLIError("Missing value for \(argument)") }
-                guard values[argument] == nil else { throw CLIError("Duplicate option: \(argument)") }
-                values[argument] = arguments[index]
-                index += 1
-            } else {
-                paths.append(argument)
-            }
-        }
-        guard paths.count == 2 else {
+        let parsed = try parseArguments(
+            arguments, schema: CLIArgumentSchema(valuedOptions: options))
+        guard parsed.paths.count == 2 else {
             throw CLIError("Expected baseline and candidate benchmark result paths")
         }
+        let values = parsed.values
         let name = values["--name"] ?? "performance"
         let wallClock = try performancePercentage(
             values["--max-wall-clock-regression"],
@@ -46,8 +33,8 @@ extension CLIOptions {
         )
         return .performanceGate(
             PerformanceGateRequest(
-                baselinePath: paths[0],
-                candidatePath: paths[1],
+                baselinePath: parsed.paths[0],
+                candidatePath: parsed.paths[1],
                 outputPath: values["--output"],
                 budget: PerformanceRegressionBudget(
                     name: name,
@@ -67,32 +54,46 @@ extension CLIOptions {
 }
 
 enum PerformanceGateCLI {
-    static func run(_ request: PerformanceGateRequest) throws -> (output: String, exitStatus: Int32) {
+    static func run(_ request: PerformanceGateRequest) throws -> (output: String, exitStatus: Int32)
+    {
         let baselineURL = URL(fileURLWithPath: request.baselinePath).standardizedFileURL
         let candidateURL = URL(fileURLWithPath: request.candidatePath).standardizedFileURL
         let decoder = JSONDecoder()
-        let baseline = try decoder.decode(PerformanceBenchmarkResult.self, from: Data(contentsOf: baselineURL))
-        let candidate = try decoder.decode(PerformanceBenchmarkResult.self, from: Data(contentsOf: candidateURL))
+        let baseline = try decoder.decode(
+            PerformanceBenchmarkResult.self, from: Data(contentsOf: baselineURL))
+        let candidate = try decoder.decode(
+            PerformanceBenchmarkResult.self, from: Data(contentsOf: candidateURL))
         let evaluation = PerformanceBudgetGate.evaluate(
             baseline: baseline,
             candidate: candidate,
             budget: request.budget
         )
+        let rendered = try render(evaluation)
+        guard let outputPath = request.outputPath else {
+            return (rendered, evaluation.passed ? 0 : 1)
+        }
+        try write(
+            rendered, to: outputPath, avoiding: [baselineURL, candidateURL])
+        return ("", evaluation.passed ? 0 : 1)
+    }
+
+    private static func render(_ evaluation: PerformanceBudgetEvaluation) throws -> String {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
-        let rendered = String(decoding: try encoder.encode(evaluation), as: UTF8.self) + "\n"
-        if let outputPath = request.outputPath {
-            let outputURL = URL(fileURLWithPath: outputPath).standardizedFileURL
-            guard outputURL != baselineURL, outputURL != candidateURL else {
-                throw CLIError("Performance gate output must not overwrite an input")
-            }
-            try FileManager.default.createDirectory(
-                at: outputURL.deletingLastPathComponent(),
-                withIntermediateDirectories: true
-            )
-            try Data(rendered.utf8).write(to: outputURL, options: .atomic)
-            return ("", evaluation.passed ? 0 : 1)
+        let encoded = try encoder.encode(evaluation)
+        guard let json = String(bytes: encoded, encoding: .utf8) else {
+            throw CLIError("Performance gate result is not valid UTF-8")
         }
-        return (rendered, evaluation.passed ? 0 : 1)
+        return json + "\n"
+    }
+
+    private static func write(_ output: String, to path: String, avoiding inputs: [URL]) throws {
+        let outputURL = URL(fileURLWithPath: path).standardizedFileURL
+        guard !inputs.contains(outputURL) else {
+            throw CLIError("Performance gate output must not overwrite an input")
+        }
+        try FileManager.default.createDirectory(
+            at: outputURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data(output.utf8).write(to: outputURL, options: .atomic)
     }
 }

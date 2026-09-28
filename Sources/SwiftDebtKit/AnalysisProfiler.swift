@@ -19,7 +19,9 @@ public struct AnalysisProfile: Codable, Sendable {
         clockReads: 0,
         peakMemoryReads: 0,
         perSourceWork: 0,
-        note: "Disabled profiling allocates no profiler and performs at most 24 optional phase-boundary checks."
+        note:
+            "Disabled profiling allocates no profiler and performs at most 24 optional "
+            + "phase-boundary checks."
     )
 }
 

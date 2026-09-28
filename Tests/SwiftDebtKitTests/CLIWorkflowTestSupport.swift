@@ -5,15 +5,17 @@ private let repositoryRoot = URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent()
     .deletingLastPathComponent()
 
-func runSwiftDebt(_ arguments: [String], currentDirectory: URL? = nil) throws -> CLIRunResult {
+func runSwiftDebt(
+    _ arguments: [String], currentDirectory: URL? = nil, environment: [String: String] = [:]
+) throws -> CLIRunResult {
     let process = Process()
     process.executableURL = try swiftDebtExecutableURL()
     process.arguments = arguments
     process.currentDirectoryURL = currentDirectory ?? repositoryRoot
-    process.environment = ProcessInfo.processInfo.environment.merging([
-        "CI": "1",
-        "TERM": "dumb",
-    ]) { _, new in new }
+    var processEnvironment = ProcessInfo.processInfo.environment
+    processEnvironment["CI"] = "1"
+    processEnvironment["TERM"] = "dumb"
+    process.environment = processEnvironment.merging(environment) { _, new in new }
     let stdout = Pipe()
     let stderr = Pipe()
     process.standardOutput = stdout

@@ -20,10 +20,12 @@ public struct TerminalEnvironment: Equatable, Sendable {
         self.ci = ci
     }
 
-    public static func current(_ environment: [String: String] = ProcessInfo.processInfo.environment)
-        -> TerminalEnvironment
+    public static func current(
+        _ environment: [String: String] = ProcessInfo.processInfo.environment
+    )
+        -> Self
     {
-        TerminalEnvironment(
+        Self(
             standardInputIsTTY: isTTY(STDIN_FILENO),
             standardOutputIsTTY: isTTY(STDOUT_FILENO),
             term: environment["TERM"],
@@ -36,23 +38,23 @@ public struct TerminalCapability: Equatable, Sendable {
     public let supportsInteractive: Bool
     public let reason: String?
 
-    public static func detect(_ environment: TerminalEnvironment) -> TerminalCapability {
+    public static func detect(_ environment: TerminalEnvironment) -> Self {
         if !environment.standardInputIsTTY {
-            return TerminalCapability(supportsInteractive: false, reason: "stdin is not a TTY")
+            return Self(supportsInteractive: false, reason: "stdin is not a TTY")
         }
         if !environment.standardOutputIsTTY {
-            return TerminalCapability(supportsInteractive: false, reason: "stdout is not a TTY")
+            return Self(supportsInteractive: false, reason: "stdout is not a TTY")
         }
         if let ci = environment.ci, !ci.isEmpty, ci.lowercased() != "false" {
-            return TerminalCapability(supportsInteractive: false, reason: "CI terminal")
+            return Self(supportsInteractive: false, reason: "CI terminal")
         }
         guard let term = environment.term, !term.isEmpty else {
-            return TerminalCapability(supportsInteractive: false, reason: "TERM missing")
+            return Self(supportsInteractive: false, reason: "TERM missing")
         }
         if term.lowercased() == "dumb" {
-            return TerminalCapability(supportsInteractive: false, reason: "TERM=dumb")
+            return Self(supportsInteractive: false, reason: "TERM=dumb")
         }
-        return TerminalCapability(supportsInteractive: true, reason: nil)
+        return Self(supportsInteractive: true, reason: nil)
     }
 }
 
@@ -73,11 +75,13 @@ public enum TerminalDebtExplorer {
         _ analysis: RankedDebtAnalysis,
         environment: TerminalEnvironment = .current(),
         fallbackOutput: String,
-        editor: String? = ProcessInfo.processInfo.environment["VISUAL"] ?? ProcessInfo.processInfo.environment["EDITOR"]
+        editor: String? = ProcessInfo.processInfo.environment["VISUAL"]
+            ?? ProcessInfo.processInfo.environment["EDITOR"]
     ) -> TerminalDebtExplorerOutput {
         let capability = TerminalCapability.detect(environment)
         guard capability.supportsInteractive else {
-            return TerminalDebtExplorerOutput(text: fallbackOutput, usedFallback: true, reason: capability.reason)
+            return TerminalDebtExplorerOutput(
+                text: fallbackOutput, usedFallback: true, reason: capability.reason)
         }
         let state = DebtExplorerState(analysis: analysis)
         return TerminalDebtExplorerOutput(
@@ -98,7 +102,8 @@ public enum TerminalDebtExplorer {
             "SwiftDebt debt explorer",
             "Ranked items: \(analysis.summary.rankedItemCount) | Visible: \(state.visibleItemIDs.count)",
             "Priority filter: \(state.priorityFilter?.rawValue ?? "all") | Search: \(state.searchQuery.isEmpty ? "none" : state.searchQuery)",
-            "Commands: j/k move | p priority | / search | c copy source/context | e editor jump | q quit",
+            "Commands: j/k move | p priority | / search | c copy source/context | e editor jump "
+                + "| q quit",
             "",
             "Ranked debt",
         ]
@@ -106,6 +111,18 @@ public enum TerminalDebtExplorer {
             lines.insert("Status: \(status)", at: 4)
         }
         let visible = visibleItems(for: state, limit: listLimit)
+        appendVisibleItems(visible, state: state, to: &lines)
+        if let detail = state.selectedDetail(editor: editor) {
+            appendDetail(detail, to: &lines)
+        }
+        return lines.joined(separator: "\n") + "\n"
+    }
+
+    private static func appendVisibleItems(
+        _ visible: [(index: Int, item: RankedDebtItem)],
+        state: DebtExplorerState,
+        to lines: inout [String]
+    ) {
         if visible.isEmpty {
             lines.append("  No debt items match the current filters.")
         } else {
@@ -120,25 +137,18 @@ public enum TerminalDebtExplorer {
                 lines.append("  ... \(state.visibleItemIDs.count - last.index - 1) more items")
             }
         }
-        if let detail = state.selectedDetail(editor: editor) {
-            lines += [
-                "",
-                "Detail",
-                "Title: \(detail.title)",
-                "Location: \(detail.location)",
-                "Priority: \(detail.priority)",
-                "Score: \(detail.score)",
-                "Why: \(detail.explanation)",
-                "Action: \(detail.recommendation)",
-                "",
-                "Copyable source/context",
-                detail.sourceContext,
-            ]
-            if let editorCommand = detail.editorCommand {
-                lines += ["", "Editor jump", editorCommand]
-            }
+    }
+
+    private static func appendDetail(_ detail: DebtExplorerDetail, to lines: inout [String]) {
+        lines += [
+            "", "Detail", "Title: \(detail.title)", "Location: \(detail.location)",
+            "Priority: \(detail.priority)", "Score: \(detail.score)",
+            "Why: \(detail.explanation)", "Action: \(detail.recommendation)", "",
+            "Copyable source/context", detail.sourceContext,
+        ]
+        if let editorCommand = detail.editorCommand {
+            lines += ["", "Editor jump", editorCommand]
         }
-        return lines.joined(separator: "\n") + "\n"
     }
 
     private static func visibleItems(
@@ -165,7 +175,9 @@ public enum TerminalDebtExplorer {
     private static func listLine(for item: RankedDebtItem) -> String {
         let priority = item.score.priority?.rawValue ?? "unscored"
         let score =
-            item.score.value.map { String(format: "%.1f", locale: Locale(identifier: "en_US_POSIX"), $0) } ?? "N/A"
+            item.score.value.map {
+                String(format: "%.1f", locale: Locale(identifier: "en_US_POSIX"), $0)
+            } ?? "N/A"
         let file = item.item.entity.location.file ?? "unknown"
         let line = item.item.entity.location.line.map(String.init) ?? "?"
         return "[\(priority) \(score)] \(item.item.entity.displayName) - \(file):\(line)"

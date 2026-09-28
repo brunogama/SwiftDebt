@@ -171,7 +171,8 @@ public struct DebtmapCompatibilityProjection: Codable, Equatable, Sendable {
         schemaVersion: Int = 1,
         projection: String = "debtmap-compatibility",
         projectionNote: String =
-            "Deterministic SwiftDebt projection for Debtmap-oriented automation; not the native SwiftDebt debt model.",
+            "Deterministic SwiftDebt projection for Debtmap-oriented automation; not the native "
+            + "SwiftDebt debt model.",
         items: [DebtmapCompatibilityItem],
         missingEvidence: [DebtReportMissingEvidence]
     ) {

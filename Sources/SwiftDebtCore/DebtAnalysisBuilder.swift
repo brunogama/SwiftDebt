@@ -19,7 +19,16 @@ public struct DebtAnalysisBuilder: Sendable {
         let filtered = limit(scored.filter(passesFilters).sorted(by: rankedOrder))
         let aggregations = makeAggregations(from: scored, scoring: scoring)
         let outputItems = options.aggregationStrategy == .aggregateOnly ? [] : filtered
-        let compact = outputItems.map { ranked in
+        return RankedDebtAnalysis(
+            options: options, items: outputItems, aggregations: aggregations,
+            compactItems: compactItems(outputItems),
+            summary: summary(
+                for: outputItems, totalItemCount: items.count, aggregations: aggregations)
+        )
+    }
+
+    private func compactItems(_ items: [RankedDebtItem]) -> [CompactDebtItem] {
+        items.map { ranked in
             CompactDebtItem(
                 id: ranked.item.id,
                 displayName: ranked.item.entity.displayName,
@@ -29,31 +38,30 @@ public struct DebtAnalysisBuilder: Sendable {
                 location: ranked.item.entity.location
             )
         }
-        let unavailable = outputItems.reduce(0) { partial, ranked in
+    }
+
+    private func summary(
+        for items: [RankedDebtItem], totalItemCount: Int, aggregations: [DebtAggregation]
+    ) -> DebtAnalysisSummary {
+        let unavailable = items.reduce(0) { partial, ranked in
             partial + ranked.score.breakdown.unavailableEvidence.count
         }
         var priorityCounts: [String: Int] = [:]
-        for ranked in outputItems {
+        for ranked in items {
             let key = ranked.score.priority?.rawValue ?? "unscored"
             priorityCounts[key, default: 0] += 1
         }
-        return RankedDebtAnalysis(
-            options: options,
-            items: outputItems,
-            aggregations: aggregations,
-            compactItems: compact,
-            summary: DebtAnalysisSummary(
-                totalItemCount: items.count,
-                rankedItemCount: outputItems.count,
-                aggregationCount: aggregations.count,
-                unavailableEvidenceCount: unavailable,
-                priorityCounts: priorityCounts
-            )
+        return DebtAnalysisSummary(
+            totalItemCount: totalItemCount, rankedItemCount: items.count,
+            aggregationCount: aggregations.count, unavailableEvidenceCount: unavailable,
+            priorityCounts: priorityCounts
         )
     }
 
     private func passesFilters(_ ranked: RankedDebtItem) -> Bool {
-        if !options.levels.isEmpty, !options.levels.contains(ranked.item.entity.level) { return false }
+        if !options.levels.isEmpty, !options.levels.contains(ranked.item.entity.level) {
+            return false
+        }
         if !options.categories.isEmpty {
             let matches = ranked.item.evidence.contains { evidence in
                 options.categories.contains { category in
@@ -66,7 +74,9 @@ public struct DebtAnalysisBuilder: Sendable {
             guard let score = ranked.score.value, score >= minScore else { return false }
         }
         if let minPriority = options.minPriority {
-            guard let priority = ranked.score.priority, priorityRank(priority) >= priorityRank(minPriority) else {
+            guard let priority = ranked.score.priority,
+                priorityRank(priority) >= priorityRank(minPriority)
+            else {
                 return false
             }
         }
@@ -82,7 +92,9 @@ public struct DebtAnalysisBuilder: Sendable {
         return Array(ranked.prefix(count))
     }
 
-    private func makeAggregations(from scored: [RankedDebtItem], scoring: DebtScoring) -> [DebtAggregation] {
+    private func makeAggregations(from scored: [RankedDebtItem], scoring: DebtScoring)
+        -> [DebtAggregation]
+    {
         guard options.aggregationStrategy != .none else { return [] }
         let problematic = scored.filter { ranked in
             guard let value = ranked.score.value else { return false }
@@ -90,7 +102,9 @@ public struct DebtAnalysisBuilder: Sendable {
         }
         let grouped = Dictionary(grouping: problematic, by: { $0.item.entity.location.file ?? "" })
         return grouped.keys.sorted().compactMap { file in
-            guard !file.isEmpty, let members = grouped[file]?.sorted(by: rankedOrder), !members.isEmpty else {
+            guard !file.isEmpty, let members = grouped[file]?.sorted(by: rankedOrder),
+                !members.isEmpty
+            else {
                 return nil
             }
             let evidence = members.flatMap { $0.item.evidence }.sorted(by: evidenceOrder)
@@ -99,7 +113,8 @@ public struct DebtAnalysisBuilder: Sendable {
                 id: "file:\(file)",
                 level: .file,
                 displayName: file,
-                location: DebtLocation(module: anchor.module, file: file, line: anchor.line, column: anchor.column),
+                location: DebtLocation(
+                    module: anchor.module, file: file, line: anchor.line, column: anchor.column),
                 memberItemIDs: members.map { $0.item.id }.sorted(),
                 score: scoring.score(evidence: evidence)
             )
@@ -154,17 +169,20 @@ private func explanation(for item: DebtItem) -> String {
     else {
         return "No evidence was available for this debt item."
     }
-    return "Highest evidence is \(strongest.kind) with raw value \(strongest.rawValue). \(strongest.note ?? "")"
+    return
+        "Highest evidence is \(strongest.kind) with raw value \(strongest.rawValue). \(strongest.note ?? "")"
 }
 
 private func recommendation(for item: DebtItem) -> String {
     if item.evidence.contains(where: { !$0.availability.isAvailable }) {
         return
-            "Review unavailable evidence before treating the score as complete; no unavailable provider was converted to zero risk."
+            "Review unavailable evidence before treating the score as complete; no unavailable "
+            + "provider was converted to zero risk."
     }
     if item.evidence.contains(where: { $0.kind.hasPrefix("coverage.") }) {
         return
-            "Prioritize tests around this context before structural refactoring; coverage evidence can only dampen risk."
+            "Prioritize tests around this context before structural refactoring; coverage "
+            + "evidence can only dampen risk."
     }
     switch item.entity.level {
     case .callable:
@@ -172,7 +190,9 @@ private func recommendation(for item: DebtItem) -> String {
     case .type:
         return "Split responsibilities or simplify the most complex methods in this type."
     case .file:
-        return "Inspect clustered callable and type evidence before moving code across file boundaries."
+        return
+            "Inspect clustered callable and type evidence before moving code across file "
+            + "boundaries."
     case .module:
         return "Review module boundaries and repeated high-risk files before broad refactoring."
     }

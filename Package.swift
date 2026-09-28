@@ -1,6 +1,8 @@
 // swift-tools-version: 6.2
 import PackageDescription
 
+let warningsAsErrors: [SwiftSetting] = [.treatAllWarnings(as: .error)]
+
 let package = Package(
     name: "SwiftDebt",
     platforms: [
@@ -18,11 +20,14 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/swiftlang/swift-syntax.git", exact: "602.0.0"),
-        // Build-time tooling for the checked-in SwiftDebtKit DocC catalog and Pages site.
+        .package(
+            url: "https://github.com/hummingbird-project/swift-mustache.git",
+            exact: "2.1.0"),
+        // Build-time DocC tooling for public API references and the shared article catalog.
         .package(url: "https://github.com/swiftlang/swift-docc-plugin.git", exact: "1.5.0"),
     ],
     targets: [
-        .target(name: "SwiftDebtCore"),
+        .target(name: "SwiftDebtCore", swiftSettings: warningsAsErrors),
         .target(
             name: "SwiftDebtSyntax",
             dependencies: [
@@ -30,17 +35,34 @@ let package = Package(
                 .product(name: "SwiftSyntax", package: "swift-syntax"),
                 .product(name: "SwiftParser", package: "swift-syntax"),
                 .product(name: "SwiftParserDiagnostics", package: "swift-syntax"),
-            ]
+            ],
+            swiftSettings: warningsAsErrors
         ),
-        .target(name: "SwiftDebtReporting", dependencies: ["SwiftDebtCore"]),
-        .target(name: "SwiftDebtInteractive", dependencies: ["SwiftDebtCore"]),
+        .target(
+            name: "SwiftDebtReporting",
+            dependencies: [
+                "SwiftDebtCore",
+                .product(name: "Mustache", package: "swift-mustache"),
+            ],
+            resources: [.process("Resources")],
+            swiftSettings: warningsAsErrors
+        ),
+        .target(
+            name: "SwiftDebtInteractive",
+            dependencies: ["SwiftDebtCore"],
+            swiftSettings: warningsAsErrors
+        ),
         .target(
             name: "SwiftDebtKit",
             dependencies: ["SwiftDebtCore", "SwiftDebtSyntax", "SwiftDebtReporting"],
-            // SwiftPM skips the catalog during compilation; the DocC plugin discovers it independently.
-            exclude: ["SwiftDebtKit.docc"]
+            resources: [.copy("SwiftDebtKit.docc")],
+            swiftSettings: warningsAsErrors
         ),
-        .executableTarget(name: "swift-debt", dependencies: ["SwiftDebtCore", "SwiftDebtInteractive", "SwiftDebtKit"]),
+        .executableTarget(
+            name: "swift-debt",
+            dependencies: ["SwiftDebtCore", "SwiftDebtInteractive", "SwiftDebtKit"],
+            swiftSettings: warningsAsErrors
+        ),
         .plugin(
             name: "SwiftDebtCommandPlugin",
             capability: .command(
@@ -53,21 +75,25 @@ let package = Package(
         .testTarget(
             name: "SwiftDebtCoreTests",
             dependencies: ["SwiftDebtCore"],
-            resources: [.process("Fixtures")]
+            resources: [.process("Fixtures")],
+            swiftSettings: warningsAsErrors
         ),
         .testTarget(
             name: "SwiftDebtSyntaxTests",
             dependencies: ["SwiftDebtCore", "SwiftDebtSyntax"],
-            resources: [.process("Fixtures")]
+            resources: [.process("Fixtures")],
+            swiftSettings: warningsAsErrors
         ),
         .testTarget(
             name: "SwiftDebtKitTests",
             dependencies: ["SwiftDebtCore", "SwiftDebtKit", "SwiftDebtReporting"],
-            resources: [.process("Fixtures")]
+            resources: [.process("Fixtures")],
+            swiftSettings: warningsAsErrors
         ),
         .testTarget(
             name: "SwiftDebtInteractiveTests",
-            dependencies: ["SwiftDebtCore", "SwiftDebtInteractive", "swift-debt"]
+            dependencies: ["SwiftDebtCore", "SwiftDebtInteractive", "swift-debt"],
+            swiftSettings: warningsAsErrors
         ),
     ],
     swiftLanguageModes: [.v6]

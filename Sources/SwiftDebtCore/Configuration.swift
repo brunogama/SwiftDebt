@@ -92,16 +92,19 @@ public struct AnalysisOptions: Sendable {
         }
         if let limit = threshold(for: .dc), minimumDuplicateLines - 1 > limit {
             throw AnalysisFailure.invalidConfiguration(
-                "minimumDuplicateLines must not exceed the DC threshold plus one; otherwise shorter violations would be hidden"
+                "minimumDuplicateLines must not exceed the DC threshold plus one; otherwise "
+                    + "shorter violations would be hidden"
             )
         }
         if scoring != .none && minimumDuplicateLines != 11 {
             throw AnalysisFailure.invalidConfiguration(
-                "paper/bounded scoring requires minimumDuplicateLines = 11; use scoring = none for a custom clone floor"
+                "paper/bounded scoring requires minimumDuplicateLines = 11; use scoring = none "
+                    + "for a custom clone floor"
             )
         }
         guard maximumDuplicateComparisons > 0 else {
-            throw AnalysisFailure.invalidConfiguration("maximumDuplicateComparisons must be positive")
+            throw AnalysisFailure.invalidConfiguration(
+                "maximumDuplicateComparisons must be positive")
         }
         guard thresholds.values.allSatisfy({ $0 >= 0 }) else {
             throw AnalysisFailure.invalidConfiguration("thresholds must be nonnegative")
@@ -139,7 +142,8 @@ public enum ReportFormat: String, Codable, CaseIterable, Sendable {
         switch self {
         case .text, .json, .csv, .html, .diagnostics:
             false
-        case .debtJSON, .debtMarkdown, .debtDot, .debtText, .debtCompact, .debtmapJSON, .debtDashboard:
+        case .debtJSON, .debtMarkdown, .debtDot, .debtText, .debtCompact, .debtmapJSON,
+            .debtDashboard:
             true
         }
     }

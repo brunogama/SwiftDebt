@@ -14,6 +14,15 @@ enum DebtDashboardApplication {
             if (value !== undefined) element.textContent = value;
             return element;
           };
+          const createTable = headings => {
+            const element = el("table");
+            const header = el("thead");
+            const row = el("tr");
+            headings.forEach(heading => row.append(el("th", heading)));
+            header.append(row);
+            element.append(header);
+            return element;
+          };
           const state = { priority: "all", category: "all", level: "all", query: "" };
           let report = null;
           let comparison = null;
@@ -42,7 +51,8 @@ enum DebtDashboardApplication {
           function validateReport(value) {
             if (!value || value.reportKind !== "swiftdebt-report"
                 || value.schemaVersion !== reportSchemaVersion || !Array.isArray(value.items)) {
-              throw new Error(`Expected SwiftDebt debt report schema version ${reportSchemaVersion}`);
+              throw new Error(`Expected SwiftDebt debt report schema version ${reportSchemaVersion}\
+        `);
             }
             return value;
           }
@@ -62,7 +72,8 @@ enum DebtDashboardApplication {
                 || value.beforeReportSchemaVersion !== reportSchemaVersion
                 || value.afterReportSchemaVersion !== reportSchemaVersion
                 || !value.summary || !validItems || !validAggregations || !value.missingEvidence) {
-              throw new Error(`Expected SwiftDebt debt report comparison schema version ${comparisonSchemaVersion}`);
+              throw new Error(`Expected SwiftDebt debt report comparison schema version $\
+        {comparisonSchemaVersion}`);
             }
             return value;
           }
@@ -79,7 +90,8 @@ enum DebtDashboardApplication {
             fillSelect("priority-filter", priorities(report), "All priorities");
             fillSelect("category-filter", categories(report), "All categories");
             fillSelect("level-filter", levels(report), "All levels");
-            q("report-title").textContent = `${report.generator || "SwiftDebt"} schema ${report.schemaVersion} - ${report.items.length} ranked items`;
+            q("report-title").textContent = `${report.generator || "SwiftDebt"} schema $\
+        {report.schemaVersion} - ${report.items.length} ranked items`;
             const items = filteredItems();
             renderSummary();
             renderTable(items);

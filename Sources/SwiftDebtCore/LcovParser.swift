@@ -2,66 +2,82 @@ public struct LcovParser: Sendable {
     public init() {}
 
     public func parse(_ text: String) -> LcovReport {
-        var records: [LcovRecord] = []
-        var sourcePath: String?
-        var functions: [LcovFunctionDefinition] = []
-        var functionHits: [LcovFunctionHit] = []
-        var lineHits: [LcovLineHit] = []
-
-        func finishRecord() {
-            guard let path = sourcePath, !path.isEmpty else { return }
-            records.append(
-                LcovRecord(
-                    sourcePath: path,
-                    functions: functions.sorted(by: functionDefinitionOrder),
-                    functionHits: functionHits.sorted(by: functionHitOrder),
-                    lineHits: lineHits.sorted(by: lineHitOrder)
-                )
-            )
-            sourcePath = nil
-            functions = []
-            functionHits = []
-            lineHits = []
-        }
-
+        var accumulator = LcovAccumulator()
         for rawLine in text.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline) {
-            let line = trimmed(String(rawLine))
-            if line.isEmpty { continue }
-            if line == "end_of_record" {
-                finishRecord()
-                continue
-            }
-            if let value = value(after: "SF:", in: line) {
-                finishRecord()
-                sourcePath = value
-                continue
-            }
-            if let value = value(after: "FN:", in: line), let comma = value.firstIndex(of: ",") {
-                let lineText = String(value[..<comma])
-                let name = String(value[value.index(after: comma)...])
-                if let lineNumber = Int(lineText), !name.isEmpty {
-                    functions.append(LcovFunctionDefinition(line: lineNumber, name: name))
-                }
-                continue
-            }
-            if let value = value(after: "FNDA:", in: line), let comma = value.firstIndex(of: ",") {
-                let hitText = String(value[..<comma])
-                let name = String(value[value.index(after: comma)...])
-                if let hits = Int(hitText), !name.isEmpty {
-                    functionHits.append(LcovFunctionHit(name: name, hits: hits))
-                }
-                continue
-            }
-            if let value = value(after: "DA:", in: line) {
-                let parts = value.split(separator: ",", maxSplits: 2, omittingEmptySubsequences: false)
-                if parts.count >= 2, let lineNumber = Int(parts[0]), let hits = Int(parts[1]) {
-                    lineHits.append(LcovLineHit(line: lineNumber, hits: hits))
-                }
-                continue
-            }
+            accumulator.consume(trimmed(String(rawLine)))
         }
-        finishRecord()
-        return LcovReport(records: records.sorted { normalizedPath($0.sourcePath) < normalizedPath($1.sourcePath) })
+        accumulator.finishRecord()
+        return LcovReport(
+            records: accumulator.records.sorted {
+                normalizedPath($0.sourcePath) < normalizedPath($1.sourcePath)
+            })
+    }
+}
+
+private struct LcovAccumulator {
+    var records: [LcovRecord] = []
+    var sourcePath: String?
+    var functions: [LcovFunctionDefinition] = []
+    var functionHits: [LcovFunctionHit] = []
+    var lineHits: [LcovLineHit] = []
+
+    mutating func consume(_ line: String) {
+        guard !line.isEmpty else { return }
+        if line == "end_of_record" {
+            finishRecord()
+        } else if let path = value(after: "SF:", in: line) {
+            finishRecord()
+            sourcePath = path
+        } else if let definition = functionDefinition(line) {
+            functions.append(definition)
+        } else if let hit = functionHit(line) {
+            functionHits.append(hit)
+        } else if let hit = lineHit(line) {
+            lineHits.append(hit)
+        }
+    }
+
+    mutating func finishRecord() {
+        guard let sourcePath, !sourcePath.isEmpty else { return }
+        records.append(
+            LcovRecord(
+                sourcePath: sourcePath, functions: functions.sorted(by: functionDefinitionOrder),
+                functionHits: functionHits.sorted(by: functionHitOrder),
+                lineHits: lineHits.sorted(by: lineHitOrder)))
+        self.sourcePath = nil
+        functions = []
+        functionHits = []
+        lineHits = []
+    }
+
+    private func functionDefinition(_ line: String) -> LcovFunctionDefinition? {
+        guard let parts = pair(after: "FN:", in: line), let lineNumber = Int(parts.first),
+            !parts.second.isEmpty
+        else { return nil }
+        return LcovFunctionDefinition(line: lineNumber, name: parts.second)
+    }
+
+    private func functionHit(_ line: String) -> LcovFunctionHit? {
+        guard let parts = pair(after: "FNDA:", in: line), let hits = Int(parts.first),
+            !parts.second.isEmpty
+        else { return nil }
+        return LcovFunctionHit(name: parts.second, hits: hits)
+    }
+
+    private func lineHit(_ line: String) -> LcovLineHit? {
+        guard let raw = value(after: "DA:", in: line) else { return nil }
+        let parts = raw.split(separator: ",", maxSplits: 2, omittingEmptySubsequences: false)
+        guard parts.count >= 2, let lineNumber = Int(parts[0]), let hits = Int(parts[1]) else {
+            return nil
+        }
+        return LcovLineHit(line: lineNumber, hits: hits)
+    }
+
+    private func pair(after prefix: String, in line: String) -> (first: String, second: String)? {
+        guard let raw = value(after: prefix, in: line), let comma = raw.firstIndex(of: ",") else {
+            return nil
+        }
+        return (String(raw[..<comma]), String(raw[raw.index(after: comma)...]))
     }
 }
 
@@ -85,7 +101,9 @@ private func isWhitespace(_ character: Character) -> Bool {
     character == " " || character == "\t" || character == "\r" || character == "\n"
 }
 
-private func functionDefinitionOrder(_ lhs: LcovFunctionDefinition, _ rhs: LcovFunctionDefinition) -> Bool {
+private func functionDefinitionOrder(_ lhs: LcovFunctionDefinition, _ rhs: LcovFunctionDefinition)
+    -> Bool
+{
     if lhs.line != rhs.line { return lhs.line < rhs.line }
     return lhs.name < rhs.name
 }

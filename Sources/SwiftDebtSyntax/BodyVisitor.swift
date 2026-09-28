@@ -154,14 +154,18 @@ final class BodyVisitor: SyntaxVisitor {
             let labels = node.arguments.map { argument in
                 "\(cleanName(argument.label?.text ?? "_")):"
             }.joined()
-            callSites.append(CallSiteFact(name: name, labels: labels, location: sourceLines.location(node)))
+            callSites.append(
+                CallSiteFact(name: name, labels: labels, location: sourceLines.location(node)))
         }
         return .visitChildren
     }
     override func visit(_ node: DeclReferenceExprSyntax) -> SyntaxVisitorContinueKind {
         let name = cleanName(node.baseName.text)
-        if let member = node.parent?.as(MemberAccessExprSyntax.self), member.declName.id == node.id {
-            if let base = member.base, let receiver = expressionName(base), receiver == "self" || receiver == "Self" {
+        if let member = node.parent?.as(MemberAccessExprSyntax.self), member.declName.id == node.id
+        {
+            if let base = member.base, let receiver = expressionName(base),
+                receiver == "self" || receiver == "Self"
+            {
                 explicitSelfReferences.insert(name)
             }
             return .skipChildren

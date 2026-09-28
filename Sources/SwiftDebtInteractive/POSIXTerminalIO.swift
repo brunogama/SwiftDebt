@@ -30,7 +30,8 @@ final class RawTerminalMode {
     func restore() throws {
         guard var original = savedAttributes else { return }
         guard tcsetattr(STDIN_FILENO, TCSANOW, &original) == 0 else {
-            throw TerminalInteractionError.posix(operation: "restore terminal attributes", code: errno)
+            throw TerminalInteractionError.posix(
+                operation: "restore terminal attributes", code: errno)
         }
         savedAttributes = nil
     }
@@ -57,11 +58,18 @@ enum POSIXTerminalInput {
         var bytes: [UInt8] = []
         while let byte = try readByte() {
             if byte == 10 || byte == 13 {
-                return String(decoding: bytes, as: UTF8.self)
+                guard let line = String(bytes: bytes, encoding: .utf8) else {
+                    throw TerminalInteractionError.terminalMode("terminal input is not valid UTF-8")
+                }
+                return line
             }
             bytes.append(byte)
         }
-        return bytes.isEmpty ? nil : String(decoding: bytes, as: UTF8.self)
+        guard !bytes.isEmpty else { return nil }
+        guard let line = String(bytes: bytes, encoding: .utf8) else {
+            throw TerminalInteractionError.terminalMode("terminal input is not valid UTF-8")
+        }
+        return line
     }
 }
 

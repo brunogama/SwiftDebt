@@ -26,6 +26,26 @@ package struct StructuralTypeFacts: Sendable {
     }
 }
 
+struct StructuralEvidenceInput {
+    let itemID: String
+    let suffix: String
+    let kind: String
+    let value: Int
+    let threshold: Int
+    let weight: Double
+    let location: DebtLocation
+    let note: String
+}
+
+struct StructuralEvidenceSpec {
+    let suffix: String
+    let kind: String
+    let value: Int
+    let threshold: Int
+    let weight: Double
+    let note: String
+}
+
 package struct StructuralDebtBuilder: Sendable {
     package init() {}
 
@@ -41,12 +61,15 @@ package struct StructuralDebtBuilder: Sendable {
         items += functions.sorted(by: functionOrder).map(makeCallableItem)
         items += types.sorted { $0.key.displayName < $1.key.displayName }.map(makeTypeItem)
         items += files.sorted { $0.path < $1.path }.map { file in
-            makeFileItem(file: file, types: types, functions: functions, duplicateLines: duplicateLines)
+            makeFileItem(
+                file: file, types: types, functions: functions, duplicateLines: duplicateLines)
         }
         for module in Set(files.map(\.module)).sorted() {
             let moduleFiles = files.filter { $0.module == module }.sorted { $0.path < $1.path }
             guard !moduleFiles.isEmpty else { continue }
-            items.append(makeModuleItem(module: module, files: moduleFiles, types: types, functions: functions))
+            items.append(
+                makeModuleItem(
+                    module: module, files: moduleFiles, types: types, functions: functions))
         }
 
         return items.sorted { lhs, rhs in
@@ -57,25 +80,24 @@ package struct StructuralDebtBuilder: Sendable {
         }
     }
 
-    func evidence(
-        itemID: String,
-        suffix: String,
-        kind: String,
-        value: Int,
-        threshold: Int,
-        weight: Double,
-        location: DebtLocation,
-        note: String
-    ) -> DebtEvidence {
+    func evidence(_ input: StructuralEvidenceInput) -> DebtEvidence {
         DebtEvidence(
-            id: "\(itemID):\(suffix)",
-            kind: kind,
-            weight: weight,
-            normalizedScore: normalized(value, threshold: threshold),
-            rawValue: "value=\(value)",
-            location: location,
-            note: note
+            id: "\(input.itemID):\(input.suffix)", kind: input.kind, weight: input.weight,
+            normalizedScore: normalized(input.value, threshold: input.threshold),
+            rawValue: "value=\(input.value)", location: input.location, note: input.note
         )
+    }
+
+    func evidence(
+        itemID: String, location: DebtLocation, specs: [StructuralEvidenceSpec]
+    ) -> [DebtEvidence] {
+        specs.map { spec in
+            evidence(
+                StructuralEvidenceInput(
+                    itemID: itemID, suffix: spec.suffix, kind: spec.kind, value: spec.value,
+                    threshold: spec.threshold, weight: spec.weight, location: location,
+                    note: spec.note))
+        }.sorted(by: evidenceOrder)
     }
 
     func normalized(_ value: Int, threshold: Int) -> Double {

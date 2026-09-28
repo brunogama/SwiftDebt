@@ -29,15 +29,33 @@ public struct Analyzer: Sendable {
             throw AnalysisFailure.invalidConfiguration(
                 "Source paths must be unique and paths/modules must not be empty")
         }
+        let parsed = try await parse(sources, jobs: jobs, phaseSink: phaseSink)
+        try Task.checkCancellation()
+        return try MetricsCalculator().analyze(parsed, options: options, phaseSink: phaseSink)
+    }
+
+    private func parse(
+        _ sources: [SourceUnit], jobs: Int, phaseSink: (any AnalysisPhaseSink)?
+    ) async throws -> [ParsedSource] {
+        phaseSink?.begin(.parsing)
+        defer { phaseSink?.end(.parsing) }
         let parser = self.parser
-        let parsed: [ParsedSource] = try await { () async throws -> [ParsedSource] in
-            phaseSink?.begin(.parsing)
-            defer { phaseSink?.end(.parsing) }
-            return try await withThrowingTaskGroup(of: ParsedSource.self) { group in
-                var next = 0
-                var results: [ParsedSource] = []
-                results.reserveCapacity(sources.count)
-                for _ in 0..<min(jobs, sources.count) {
+        return try await withThrowingTaskGroup(of: ParsedSource.self) { group in
+            var next = 0
+            var results: [ParsedSource] = []
+            results.reserveCapacity(sources.count)
+            for _ in 0..<min(jobs, sources.count) {
+                let source = sources[next]
+                next += 1
+                group.addTask {
+                    try Task.checkCancellation()
+                    return parser.parse(source)
+                }
+            }
+            while let result = try await group.next() {
+                try Task.checkCancellation()
+                results.append(result)
+                if next < sources.count {
                     let source = sources[next]
                     next += 1
                     group.addTask {
@@ -45,22 +63,8 @@ public struct Analyzer: Sendable {
                         return parser.parse(source)
                     }
                 }
-                while let result = try await group.next() {
-                    try Task.checkCancellation()
-                    results.append(result)
-                    if next < sources.count {
-                        let source = sources[next]
-                        next += 1
-                        group.addTask {
-                            try Task.checkCancellation()
-                            return parser.parse(source)
-                        }
-                    }
-                }
-                return results
             }
-        }()
-        try Task.checkCancellation()
-        return try MetricsCalculator().analyze(parsed, options: options, phaseSink: phaseSink)
+            return results
+        }
     }
 }

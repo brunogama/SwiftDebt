@@ -34,7 +34,8 @@ extension DebtDashboardApplication {
             const needle = state.query.trim().toLowerCase();
             return report.items.filter(item =>
               (state.priority === "all"
-                || (state.priority === "unscored" ? !item.priority : item.priority === state.priority))
+                || (state.priority === "unscored" ? !item.priority : item.priority === \
+        state.priority))
               && (state.category === "all" || item.category === state.category)
               && (state.level === "all" || item.level === state.level)
               && (!needle || [
@@ -74,7 +75,8 @@ extension DebtDashboardApplication {
           function appendRow(body, values, rowHeaderClass) {
             const row = el("tr");
             values.forEach((value, index) => {
-              const cell = el(index === 0 ? "th" : "td", value, index === 0 ? rowHeaderClass : undefined);
+              const cell = el(index === 0 ? "th" : "td", value, index === 0 ? rowHeaderClass : \
+        undefined);
               if (index === 0) cell.scope = "row";
               row.append(cell);
             });
@@ -83,8 +85,9 @@ extension DebtDashboardApplication {
 
           function renderTable(items) {
             const wrap = q("item-table");
-            const table = el("table");
-            table.innerHTML = "<thead><tr><th>Priority</th><th>Score</th><th>Entity</th><th>Level</th><th>Location</th><th>Category</th><th>Recommendation</th></tr></thead>";
+            const table = createTable([
+              "Priority", "Score", "Entity", "Level", "Location", "Category", "Recommendation",
+            ]);
             const body = el("tbody");
             items.forEach(item => {
               appendRow(body, [
@@ -124,18 +127,22 @@ extension DebtDashboardApplication {
               const evidence = el("ul");
               (item.evidence || []).forEach(value => evidence.append(el(
                 "li",
-                `${value.kind}: ${value.rawValue} (${value.availability?.state || "unknown"}) ${value.availability?.reason || ""}`
+                `${value.kind}: ${value.rawValue} (${value.availability?.state || "unknown"}) $\
+        {value.availability?.reason || ""}`
               )));
               body.append(el("h3", "Evidence"), evidence);
               const breakdown = el("ul");
               ((item.scoreBreakdown && item.scoreBreakdown.contributions) || []).forEach(value =>
                 breakdown.append(el(
                   "li",
-                  `${value.kind}: ${score(value.normalizedScore)} weight ${score(value.effectiveWeight)} - ${value.rawValue}`
+                  `${value.kind}: ${score(value.normalizedScore)} weight $\
+        {score(value.effectiveWeight)} - ${value.rawValue}`
                 ))
               );
-              ((item.scoreBreakdown && item.scoreBreakdown.unavailableEvidence) || []).forEach(value =>
-                breakdown.append(el("li", `${value.kind}: unavailable - ${value.reason || "unspecified"}`))
+              ((item.scoreBreakdown && item.scoreBreakdown.unavailableEvidence) || \
+        []).forEach(value =>
+                breakdown.append(el("li", `${value.kind}: unavailable - ${value.reason || \
+        "unspecified"}`))
               );
               body.append(el("h3", "Score breakdown"), breakdown);
               details.append(summary, body);

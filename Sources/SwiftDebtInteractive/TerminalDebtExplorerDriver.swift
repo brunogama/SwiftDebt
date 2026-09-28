@@ -39,34 +39,49 @@ extension TerminalDebtExplorer {
 
         commandLoop: while true {
             guard let key = try readKey(dependencies: dependencies) else { break }
-            switch TerminalDebtExplorerCommand(key: key) {
-            case .moveDown:
-                state = DebtExplorerReducer.reduce(state, .moveSelection(1))
-                status = nil
-            case .moveUp:
-                state = DebtExplorerReducer.reduce(state, .moveSelection(-1))
-                status = nil
-            case .cyclePriority:
-                state = DebtExplorerReducer.reduce(state, .cyclePriorityFilter)
-                status = nil
-            case .search:
-                try dependencies.write("Search query (empty clears): ")
-                guard let query = try dependencies.readLine() else { break commandLoop }
-                state = DebtExplorerReducer.reduce(state, .setSearchQuery(query))
-                status = query.isEmpty ? "Search cleared." : "Search updated."
-            case .copyContext:
-                status = copySelectedContext(state: state, dependencies: dependencies)
-            case .openEditor:
-                status = openSelectedSource(state: state, dependencies: dependencies)
-            case .quit:
-                break commandLoop
-            case .unknown(let key):
-                status = "Unknown command: \(String(decoding: [key], as: UTF8.self))"
-            }
+            guard
+                try apply(
+                    TerminalDebtExplorerCommand(key: key), state: &state, status: &status,
+                    dependencies: dependencies)
+            else { break commandLoop }
             try redraw(state: state, analysis: analysis, status: status, dependencies: dependencies)
         }
 
         return TerminalDebtExplorerRunResult(usedFallback: false, reason: nil, finalState: state)
+    }
+
+    private static func apply(
+        _ command: TerminalDebtExplorerCommand,
+        state: inout DebtExplorerState,
+        status: inout String?,
+        dependencies: TerminalDebtExplorerDependencies
+    ) throws -> Bool {
+        switch command {
+        case .moveDown:
+            state = DebtExplorerReducer.reduce(state, .moveSelection(1))
+            status = nil
+        case .moveUp:
+            state = DebtExplorerReducer.reduce(state, .moveSelection(-1))
+            status = nil
+        case .cyclePriority:
+            state = DebtExplorerReducer.reduce(state, .cyclePriorityFilter)
+            status = nil
+        case .search:
+            try dependencies.write("Search query (empty clears): ")
+            guard let query = try dependencies.readLine() else { return false }
+            state = DebtExplorerReducer.reduce(state, .setSearchQuery(query))
+            status = query.isEmpty ? "Search cleared." : "Search updated."
+        case .copyContext:
+            status = copySelectedContext(state: state, dependencies: dependencies)
+        case .openEditor:
+            status = openSelectedSource(state: state, dependencies: dependencies)
+        case .quit:
+            return false
+        case .unknown(let key):
+            let value = String(bytes: [key], encoding: .utf8) ?? "0x\(String(key, radix: 16))"
+            status = "Unknown command: \(value)"
+        }
+        return true
     }
 
     private static func readKey(dependencies: TerminalDebtExplorerDependencies) throws -> UInt8? {

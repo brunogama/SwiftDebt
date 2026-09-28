@@ -38,7 +38,9 @@ public struct DebtExplorerDetail: Equatable, Sendable {
         if !item.score.breakdown.unavailableEvidence.isEmpty {
             lines.append("Unavailable evidence:")
             for evidence in item.score.breakdown.unavailableEvidence {
-                lines.append("- \(evidence.kind) \(evidence.evidenceID): \(evidence.reason ?? "unspecified")")
+                lines.append(
+                    "- \(evidence.kind) \(evidence.evidenceID): \(evidence.reason ?? "unspecified")"
+                )
             }
         }
         return lines.joined(separator: "\n")
@@ -48,7 +50,8 @@ public struct DebtExplorerDetail: Equatable, Sendable {
         "- \(contribution.kind) \(contribution.evidenceID): raw=\(contribution.rawValue), normalized=\(contribution.normalizedScore.debtExplorerScore), weight=\(contribution.effectiveWeight.debtExplorerScore), contribution=\(contribution.contribution.debtExplorerScore)"
     }
 
-    private static func sourceContext(for item: RankedDebtItem, scoreExplanation: String) -> String {
+    private static func sourceContext(for item: RankedDebtItem, scoreExplanation: String) -> String
+    {
         var lines = [
             item.item.entity.location.debtExplorerLocation,
             item.item.entity.displayName,
@@ -97,7 +100,8 @@ extension Double {
 }
 
 private func shellQuote(_ value: String) -> String {
-    let safe = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_./+-")
+    let safe = CharacterSet(
+        charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_./+-")
     if value.unicodeScalars.allSatisfy({ safe.contains($0) }) {
         return value
     }

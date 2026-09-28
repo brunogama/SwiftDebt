@@ -333,6 +333,15 @@
     if (value !== undefined) element.textContent = value;
     return element;
   };
+  const createTable = headings => {
+    const element = el("table");
+    const header = el("thead");
+    const row = el("tr");
+    headings.forEach(heading => row.append(el("th", heading)));
+    header.append(row);
+    element.append(header);
+    return element;
+  };
   const state = { priority: "all", category: "all", level: "all", query: "" };
   let report = null;
   let comparison = null;
@@ -472,8 +481,9 @@
 
   function renderTable(items) {
     const wrap = q("item-table");
-    const table = el("table");
-    table.innerHTML = "<thead><tr><th>Priority</th><th>Score</th><th>Entity</th><th>Level</th><th>Location</th><th>Category</th><th>Recommendation</th></tr></thead>";
+    const table = createTable([
+      "Priority", "Score", "Entity", "Level", "Location", "Category", "Recommendation",
+    ]);
     const body = el("tbody");
     items.forEach(item => {
       appendRow(body, [
@@ -581,8 +591,7 @@
 
   function renderItemChanges(box) {
     const changes = comparison.itemChanges;
-    const table = el("table");
-    table.innerHTML = "<thead><tr><th>Change</th><th>Item</th><th>Before</th><th>After</th><th>Delta</th></tr></thead>";
+    const table = createTable(["Change", "Item", "Before", "After", "Delta"]);
     const body = el("tbody");
     changes.added.forEach(item => appendRow(
       body,
@@ -606,8 +615,7 @@
   function renderAggregationChanges(box) {
     const changes = comparison.aggregationChanges;
     if (!changes.added.length && !changes.removed.length && !changes.changed.length) return;
-    const table = el("table");
-    table.innerHTML = "<thead><tr><th>Change</th><th>Aggregation</th><th>Before</th><th>After</th><th>Delta</th></tr></thead>";
+    const table = createTable(["Change", "Aggregation", "Before", "After", "Delta"]);
     const body = el("tbody");
     changes.added.forEach(value => appendRow(
       body,

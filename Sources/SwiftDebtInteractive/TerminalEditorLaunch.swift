@@ -56,7 +56,9 @@ struct TerminalEditorLaunch: Equatable {
         return sourceRoot.appendingPathComponent(file).standardizedFileURL.path
     }
 
-    private static func sourceArguments(editor: String, file: String, line: Int, column: Int) -> [String] {
+    private static func sourceArguments(editor: String, file: String, line: Int, column: Int)
+        -> [String]
+    {
         switch URL(fileURLWithPath: editor).lastPathComponent {
         case "code", "code-insiders", "codium", "cursor":
             return ["--goto", "\(file):\(line):\(column)"]
@@ -99,7 +101,11 @@ enum TerminalClipboard {
             ("/usr/bin/wl-copy", []),
             ("/usr/bin/xclip", ["-selection", "clipboard"]),
         ]
-        guard let command = candidates.first(where: { FileManager.default.isExecutableFile(atPath: $0.0) }) else {
+        guard
+            let command = candidates.first(where: {
+                FileManager.default.isExecutableFile(atPath: $0.0)
+            })
+        else {
             throw TerminalInteractionError.clipboardUnavailable
         }
         return (URL(fileURLWithPath: command.0), command.1)

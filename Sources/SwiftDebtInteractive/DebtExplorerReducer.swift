@@ -23,7 +23,8 @@ public struct DebtExplorerState: Equatable, Sendable {
         self.items = analysis.items
         self.priorityFilter = nil
         self.searchQuery = ""
-        self.visibleItemIDs = Self.visibleItemIDs(in: analysis.items, priorityFilter: nil, searchQuery: "")
+        self.visibleItemIDs = Self.visibleItemIDs(
+            in: analysis.items, priorityFilter: nil, searchQuery: "")
         self.selectedVisibleIndex = 0
         self.selectedItemID = visibleItemIDs.first
     }
@@ -54,7 +55,7 @@ public struct DebtExplorerState: Equatable, Sendable {
         return DebtExplorerDetail(item: selectedItem, editor: editor)
     }
 
-    fileprivate func movingSelection(by delta: Int) -> DebtExplorerState {
+    fileprivate func movingSelection(by delta: Int) -> Self {
         guard !visibleItemIDs.isEmpty else {
             return replacingSelection(index: 0, selectedID: nil)
         }
@@ -62,7 +63,7 @@ public struct DebtExplorerState: Equatable, Sendable {
         return replacingSelection(index: bounded, selectedID: visibleItemIDs[bounded])
     }
 
-    fileprivate func selectingVisibleItem(offset: Int) -> DebtExplorerState {
+    fileprivate func selectingVisibleItem(offset: Int) -> Self {
         guard !visibleItemIDs.isEmpty else {
             return replacingSelection(index: 0, selectedID: nil)
         }
@@ -70,16 +71,16 @@ public struct DebtExplorerState: Equatable, Sendable {
         return replacingSelection(index: bounded, selectedID: visibleItemIDs[bounded])
     }
 
-    fileprivate func selectingItem(id: String) -> DebtExplorerState {
+    fileprivate func selectingItem(id: String) -> Self {
         guard let index = visibleItemIDs.firstIndex(of: id) else { return self }
         return replacingSelection(index: index, selectedID: id)
     }
 
-    fileprivate func replacingFilters(priority: Priority?, query: String) -> DebtExplorerState {
+    fileprivate func replacingFilters(priority: Priority?, query: String) -> Self {
         let visible = Self.visibleItemIDs(in: items, priorityFilter: priority, searchQuery: query)
         let retainedIndex = selectedItemID.flatMap { visible.firstIndex(of: $0) }
         let index = retainedIndex ?? 0
-        return DebtExplorerState(
+        return Self(
             items: items,
             visibleItemIDs: visible,
             selectedVisibleIndex: visible.isEmpty ? 0 : index,
@@ -89,8 +90,8 @@ public struct DebtExplorerState: Equatable, Sendable {
         )
     }
 
-    private func replacingSelection(index: Int, selectedID: String?) -> DebtExplorerState {
-        DebtExplorerState(
+    private func replacingSelection(index: Int, selectedID: String?) -> Self {
+        Self(
             items: items,
             visibleItemIDs: visibleItemIDs,
             selectedVisibleIndex: index,
@@ -115,7 +116,9 @@ public struct DebtExplorerState: Equatable, Sendable {
 }
 
 public enum DebtExplorerReducer {
-    public static func reduce(_ state: DebtExplorerState, _ action: DebtExplorerAction) -> DebtExplorerState {
+    public static func reduce(_ state: DebtExplorerState, _ action: DebtExplorerAction)
+        -> DebtExplorerState
+    {
         switch action {
         case .moveSelection(let delta):
             return state.movingSelection(by: delta)
@@ -126,7 +129,8 @@ public enum DebtExplorerReducer {
         case .setPriorityFilter(let priority):
             return state.replacingFilters(priority: priority, query: state.searchQuery)
         case .cyclePriorityFilter:
-            return state.replacingFilters(priority: nextPriority(after: state.priorityFilter), query: state.searchQuery)
+            return state.replacingFilters(
+                priority: nextPriority(after: state.priorityFilter), query: state.searchQuery)
         case .setSearchQuery(let query):
             return state.replacingFilters(priority: state.priorityFilter, query: query)
         case .clearFilters:
@@ -145,8 +149,8 @@ public enum DebtExplorerReducer {
     }
 }
 
-private extension RankedDebtItem {
-    func matchesDebtExplorerQuery(_ query: String) -> Bool {
+extension RankedDebtItem {
+    fileprivate func matchesDebtExplorerQuery(_ query: String) -> Bool {
         let fields = [
             item.id,
             item.entity.displayName,

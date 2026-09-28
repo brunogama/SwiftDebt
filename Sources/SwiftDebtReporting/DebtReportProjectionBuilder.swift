@@ -1,5 +1,11 @@
 import SwiftDebtCore
 
+private struct DebtItemSortKey {
+    let id: String
+    let score: Double?
+    let priority: Priority?
+}
+
 package struct DebtReportProjectionBuilder {
     package init() {}
 
@@ -53,7 +59,9 @@ package struct DebtReportProjectionBuilder {
 
     private func aggregations(from analysis: RankedDebtAnalysis) -> [DebtReportAggregation] {
         analysis.aggregations.sorted { lhs, rhs in
-            if lhs.level.rawValue != rhs.level.rawValue { return lhs.level.rawValue < rhs.level.rawValue }
+            if lhs.level.rawValue != rhs.level.rawValue {
+                return lhs.level.rawValue < rhs.level.rawValue
+            }
             return lhs.id < rhs.id
         }.map { aggregation in
             DebtReportAggregation(
@@ -71,12 +79,8 @@ package struct DebtReportProjectionBuilder {
     private func compactItems(from analysis: RankedDebtAnalysis) -> [CompactDebtItem] {
         analysis.compactItems.sorted { lhs, rhs in
             itemOrder(
-                lhsID: lhs.id,
-                lhsScore: lhs.score,
-                lhsPriority: lhs.priority,
-                rhsID: rhs.id,
-                rhsScore: rhs.score,
-                rhsPriority: rhs.priority
+                DebtItemSortKey(id: lhs.id, score: lhs.score, priority: lhs.priority),
+                DebtItemSortKey(id: rhs.id, score: rhs.score, priority: rhs.priority)
             )
         }
     }
@@ -103,25 +107,16 @@ package struct DebtReportProjectionBuilder {
     private func sorted(_ items: [RankedDebtItem]) -> [RankedDebtItem] {
         items.sorted { lhs, rhs in
             itemOrder(
-                lhsID: lhs.item.id,
-                lhsScore: lhs.score.value,
-                lhsPriority: lhs.score.priority,
-                rhsID: rhs.item.id,
-                rhsScore: rhs.score.value,
-                rhsPriority: rhs.score.priority
+                DebtItemSortKey(
+                    id: lhs.item.id, score: lhs.score.value, priority: lhs.score.priority),
+                DebtItemSortKey(
+                    id: rhs.item.id, score: rhs.score.value, priority: rhs.score.priority)
             )
         }
     }
 
-    private func itemOrder(
-        lhsID: String,
-        lhsScore: Double?,
-        lhsPriority: Priority?,
-        rhsID: String,
-        rhsScore: Double?,
-        rhsPriority: Priority?
-    ) -> Bool {
-        switch (lhsScore, rhsScore) {
+    private func itemOrder(_ lhs: DebtItemSortKey, _ rhs: DebtItemSortKey) -> Bool {
+        switch (lhs.score, rhs.score) {
         case (let lhs?, let rhs?) where lhs != rhs:
             return lhs > rhs
         case (nil, _?):
@@ -131,10 +126,10 @@ package struct DebtReportProjectionBuilder {
         default:
             break
         }
-        let lhsPriorityValue = lhsPriority.map(priorityRank) ?? -1
-        let rhsPriorityValue = rhsPriority.map(priorityRank) ?? -1
+        let lhsPriorityValue = lhs.priority.map(priorityRank) ?? -1
+        let rhsPriorityValue = rhs.priority.map(priorityRank) ?? -1
         if lhsPriorityValue != rhsPriorityValue { return lhsPriorityValue > rhsPriorityValue }
-        return lhsID < rhsID
+        return lhs.id < rhs.id
     }
 
     private func sortedEvidence(_ evidence: [DebtEvidence]) -> [DebtEvidence] {

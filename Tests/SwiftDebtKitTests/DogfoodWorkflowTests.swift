@@ -59,9 +59,23 @@ struct DogfoodWorkflowTests {
         #expect(report.items.count == min(report.summary.totalItemCount, 10))
         #expect(report.items.allSatisfy { $0.location.file?.hasPrefix("Sources/") == true })
         #expect(recencyEvidence.count == report.items.count)
-        #expect(recencyEvidence.allSatisfy { $0.availability.isAvailable })
-        #expect(recencyEvidence.allSatisfy { $0.rawValue.contains("referenceTime=\(referenceTime)") })
-        #expect(!report.missingEvidence.contains { $0.kind.hasPrefix("git-history.") })
+        for item in report.items {
+            let file = try #require(item.location.file)
+            let recency = try #require(item.evidence.first { $0.kind == "git-history.recency" })
+            let hasHistory = try hasGitHistory(file: file)
+            let missingHistory = report.missingEvidence.filter {
+                $0.itemID == item.id && $0.kind.hasPrefix("git-history.")
+            }
+
+            #expect(recency.availability.isAvailable == hasHistory)
+            if hasHistory {
+                #expect(recency.rawValue.contains("referenceTime=\(referenceTime)"))
+                #expect(missingHistory.isEmpty)
+            } else {
+                #expect(recency.rawValue == "unavailable")
+                #expect(missingHistory.contains { $0.kind == "git-history.recency" })
+            }
+        }
     }
 
     @Test("Profiling emits the documented machine-readable phase schema")
@@ -114,5 +128,23 @@ struct DogfoodWorkflowTests {
         }
         .map(\.lastPathComponent)
         .sorted()
+    }
+
+    private func hasGitHistory(file: String) throws -> Bool {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = [
+            "git", "-C", dogfoodRepositoryRoot.path, "log", "--follow", "-1", "--format=%H",
+            "--", file,
+        ]
+        let output = Pipe()
+        process.standardOutput = output
+        try process.run()
+        process.waitUntilExit()
+        guard process.terminationStatus == 0 else {
+            throw TestGitError(message: "git log failed for \(file)")
+        }
+        let history = output.fileHandleForReading.readDataToEndOfFile()
+        return !history.isEmpty
     }
 }

@@ -37,9 +37,9 @@ public struct TerminalDebtExplorerDependencies {
         editor: String? = ProcessInfo.processInfo.environment["VISUAL"]
             ?? ProcessInfo.processInfo.environment["EDITOR"],
         sourceRoot: URL? = nil
-    ) -> TerminalDebtExplorerDependencies {
+    ) -> Self {
         let terminalMode = RawTerminalMode()
-        return TerminalDebtExplorerDependencies(
+        return Self(
             readKey: POSIXTerminalInput.readByte,
             readLine: POSIXTerminalInput.readLine,
             write: { text in
@@ -48,7 +48,8 @@ public struct TerminalDebtExplorerDependencies {
             copy: TerminalClipboard.copy,
             openEditor: { location in
                 guard let editor else { throw TerminalInteractionError.editorNotConfigured }
-                try TerminalEditorLaunch(editor: editor, location: location, sourceRoot: sourceRoot).run()
+                try TerminalEditorLaunch(editor: editor, location: location, sourceRoot: sourceRoot)
+                    .run()
             },
             enterRawMode: terminalMode.enter,
             restoreTerminalMode: terminalMode.restore,

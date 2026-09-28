@@ -35,24 +35,8 @@ struct SourceDiscovery {
 
     func select(request: AnalysisRequest, root: URL, excludes: [String]) throws -> Selection {
         if let manifestPath = request.manifestPath {
-            let manifest = try JSONDecoder().decode(
-                SourceManifest.self, from: Data(contentsOf: URL(fileURLWithPath: manifestPath)))
-            let entries = try manifest.sources.filter { entry in
-                let url = URL(fileURLWithPath: entry.path, relativeTo: root).standardizedFileURL
-                    .resolvingSymlinksInPath()
-                guard url.pathExtension == "swift", isWithin(url, root: root), !entry.module.isEmpty else {
-                    throw WorkspaceError(
-                        "Manifest entries must be Swift files inside root with a nonempty module: \(entry.path)")
-                }
-                return !isExcluded(relativePath(url, root: root), excludes: excludes)
-            }.map { entry in
-                SourceManifest.Entry(
-                    path: URL(fileURLWithPath: entry.path, relativeTo: root).standardizedFileURL
-                        .resolvingSymlinksInPath().path,
-                    module: entry.module
-                )
-            }
-            return Selection(root: root, entries: entries.sorted { $0.path < $1.path })
+            return try manifestSelection(
+                path: manifestPath, root: root, excludes: excludes)
         }
         let input = URL(fileURLWithPath: request.path).standardizedFileURL
         let inputValues = try input.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
@@ -60,16 +44,51 @@ struct SourceDiscovery {
             throw WorkspaceError("Explicit symbolic-link inputs are not followed: \(input.path)")
         }
         if inputValues.isDirectory != true {
-            guard input.pathExtension == "swift" else { throw WorkspaceError("Input file is not Swift: \(input.path)") }
-            let entries =
-                isExcluded(relativePath(input, root: root), excludes: excludes)
-                ? [] : [SourceManifest.Entry(path: input.path, module: "Workspace")]
-            return Selection(root: root, entries: entries)
+            return try fileSelection(input: input, root: root, excludes: excludes)
         }
+        return try directorySelection(root: root, excludes: excludes)
+    }
+
+    private func manifestSelection(
+        path: String, root: URL, excludes: [String]
+    ) throws -> Selection {
+        let manifest = try JSONDecoder().decode(
+            SourceManifest.self, from: Data(contentsOf: URL(fileURLWithPath: path)))
+        let entries: [SourceManifest.Entry] = try manifest.sources.compactMap { entry in
+            let url = URL(fileURLWithPath: entry.path, relativeTo: root).standardizedFileURL
+                .resolvingSymlinksInPath()
+            guard url.pathExtension == "swift", isWithin(url, root: root), !entry.module.isEmpty
+            else {
+                throw WorkspaceError(
+                    "Manifest entries must be Swift files inside root with a nonempty module: \(entry.path)"
+                )
+            }
+            guard !isExcluded(relativePath(url, root: root), excludes: excludes) else { return nil }
+            return SourceManifest.Entry(path: url.path, module: entry.module)
+        }
+        return Selection(root: root, entries: entries.sorted { $0.path < $1.path })
+    }
+
+    private func fileSelection(
+        input: URL, root: URL, excludes: [String]
+    ) throws -> Selection {
+        guard input.pathExtension == "swift" else {
+            throw WorkspaceError("Input file is not Swift: \(input.path)")
+        }
+        let entries =
+            isExcluded(relativePath(input, root: root), excludes: excludes)
+            ? [] : [SourceManifest.Entry(path: input.path, module: "Workspace")]
+        return Selection(root: root, entries: entries)
+    }
+
+    private func directorySelection(root: URL, excludes: [String]) throws -> Selection {
         var enumerationError: (any Error)?
         guard
             let enumerator = FileManager.default.enumerator(
-                at: root, includingPropertiesForKeys: [.isRegularFileKey, .isDirectoryKey, .isSymbolicLinkKey],
+                at: root,
+                includingPropertiesForKeys: [
+                    .isRegularFileKey, .isDirectoryKey, .isSymbolicLinkKey,
+                ],
                 options: [],
                 errorHandler: { _, error in
                     enumerationError = error
@@ -79,7 +98,9 @@ struct SourceDiscovery {
         else { throw WorkspaceError("Unable to enumerate \(root.path)") }
         var entries: [SourceManifest.Entry] = []
         for case let url as URL in enumerator {
-            let values = try url.resourceValues(forKeys: [.isRegularFileKey, .isDirectoryKey, .isSymbolicLinkKey])
+            let values = try url.resourceValues(forKeys: [
+                .isRegularFileKey, .isDirectoryKey, .isSymbolicLinkKey,
+            ])
             if values.isSymbolicLink == true {
                 enumerator.skipDescendants()
                 continue
@@ -92,7 +113,8 @@ struct SourceDiscovery {
                 enumerator.skipDescendants()
                 continue
             }
-            guard values.isRegularFile == true, url.pathExtension == "swift", url.lastPathComponent != "Package.swift"
+            guard values.isRegularFile == true, url.pathExtension == "swift",
+                url.lastPathComponent != "Package.swift"
             else { continue }
             entries.append(SourceManifest.Entry(path: url.path, module: "Workspace"))
         }
@@ -117,7 +139,9 @@ struct SourceDiscovery {
             guard let content = String(data: data, encoding: .utf8) else {
                 throw WorkspaceError("Input is not valid UTF-8: \(entry.path)")
             }
-            return SourceUnit(path: relativePath(url, root: selection.root), module: entry.module, content: content)
+            return SourceUnit(
+                path: relativePath(url, root: selection.root), module: entry.module,
+                content: content)
         }
     }
 

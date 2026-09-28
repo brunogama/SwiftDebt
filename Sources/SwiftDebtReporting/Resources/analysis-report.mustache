@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport"     content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src     'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<title>SwiftDebt analysis</title><style>
+:root{color-scheme:light dark}body{font:16px/1.55 system-ui,sans-serif;    max-width:1180px;margin:3rem auto;padding:0 1.5rem}
+h1{font-size:2.2rem;margin-bottom:.3rem}h2{margin-top:2.2rem}.meta{opacity:.75}.notice    {border-left:4px solid #c88925;padding:1rem;background:#c8892515}
+.scroll{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:.9rem}th,td    {text-align:left;padding:.7rem;border-bottom:1px solid #80808050;vertical-align:top}
+thead{background:#80808015}td{font-variant-numeric:tabular-nums}details{margin:1rem 0;    padding:.6rem;border:1px solid #80808050;border-radius:6px}
+summary{cursor:pointer;font-weight:600}li{margin:.5rem 0}footer{margin-top:3rem;    border-top:1px solid #80808050;padding-top:1rem;opacity:.7}
+</style></head><body><header><p class="meta">STATIC ANALYSIS / SCMA PAPER     IMPLEMENTATION</p><h1>SwiftDebt</h1>
+<p>{{{analysisState}}} ·     {{{analyzedFileCount}}}/{{{inputFileCount}}} files · {{{codeLineCount}}}     code lines</p>
+<p class="meta">Type scope: {{{typeScope}}} · Scoring:     {{{scoringMode}}} · Modules:     {{{modules}}}</p></header>
+<p class="notice">Raw metrics are the primary result. Paper-derived scores are     experimental, not validated quality grades.
+Coupling and field usage are syntactic estimates. Clone detection is a native     substitute for Lizard.</p>
+<h2>Metrics</h2><div class="scroll"><table><thead><tr><th>ID</th><th>Metric</th><th>    Entities</th><th>Maximum</th><th>Total</th><th>Limit</th><th>Violations</th><th>Score    </th></tr></thead><tbody>{{#metrics}}<tr><th scope="row">{{id}}</th><td>{{title}}</td>
+<td>{{observationCount}}</td><td>{{maximum}}</td>
+<td>{{total}}</td><td>{{limit}}</td>
+<td>{{violations}}</td><td>{{score}}</td></tr>{{^last()}}
+{{/last()}}{{/metrics}}</tbody></table></div>
+<p><strong>Overall: {{{overallScore}}}</strong> ·     {{{overallScoreNote}}}</p>
+<h2>Findings ({{{findingCount}}})</h2><ul>{{#findings}}<li><strong>{{metric}}</strong> {{file}}:{{line}} - {{entity}}: {{value}} &gt; {{threshold}}</li>{{/findings}}</ul>
+<h2>Analysis diagnostics</h2><ul>{{#diagnostics}}<li>{{file}}:{{line}} - {{severity}}: {{message}}</li>{{/diagnostics}}</ul>
+<h2>Observation details</h2>{{#metrics}}<details><summary>{{id}} · {{observationCount}} observations</summary>
+<p>{{measurementNote}}</p><p>{{scoreNote}}</p>
+<div class="scroll"><table><thead><tr><th>Entity</th><th>Location</th><th>Value</th></tr></thead>
+<tbody>{{#observations}}<tr><td>{{entity}}</td><td>{{file}}:{{line}}</td><td>{{value}}</td></tr>{{^last()}}
+{{/last()}}{{/observations}}</tbody></table></div></details>{{^last()}}
+{{/last()}}{{/metrics}}
+<footer>SwiftDebt {{{engineVersion}}} · Report schema {{{schemaVersion}}} ·     Self-contained report; no scripts, analytics, or network assets.</footer>
+</body></html>
