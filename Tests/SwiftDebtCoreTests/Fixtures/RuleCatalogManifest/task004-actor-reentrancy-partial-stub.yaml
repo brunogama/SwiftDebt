@@ -1,0 +1,33 @@
+rules:
+  - id: concurrency.actor-reentrancy
+    semanticRevision: 1
+    title: Actor reentrancy after suspension
+    category: concurrency
+    scope: sourceUnit
+    detectionMode: derived
+    requirements:
+      - syntax
+      - isolation
+      - controlFlow
+      - dataFlow
+    evidence:
+      required:
+        all:
+          - fact:
+              key: invariantEstablished
+              kind: controlFlow
+          - fact:
+              key: suspensionPoint
+              kind: isolation
+          - fact:
+              key: postSuspensionUse
+              kind: controlFlow
+          - fact:
+              key: noSufficientRevalidation
+              kind: controlFlow
+    supportState: partial
+    provenance:
+      researchItem: 19
+      note: >-
+        TASK-004 honest partial stub - ADR 0001 Q8 caps R2 at intraprocedural
+        analysis; no control-flow/data-flow sensor exists
