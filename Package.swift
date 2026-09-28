@@ -103,7 +103,7 @@ let package = Package(
         ),
         .testTarget(
             name: "SwiftDebtKitTests",
-            dependencies: ["SwiftDebtCore", "SwiftDebtKit", "SwiftDebtReporting"],
+            dependencies: ["SwiftDebtCore", "SwiftDebtKit", "SwiftDebtSyntax", "SwiftDebtReporting"],
             exclude: ["Fixtures/ProjectRules"],
             resources: [.process("Fixtures")],
             swiftSettings: warningsAsErrors
