@@ -1,0 +1,17 @@
+rules:
+  - id: architecture.impossible-claim
+    semanticRevision: 1
+    title: A claim that is not reliably observable, claimed deterministic
+    category: architecture
+    scope: sourceUnit
+    detectionMode: deterministic
+    requirements:
+      - syntax
+    evidence:
+      required:
+        fact:
+          key: somethingObserved
+          kind: syntax
+    supportState: notReliablyObservable
+    provenance:
+      researchItem: 1
