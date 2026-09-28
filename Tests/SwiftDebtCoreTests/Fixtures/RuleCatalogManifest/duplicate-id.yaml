@@ -1,0 +1,34 @@
+rules:
+  - id: errors.force-try
+    semanticRevision: 1
+    title: Force try suppresses recoverable errors
+    category: errorHandling
+    scope: syntax
+    detectionMode: deterministic
+    requirements:
+      - syntax
+    evidence:
+      required:
+        fact:
+          key: forceTryPresent
+          kind: syntax
+    supportState: supported
+    provenance:
+      researchItem: 28
+
+  - id: errors.force-try
+    semanticRevision: 2
+    title: Duplicate of the same rule id
+    category: errorHandling
+    scope: syntax
+    detectionMode: deterministic
+    requirements:
+      - syntax
+    evidence:
+      required:
+        fact:
+          key: forceTryPresent
+          kind: syntax
+    supportState: supported
+    provenance:
+      researchItem: 28

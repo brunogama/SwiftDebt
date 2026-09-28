@@ -1,0 +1,14 @@
+import Foundation
+
+struct Loader {
+    func load(from path: String) -> Data {
+        let data = try! Data(contentsOf: URL(fileURLWithPath: path))
+        return data
+    }
+
+    func loadTwice(from path: String) -> (Data, Data) {
+        let first = try! Data(contentsOf: URL(fileURLWithPath: path))
+        let second = try! Data(contentsOf: URL(fileURLWithPath: path))
+        return (first, second)
+    }
+}

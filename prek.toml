@@ -33,11 +33,11 @@ rev = "v6.0.0"
 # rewrite them or every test run leaves the working tree dirty.
 [[repos.hooks]]
 id = "trailing-whitespace"
-exclude = "\\.md$|__GoldenMasters__/"
+exclude = "\\.md$|__GoldenMasters__/|\\.golden\\."
 
 [[repos.hooks]]
 id = "end-of-file-fixer"
-exclude = "__GoldenMasters__/"
+exclude = "__GoldenMasters__/|\\.golden\\."
 
 [[repos.hooks]]
 id = "mixed-line-ending"

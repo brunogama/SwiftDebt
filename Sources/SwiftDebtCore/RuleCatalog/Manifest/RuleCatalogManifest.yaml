@@ -1,0 +1,80 @@
+# Rule Catalog Manifest (R2 acceptance corpus).
+#
+# This is a placeholder manifest proving the build-time wiring from
+# TASK-009: RuleManifestParser runs against this file on every build of
+# SwiftDebtCore via RuleManifestValidationPlugin. TASK-001..008 populate the
+# real corpus rules in parallel; this file exists only to exercise that
+# wiring end-to-end and will be superseded once those tasks land.
+rules:
+  - id: concurrency.actor-reentrancy
+    semanticRevision: 1
+    title: Actor reentrancy after suspension
+    category: concurrency
+    scope: sourceUnit
+    detectionMode: derived
+    requirements:
+      - syntax
+      - isolation
+      - controlFlow
+      - references
+    evidence:
+      required:
+        all:
+          - fact:
+              key: invariantEstablished
+              kind: controlFlow
+          - fact:
+              key: suspensionPoint
+              kind: isolation
+          - fact:
+              key: postSuspensionUse
+              kind: relationship
+          - not:
+              fact:
+                key: sufficientRevalidation
+                kind: controlFlow
+    supportState: partial
+    provenance:
+      researchItem: 19
+
+  - id: errors.force-try
+    semanticRevision: 1
+    title: Force try suppresses recoverable errors
+    category: errorHandling
+    scope: syntax
+    detectionMode: deterministic
+    requirements:
+      - syntax
+      - references
+    evidence:
+      required:
+        fact:
+          key: forceTryPresent
+          kind: syntax
+      optional:
+        - fact:
+            key: fallibleExternalBoundary
+            kind: relationship
+    supportState: supported
+    provenance:
+      researchItem: 28
+      note: broad syntax rule only proves presence of `try!`
+
+  - id: quality.long-method
+    semanticRevision: 1
+    title: Method length exceeds maintainability threshold
+    category: style
+    scope: syntax
+    detectionMode: deterministic
+    requirements:
+      - syntax
+      - metrics
+    evidence:
+      required:
+        fact:
+          key: statementCountExceedsThreshold
+          kind: metric
+    supportState: supported
+    provenance:
+      researchItem: 12
+      note: placeholder threshold pending corpus calibration

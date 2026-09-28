@@ -1,0 +1,13 @@
+import Foundation
+
+struct Loader {
+    func load(from path: String) throws -> Data {
+        let data = try Data(contentsOf: URL(fileURLWithPath: path))
+        return data
+    }
+
+    func loadOptional(from path: String) -> Data? {
+        let data = try? Data(contentsOf: URL(fileURLWithPath: path))
+        return data
+    }
+}

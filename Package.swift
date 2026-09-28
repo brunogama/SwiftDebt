@@ -17,6 +17,8 @@ let package = Package(
         .library(name: "SwiftDebtKit", targets: ["SwiftDebtKit", "SwiftDebtCore"]),
         .plugin(name: "SwiftDebtCommandPlugin", targets: ["SwiftDebtCommandPlugin"]),
         .plugin(name: "SwiftDebtBuildPlugin", targets: ["SwiftDebtBuildPlugin"]),
+        .plugin(
+            name: "RuleManifestValidationPlugin", targets: ["RuleManifestValidationPlugin"]),
     ],
     dependencies: [
         .package(url: "https://github.com/swiftlang/swift-syntax.git", exact: "602.0.0"),
@@ -27,7 +29,11 @@ let package = Package(
         .package(url: "https://github.com/swiftlang/swift-docc-plugin.git", exact: "1.5.0"),
     ],
     targets: [
-        .target(name: "SwiftDebtCore", swiftSettings: warningsAsErrors),
+        .target(
+            name: "SwiftDebtCore",
+            exclude: ["RuleCatalog/Manifest/RuleCatalogManifest.yaml"],
+            swiftSettings: warningsAsErrors
+        ),
         .target(
             name: "SwiftDebtSyntax",
             dependencies: [
@@ -61,6 +67,12 @@ let package = Package(
         .executableTarget(
             name: "swift-debt",
             dependencies: ["SwiftDebtCore", "SwiftDebtInteractive", "SwiftDebtKit"],
+            swiftSettings: warningsAsErrors,
+            plugins: ["RuleManifestValidationPlugin"]
+        ),
+        .executableTarget(
+            name: "swift-debt-manifest-lint",
+            dependencies: ["SwiftDebtCore"],
             swiftSettings: warningsAsErrors
         ),
         .plugin(
@@ -72,6 +84,11 @@ let package = Package(
             dependencies: ["swift-debt"]
         ),
         .plugin(name: "SwiftDebtBuildPlugin", capability: .buildTool(), dependencies: ["swift-debt"]),
+        .plugin(
+            name: "RuleManifestValidationPlugin",
+            capability: .buildTool(),
+            dependencies: ["swift-debt-manifest-lint"]
+        ),
         .testTarget(
             name: "SwiftDebtCoreTests",
             dependencies: ["SwiftDebtCore"],
@@ -86,7 +103,8 @@ let package = Package(
         ),
         .testTarget(
             name: "SwiftDebtKitTests",
-            dependencies: ["SwiftDebtCore", "SwiftDebtKit", "SwiftDebtReporting"],
+            dependencies: ["SwiftDebtCore", "SwiftDebtKit", "SwiftDebtSyntax", "SwiftDebtReporting"],
+            exclude: ["Fixtures/ProjectRules"],
             resources: [.process("Fixtures")],
             swiftSettings: warningsAsErrors
         ),
