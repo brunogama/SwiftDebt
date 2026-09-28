@@ -1,0 +1,17 @@
+import SwiftUI
+
+final class ProfileViewModel: ObservableObject {
+    @Published var name: String = ""
+}
+
+struct ProfileView: View {
+    @ObservedObject var vm: ProfileViewModel
+
+    init(vm: ProfileViewModel) {
+        self.vm = vm
+    }
+
+    var body: some View {
+        Text(vm.name)
+    }
+}
