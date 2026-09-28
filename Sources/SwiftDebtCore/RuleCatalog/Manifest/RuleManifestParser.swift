@@ -1,9 +1,10 @@
 /// Parses a Rule Catalog Manifest (YAML, addendum H) into validated
 /// `RuleDefinition`s. This is the compile-time validation half of ADR 0001
-/// Q12 (the startup-time half is a downstream unit's responsibility); a
-/// SwiftPM build plugin wiring this parser into an actual build failure is
-/// likewise out of scope here (a normal Swift type a downstream plugin can
-/// call), per the unit's brief.
+/// Q12 (the startup-time half is a downstream unit's responsibility).
+/// `RuleManifestValidationPlugin` (Plugins/RuleManifestValidationPlugin, via
+/// the `swift-debt-manifest-lint` executable target) wires `collectErrors`
+/// into an actual `swift build` failure against
+/// `Sources/SwiftDebtCore/RuleCatalog/Manifest/RuleCatalogManifest.yaml`.
 public enum RuleManifestParser {
     /// Result of a best-effort parse: the rules that decoded and validated
     /// cleanly, plus every error encountered along the way.
