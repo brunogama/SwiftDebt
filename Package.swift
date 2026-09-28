@@ -75,6 +75,7 @@ let package = Package(
         .testTarget(
             name: "SwiftDebtCoreTests",
             dependencies: ["SwiftDebtCore"],
+            exclude: ["Fixtures/ProjectRules"],
             resources: [.process("Fixtures")],
             swiftSettings: warningsAsErrors
         ),
