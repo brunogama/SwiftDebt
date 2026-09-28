@@ -1,5 +1,5 @@
 {
-  "baselineCommit": "b0ae66be2065084b29b8b5da0a86d5cd049feced",
+  "baselineCommit": "a2a10c6e35fdb84ebc45b6a3873af8d46ea1b0c0",
   "capabilities": [
     {
       "capability": "Frozen SwiftDebt baseline benchmark inputs and measurement methodology",
@@ -460,6 +460,32 @@
         {
           "kind": "test",
           "reference": "DebtmapParityFixtureTests.finalReleaseAcceptanceRequiresClosedParityEvidence"
+        }
+      ],
+      "scope": "in-scope",
+      "status": "implemented"
+    },
+    {
+      "capability": "Swift-native error-handling and test-synchronization risk evidence",
+      "id": "swift-native-error-test-risk",
+      "implementationState": "implemented",
+      "ownerTicket": null,
+      "proofs": [
+        {
+          "kind": "test",
+          "reference": "FunctionalEvidenceTests.errorHandlingPatternsProduceSwiftNativeRiskEvidence"
+        },
+        {
+          "kind": "test",
+          "reference": "FunctionalEvidenceTests.errorHandlingEvidenceUsesDedicatedKinds"
+        },
+        {
+          "kind": "test",
+          "reference": "FunctionalEvidenceTests.testSynchronizationEvidenceIsScopedToSwiftTestSources"
+        },
+        {
+          "kind": "documentation",
+          "reference": "docs/debtmap/release-quality-acceptance.md"
         }
       ],
       "scope": "in-scope",

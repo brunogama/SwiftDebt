@@ -6,7 +6,7 @@ SwiftDebt claims Debtmap 0.23.0 workflow/capability parity for Swift for the fro
 
 Every in-scope capability row in the matrix is implemented and carries release evidence from tests, golden fixtures, executable checks, or this document. Ticket references are no longer used as proof for any in-scope row.
 
-The matrix covers deterministic JSON, Markdown, DOT, and CLI-exit fixtures; debt analyze and validate CLI workflows; coverage and Git-history evidence; graph and functional evidence; ranked scoring, aggregation, and filtering; before and after comparison and improvement validation; terminal and dashboard explorers; profiling budgets; and SwiftPM command/build plugin debt workflows.
+The matrix covers deterministic JSON, Markdown, DOT, and CLI-exit fixtures; debt analyze and validate CLI workflows; coverage and Git-history evidence; graph, functional, Swift-native error-handling, and test-synchronization evidence; ranked scoring, aggregation, and filtering; before and after comparison and improvement validation; terminal and dashboard explorers; profiling budgets; and SwiftPM command/build plugin debt workflows.
 
 ## Regression and performance gates
 
@@ -35,5 +35,7 @@ The SwiftDebt native report uses schema version 2 after the product discriminato
 Graph evidence is intentionally SwiftSyntax-only. It records resolved, unresolved, and ambiguous edges without claiming compiler type-checker bindings, macro expansion, dynamic dispatch, or complete call-graph semantics.
 
 Concurrency, side-effect, and API-risk evidence is Swift-specific heuristic evidence. It reports syntax-observable risk signals and confidence limits rather than compiler-proven concurrency safety.
+
+Error-handling and test-synchronization evidence is also syntax-observable: `try?`, empty `catch` blocks, forced casts/unwraps, failure termination calls, and wall-clock waits in Swift test sources are reported as typed risks. The analyzer does not infer runtime control flow or prove that a failure is reachable.
 
 Debtmap parsers for non-Swift languages are outside this Swift parity target. Unsupported non-Swift parsing does not weaken the parity definition because the matrix is scoped to Swift workflows and documents that row as out-of-scope.

@@ -23,6 +23,7 @@ This is an independent, paper-inspired implementation, **not a reproduction of t
 - [Configuration](#configuration)
 - [Library API](#library-api)
 - [Architecture](#architecture)
+- [Debtmap parity scope](#debtmap-parity-scope)
 - [Validation and limitations](#validation-and-limitations)
 
 Detailed references: [paper mapping](docs/PAPER_MAPPING.md), [measurement definitions](docs/METRICS.md), [plugin integration](docs/PLUGINS.md), [validation record](docs/VALIDATION.md).
@@ -75,13 +76,16 @@ swift build -c release
 
 ## Tutorials and documentation
 
-The [published Swift-DocC site](https://brunogama.github.io/SwiftDebt/documentation/swiftdebtkit/) includes these practical tutorials:
+The documentation workflow builds a [Swift-DocC site](https://brunogama.github.io/SwiftDebt/documentation/swiftdebtkit/) and prepares the same checked-in articles and tutorials for Swift Package Index hosting. Start with:
 
-- [Use the standalone CLI](Sources/SwiftDebtKit/SwiftDebtKit.docc/Tutorials/StandaloneCLI.md)
+- [Run your first analysis](Sources/SwiftDebtKit/SwiftDebtKit.docc/Tutorials/FirstAnalysis.md)
+- [Rank debt with Git history](Sources/SwiftDebtKit/SwiftDebtKit.docc/Tutorials/RankedDebt.md)
 - [Analyze source with the library API](Sources/SwiftDebtKit/SwiftDebtKit.docc/Tutorials/LibraryAPI.md)
 - [Run the command plugin](Sources/SwiftDebtKit/SwiftDebtKit.docc/Tutorials/CommandPlugin.md)
 - [Attach the build plugin](Sources/SwiftDebtKit/SwiftDebtKit.docc/Tutorials/BuildPlugin.md)
 - [Enforce debt policy in CI](Sources/SwiftDebtKit/SwiftDebtKit.docc/Tutorials/CIEnforcement.md)
+
+The [documentation build guide](Documentation/README.md) explains how to build the DocC site and all public-module API references locally.
 
 ## Quick start
 
@@ -109,7 +113,7 @@ swift run swift-debt analyze /path/to/project \
 
 An explicit input directory becomes the configuration/discovery root. For example, `analyze /project/Sources` looks for `/project/Sources/.swift-debt.json`, not `/project/.swift-debt.json`; use `--config /project/.swift-debt.json` when needed. Output paths are relative to the current working directory, not the scanned root.
 
-Supported SCMA-paper formats are `text`, `json`, `csv`, `html`, and `diagnostics`. HTML is standalone and script-free. JSON is the full machine-readable SCMA report; CSV is a flat observation export, not an equivalent serialization of the report. Ranked debt analysis can additionally render `debt-json`, `debt-markdown`, `debt-dot`, `debt-text`, `debt-compact`, `debtmap-json`, and `debt-dashboard` when `debtAnalysis` is configured. `debtmap-json` is a deterministic compatibility projection for Debtmap-oriented automation, not the native SwiftDebt debt model. `debt-dashboard` is a self-contained browser dashboard over the native debt-report schema. The closed conformance record supports `Debtmap 0.23.0 workflow/capability parity for Swift` for the frozen Swift workflow matrix. Canonical outputs are checked in as [golden fixtures](Tests/SwiftDebtKitTests/Fixtures/DebtReport), and release evidence is in [the Debtmap acceptance record](docs/debtmap/release-quality-acceptance.md).
+Supported SCMA-paper formats are `text`, `json`, `csv`, `html`, and `diagnostics`. HTML is standalone and script-free. JSON is the full machine-readable SCMA report; CSV is a flat observation export, not an equivalent serialization of the report. Ranked debt analysis can additionally render `debt-json`, `debt-markdown`, `debt-dot`, `debt-text`, `debt-compact`, `debtmap-json`, and `debt-dashboard` when `debtAnalysis` is configured. `debtmap-json` is a deterministic compatibility projection for Debtmap-oriented automation, not the native SwiftDebt debt model. `debt-dashboard` is a self-contained browser dashboard over the native debt-report schema. The project supports `Debtmap 0.23.0 workflow/capability parity for Swift` for the frozen Swift workflow subset; this is not a claim of complete feature parity with the Rust product. See the [Debtmap 0.23.0 parity matrix](docs/debtmap/parity-matrix.v0.23.0.json). Canonical outputs are checked in as [golden fixtures](Tests/SwiftDebtKitTests/Fixtures/DebtReport), and release evidence is in [the Debtmap acceptance record](docs/debtmap/release-quality-acceptance.md).
 
 Git-history recency in ranked debt analysis requires an explicit ISO-8601 reference time so repeated runs remain deterministic:
 
@@ -269,6 +273,8 @@ CLI scalar options override file settings. CLI thresholds merge by metric, and e
 
 `debtReferenceTime` must be an ISO-8601 internet timestamp with a time zone, such as `2026-09-12T00:00:00Z`. `--debt-reference-time` overrides the configured value.
 
+Git-history evidence uses `git` from `PATH` by default. Pass `--git-executable /absolute/path/to/git` to `analyze`, `debt analyze`, or `debt validate` to select another installation. Library callers can set `AnalysisRequest.gitExecutablePath` or initialize `GitHistoryEvidenceProvider(gitExecutablePath:)` directly.
+
 Exclusions are literal root-relative path prefixes such as `Generated` or `Sources/Legacy`, not globs. Directory scanning always omits `.git`, `.build`, `.swiftpm`, `.swift-debt`, `Pods`, `Carthage`, `node_modules`, symbolic links, and discovered `Package.swift` files. An explicitly selected `Package.swift` can still be analyzed. A filesystem scan treats all input as one virtual `Workspace` module; prefer the command plugin for a multi-module Swift package.
 
 Parsing jobs must be `1...64`; the default is the active processor count, capped at 8. The per-file size ceiling defaults to 16 MiB and can be overridden with `--max-file-bytes`. The clone comparison budget is a deterministic work limit, **not a time or total-memory limit**. Exhausting it fails the analysis rather than falsely reporting no duplication. There is no persistent content cache; files are parsed again on each CLI invocation. SwiftPM handles build-level invalidation.
@@ -328,13 +334,31 @@ SwiftPM plugins / CLI -> swift-debt executable -> SwiftDebtKit composition root
 | `SwiftDebtCommandPlugin` | Source/module manifest and on-demand package analysis. |
 | `SwiftDebtBuildPlugin` | Per-target build commands and explicit input/output tracking. |
 
+## Debtmap parity scope
+
+The reference used for this comparison is [Debtmap 0.23.0](https://github.com/iepathos/debtmap/tree/0.23.0). SwiftDebt is a Swift-native analyzer with workflow parity for the frozen Swift matrix, not a port of every Rust implementation detail.
+
+| Debtmap capability family | SwiftDebt status | Notes |
+| --- | --- | --- |
+| Swift parsing, structural metrics, duplication, scoring, JSON/Markdown/DOT reports | Implemented | Covered by executable tests and golden fixtures. |
+| Ranked debt, aggregation, filters, coverage evidence, Git-history evidence | Implemented | Evidence availability remains explicit and reference-time driven. |
+| Compare and improvement validation | Implemented with a native schema | The compatibility projection is deterministic, but it is not the Rust report schema. |
+| Terminal explorer, browser dashboard, CI workflows, and SwiftPM plugins | Implemented | These are SwiftDebt integrations with their own interfaces. |
+| Swift-native error-handling and test-synchronization risk evidence | Implemented | Detects discarded throws, empty catches, forced failure paths, and wall-clock test waits through typed SwiftSyntax facts. |
+| Call/dependency graph | Intentional divergence | SwiftSyntax-based resolution reports resolved, ambiguous, and unresolved edges; it does not claim compiler-backed binding, macro expansion, or complete dynamic dispatch. |
+| Non-Swift parsers (Rust, Python, JavaScript, TypeScript, Go, Solidity) | Out of scope | The parity target is Swift source and SwiftPM workflows. |
+| Rust macro expansion, trait-aware analysis, Rust-specific resource/data-flow/security analyzers, refactoring guidance, architecture detectors, and advanced framework patterns | Not implemented | These are Rust Debtmap implementation features without SwiftDebt equivalents; Swift-native error and test risks are covered separately above. |
+| Rust CLI-only surfaces such as `init`, `config check`, `diagnose-coverage`, and the Rust-specific context/debug switches | Not fully implemented | SwiftDebt exposes a separate CLI and configuration model; matching names are not assumed to mean matching semantics. |
+
+For the machine-readable claim and its proofs, see the [parity matrix](docs/debtmap/parity-matrix.v0.23.0.json) and [release-quality acceptance record](docs/debtmap/release-quality-acceptance.md). The parity tests validate that every in-scope row has executable proof; they do not turn out-of-scope Rust features into implemented features.
+
 Implementation-only types use internal/package access. Public types form the reusable domain/application boundary. Dependency versions are pinned in the manifest; the shipping package contains no host-library search paths or unsafe compiler flags.
 
 ## Validation and limitations
 
-**51 Swift Testing tests in four suites and 27 subprocess integration checks passed** with Swift 6.2.1 on x86_64 Linux. The integration checks launch the real CLI and both SwiftPM plugins in a real downstream consumer package, including source/config invalidation, gate failures, and warmed no-op builds.
+The current checkout has a passing `swift build --build-tests`, strict SwiftLint/pre-commit verification, and passing parity-matrix, plugin-scope, and dashboard tests. A full `swift test` run currently has one repository-dogfood failure: newly split, uncommitted source files do not yet have Git history, so their optional recency evidence is correctly reported as unavailable. That is a checkout-state limitation, not fabricated evidence or a hidden test bypass.
 
-The container could not resolve GitHub from the build process. Verification therefore used a separate disposable copy linked against SwiftSyntax/SwiftParser modules bundled with the installed toolchain. **This does not verify the normal pinned dependency build, macOS plugin sandbox, or Xcode adapter.** The shipped `Package.swift` retains the ordinary remote dependency and has been manifest-validated. The test logs and reproduction procedure are in [docs/VALIDATION.md](docs/VALIDATION.md).
+The shipped `Package.swift` retains the normal pinned SwiftSyntax and Swift Mustache dependencies and has been manifest-validated. Run the complete verification on a committed checkout with:
 
 Run full validation on your own toolchain:
 
@@ -342,4 +366,4 @@ Run full validation on your own toolchain:
 ./scripts/verify.sh
 ```
 
-This tool does not type-check or expand macros, perform compiler-backed name binding, evaluate `#if`, model dispatch, prove architecture compliance, or validate the paper's quality score against outcomes. Debtmap parsers for non-Swift languages are outside the SwiftDebt parity target. There is no empirical large-repository performance claim and no claimed parity with the original SCMA/Lizard results. Read [METRICS.md](docs/METRICS.md) before comparing results with another analyzer.
+This tool does not type-check or expand macros, perform compiler-backed name binding, evaluate `#if`, model dispatch, prove architecture compliance, or validate the paper's quality score against outcomes. It also does not implement every Rust Debtmap analyzer, language parser, CLI command, or UI behavior. Debtmap parsers for non-Swift languages are outside the SwiftDebt parity target. There is no empirical large-repository performance claim and no claimed parity with the original SCMA/Lizard results. Read [METRICS.md](docs/METRICS.md) before comparing results with another analyzer.
