@@ -1,4 +1,5 @@
 import Foundation
+import SwiftDebtCore
 
 /// One project-scope Detection produced by `UnsafeSwiftPMFlagsRule`.
 ///

@@ -1,7 +1,8 @@
 import Foundation
+import SwiftDebtCore
 import Testing
 
-@testable import SwiftDebtCore
+@testable import SwiftDebtKit
 
 @Suite("UnsafeSwiftPMFlagsRule")
 struct UnsafeSwiftPMFlagsRuleTests {

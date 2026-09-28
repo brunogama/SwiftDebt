@@ -92,7 +92,6 @@ let package = Package(
         .testTarget(
             name: "SwiftDebtCoreTests",
             dependencies: ["SwiftDebtCore"],
-            exclude: ["Fixtures/ProjectRules"],
             resources: [.process("Fixtures")],
             swiftSettings: warningsAsErrors
         ),
@@ -105,6 +104,7 @@ let package = Package(
         .testTarget(
             name: "SwiftDebtKitTests",
             dependencies: ["SwiftDebtCore", "SwiftDebtKit", "SwiftDebtReporting"],
+            exclude: ["Fixtures/ProjectRules"],
             resources: [.process("Fixtures")],
             swiftSettings: warningsAsErrors
         ),
