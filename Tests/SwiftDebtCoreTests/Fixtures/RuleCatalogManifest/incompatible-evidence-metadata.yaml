@@ -1,0 +1,17 @@
+rules:
+  - id: concurrency.isolation-claim-without-capability
+    semanticRevision: 1
+    title: Claims isolation evidence without declaring the isolation capability
+    category: concurrency
+    scope: sourceUnit
+    detectionMode: derived
+    requirements:
+      - syntax
+    evidence:
+      required:
+        fact:
+          key: suspensionPoint
+          kind: isolation
+    supportState: partial
+    provenance:
+      researchItem: 19
