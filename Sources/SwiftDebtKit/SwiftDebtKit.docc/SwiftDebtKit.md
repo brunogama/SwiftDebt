@@ -13,15 +13,29 @@ SwiftDebt provides an in-memory library API, a standalone `swift-debt` executabl
 
 All routes share the same analysis engine and deterministic report formats. Read <doc:CIEnforcement> before turning findings into a required policy gate.
 
+---
+
 ## Topics
 
 ### Tutorials
 
+- <doc:FirstAnalysis>
+- <doc:RankedDebt>
+- <doc:ProgrammaticGate>
 - <doc:StandaloneCLI>
 - <doc:LibraryAPI>
 - <doc:CommandPlugin>
 - <doc:BuildPlugin>
 - <doc:CIEnforcement>
+
+### Guides
+
+- <doc:Integrations>
+- <doc:Configuration>
+- <doc:Metrics>
+- <doc:Evidence>
+- <doc:Reports>
+- <doc:Determinism>
 
 ### Analysis API
 
@@ -29,3 +43,6 @@ All routes share the same analysis engine and deterministic report formats. Read
 - ``AnalysisService``
 - ``AnalysisRequest``
 - ``AnalysisRunResult``
+- ``GitHistoryEvidenceProvider``
+- ``DebtImprovementService``
+- ``CoverageExplanationService``
