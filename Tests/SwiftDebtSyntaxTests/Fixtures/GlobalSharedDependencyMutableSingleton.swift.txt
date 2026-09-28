@@ -1,0 +1,23 @@
+final class SessionCache {
+    static let shared = SessionCache()
+
+    var lastUserID: String?
+    private var hitCount: Int = 0
+
+    func record(userID: String) {
+        lastUserID = userID
+        hitCount += 1
+    }
+}
+
+func loginFlow() {
+    SessionCache.shared.record(userID: "alice")
+}
+
+func refreshFlow() {
+    SessionCache.shared.record(userID: "bob")
+}
+
+func logoutFlow() {
+    SessionCache.shared.record(userID: "")
+}
