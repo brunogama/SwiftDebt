@@ -102,25 +102,12 @@ jobs:
             -m "chore(release): v$VERSION" \
             -m "SwiftDebt-Release: v$VERSION"
 
-      - name: Generate static Swift-DocC site
+      - name: Generate DocC site and public API references
         if: steps.guard.outputs.proceed == 'true'
-        env:
-          REPOSITORY_NAME: ${{ github.event.repository.name }}
         shell: bash
         run: |
           set -euo pipefail
-          site="$RUNNER_TEMP/site"
-          mkdir -p "$site"
-          swift package \
-            --allow-writing-to-directory "$site" \
-            generate-documentation \
-            --target SwiftDebtKit \
-            --output-path "$site" \
-            --transform-for-static-hosting \
-            --hosting-base-path "$REPOSITORY_NAME" \
-            --disable-indexing \
-            --warnings-as-errors
-          test -f "$site/index.html"
+          python3 scripts/build_documentation.py --output "$RUNNER_TEMP/site"
           test -z "$(git status --porcelain --untracked-files=no)"
 
       - name: Recheck main, tag, and publish refs
