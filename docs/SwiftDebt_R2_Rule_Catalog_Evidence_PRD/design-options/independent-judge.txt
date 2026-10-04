@@ -1,0 +1,24 @@
+**Verdict: Choose Option B (Fowler 24 plus explicitly sourced Swift extensions)**
+
+Option B is the only choice that satisfies all constraints, successfully bridging the strict syntax/evidence boundaries on `main` with the project-specific differentiation developed in the branch.
+
+### Rationale and Evidence
+
+1. **Preserves schema and report compatibility:**
+   `main:docs/REFACTORING_CODE_SMELLS.md` explicitly warns that any change to the 24 Fowler entries or their support states breaks catalog report schema 1. Main's `docs/prd-r2.md` also strictly forbids silently altering `AnalysisReport` schema 2. Option B preserves the stable Fowler baseline and isolates extension claims, fulfilling these schema compatibility constraints. Option A drops the extensions, and Option C risks bifurcating the schema entirely.
+2. **Avoids a duplicate canonical catalog:**
+   Option C proposes keeping the released Fowler catalog on main separate from a new Swift pilot catalog, which creates two conflicting sources of truth. Option B builds a single, integrated versioned Rule Catalog (as required by branch `docs/SwiftDebt_R2_Rule_Catalog_Evidence_PRD/prd.md` FR-1 and FR-2) that accurately models both domains.
+3. **Source provenance without false debt judgment:**
+   The branch originally assumed 100 research items could be treated as canonical debt (as seen in `docs/adr/0001-r2-open-questions.md`). Option B correctly observes that while official Apple documentation (e.g., DocC for Swift/SwiftUI) provides capability facts, it does not mandate subjective debt judgments. Option B reclassifies the Swift examples (like actor reentrancy or SwiftUI `@ObservedObject` from `prd-addendum.md`) as explicitly registered "project-authored policy," removing the unverified 100-item claim while maintaining honest provenance.
+
+### Decisions Needing User Confirmation
+
+1. **YAML vs. Swift Catalog Ownership:**
+   Branch ADR 0001 (Question 9) proposes a hybrid YAML-to-Swift code generation pipeline for rule definitions. `main` currently relies on a pure Swift `RefactoringCodeSmellCatalog`. You must confirm whether we are migrating the existing 24 Fowler smells into the YAML pipeline, or if the new Swift extensions should just be added to the existing Swift structure to avoid build complexity and schema drift.
+2. **Provenance Taxonomy Scheme:**
+   Since we are replacing the `researchItem: <number>` property from the branch, we need confirmation on the exact schema structure or metadata key that will denote "project-authored policy" so that the catalog validation step (ADR 0001 Q12) doesn't fail.
+
+### Unresolved Risks
+
+- **Support State Mismatches:** The branch PRD introduces `Partial` and `External/Runtime Required` support states. `main:docs/REFACTORING_CODE_SMELLS.md` maps exactly to `Supported`, `Research`, and `Not Reliably Observable`. Bridging these states risks silently violating the report schema if reporters encounter unknown enum values.
+- **Capability DAG Initialization:** Branch `prd-addendum.md` (Section C) proposes a dependency DAG for resolving capabilities. Main `docs/prd-r2.md` (FR-7) mandates strict, lazy initialization so syntax-only rules do not boot up semantic or external subsystems. If the DAG eagerly computes graphs, it will violate R2's performance and privacy constraints.

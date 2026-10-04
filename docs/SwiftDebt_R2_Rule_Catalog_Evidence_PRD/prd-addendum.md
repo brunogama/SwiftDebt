@@ -1,31 +1,21 @@
-# SwiftDebt R2 — PRD Addendum
+# SwiftDebt R2 - PRD Addendum
+
+---
 
 ## A. Purpose
-This addendum captures proposed mechanisms supporting the PRD. These are architectural recommendations, not product requirements unless promoted into an FR. The design preserves R1 authority while making the 100-item research catalog executable incrementally. The central mechanism is `Research Claim → Rule Definition → Requirements/Evidence → Rule Implementation → Detection → R1 reconciliation`. Rules should consume evidence rather than each rebuilding analyzers.
+This addendum proposes mechanisms for the [R2 Rule Catalog PRD](prd.md). They are design recommendations, not product requirements unless promoted into an FR. It retains the old branch's useful capability/evidence ideas while replacing its unauthenticated 100-item source and YAML ownership with the [single Swift-authored catalog decision](../adr/0002-r2-rule-catalog-source-and-authoring.md). The central path is `Source Claim or SwiftDebt Extension → Rule Definition → Requirements/Evidence → Rule Implementation → Detection → existing reconciliation`. Current main's Fowler schema 1, analysis schema 2, compiler-evidence sidecar, and lifecycle behavior remain authoritative. Rules consume shared evidence instead of rebuilding analyzers.
 
-## B. Proposed Domain Shape
+---
 
-```swift
-public struct RuleDefinition: Sendable {
-    public let identity: RuleIdentity
-    public let metadata: RuleMetadata
-    public let scope: RuleScope
-    public let mode: DetectionMode
-    public let requirements: RuleRequirements
-    public let evidenceContract: EvidenceContract
-    public let semanticRevision: SemanticRevision
-}
-```
+## B. Domain shape and the released R1 seam
 
-`RuleDefinition` says what SwiftDebt claims. `RuleImplementation` says how this release observes the claim. This allows Implementation Revision to change for optimization/bug fixes without necessarily changing Semantic Revision.
+Current main already has `RuleDescriptor(identity:metadata:contract:)` and `RuleMetadata.defaultSeverity` in `Sources/SwiftDebtCore/RuleIdentity.swift`. Source rules implement `DebtRule.detect(in: AnalysisContext, emit:)` with a concrete `AnalysisContext` in `Sources/SwiftDebtSyntax/DebtRule.swift`. The old branch's similarly named `RuleDefinition`, `RuleIdentity`, and marker-only `AnalysisContextProtocol` / `RuleImplementation` are **not** drop-in types.
 
-```swift
-public protocol RuleImplementation: Sendable {
-    associatedtype Context: AnalysisContextProtocol
-    var definition: RuleDefinition { get }
-    func detect(in context: Context, emit: DetectionEmitter) throws
-}
-```
+Author one canonical typed Rule Definition registry for **all** accepted claims: identity and provenance, support state, scope, mode, capabilities, evidence contract, and semantic/implementation/evidence revisions. The exact Swift type is an implementation choice, but the registry is not a second authored copy of the 24 Fowler entries. Keep main's public `RuleDescriptor` as an execution compatibility projection for supported R1 rules, and main's 24-entry `RefactoringCodeSmellCatalog` as a report compatibility projection; prove both stay consistent with the registry. R1's `defaultSeverity` stays on its compatibility descriptor until policy consumers can use a separate policy input; it is not a universal property of a catalog claim. Do not force severity onto unsupported definitions.
+
+Keep the existing concrete source-local `AnalysisContext` and `DebtRule` behavior. Introduce concrete project/history/external contexts only when a scoped rule has a provider and a verified end-to-end consumer. A marker protocol that merely permits a conformer to compile is not a working FR-14 implementation. Implementation Revision may change for optimization or bug fixes without changing Semantic Revision; evidence and policy changes have their own acceptance checks.
+
+---
 
 ## C. Analysis Capability Vocabulary
 
@@ -42,7 +32,7 @@ enum AnalysisCapability: Hashable, Sendable {
 }
 ```
 
-Use a set/dependency graph rather than `OptionSet`: the vocabulary will grow and some capabilities depend on others. Example: `actorReentrancyEvidence` may require syntax + isolation + controlFlow + dataFlow. The engine resolves dependency closure once for enabled rules. This is the R2 precursor to R3's query planner.
+Use a set/dependency graph rather than `OptionSet`: the vocabulary will grow and some capabilities depend on others. Example: `actorReentrancyEvidence` may require syntax + isolation + controlFlow + dataFlow. The engine resolves dependency closure once for enabled rules. This is the bounded R2 capability resolver, not a duplicate of main's released lifecycle or R3's query planner.
 
 ```mermaid
 flowchart TD
@@ -66,6 +56,8 @@ flowchart TD
     Impl --> Det[Detections]
 ```
 
+---
+
 ## D. Scope Model
 
 Recommended scopes:
@@ -83,6 +75,8 @@ enum RuleScope: Sendable {
 ```
 
 Do not force build/CI/history claims through `SourceFileSyntax`. Source-local rules should remain lightweight. Broader contexts can be introduced only when exercised by concrete claims.
+
+---
 
 ## E. Evidence Algebra
 
@@ -116,6 +110,8 @@ AND no sufficient revalidation
 
 The catalog declares the contract; Swift implements the algorithms. Avoid a generic expression language in YAML.
 
+---
+
 ## F. Typed Evidence
 
 Avoid `[String:String]` or arbitrary metadata. Suggested hierarchy:
@@ -135,6 +131,8 @@ public enum EvidenceFact: Sendable {
 
 Evidence remains snapshot-local and may reference source locations/SemanticUnit IDs. It must never carry `FindingID`. The pipeline remains `Facts → Evidence → Detection → Reconciler → Finding`.
 
+---
+
 ## G. Sensor → Fact → Evidence → Rule
 
 Rules should not become giant AST visitors. Proposed internal architecture:
@@ -151,39 +149,21 @@ flowchart LR
 
 Candidate sensors include Syntax, Call, Type, Isolation, ControlFlow, DataFlow, Reference, Package, XcodeProject, Git, and future CI/runtime providers. Sensors do not know rules. Multiple rules can reuse the same facts.
 
-## H. Rule Catalog Manifest
+---
 
-A declarative catalog is recommended for semantics/metadata while executable detection remains Swift. Example:
+## H. Swift-authored Rule Catalog
 
-```yaml
-id: concurrency.actor-reentrancy
-semanticRevision: 1
-category: concurrency
-scope: sourceUnit
-detectionMode: derived
-requirements:
-  - syntax
-  - isolation
-  - controlFlow
-  - dataFlow
-evidence:
-  all:
-    - invariantEstablished
-    - suspensionPoint
-    - postSuspensionUse
-    - noSufficientRevalidation
-implementation:
-  builtin: actorReentrancy
-supportState: partial
-provenance:
-  researchItem: 19
-```
+The canonical catalog consists of typed Swift Rule Definitions, not YAML, JSON, generated metadata, or an independently authored legacy catalog. Current main's `RefactoringCodeSmellCatalog` supplies the published 24-smell projection; evolve its backing definitions to a single authoritative registry and preserve its schema 1 report bytes. Reuse main's `RuleIdentity` and `SemanticRevision` rather than porting same-named branch types. An additional wider report must have its own explicit schema version.
 
-Do not add arbitrary executable expressions to the manifest. YAML/JSON should describe contracts; Swift should implement algorithms. Generation may produce validated Swift metadata if compile-time guarantees are desirable.
+For an actor-reentrancy **candidate**, a definition would declare a stable identity, derived detection mode, source-unit scope, isolation/control-flow/data-flow requirements, and an Evidence Contract covering invariant establishment, suspension, post-suspension use, and absence of sufficient revalidation. Until all required evidence can be obtained and tested, its Support State remains Partial or Research. Compare the candidate against the 24 Fowler smells before assigning a distinct SwiftDebt-extension provenance and cite Swift concurrency facts independently from SwiftDebt's debt judgment.
+
+Catalog validation checks uniqueness, provenance, requirement references, evidence metadata, and Support State consistency against these Swift definitions. Do not port the old branch's manifest parser or validation plugin. Rule Implementations remain Swift algorithms; arbitrary executable expressions in metadata are out of scope.
+
+---
 
 ## I. Stable IDs
 
-Research numbers are provenance only. Prefer semantic IDs:
+The unauthenticated draft's item numbers are not provenance. These are provisional semantic IDs for candidate mappings, not preapproved catalog entries. Check for an existing Fowler identity before assigning a distinct extension:
 
 ```text
 architecture.mixed-responsibilities
@@ -204,36 +184,52 @@ ci.unpinned-xcode
 observability.production-print
 ```
 
-IDs should survive catalog reorder and implementation renames.
+Once accepted, identities survive catalog reorder and implementation renames. Main's existing `RuleIdentity` and report schema 1 remain the compatibility baseline.
+Canonical dot-form identity `namespace.rule-id` uses main's `RuleIdentity(namespace: RuleNamespace, id: RuleID)`; never port the older single-string `RuleIdentity` type or infer provenance from an ID prefix.
 
-## J. Example Mappings from the Research
+---
 
-### Research #28 — `try!`
-Primary capability: syntax. Detection Mode: Deterministic for presence of `try!`; a more specific “fallible external boundary” variant additionally requires symbol/call classification. Do not pretend the broad syntax rule proves the full contextual research statement.
+## J. Candidate Swift mappings, not research numbers
 
-### Research #12 — `DispatchSemaphore.wait()` in async
-Capabilities: syntax + symbols/context. Detect resolved semaphore wait inside async or MainActor-sensitive execution. This is high-confidence derived/deterministic evidence when call resolution is known.
+These are examples from the archived draft, not a sourced list or approved extension count. For each, first test whether an existing Fowler claim expresses the same smell. Cite primary technical documentation before accepting a distinct SwiftDebt-authored policy judgment. A narrower syntax detector must not claim the full contextual conclusion.
 
-### Research #19 — Actor reentrancy
-Capabilities: syntax + isolation + control flow + data flow. Evidence tracks invariant establishment, suspension, post-suspension state use, and revalidation. This is a Derived rule, not AST pattern matching.
+### Candidate: `try!`
 
-### Research #1 — Mixed responsibilities in UI/model type
-Capabilities: symbols + references + ownership, possibly dependency classification. Evidence should identify presentation/networking/persistence/domain responsibilities rather than using LOC alone. This is likely Derived/Heuristic.
+Syntax observes the operator deterministically. A claim about a fallible external boundary additionally needs reliable symbol/call classification; it is not proven by the operator alone.
 
-### Research #3 — Global `shared` dependency
-`static let shared` is a candidate, not automatically debt. Additional evidence may include mutable state, broad usage, missing substitution boundary, and cross-module references. This prevents harmless shared immutable utilities from being universally flagged.
+### Candidate: `DispatchSemaphore.wait()` in async execution
 
-### Research #40 — Primitive identifiers
-Lexical/type/reference evidence can identify distinct semantic ID concepts represented by `String`/`Int`. Semantic similarity may generate candidates but cannot directly emit a Detection.
+Require resolved semaphore use and an async or MainActor-sensitive context. Matching an arbitrary method named `wait` cannot establish the claim; unresolved binding leaves observation incomplete.
 
-### Research #46 — SwiftUI `@ObservedObject` owned by View
-This is a strong source-local rule when the property wrapper, initialization, and ownership conditions are observable. It demonstrates why many catalog items remain cheap even after the architecture becomes richer.
+### Candidate: actor reentrancy
 
-### Research #71 — SwiftPM `unsafeFlags`
-This belongs to package/project scope, not a source syntax rule. A `PackageAnalysisContext` can expose manifest facts without contaminating source-local rule APIs.
+Require isolation, control-flow, and data-flow evidence for invariant establishment, suspension, post-suspension use, and lack of sufficient revalidation. An `await` alone is not a detector.
 
-### Research #86–92 — CI/CD
-These require CI/project configuration sensors or external evidence. R2 should catalog them now and avoid pretending ordinary Swift analysis can prove them.
+### Candidate: mixed UI/model responsibilities
+
+Compare first with Fowler's Large Class and Divergent Change. Evidence must distinguish presentation, networking, persistence, and domain responsibilities, rather than merely measuring LOC.
+
+### Candidate: global `shared` dependency
+
+Compare first with Fowler's Global Data. A `static let shared` occurrence is only a candidate; mutable state, broad use, and missing substitution boundaries may be needed. Immutable utilities are not automatically debt.
+
+### Candidate: primitive identifiers
+
+Compare first with Fowler's Primitive Obsession. Type/reference evidence can identify distinct semantic ID concepts represented by `String` or `Int`; similarity can propose candidates but cannot independently emit a Detection.
+
+### Candidate: SwiftUI `@ObservedObject` owned by a View
+
+A source-local observation needs property-wrapper, initialization, and ownership evidence. Its debt interpretation is a SwiftDebt-authored judgment, not an Apple documentation claim.
+
+### Candidate: SwiftPM `unsafeFlags`
+
+A package/project-scoped context may expose manifest facts. Presence alone is not sufficient to infer a CI or portability failure, and this cannot be implemented by inventing a source syntax node.
+
+### Candidate: CI/CD configuration
+
+Each separately accepted claim needs a named configuration sensor or external provider. Ordinary Swift source cannot prove CI policy. Unavailable provider evidence is not clean absence; the old draft's numbered range does not define entries.
+
+---
 
 ## K. Detection Mode
 
@@ -252,6 +248,8 @@ enum DetectionMode: Sendable {
 
 This is epistemic metadata, not severity and not probability. A semantic-similarity score remains an evidence value.
 
+---
+
 ## L. Observation State
 
 Recommended result concept:
@@ -267,10 +265,15 @@ enum ObservationState: Sendable {
 ```
 
 CLI should summarize evaluated/partial/unavailable/disabled counts separately from Detections. This prevents `0 detections` from meaning `0 debt` when a rule could not observe its domain.
+The wider five-state Support State applies to the new catalog, not to a silent rewrite of main's four-case `CodeSmellSupportState`. The schema-1 adapter projects only the original 24 Fowler entries and preserves each existing four-case value. SwiftDebt extensions, including external/runtime-required entries, belong in a separate versioned view; do not coerce external absence to a schema-1 `research` result.
+
+---
 
 ## M. Policy Boundary
 
 Do not place universal severity in Rule Definition. Example policy may fail `errors.force-try` under production source while warning/ignoring controlled tests. Policy changes should not alter Semantic Revision. Rule Implementations observe; they do not decide build failure.
+
+---
 
 ## N. Suggested Catalog Categories
 
@@ -289,19 +292,26 @@ Do not place universal severity in Rule Definition. Example policy may fail `err
 - style
 - observability
 
-The supplied research headings map naturally to these categories. Category is metadata; it does not determine execution.
+The publisher-backed Fowler names and individually accepted SwiftDebt extensions may use these categories. Category is metadata; it does not determine execution.
+
+---
 
 ## O. Validation Strategy
 
 Every Supported rule should have positive fixtures, adversarial negative fixtures, evidence-shape tests, observation-completeness tests, and performance characterization appropriate to its capabilities. Catalog validation should test identity uniqueness, provenance coverage, requirement validity, support-state consistency, and Evidence Contract validity. Derived/heuristic rules need explicit false-positive/false-negative documentation. Runtime/external claims need tests proving they do not become false absence when providers are missing.
+Swift type checking verifies catalog shape; test/build validation checks cross-entry consistency without YAML code generation. At runtime, invalid configuration disables only the affected rule with an explicit reason, and it cannot prove absence. The released compiler-evidence sidecar remains separate from rule validation.
+
+---
 
 ## P. R2 → R3 Seam
 
 R2 should introduce capability semantics without overbuilding the R3 planner. R3 can later turn the requirement set into a full DAG with shared RepositoryGraph/EvidenceGraph indexes. This seam preserves R2's performance promise and avoids a breaking conceptual migration. Rule Definitions should therefore depend on domain capabilities, never concrete databases or graph implementations. The vector database remains an implementation behind similarity capabilities.
 
+---
+
 ## Q. Key Architectural Invariants
 
-1. Research Claim is not automatically Rule Implementation.
+1. A Fowler source claim or SwiftDebt extension is not automatically a Rule Implementation.
 2. Rule Definition semantics are independent of implementation type.
 3. Missing Evidence is not negative Evidence.
 4. Evidence is snapshot-local; Finding is historical.
