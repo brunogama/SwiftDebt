@@ -11,7 +11,11 @@ struct RuleManifestFile {
         guard let items = rulesNode.sequenceItems else {
             throw RuleManifestError.malformedDocument(reason: "'rules' must be a sequence")
         }
-        return Self(rules: try items.map { try RuleManifestEntry(node: $0) })
+        let rules = try items.map {
+            item in
+            try RuleManifestEntry(node: item)
+        }
+        return Self(rules: rules)
     }
 }
 
@@ -48,10 +52,15 @@ struct RuleManifestEntry {
         }
         evidence = try RuleManifestEvidenceContract(node: evidenceNode)
         supportState = try Self.requiredString(node, "supportState")
-        provenance = try node["provenance"].map { try RuleManifestProvenance(node: $0) }
+        provenance = try node["provenance"].map {
+            node in
+            try RuleManifestProvenance(node: node)
+        }
     }
 
-    private static func requiredString(_ node: YAMLNode, _ key: String) throws -> String {
+    private static func requiredString(
+        _ node: YAMLNode, _ key: String
+    ) throws -> String {
         guard let value = node[key]?.stringValue else {
             throw RuleManifestError.malformedDocument(
                 reason: "manifest entry is missing required field '\(key)'")
@@ -59,7 +68,9 @@ struct RuleManifestEntry {
         return value
     }
 
-    private static func requiredInt(_ node: YAMLNode, _ key: String) throws -> Int {
+    private static func requiredInt(
+        _ node: YAMLNode, _ key: String
+    ) throws -> Int {
         guard let value = node[key]?.intValue else {
             throw RuleManifestError.malformedDocument(
                 reason: "manifest entry field '\(key)' must be an integer")
@@ -67,7 +78,9 @@ struct RuleManifestEntry {
         return value
     }
 
-    private static func stringList(_ node: YAMLNode, _ key: String) throws -> [String] {
+    private static func stringList(
+        _ node: YAMLNode, _ key: String
+    ) throws -> [String] {
         let listNode = node[key] ?? .sequence([])
         guard let items = listNode.sequenceItems else {
             throw RuleManifestError.malformedDocument(
@@ -100,7 +113,10 @@ struct RuleManifestEvidenceContract {
                 throw RuleManifestError.malformedDocument(
                     reason: "'evidence.optional' must be a sequence")
             }
-            optional = try items.map { try RuleManifestEvidencePredicate(node: $0) }
+            optional = try items.map {
+                item in
+                try RuleManifestEvidencePredicate(node: item)
+            }
         } else {
             optional = nil
         }
@@ -165,10 +181,14 @@ indirect enum RuleManifestEvidencePredicate {
         }
     }
 
-    private static func children(of node: YAMLNode, under key: String) throws -> [Self] {
+    private static func children(
+        of node: YAMLNode, under key: String
+    ) throws -> [Self] {
         guard let items = node.sequenceItems else {
             throw RuleManifestError.malformedDocument(reason: "'\(key)' must be a sequence")
         }
-        return try items.map { try Self(node: $0) }
+        return try items.map { item in
+            try Self(node: item)
+        }
     }
 }

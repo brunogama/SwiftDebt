@@ -16,6 +16,7 @@ enum CLIAction {
     case validateImprovement(DebtValidationRequest)
     case explainCoverage(CoverageExplanationRequest)
     case performanceGate(PerformanceGateRequest)
+    case pipeline(PipelineCLIRequest)
 }
 
 struct CLIOptions {
@@ -24,6 +25,9 @@ struct CLIOptions {
         if input == ["--help"] || input == ["-h"] || input == ["help"] { return .help }
         if input == ["--version"] || input == ["version"] { return .version }
         let arguments = input
+        if arguments.first == "pipeline" {
+            return try parsePipeline(Array(arguments.dropFirst()))
+        }
         if arguments.first == "compare" {
             return try parseCompare(Array(arguments.dropFirst()))
         }

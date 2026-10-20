@@ -47,6 +47,10 @@ struct SwiftDebtCommand {
             let result = try PerformanceGateCLI.run(request)
             write(result.output)
             exit(result.exitStatus)
+        case .pipeline(let request):
+            let result = try PipelineCLI.run(request)
+            write(result.output)
+            exit(result.exitStatus)
         }
     }
 

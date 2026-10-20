@@ -28,6 +28,9 @@ This is an independent, paper-inspired implementation, **not a reproduction of t
 
 Detailed references: [paper mapping](docs/PAPER_MAPPING.md), [measurement definitions](docs/METRICS.md), [plugin integration](docs/PLUGINS.md), [validation record](docs/VALIDATION.md).
 
+The [Swift testing pipeline](docs/TESTING_PIPELINE.md) plans risk-based checks and runs configured commands with retained logs and explicit pass, failure, or incomplete verdicts.
+The [research pipeline design](docs/RESEARCH_PIPELINE_DESIGN.md) separates that implementation from proposed finding reconciliation, remediation records, and outcome measurement.
+
 ## Installation
 
 Add the released package and the products you need to your package manifest:

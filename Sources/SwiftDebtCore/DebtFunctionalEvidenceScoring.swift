@@ -1,19 +1,4 @@
 extension DebtFunctionalEvidenceBuilder {
-    private static let riskWeights: [SwiftRiskCategory: Double] = [
-        .isolationCrossing: 1.25,
-        .actorIsolation: 0.75,
-        .globalActorIsolation: 1,
-        .sendableConformance: 0.75,
-        .uncheckedSendable: 2,
-        .unstructuredTask: 1.75,
-        .nonisolatedDeclaration: 1.5,
-        .mutableSharedState: 2,
-        .unsafeEscapeHatch: 2,
-        .errorSwallowing: 1.75,
-        .errorTermination: 2,
-        .testSynchronization: 1.5,
-    ]
-
     func patternScore(_ function: FunctionFacts) -> Double {
         let effectKinds = Set(function.effectFacts.map(\.category)).count
         let raw =
@@ -58,7 +43,15 @@ extension DebtFunctionalEvidenceBuilder {
     }
 
     func riskWeight(for category: SwiftRiskCategory) -> Double {
-        Self.riskWeights[category, default: 1]
+        switch category {
+        case .isolationCrossing: 1.25
+        case .actorIsolation, .sendableConformance: 0.75
+        case .globalActorIsolation: 1
+        case .uncheckedSendable, .mutableSharedState, .unsafeEscapeHatch, .errorTermination: 2
+        case .unstructuredTask, .errorSwallowing: 1.75
+        case .nonisolatedDeclaration: 1.5
+        case .testSynchronization: 1.5
+        }
     }
 
     func confidenceSummary(_ values: [SyntaxEvidenceConfidence]) -> String {

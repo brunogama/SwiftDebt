@@ -46,25 +46,3 @@ private func evidenceOrder(_ lhs: DebtEvidence, _ rhs: DebtEvidence) -> Bool {
     if lhs.rawValue != rhs.rawValue { return lhs.rawValue < rhs.rawValue }
     return String(reflecting: lhs.note) < String(reflecting: rhs.note)
 }
-
-private func effectOrder(_ lhs: SyntaxEffectFact, _ rhs: SyntaxEffectFact) -> Bool {
-    if lhs.location != rhs.location { return locationOrder(lhs.location, rhs.location) }
-    if lhs.detail != rhs.detail { return lhs.detail < rhs.detail }
-    if lhs.confidence != rhs.confidence { return lhs.confidence.rawValue < rhs.confidence.rawValue }
-    return false
-}
-
-private func compositionOrder(_ lhs: FunctionalCompositionFact, _ rhs: FunctionalCompositionFact)
-    -> Bool
-{
-    if lhs.location != rhs.location { return locationOrder(lhs.location, rhs.location) }
-    if lhs.operation != rhs.operation { return lhs.operation < rhs.operation }
-    if lhs.closureHasSideEffects != rhs.closureHasSideEffects { return !lhs.closureHasSideEffects }
-    return lhs.confidence.rawValue < rhs.confidence.rawValue
-}
-
-private func riskOrder(_ lhs: SwiftRiskFact, _ rhs: SwiftRiskFact) -> Bool {
-    if lhs.location != rhs.location { return locationOrder(lhs.location, rhs.location) }
-    if lhs.detail != rhs.detail { return lhs.detail < rhs.detail }
-    return lhs.confidence.rawValue < rhs.confidence.rawValue
-}

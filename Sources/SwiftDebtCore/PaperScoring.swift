@@ -41,8 +41,14 @@ package struct PaperScoring {
     ) -> Double? {
         let maximum = Double(values.max() ?? 0)
         switch metric {
-        case .locc, .nomc, .nogc, .nocc, .locf:
-            return sizeScore(metric: metric, maximum: maximum)
+        case .locc:
+            return 1000 / (maximum + 1500)
+        case .nomc, .nogc:
+            return 500 / (maximum + 75)
+        case .nocc:
+            return 1000 / (maximum + 150)
+        case .locf:
+            return 2000 / (maximum + 300)
         case .wmcc, .ccf, .nopf:
             return violationScore(metric: metric, values: values, maximum: maximum)
         case .noav:
@@ -50,16 +56,6 @@ package struct PaperScoring {
             return 2 / (Double(inputs.methodCount) / Double(inputs.propertyCount) + 0.4)
         case .dc:
             return duplicationScore(inputs: inputs, mode: mode)
-        }
-    }
-
-    private func sizeScore(metric: Metric, maximum: Double) -> Double {
-        switch metric {
-        case .locc: 1000 / (maximum + 1500)
-        case .nomc, .nogc: 500 / (maximum + 75)
-        case .nocc: 1000 / (maximum + 150)
-        case .locf: 2000 / (maximum + 300)
-        default: preconditionFailure("sizeScore called for non-size metric")
         }
     }
 

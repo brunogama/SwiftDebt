@@ -89,7 +89,8 @@ enum MinimalYAMLParser {
     ) throws -> YAMLNode {
         var items: [YAMLNode] = []
         while index < lines.count, lines[index].indent == indent,
-            isSequenceMarker(lines[index].content) {
+            isSequenceMarker(lines[index].content)
+        {
             let afterDash = String(lines[index].content.dropFirst())
             let leadingSpaces = afterDash.prefix { $0 == " " }.count
             let remainder = ltrim(afterDash)
@@ -124,7 +125,8 @@ enum MinimalYAMLParser {
     ) throws -> YAMLNode {
         var pairs: [(key: String, value: YAMLNode)] = []
         while index < lines.count, lines[index].indent == indent,
-            !isSequenceMarker(lines[index].content) {
+            !isSequenceMarker(lines[index].content)
+        {
             let (key, rawValue) = try splitKeyValue(lines[index].content)
             index += 1
             if rawValue.isEmpty {
@@ -142,7 +144,9 @@ enum MinimalYAMLParser {
         return .mapping(pairs)
     }
 
-    private static func splitKeyValue(_ content: String) throws -> (String, String) {
+    private static func splitKeyValue(
+        _ content: String
+    ) throws -> (String, String) {
         if let range = content.firstRange(of: ": ") {
             let key = rtrim(String(content[..<range.lowerBound]))
             let value = ltrim(String(content[range.upperBound...]))

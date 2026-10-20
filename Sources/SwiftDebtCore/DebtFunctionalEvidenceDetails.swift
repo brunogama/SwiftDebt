@@ -12,7 +12,7 @@ extension DebtFunctionalEvidenceBuilder {
             result.append(contentsOf: apiRiskEvidence(for: function, module: module))
         }
         result.append(patternConsistencyEvidence(for: function, location: location))
-        return result.sorted(by: functionalEvidenceOrder)
+        return result.sorted { $0.id < $1.id }
     }
 
     private func effectEvidence(
@@ -162,12 +162,6 @@ extension DebtFunctionalEvidenceBuilder {
                 + "compiler semantic proof.")
     }
 
-}
-
-private func functionalEvidenceOrder(_ lhs: DebtEvidence, _ rhs: DebtEvidence) -> Bool {
-    if lhs.id != rhs.id { return lhs.id < rhs.id }
-    if lhs.rawValue != rhs.rawValue { return lhs.rawValue < rhs.rawValue }
-    return String(reflecting: lhs.note) < String(reflecting: rhs.note)
 }
 
 private func functionalEffectOrder(_ lhs: SyntaxEffectFact, _ rhs: SyntaxEffectFact) -> Bool {

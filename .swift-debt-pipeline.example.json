@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "context": {
+    "risk": "medium",
+    "trigger": "pullRequest",
+    "impact": "uncertain"
+  },
+  "commands": [
+    {
+      "check": "staticAnalysis",
+      "executable": "/usr/bin/env",
+      "arguments": ["swift", "build", "--build-tests"],
+      "timeoutSeconds": 1800
+    },
+    {
+      "check": "architecture",
+      "executable": "/usr/bin/env",
+      "arguments": ["swift", "test", "--skip-build", "--filter", "DebtScoringTests"],
+      "timeoutSeconds": 600
+    },
+    {
+      "check": "unit",
+      "executable": "/usr/bin/env",
+      "arguments": ["swift", "test", "--skip-build", "--filter", "CoreTests"],
+      "timeoutSeconds": 600
+    },
+    {
+      "check": "integration",
+      "executable": "/usr/bin/env",
+      "arguments": ["swift", "test", "--skip-build", "--filter", "AnalyzerTests"],
+      "timeoutSeconds": 600
+    },
+    {
+      "check": "fullRegression",
+      "executable": "/usr/bin/env",
+      "arguments": ["python3", "scripts/check_domain_coverage.py"],
+      "timeoutSeconds": 1800
+    },
+    {
+      "check": "endToEnd",
+      "executable": "/usr/bin/env",
+      "arguments": ["python3", "scripts/smoke-test.py", "--binary", ".build/debug/swift-debt", "--plugins"],
+      "timeoutSeconds": 1800
+    }
+  ]
+}

@@ -128,9 +128,3 @@ private func functionOrder(
         rhs.fact.name, rhs.fact.location.file, rhs.fact.location.line, rhs.fact.location.column
     )
 }
-
-private func callSiteOrder(_ lhs: CallSiteFact, _ rhs: CallSiteFact) -> Bool {
-    if lhs.location != rhs.location { return locationOrder(lhs.location, rhs.location) }
-    if lhs.name != rhs.name { return lhs.name < rhs.name }
-    return lhs.labels < rhs.labels
-}

@@ -26,8 +26,9 @@ def arguments() -> argparse.Namespace:
 def coverage_path(root: Path, supplied: Optional[Path]) -> Path:
     if supplied is not None:
         return supplied.resolve()
+    # Serial execution keeps instrumented branch counts consistent across tests.
     subprocess.run(
-        ["swift", "test", "--enable-code-coverage"],
+        ["swift", "test", "--enable-code-coverage", "--no-parallel"],
         cwd=root,
         check=True,
     )

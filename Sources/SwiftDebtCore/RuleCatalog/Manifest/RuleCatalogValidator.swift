@@ -3,7 +3,9 @@
 /// ``RuleManifestParser``; everything checkable from one entry's own fields
 /// lives here (PRD FR-20).
 enum RuleCatalogValidator {
-    static func validate(entry: RuleManifestEntry) throws -> RuleDefinition {
+    static func validate(
+        entry: RuleManifestEntry
+    ) throws -> RuleDefinition {
         let capabilities = try validateCapabilities(entry: entry)
         let category = try enumValue(
             RuleCategory.self, entry.category, field: "category", ruleID: entry.id)
@@ -51,7 +53,9 @@ enum RuleCatalogValidator {
 
     // MARK: - Provenance
 
-    private static func validateProvenance(entry: RuleManifestEntry) throws -> RuleProvenance {
+    private static func validateProvenance(
+        entry: RuleManifestEntry
+    ) throws -> RuleProvenance {
         guard let provenance = entry.provenance, provenance.researchItem > 0 else {
             throw RuleManifestError.missingProvenance(ruleID: entry.id)
         }
@@ -66,13 +70,15 @@ enum RuleCatalogValidator {
         let required = try convertPredicate(
             entry.evidence.required, ruleID: entry.id, capabilities: capabilities)
         let optional = try (entry.evidence.optional ?? []).map {
-            try convertPredicate($0, ruleID: entry.id, capabilities: capabilities)
+            predicate in
+            try convertPredicate(predicate, ruleID: entry.id, capabilities: capabilities)
         }
         return EvidenceContract(required: required, optional: optional)
     }
 
     private static func convertPredicate(
-        _ node: RuleManifestEvidencePredicate, ruleID: String, capabilities: Set<AnalysisCapability>
+        _ node: RuleManifestEvidencePredicate, ruleID: String,
+        capabilities: Set<AnalysisCapability>
     ) throws -> EvidencePredicate {
         switch node {
         case .fact(let key, let rawKind):
@@ -83,17 +89,21 @@ enum RuleCatalogValidator {
                 throw RuleManifestError.invalidEvidenceShape(
                     ruleID: ruleID, reason: "'all' predicate is empty")
             }
-            return .all(try children.map {
-                try convertPredicate($0, ruleID: ruleID, capabilities: capabilities)
-            })
+            return .all(
+                try children.map {
+                    child in
+                    try convertPredicate(child, ruleID: ruleID, capabilities: capabilities)
+                })
         case .any(let children):
             guard !children.isEmpty else {
                 throw RuleManifestError.invalidEvidenceShape(
                     ruleID: ruleID, reason: "'any' predicate is empty")
             }
-            return .any(try children.map {
-                try convertPredicate($0, ruleID: ruleID, capabilities: capabilities)
-            })
+            return .any(
+                try children.map {
+                    child in
+                    try convertPredicate(child, ruleID: ruleID, capabilities: capabilities)
+                })
         case .not(let child):
             return .not(try convertPredicate(child, ruleID: ruleID, capabilities: capabilities))
         }
@@ -106,9 +116,7 @@ enum RuleCatalogValidator {
             throw RuleManifestError.invalidEvidenceShape(
                 ruleID: ruleID, reason: "fact '\(key)' has unknown kind '\(rawKind)'")
         }
-        guard let requiredCapability = requiredCapability(for: kind) else {
-            return .fact(EvidenceRequirement(key: key, kind: kind))
-        }
+        let requiredCapability = requiredCapability(for: kind)
         guard capabilities.contains(requiredCapability) else {
             let reason =
                 "fact '\(key)' has kind '\(kind.rawValue)' which requires capability "
@@ -120,8 +128,8 @@ enum RuleCatalogValidator {
 
     /// The `AnalysisCapability` an `EvidenceFactKind` implies must have been
     /// declared in `requirements` (a lightweight cross-check between the
-    /// two vocabularies; not every kind maps to exactly one capability).
-    private static func requiredCapability(for kind: EvidenceFactKind) -> AnalysisCapability? {
+    /// two vocabularies; each fact kind maps to exactly one capability).
+    private static func requiredCapability(for kind: EvidenceFactKind) -> AnalysisCapability {
         switch kind {
         case .syntax: return .syntax
         case .metric: return .metrics

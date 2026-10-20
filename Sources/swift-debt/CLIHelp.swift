@@ -10,10 +10,13 @@ extension CLIOptions {
         [--output PATH]
                swift-debt explain coverage [path] --lcov PATH [options]
                swift-debt performance-gate BASELINE_JSON CANDIDATE_JSON [options]
+               swift-debt pipeline plan CONFIG_JSON
+               swift-debt pipeline run CONFIG_JSON --artifacts NEW_DIRECTORY
                swift-debt --help
                swift-debt --version
 
         OPTIONS:
+          --artifacts DIRECTORY          New directory for pipeline logs and report.json.
           --config PATH                  JSON configuration (default: <root>/.swift-debt.json).
           --format FORMAT                text, json, csv, html, diagnostics (default: text),
                                          plus debt-json, debt-markdown, debt-dot,
@@ -55,8 +58,8 @@ extension CLIOptions {
           --stamp PATH                   Internal build-plugin completion marker.
           --                             Treat the remaining argument as a literal path.
 
-        EXIT STATUS: 0 success; 1 opted-in metric or improvement gate failed; 2 \
-        input/configuration/analysis error.
+        EXIT STATUS: 0 success; 1 metric, improvement, or required pipeline check failed; 2 \
+        input/configuration/analysis error or incomplete pipeline evidence.
         Paper equations are experimental. Undefined scores are not replaced with a passing grade.
         """
 }

@@ -34,10 +34,13 @@ public enum RuleManifestParser {
     /// identities are still reported once each, at the point of the second
     /// (and later) occurrence.
     public static func collectErrors(yaml: String) -> CollectedResult {
-        guard let entries = try? decodeEntries(yaml: yaml) else {
-            let reason = malformedReason(yaml: yaml)
-            return ([], [.malformedDocument(reason: reason)])
+        let entries: [RuleManifestEntry]
+        do {
+            entries = try decodeEntries(yaml: yaml)
+        } catch {
+            return ([], [error])
         }
+
         var definitions: [RuleDefinition] = []
         var errors: [RuleManifestError] = []
         var seenIdentities: Set<String> = []
@@ -48,37 +51,17 @@ public enum RuleManifestParser {
             }
             do {
                 definitions.append(try RuleCatalogValidator.validate(entry: entry))
-            } catch let error as RuleManifestError {
-                errors.append(error)
             } catch {
-                errors.append(.malformedDocument(reason: "\(error)"))
+                errors.append(error)
             }
         }
         return (definitions, errors)
     }
 
-    private static func decodeEntries(yaml: String) throws -> [RuleManifestEntry] {
-        do {
-            let node = try MinimalYAMLParser.parse(yaml)
-            return try RuleManifestFile.parse(node).rules
-        } catch let error as RuleManifestError {
-            throw error
-        } catch {
-            throw RuleManifestError.malformedDocument(reason: "\(error)")
-        }
-    }
-
-    private static func malformedReason(yaml: String) -> String {
-        do {
-            _ = try decodeEntries(yaml: yaml)
-            return "unknown"
-        } catch let error as RuleManifestError {
-            if case .malformedDocument(let reason) = error {
-                return reason
-            }
-            return "\(error)"
-        } catch {
-            return "\(error)"
-        }
+    private static func decodeEntries(
+        yaml: String
+    ) throws -> [RuleManifestEntry] {
+        let node = try MinimalYAMLParser.parse(yaml)
+        return try RuleManifestFile.parse(node).rules
     }
 }
