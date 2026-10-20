@@ -173,6 +173,14 @@ struct RuleCatalogBoundaryCoverageTests {
         }
     }
 
+    @Test("Unexpected parser errors become malformed-document diagnostics")
+    func unexpectedParserErrorIsNormalized() {
+        #expect(
+            RuleManifestParser.normalized(UnexpectedManifestError())
+                == .malformedDocument(reason: "unexpected parser failure")
+        )
+    }
+
     @Test("Failed observation retains its diagnostic and cannot prove absence")
     func failedObservationRetainsDiagnostic() {
         let state = ObservationState.failed(RuleAnalysisFailure(message: "sensor timed out"))
@@ -199,4 +207,8 @@ struct RuleCatalogBoundaryCoverageTests {
         #expect(explicitEvidence.value == 11)
         #expect(literalEvidence.value == 12)
     }
+}
+
+private struct UnexpectedManifestError: Error, CustomStringConvertible {
+    var description: String { "unexpected parser failure" }
 }

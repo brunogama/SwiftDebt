@@ -38,7 +38,7 @@ public enum RuleManifestParser {
         do {
             entries = try decodeEntries(yaml: yaml)
         } catch {
-            return ([], [error])
+            return ([], [normalized(error)])
         }
 
         var definitions: [RuleDefinition] = []
@@ -52,10 +52,17 @@ public enum RuleManifestParser {
             do {
                 definitions.append(try RuleCatalogValidator.validate(entry: entry))
             } catch {
-                errors.append(error)
+                errors.append(normalized(error))
             }
         }
         return (definitions, errors)
+    }
+
+    static func normalized(_ error: any Error) -> RuleManifestError {
+        if let error = error as? RuleManifestError {
+            return error
+        }
+        return .malformedDocument(reason: String(describing: error))
     }
 
     private static func decodeEntries(
