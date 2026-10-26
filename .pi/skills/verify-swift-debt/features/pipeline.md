@@ -4,7 +4,7 @@
 
 - Render a policy-derived pipeline plan from a JSON configuration.
 - Run explicitly bound local checks with per-check stdout and stderr artifacts.
-- Preserve the configuration and a canonical `report.json` receipt in a new artifacts directory.
+- Preserve the configuration, canonical plan, and `report.json` receipt in a new artifacts directory.
 - Reject missing or reused artifact directories before launching commands.
 
 ## How to get to it (user POV)

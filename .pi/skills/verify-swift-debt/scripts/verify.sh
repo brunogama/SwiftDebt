@@ -245,8 +245,6 @@ for check in expected:
     assert (artifacts / f"{check}.stdout.log").is_file()
     assert (artifacts / f"{check}.stderr.log").is_file()
     assert (artifacts / f"{check}.result.json").is_file()
-    assert (artifacts / f"{check}.stderr.log").is_file()
-    assert (artifacts / f"{check}.result.json").is_file()
 print("PASS: pipeline report and per-check artifacts retained")
 PY
         ;;
