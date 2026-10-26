@@ -1,12 +1,12 @@
 ---
 name: verify-swift-debt
-description: "Drive the SwiftDebt CLI and SwiftPM plugin workflows end to end when verifying source analysis, ranked debt reports, or package integration."
+description: "Drive the SwiftDebt CLI and SwiftPM plugin workflows end to end when verifying source analysis, ranked debt reports, package integration, or pipeline execution."
 ---
 
 # Verify SwiftDebt
 
 Use this skill when a change affects the SwiftDebt CLI, ranked debt workflows,
-report rendering, or SwiftPM plugin integration. The primary surface is the
+report rendering, SwiftPM plugin integration, or pipeline execution. The primary surface is the
 short-lived `swift-debt` executable. The repository also contains an optional
 interactive terminal debt explorer and two SwiftPM plugins; those are driven as
 separate, isolated checks.
@@ -39,7 +39,7 @@ ${SWIFTDEBT_VERIFY_ROOT:-.pi/skills/verify-swift-debt}/scripts/verify.sh --docto
 ```
 
 The doctor checks that the already-built binary exists, reports the repository
-version, and exposes the expected `analyze` and `debt` commands in help output.
+version, and exposes the expected `analyze`, `debt`, and `pipeline` commands in help output.
 It does not analyze files, write reports, or change the checkout. If it fails,
 run the Launch command and then retry the doctor.
 
@@ -52,7 +52,7 @@ touching repository source files:
 ${SWIFTDEBT_VERIFY_ROOT:-.pi/skills/verify-swift-debt}/scripts/verify.sh --feature metrics
 ```
 
-The supported feature names are `metrics`, `debt`, and `plugins`:
+The supported feature names are `metrics`, `debt`, `plugins`, and `pipeline`:
 
 - `metrics` creates an isolated Swift source fixture, runs `swift-debt analyze`
   with JSON output, repeats the command with a different parser-job bound, and
@@ -63,6 +63,8 @@ The supported feature names are `metrics`, `debt`, and `plugins`:
 - `plugins` delegates to the repository's real
   `scripts/smoke-test.py --plugins` harness, which creates its own temporary
   SwiftPM consumer and exercises both the build and command plugins.
+- `pipeline` creates a version-1 local configuration, runs `swift-debt pipeline run`,
+  and proves that its passed report and per-check artifacts were retained.
 
 For a direct manual drive, use stable command arguments rather than terminal
 coordinates:
@@ -88,6 +90,7 @@ Every helper run creates a unique directory under
 - drive command transcripts;
 - the generated JSON or plugin smoke evidence;
 - deterministic comparison results and validation summaries.
+- pipeline configuration, report receipt, and per-check artifacts.
 
 Proof must exercise the executable or plugin the way a package user does. Do
 not call internal Swift types, inject test-only setters, or rely on a test-only
@@ -116,7 +119,7 @@ The executable helper is:
 
 ```sh
 ${SWIFTDEBT_VERIFY_ROOT:-.pi/skills/verify-swift-debt}/scripts/verify.sh \
-  --feature metrics|debt|plugins
+  --feature metrics|debt|plugins|pipeline
 ```
 
 The command defaults to the active Pi skill path. To verify a reviewed staged copy before promotion, set `SWIFTDEBT_VERIFY_ROOT` to that copy’s path; the helper discovers the repository by walking up to `Package.swift`.

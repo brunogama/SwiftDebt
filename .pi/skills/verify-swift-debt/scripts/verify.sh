@@ -18,7 +18,7 @@ doctor_only=false
 
 usage() {
     cat <<'EOF'
-Usage: verify.sh [--doctor] [--feature metrics|debt|plugins]
+Usage: verify.sh [--doctor] [--feature metrics|debt|plugins|pipeline]
 
   --doctor                    Check an existing build without writing reports.
   --feature NAME              Run one isolated end-to-end feature proof.
@@ -48,7 +48,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 case "$feature" in
-    metrics|debt|plugins) ;;
+    metrics|debt|plugins|pipeline) ;;
     *)
         printf 'Unknown feature: %s\n' "$feature" >&2
         exit 2
@@ -68,6 +68,7 @@ doctor() {
     }
     "$binary" --help | grep -Fq 'swift-debt analyze'
     "$binary" --help | grep -Fq 'swift-debt debt analyze'
+    "$binary" --help | grep -Fq 'swift-debt pipeline run'
     printf 'PASS doctor: %s\n' "$version"
 }
 
@@ -171,6 +172,83 @@ PY
             --timeout 900
         cp "$evidence_root/plugins.log" "$evidence_root/plugin-smoke.log"
         printf 'PASS: command and build plugin smoke harness\n' > "$evidence_root/validation.log"
+        ;;
+    pipeline)
+        cat > "$evidence_root/pipeline-configuration.json" <<'EOF'
+{
+  "schemaVersion": 1,
+  "context": {
+    "risk": "low",
+    "trigger": "pullRequest",
+    "impact": "known"
+  },
+  "commands": [
+    {
+      "check": "staticAnalysis",
+      "executable": "/bin/sh",
+      "arguments": ["-c", "printf static-analysis"],
+      "timeoutSeconds": 2
+    },
+    {
+      "check": "architecture",
+      "executable": "/bin/sh",
+      "arguments": ["-c", "printf architecture"],
+      "timeoutSeconds": 2
+    },
+    {
+      "check": "unit",
+      "executable": "/bin/sh",
+      "arguments": ["-c", "printf unit"],
+      "timeoutSeconds": 2
+    },
+    {
+      "check": "integration",
+      "executable": "/bin/sh",
+      "arguments": ["-c", "printf integration"],
+      "timeoutSeconds": 2
+    },
+    {
+      "check": "regression",
+      "executable": "/bin/sh",
+      "arguments": ["-c", "printf regression"],
+      "timeoutSeconds": 2
+    },
+    {
+      "check": "endToEnd",
+      "executable": "/bin/sh",
+      "arguments": ["-c", "printf end-to-end"],
+      "timeoutSeconds": 2
+    }
+  ]
+}
+EOF
+        record_command pipeline \
+            "$binary" pipeline run "$evidence_root/pipeline-configuration.json" \
+            --artifacts "$evidence_root/pipeline-artifacts"
+        python3 - "$evidence_root/pipeline-artifacts/report.json" \
+            "$evidence_root/pipeline-artifacts" > "$evidence_root/validation.log" <<'PY'
+import json
+import pathlib
+import sys
+
+report_path, artifacts = map(pathlib.Path, sys.argv[1:])
+report = json.loads(report_path.read_text())
+expected = {"staticAnalysis", "architecture", "unit", "integration", "regression", "endToEnd"}
+results = {item["check"]: item["status"] for item in report["evaluation"]["results"]}
+assert report["schemaVersion"] == 1
+assert report["evaluation"]["verdict"] == "passed"
+assert results.keys() == expected
+assert all(status == "passed" for status in results.values())
+assert (artifacts / "configuration.json").is_file()
+assert (artifacts / "plan.json").is_file()
+for check in expected:
+    assert (artifacts / f"{check}.stdout.log").is_file()
+    assert (artifacts / f"{check}.stderr.log").is_file()
+    assert (artifacts / f"{check}.result.json").is_file()
+    assert (artifacts / f"{check}.stderr.log").is_file()
+    assert (artifacts / f"{check}.result.json").is_file()
+print("PASS: pipeline report and per-check artifacts retained")
+PY
         ;;
 esac
 

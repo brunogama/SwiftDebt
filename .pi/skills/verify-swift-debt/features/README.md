@@ -9,6 +9,7 @@ end state that proves it worked.
 | [Metric analysis](metric-analysis.md) | `swift-debt analyze` | Complete JSON report and deterministic repeat |
 | [Ranked debt](ranked-debt.md) | `swift-debt debt analyze` | Native debt JSON with frozen reference time |
 | [SwiftPM plugins](swiftpm-plugins.md) | `swift build` and `swift package swift-debt` | Consumer build and analysis stamp |
+| [Verification pipeline](pipeline.md) | `swift-debt pipeline run` | Pipeline report plus per-check artifacts |
 
 Run one feature through the helper:
 
