@@ -26,13 +26,14 @@ jobs:
           BEFORE_SHA: ${{ github.event.before }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           HEAD_SHA: ${{ github.sha }}
+          PUSHED_BRANCH: ${{ github.ref_name }}
         shell: bash
         run: |
           set -euo pipefail
-          base="$BEFORE_SHA"
-          if [[ "$base" =~ ^0+$ ]]; then
-            git fetch --no-tags origin \
-              "+refs/heads/$DEFAULT_BRANCH:refs/remotes/origin/$DEFAULT_BRANCH"
-            base="$(git merge-base "origin/$DEFAULT_BRANCH" "$HEAD_SHA")"
-          fi
-          python3 scripts/check_conventional_commits.py --base "$base" --head "$HEAD_SHA"
+          git fetch --no-tags origin \
+            "+refs/heads/$DEFAULT_BRANCH:refs/remotes/origin/$DEFAULT_BRANCH"
+          python3 scripts/check_conventional_commits.py \
+            --base "$BEFORE_SHA" \
+            --head "$HEAD_SHA" \
+            --default-branch "$DEFAULT_BRANCH" \
+            --pushed-branch "$PUSHED_BRANCH"

@@ -95,6 +95,27 @@ def merge_base(root: Path, left: str, right: str) -> str:
         raise CommitPolicyError(f"base {left} and head {right} have no common ancestor") from error
 
 
+
+def push_validation_base(
+    root: Path,
+    base: str | None,
+    head: str,
+    default_branch: str,
+    pushed_branch: str,
+) -> str | None:
+    resolved_head = resolve_commit(root, head, "head")
+    if (
+        base is not None
+        and not ZERO_REVISION.fullmatch(base)
+        and is_available(root, base)
+        and is_ancestor(root, base, resolved_head)
+    ):
+        return resolve_commit(root, base, "base")
+    if pushed_branch == default_branch:
+        return base
+    default_head = resolve_commit(root, f"origin/{default_branch}", "default branch")
+    return merge_base(root, default_head, resolved_head)
+
 def validation_base(root: Path, base: str | None, head: str, cutover: str) -> tuple[str, str]:
     resolved_head = resolve_commit(root, head, "head")
     resolved_cutover = resolve_commit(root, cutover, "cutover")
@@ -168,9 +189,22 @@ def main(arguments: list[str] | None = None) -> int:
     parser.add_argument("--base")
     parser.add_argument("--head", default="HEAD")
     parser.add_argument("--cutover", default=DEFAULT_CUTOVER)
+    parser.add_argument("--default-branch")
+    parser.add_argument("--pushed-branch")
     args = parser.parse_args(arguments)
+    if (args.default_branch is None) != (args.pushed_branch is None):
+        parser.error("--default-branch and --pushed-branch must be provided together")
+    selected_base = args.base
+    if args.default_branch is not None and args.pushed_branch is not None:
+        selected_base = push_validation_base(
+            args.root.resolve(),
+            args.base,
+            args.head,
+            args.default_branch,
+            args.pushed_branch,
+        )
     try:
-        base, head = validation_base(args.root.resolve(), args.base, args.head, args.cutover)
+        base, head = validation_base(args.root.resolve(), selected_base, args.head, args.cutover)
         commits = commits_between(args.root.resolve(), base, head)
         failures = violations(commits)
         if failures:
