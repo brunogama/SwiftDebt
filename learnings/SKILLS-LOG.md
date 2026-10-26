@@ -31,3 +31,14 @@
 - Trigger: evidence-based, delegated, risky, or reviewer-facing work with at least three meaningful steps.
 - Procedure: frame direct acceptance evidence; track units with `pstack_todo`; verify each unit before advancing; inspect delegated artifacts rather than reports; run the real outcome path; keep an honest audit trail when warranted.
 - Evaluation: a fresh read-only deduction review passed. It reconstructed a practical workflow, found no necessary patch, and confirmed that the candidate limits process overhead for one-command tasks.
+
+
+---
+
+## 2026-10-26: verify-swift-debt
+
+- Status: explicitly approved and promoted to `.pi/skills/verify-swift-debt/` from the staged Pi candidate.
+- Surface: short-lived `swift-debt` CLI, with separate SwiftPM command/build-plugin verification paths; the optional interactive debt explorer remains TTY-only.
+- Procedure: build once, run the read-only doctor, choose a mapped CLI or plugin workflow, retain command/report artifacts under `.verification/evidence/`, then remove only the helper-created fixture.
+- Feature map: metric analysis, ranked debt analysis, and SwiftPM plugins.
+- Evaluation: the candidate doctor passed for `SwiftDebt 0.1.0`; the real `metrics` feature produced a complete ten-metric JSON report and byte-identical repeat, with retained evidence at `.verification/evidence/run-20261026T060112Z-341/` after fixture cleanup. Full Swift tests and `uv run scripts/qa_repository.py .` passed. Independent Gemini review found no material issue. Only the required one mapped feature (`metrics`) was driven in this creation run; `debt` and `plugins` remain mapped but unexecuted here.
