@@ -60,12 +60,12 @@ struct CLIWorkflowTests {
         let directory = try makeTemporaryProject()
         defer { try? FileManager.default.removeItem(at: directory) }
         try """
-            {"maximumFileBytes":1}
-            """.write(
-                to: directory.appendingPathComponent(".swift-debt.json"),
-                atomically: true,
-                encoding: .utf8
-            )
+        {"maximumFileBytes":1}
+        """.write(
+            to: directory.appendingPathComponent(".swift-debt.json"),
+            atomically: true,
+            encoding: .utf8
+        )
 
         let result = try runSwiftDebt([
             "debt", "analyze", directory.path, "--max-file-bytes", "4096", "--jobs", "1",
@@ -131,7 +131,8 @@ struct CLIWorkflowTests {
     }
 
     @Test func implicitAnalyzePathNamedDebtRemainsSwiftDebtJSONWorkflow() throws {
-        let parent = FileManager.default.temporaryDirectory.appendingPathComponent("swift-debt-cli-tests-\(UUID().uuidString)")
+        let parent = FileManager.default.temporaryDirectory.appendingPathComponent(
+            "swift-debt-cli-tests-\(UUID().uuidString)")
         _ = try makeTemporaryProject(named: "debt", in: parent)
         defer { try? FileManager.default.removeItem(at: parent) }
 

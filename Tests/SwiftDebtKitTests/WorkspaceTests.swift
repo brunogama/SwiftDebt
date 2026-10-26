@@ -7,7 +7,8 @@ import Testing
 @Suite("Filesystem and integration boundaries")
 struct WorkspaceTests {
     private func temporary() throws -> URL {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("swift-debt-tests-\(UUID().uuidString)")
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(
+            "swift-debt-tests-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         return root
     }

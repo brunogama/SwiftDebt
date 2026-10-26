@@ -9,20 +9,36 @@ struct CoverageMatchingTests {
         let report = LcovParser().parse(try fixture("canonical.lcov"))
         let result = CoverageMatcher().match(report: report, entities: canonicalEntities(), repositoryRoot: "/repo")
 
-        #expect(report.records.map(\.sourcePath) == [
-            ".build/generated/Generated.swift",
-            "/repo/Sources/App/Processor.swift",
-            "Sources/App/Extensions.swift",
-            "Sources/App/Unused.swift",
-        ])
-        #expect(result.evidence.first { $0.id == "callable:App.Processor.process(value:):coverage:lcov" }?.availability.state == .measuredCoverage)
-        #expect(result.evidence.first { $0.id == "callable:App.Processor.process(value:):coverage:lcov" }?.normalizedScore == 100)
-        #expect(result.evidence.first { $0.id == "callable:App.Processor.process(text:):coverage:lcov" }?.availability.state == .zeroCoverage)
-        #expect(result.evidence.first { $0.id == "callable:App.Processor.process(text:):coverage:lcov" }?.normalizedScore == 0)
-        #expect(result.evidence.first { $0.id == "callable:App.Processor.extended():coverage:lcov" }?.availability.state == .measuredCoverage)
-        #expect(result.evidence.first { $0.id == "callable:App.Processor.missing():coverage:lcov" }?.availability.state == .missingFile)
-        #expect(result.evidence.first { $0.id == "callable:App.Processor.unknown():coverage:lcov" }?.availability.state == .unmatchedEntity)
-        #expect(result.diagnostics.contains { $0.sourcePath == ".build/generated/Generated.swift" && $0.entityID == nil })
+        #expect(
+            report.records.map(\.sourcePath) == [
+                ".build/generated/Generated.swift",
+                "/repo/Sources/App/Processor.swift",
+                "Sources/App/Extensions.swift",
+                "Sources/App/Unused.swift",
+            ])
+        #expect(
+            result.evidence.first { $0.id == "callable:App.Processor.process(value:):coverage:lcov" }?.availability
+                .state == .measuredCoverage)
+        #expect(
+            result.evidence.first { $0.id == "callable:App.Processor.process(value:):coverage:lcov" }?.normalizedScore
+                == 100)
+        #expect(
+            result.evidence.first { $0.id == "callable:App.Processor.process(text:):coverage:lcov" }?.availability.state
+                == .zeroCoverage)
+        #expect(
+            result.evidence.first { $0.id == "callable:App.Processor.process(text:):coverage:lcov" }?.normalizedScore
+                == 0)
+        #expect(
+            result.evidence.first { $0.id == "callable:App.Processor.extended():coverage:lcov" }?.availability.state
+                == .measuredCoverage)
+        #expect(
+            result.evidence.first { $0.id == "callable:App.Processor.missing():coverage:lcov" }?.availability.state
+                == .missingFile)
+        #expect(
+            result.evidence.first { $0.id == "callable:App.Processor.unknown():coverage:lcov" }?.availability.state
+                == .unmatchedEntity)
+        #expect(
+            result.diagnostics.contains { $0.sourcePath == ".build/generated/Generated.swift" && $0.entityID == nil })
         #expect(result.diagnostics.contains { $0.sourcePath == "Sources/App/Unused.swift" && $0.entityID == nil })
     }
 
@@ -66,9 +82,10 @@ struct CoverageMatchingTests {
         #expect(evidence.availability.state == .measuredCoverage)
         #expect(evidence.normalizedScore == 100)
         #expect(diagnostic.matchedFunction == coverageName)
-        #expect(diagnostic.attemptedStrategies == [
-            .sourcePathExact, .functionNameExact, .functionNameSuffix, .functionStartLine,
-        ])
+        #expect(
+            diagnostic.attemptedStrategies == [
+                .sourcePathExact, .functionNameExact, .functionNameSuffix, .functionStartLine,
+            ])
     }
 
     @Test func functionStartLinePreservesZeroCoverage() throws {
@@ -80,10 +97,12 @@ struct CoverageMatchingTests {
                     functionHits: [LcovFunctionHit(name: "lcov-only-name", hits: 0)]
                 )
             ]),
-            entities: [entity(
-                "callable:App.Processor.process()", "App.Processor.process()",
-                file: "Sources/App/Processor.swift", line: 42
-            )]
+            entities: [
+                entity(
+                    "callable:App.Processor.process()", "App.Processor.process()",
+                    file: "Sources/App/Processor.swift", line: 42
+                )
+            ]
         )
 
         #expect(result.evidence.first?.availability.state == .zeroCoverage)
@@ -169,16 +188,28 @@ struct CoverageMatchingTests {
         #expect(withFullCoverage == base)
         #expect(withPartialCoverage < base)
         #expect(withMissingCoverage == base)
-        #expect(DebtScoring().score(evidence: baseEvidence + [partialCoverage]).breakdown.contributions.last?.contribution ?? 1 <= 0)
+        #expect(
+            DebtScoring().score(evidence: baseEvidence + [partialCoverage]).breakdown.contributions.last?.contribution
+                ?? 1 <= 0)
     }
 
     private func canonicalEntities() -> [DebtEntity] {
         [
-            entity("callable:App.Processor.process(value:)", "App.Processor.process(value:)", file: "Sources/App/Processor.swift", line: 3),
-            entity("callable:App.Processor.process(text:)", "App.Processor.process(text:)", file: "Sources/App/Processor.swift", line: 7),
-            entity("callable:App.Processor.extended()", "App.Processor.extended()", file: "Sources/App/Extensions.swift", line: 5),
-            entity("callable:App.Processor.unknown()", "App.Processor.unknown()", file: "Sources/App/Processor.swift", line: 99),
-            entity("callable:App.Processor.missing()", "App.Processor.missing()", file: "Sources/App/Missing.swift", line: 1),
+            entity(
+                "callable:App.Processor.process(value:)", "App.Processor.process(value:)",
+                file: "Sources/App/Processor.swift", line: 3),
+            entity(
+                "callable:App.Processor.process(text:)", "App.Processor.process(text:)",
+                file: "Sources/App/Processor.swift", line: 7),
+            entity(
+                "callable:App.Processor.extended()", "App.Processor.extended()", file: "Sources/App/Extensions.swift",
+                line: 5),
+            entity(
+                "callable:App.Processor.unknown()", "App.Processor.unknown()", file: "Sources/App/Processor.swift",
+                line: 99),
+            entity(
+                "callable:App.Processor.missing()", "App.Processor.missing()", file: "Sources/App/Missing.swift",
+                line: 1),
         ]
     }
 

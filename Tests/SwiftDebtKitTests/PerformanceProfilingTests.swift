@@ -309,7 +309,7 @@ struct PerformanceProfilingTests {
         let enumerator = try #require(manager.enumerator(at: buildDirectory, includingPropertiesForKeys: nil))
         let candidates = enumerator.compactMap { entry -> URL? in
             guard let url = entry as? URL, url.lastPathComponent == "swift-debt",
-                manager.isExecutableFile(atPath: url.path)
+                manager.isExecutableFile(atPath: url.path), !url.hasDirectoryPath
             else { return nil }
             return url
         }

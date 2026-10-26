@@ -35,19 +35,24 @@ struct GitHistoryEvidenceProviderTests {
         let result = GitHistoryEvidenceProvider(timeoutSeconds: 5).evidence(for: request)
 
         #expect(result.diagnostics.isEmpty)
-        #expect(result.evidence.map(\.kind) == [
-            "git-history.change-frequency",
-            "git-history.contributor-concentration",
-            "git-history.fix-orientation",
-            "git-history.recency",
-        ])
+        #expect(
+            result.evidence.map(\.kind) == [
+                "git-history.change-frequency",
+                "git-history.contributor-concentration",
+                "git-history.fix-orientation",
+                "git-history.recency",
+            ])
         #expect(result.evidence.allSatisfy { $0.availability.isAvailable })
         #expect(
             result.evidence.first { $0.kind == "git-history.change-frequency" }?.rawValue
                 == "commits=2;window=last-500-file-commits;truncated=false"
         )
-        #expect(result.evidence.first { $0.kind == "git-history.fix-orientation" }?.rawValue.contains("fixCommits=1") == true)
-        #expect(result.evidence.first { $0.kind == "git-history.contributor-concentration" }?.rawValue == "uniqueContributors=2;topShare=0.500")
+        #expect(
+            result.evidence.first { $0.kind == "git-history.fix-orientation" }?.rawValue.contains("fixCommits=1")
+                == true)
+        #expect(
+            result.evidence.first { $0.kind == "git-history.contributor-concentration" }?.rawValue
+                == "uniqueContributors=2;topShare=0.500")
         #expect(
             result.evidence.first { $0.kind == "git-history.recency" }?.rawValue
                 == "lastChangeDaysAgo=2;lastChangedAt=2026-09-10T00:00:00Z;referenceTime=2026-09-12T00:00:00Z"
@@ -167,12 +172,14 @@ struct GitHistoryEvidenceProviderTests {
         runner.enqueue(.init(exitCode: 0, stdout: "true\n", stderr: "", timedOut: false))
         runner.enqueue(.init(exitCode: 0, stdout: "false\n", stderr: "", timedOut: false))
         runner.enqueue(.init(exitCode: 0, stdout: "1\n", stderr: "", timedOut: false))
-        runner.enqueue(.init(
-            exitCode: 0,
-            stdout: "\u{1e}abcdef\u{1f}dev@example.test\u{1f}2026-09-10T00:00:00Z\u{1f}fix: repair\nSources/A.swift\n",
-            stderr: "",
-            timedOut: false
-        ))
+        runner.enqueue(
+            .init(
+                exitCode: 0,
+                stdout:
+                    "\u{1e}abcdef\u{1f}dev@example.test\u{1f}2026-09-10T00:00:00Z\u{1f}fix: repair\nSources/A.swift\n",
+                stderr: "",
+                timedOut: false
+            ))
         let provider = GitHistoryEvidenceProvider(
             executableURL: URL(fileURLWithPath: "/usr/bin/env"),
             baseArguments: ["git"],
@@ -181,21 +188,23 @@ struct GitHistoryEvidenceProviderTests {
         )
         let referenceTime = try #require(ISO8601DateFormatter().date(from: "2026-09-12T00:00:00Z"))
 
-        _ = provider.evidence(for: .init(
-            repositoryRoot: "/tmp/repo with spaces",
-            referenceTime: referenceTime,
-            entities: [gitFixtureEntity(id: "file:Sources/A.swift", file: "Sources/A.swift")]
-        ))
+        _ = provider.evidence(
+            for: .init(
+                repositoryRoot: "/tmp/repo with spaces",
+                referenceTime: referenceTime,
+                entities: [gitFixtureEntity(id: "file:Sources/A.swift", file: "Sources/A.swift")]
+            ))
 
-        #expect(runner.calls.map(\.arguments) == [
-            ["git", "-C", "/tmp/repo with spaces", "rev-parse", "--is-inside-work-tree"],
-            ["git", "-C", "/tmp/repo with spaces", "rev-parse", "--is-shallow-repository"],
-            ["git", "-C", "/tmp/repo with spaces", "rev-list", "--count", "HEAD"],
-            [
-                "git", "-C", "/tmp/repo with spaces", "log", "--follow", "--max-count=501",
-                "--format=%x1e%H%x1f%aE%x1f%aI%x1f%s", "--name-only", "--", "Sources/A.swift",
-            ],
-        ])
+        #expect(
+            runner.calls.map(\.arguments) == [
+                ["git", "-C", "/tmp/repo with spaces", "rev-parse", "--is-inside-work-tree"],
+                ["git", "-C", "/tmp/repo with spaces", "rev-parse", "--is-shallow-repository"],
+                ["git", "-C", "/tmp/repo with spaces", "rev-list", "--count", "HEAD"],
+                [
+                    "git", "-C", "/tmp/repo with spaces", "log", "--follow", "--max-count=501",
+                    "--format=%x1e%H%x1f%aE%x1f%aI%x1f%s", "--name-only", "--", "Sources/A.swift",
+                ],
+            ])
         #expect(runner.calls.allSatisfy { call in !call.arguments.contains { $0.contains("git -C") } })
     }
     @Test func subprocessRunnerTerminatesAtConfiguredTimeout() throws {

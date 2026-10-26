@@ -36,6 +36,7 @@ Keywords: Conventional Commits, Git Commit, Commit Message, feat, fix, docs, sty
 - `build`: Build system or dependencies
 - `ci`: CI/CD configuration changes
 - `chore`: Maintenance tasks
+- `revert`: Revert a previous commit
 
 ### Rule 3: Breaking Changes
 **ALWAYS** indicate breaking changes:

@@ -26,7 +26,7 @@ This is an independent, paper-inspired implementation, **not a reproduction of t
 - [Debtmap parity scope](#debtmap-parity-scope)
 - [Validation and limitations](#validation-and-limitations)
 
-Detailed references: [paper mapping](docs/PAPER_MAPPING.md), [measurement definitions](docs/METRICS.md), [plugin integration](docs/PLUGINS.md), [validation record](docs/VALIDATION.md).
+Detailed references: [paper mapping](docs/PAPER_MAPPING.md), [measurement definitions](docs/METRICS.md), [plugin integration](docs/PLUGINS.md), [release process](docs/RELEASE_PROCESS.md), [validation record](docs/VALIDATION.md).
 
 The [Swift testing pipeline](docs/TESTING_PIPELINE.md) plans risk-based checks and runs configured commands with retained logs and explicit pass, failure, or incomplete verdicts.
 The [research pipeline design](docs/RESEARCH_PIPELINE_DESIGN.md) separates that implementation from proposed finding reconciliation, remediation records, and outcome measurement.
