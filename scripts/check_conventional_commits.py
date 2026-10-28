@@ -112,7 +112,7 @@ def push_validation_base(
     ):
         return resolve_commit(root, base, "base")
     if pushed_branch == default_branch:
-        return base
+        return None
     default_head = resolve_commit(root, f"origin/{default_branch}", "default branch")
     return merge_base(root, default_head, resolved_head)
 

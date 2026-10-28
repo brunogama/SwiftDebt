@@ -64,18 +64,19 @@ class CommitHistoryWorkflowTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn("1 commits checked", result.stdout)
 
-    def test_rewritten_default_branch_does_not_bypass_validation(self) -> None:
+    def test_rewritten_default_branch_validates_from_cutover(self) -> None:
         with temporary_repository() as root:
             cutover = commit(root, "ci: establish commit policy")
-            before = commit(root, "docs: explain default branch history")
-            git(root, "commit", "--amend", "-m", "rewritten default branch commit")
+            nonconforming_commit = commit(root, "nonconforming introduced default branch commit")
+            before = commit(root, "docs: original default branch head")
+            git(root, "reset", "--hard", nonconforming_commit)
+            commit(root, "docs: rewritten default branch head")
             set_remote_branch(root, "main")
 
             result = run_script(root, cutover, before, "main", "main")
 
             self.assertEqual(result.returncode, 1)
-            self.assertIn("rewritten default branch commit", result.stderr)
-
+            self.assertIn("nonconforming introduced default branch commit", result.stderr)
 
 def run(command: list[str], root: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(command, cwd=root, text=True, capture_output=True, check=False)
